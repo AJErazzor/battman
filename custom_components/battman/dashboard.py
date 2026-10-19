@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 STRATEGY_CONFIG: dict[str, Any] = {"strategy": {"type": "custom:battman"}}
 BASE_URL_PATH = "battman"
 TITLE = "Battman"
-ICON = "mdi:battery-heart-variant"
+ICON = "mdi:battery-charging-medium"
 
 
 class DashboardUnavailable(Exception):
