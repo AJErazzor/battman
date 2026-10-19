@@ -27,7 +27,7 @@ async def test_dashboard_api_fills_the_map(hass: HomeAssistant, hass_client) -> 
     assert r.status == 200
     data = await r.json()
     assert data["errors"] == []
-    assert [v["path"] for v in data["views"]] == ["finances", "correct-totals", "curvy", "pricy", "log", "theme"]
+    assert [v["path"] for v in data["views"]] == ["finances", "correct-totals", "curvy", "pricy", "log", "settings", "theme"]
     view = data["views"][0]
     assert view["title"] == "Finances" and view["path"] == "finances"
     assert view["theme"] == "Battman Coffee"
@@ -51,7 +51,8 @@ async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
                  "/battman/log.html", "/battman/theme-studio.html", "/battman/correct-energy.html",
                  "/battman/curvy.html", "/battman/pricy.html", "/battman/images/battman-lying.webp",
                  "/battman/images/battman-money.webp", "/battman/images/soc-curve-editor-line.webp",
-                 "/battman/images/price-curve-editor-line.webp", "/battman/battman-lib.js",
+                 "/battman/images/price-curve-editor-line.webp",
+                 "/battman/images/battman-wrench.webp", "/battman/images/settings-line.webp", "/battman/battman-lib.js",
                  "/battman/images/battman-toilet-mirror.webp", "/battman/images/logs-line.webp",
                  "/battman/images/battman-coins.webp", "/battman/battman-strategy.js"):
         r = await client.get(path)

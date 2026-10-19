@@ -1310,7 +1310,8 @@ function doMakeActive(){
       var tries=0;
       (function poll(){
         hass.connection.sendMessagePromise({type:"lovelace/config",url_path:urlPath}).then(function(cfg){
-          var done=(cfg.views||[]).every(function(v){return v.theme===name;});
+          var managed=cfg&&cfg.strategy&&cfg.strategy.type==="custom:battman";
+          var done=managed ? cfg.strategy.theme===name : (cfg.views||[]).every(function(v){return v.theme===name;});
           if(done)setStatus("applied","ok");   // the helper does its own refresh
           else if(++tries<20)setTimeout(poll,300);
           else setStatus("apply timed out","err");

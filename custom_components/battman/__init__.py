@@ -20,7 +20,7 @@ from .services import async_create_dashboard_and_report, async_register_services
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["button"]
+PLATFORMS: list[str] = ["button", "sensor"]
 
 # Set in the config entry once the install-time dashboard has been made, so it
 # only ever happens once. After that, use the button or battman.create_dashboard.

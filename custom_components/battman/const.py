@@ -49,6 +49,14 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "control_script": "script.solarsystemcontrol",
     "load_30m_avg": "sensor.solarsystemcontrolload30mavg",
     "high_consumption": "input_number.solarsystemcontrolhighconsumption",
+    # Settings: rules, power provider, and the events their cards fire
+    "buy_rules": "sensor.solarsystemcontrolbuyrules",
+    "sell_rules": "sensor.solarsystemcontrolsellrules",
+    "buy_rules_event": "solarsystemcontrolbuyrulesattribute",
+    "sell_rules_event": "solarsystemcontrolsellrulesattribute",
+    "power_provider_buy": "sensor.solarsystemcontrolpowerproviderbuy",
+    "power_provider_sell": "sensor.solarsystemcontrolpowerprovidersell",
+    "power_provider_event": "solarsystemcontrolpowerproviderupdate",
     # Other integrations used by Curvy / Pricy
     # Sigen inverter solar only (pv_power is Sigen + third-party)
     "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
@@ -65,6 +73,9 @@ MAP_TEXT_ENTRIES = {
     "totals_update_event",
     "soc_curves_update_event",
     "price_curves_update_event",
+    "buy_rules_event",
+    "sell_rules_event",
+    "power_provider_event",
 }
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.
