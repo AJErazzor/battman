@@ -24,6 +24,14 @@ FRONTEND_CARDS: dict[str, tuple[str, str]] = {
     "html-card": ("html-card", "https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-card"),
 }
 
+# Integrations: name -> (domain, where to get it). Checked by config entry, so it
+# doesn't matter whether they've finished loading when Battman starts.
+INTEGRATIONS: dict[str, tuple[str, str]] = {
+    "browser_mod": ("browser_mod", "https://github.com/thomasloven/hass-browser_mod"),
+}
+
+GET = {**{n: v[1] for n, v in FRONTEND_CARDS.items()}, **{n: v[1] for n, v in INTEGRATIONS.items()}}
+
 
 async def _loaded_urls(hass: HomeAssistant) -> list[str]:
     urls: list[str] = []
@@ -48,6 +56,7 @@ async def async_check(hass: HomeAssistant) -> list[str]:
     """Raise (or clear) the missing-dependencies Repair. Returns the missing names."""
     urls = [u.lower() for u in await _loaded_urls(hass)]
     missing = [name for name, (needle, _) in FRONTEND_CARDS.items() if not any(needle in u for u in urls)]
+    missing += [name for name, (domain, _) in INTEGRATIONS.items() if not hass.config_entries.async_entries(domain)]
     if missing:
         ir.async_create_issue(
             hass,
@@ -57,7 +66,7 @@ async def async_check(hass: HomeAssistant) -> list[str]:
             severity=ir.IssueSeverity.WARNING,
             translation_key=ISSUE_MISSING,
             translation_placeholders={
-                "missing": "\n".join(f"- **{n}**: {FRONTEND_CARDS[n][1]}" for n in missing)
+                "missing": "\n".join(f"- **{n}**: {GET[n]}" for n in missing)
             },
         )
         _LOGGER.warning("Battman is missing: %s", ", ".join(missing))

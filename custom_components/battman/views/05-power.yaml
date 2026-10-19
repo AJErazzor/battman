@@ -4,8 +4,8 @@
 #
 # Layout follows the Smiggles Power view. Each card goes in its original section and
 # position as it moves over:
-#   Section 1: (power-flow: stays yours) · battery mode stack · state card · profitloss · overrides
-#   Section 2: price strip · limits · …
+#   Section 1: (power-flow: stays yours) · battery mode stack · state · profitloss · overrides
+#   Section 2 (2 columns wide): amber5minpricegrid · limits · amber24hourforecasttable
 #   Section 3: gauges · PV chart · solar forecast · generation mix · demand mix (added when the first one moves)
 type: sections
 title: Power
@@ -17,7 +17,11 @@ theme: Battman Nord
 sections:
   - type: grid
     cards:
+      - type: custom:battman-state
       - type: custom:battman-profitloss
   - type: grid
+    column_span: 2
     cards:
+      - type: custom:battman-amber5minpricegrid
       - type: custom:battman-limits
+      - type: custom:battman-amber24hourforecasttable

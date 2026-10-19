@@ -1,0 +1,209 @@
+# The original Smiggles template sensor behind the 24h forecast table (v6.7), kept
+# unchanged so tests can render it and check the Battman card against it. Test data only.
+# ─── SolarSystemControlAmberForecast (v6.7) ──────────────────────────────────
+# sensor.solarsystemcontrolamberforecast — was sensor.amber_forecast_table_v6_themed.
+# Renders a compact themed HTML table of Amber 48-hour billing interval forecasts.
+# Displayed in the dashboard via custom:html-card using the friendly_table attribute.
+#
+# v6.7: Amber Advanced (CSIRO) predicted price SPLIT out of the Sell/Buy cells into
+#       its own column headed "SS" (one after Sell, one after Buy → Time|Sell|SS|Buy|SS).
+#       Each of the four price columns is now coloured by its OWN value's band — previously
+#       the inline predicted (~) figure borrowed col-1's (AEMO's) colour. SS columns key on
+#       the predicted per_kwh (sell_bg/sell_accent for the sell-SS, buy_bg/buy_accent for the
+#       buy-SS); em-dash shown when a given interval has no advanced prediction. Removed the
+#       old inline pred() macro (replaced by pv_raw, which returns the raw predicted per_kwh).
+#
+# Source sensors:
+#   sensor.amber_billing_interval_forecasts_feed_in_price  (sell / feed-in)
+#   sensor.amber_billing_interval_forecasts_general_price  (buy / grid)
+#
+# v6.6: predicted price font bumped 11px->13px (more legible); sell display now negates
+#       the raw per_kwh sign (was abs()'d, hiding sign entirely) so it reads intuitively:
+#       positive = earning FIT (normal/good), negative = paying to export (rare/bad).
+#       Buy is unchanged: positive = you pay (normal), negative = rare free-energy event.
+#       See DISPLAY SIGN CONVENTION below — this is deliberately the INVERSE of the raw
+#       API sign for sell. Color bands (sell_bg/buy_bg) still key off the raw, un-negated
+#       per_kwh — only the printed text is flipped. Removed ✕/⚡ icon glyphs from sell/buy
+#       cells (sell_ic/buy_ic + .at6-ic dropped) — color bands alone carry the signal now.
+# v6.5: predicted price now sits inline to the RIGHT of the AEMO number instead of
+#       a stacked line below it, so row height stays compact. (v6.4 = stacked.)
+# v6.4: added Amber Advanced (CSIRO) predicted price. Source here is the cabberley amber2mqtt
+#       add-on, which republishes the Amber SDK forecast objects to MQTT. Advanced
+#       price is exposed by the SDK as a NESTED object (advanced_price.predicted),
+#       unlike the HA-native forks which flatten it to advanced_price_predicted.
+#       The pred() macro is shape-agnostic: tries nested first, then flat, then
+#       renders nothing if neither is present — so it's safe regardless of whether
+#       amber2mqtt serialises the advanced-price object at all.
+#
+#       Confirm your shape: Dev Tools > States > this sensor > expand one Forecasts
+#       interval and look for advanced_price (dict w/ predicted) or advanced_price_
+#       predicted (flat). If neither is there, the add-on isn't passing it through —
+#       raise it with cabberley (the Amber REST API does carry advancedPrice).
+#
+# ⚠  RAW API SIGN CONVENTION for billing forecast per_kwh (OPPOSITE of 5-min dispatch card):
+#   sell  positive  →  paying to export (bad — oversupply)
+#   sell  negative  →  earning feed-in tariff (good)
+#   buy   positive  →  you pay to import (normal)
+#   buy   negative  →  grid paying you to consume (rare free-energy event)
+#   Color bands (sell_bg/buy_bg) are keyed on THIS raw sign — do not change without
+#   re-deriving the thresholds.
+#
+# ⚠  DISPLAY SIGN CONVENTION (as of v6.6) — deliberately inverted from the raw API for sell:
+#   Sell column & its predicted (~) figure: raw value is NEGATED before printing, so
+#     positive shown  →  earning feed-in tariff (good, the normal case)
+#     negative shown  →  paying to export (bad, rare)
+#   Buy column & its predicted (~) figure: printed AS-IS (matches raw API sign):
+#     positive shown  →  you pay to import (normal)
+#     negative shown  →  grid paying you to consume (rare free-energy event)
+#   Rationale: a bare minus sign should read as "the bad/unusual case" in both columns,
+#   independent of which way Amber's underlying per_kwh happens to be signed.
+#
+# Color bands and thresholds mirror the 5-min dispatch card
+# (buyMeta / sellMeta functions in lovelace.dashboard_hhh, section 1, card 5).
+#
+# NOTE: color bands still keyed on AEMO per_kwh (existing behaviour). To band on
+#       Amber's advanced prediction instead, swap sell_bg(sv)->sell_bg(sp),
+#       buy_bg(bv)->buy_bg(bp) etc. in the cell markup below.
+#
+# To disable: rename this file to ambermqtt_forecast_table_v6.yaml.disabled
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Renamed to the SolarSystemControl* family (was amber_forecast_table_v6_themed).
+# ── Portable: this sensor excludes ITSELF from the recorder via the block below
+#    (HA merges package `recorder:` config), so the large HTML attribute never
+#    touches the database. Move this whole file + install custom:html-card to reuse.
+recorder:
+  exclude:
+    entities:
+      - sensor.solarsystemcontrolamberforecast
+
+template:
+  - sensor:
+      - name: "SolarSystemControlAmberForecast"
+        unique_id: solarsystemcontrolamberforecast
+        state: "Amber Price Forecast"
+        attributes:
+          version: "v6.7"  # bump this when logic changes
+          friendly_table: >
+            {#- ── Data ───────────────────────────────────────────────────────────── -#}
+            {%- set sell = state_attr('sensor.amber_billing_interval_forecasts_feed_in_price','Forecasts') | default([]) -%}
+            {%- set buy  = state_attr('sensor.amber_billing_interval_forecasts_general_price','Forecasts') | default([]) -%}
+            {%- if sell | length == 0 or buy | length == 0 -%}
+              <div style="color:var(--smiggles-darkred);padding:12px;font-size:14px;background:var(--smiggles-surface-popup);border-radius:8px;">
+                Missing Amber forecast data. Check sensors:<br>
+                sensor.amber_billing_interval_forecasts_feed_in_price<br>
+                sensor.amber_billing_interval_forecasts_general_price
+              </div>
+            {%- else -%}
+              {#- ── Styles ─────────────────────────────────────────────────────────── -#}
+              {#- All classes prefixed "at6t-" to avoid collisions with HA global styles -#}
+              <style>
+                .at6t-wrap  { background:var(--smiggles-surface-popup); max-height:550px; overflow-y:auto; -webkit-overflow-scrolling:touch; border-radius:8px; }
+                .at6t-tbl   { border-collapse:collapse; width:100%; }
+                .at6t-thead { position:sticky; top:0; z-index:1; background:var(--smiggles-surface-card); }
+                .at6t-th    { color:var(--smiggles-text-muted); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:7px 8px; text-align:left; border-bottom:1px solid var(--smiggles-border-neutral-soft); }
+                .at6t-tr    { border-bottom:1px solid var(--smiggles-border-neutral-soft); }
+                .at6t-td    { padding:6px 8px; vertical-align:middle; }
+                .at6t-time  { color:var(--smiggles-text-muted); font-size:13px; white-space:nowrap; }
+                .at6t-price { color:var(--smiggles-text-bright); font-size:15px; font-weight:700; white-space:nowrap; }
+                {#- Amber Advanced (CSIRO) predicted price: muted, inline to the RIGHT of the AEMO number (keeps row height compact) -#}
+                .at6t-pred  { font-size:15px; font-weight:600; margin-left:6px; white-space:nowrap; vertical-align:0px; }
+              </style>
+
+              {#- ── SELL color bands ────────────────────────────────────────────────── -#}
+              {#- sell per_kwh: >0 = paying to export (bad) / <0 = earning FIT (good)   -#}
+              {#-   > 0       rose    — paying to export                                -#}
+              {#-   > -0.05   dark    — near-zero FIT                                   -#}
+              {#-   > -0.15   yellow  — low FIT                                         -#}
+              {#-   > -0.25   green   — good FIT                                        -#}
+              {#-   ≤ -0.25   purple  — excellent FIT                                   -#}
+              {%- macro sell_bg(v) -%}
+                {%- if v >= 0 -%}var(--smiggles-darkred-soft-bg)
+                {%- elif v > -0.05 -%}var(--smiggles-orange-soft-bg)
+                {%- elif v > -0.15 -%}var(--smiggles-yellow-soft-bg)
+                {%- elif v > -0.25 -%}var(--smiggles-green-soft-bg)
+                {%- else -%}var(--smiggles-purple-soft-bg)
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {#- ── BUY color bands ─────────────────────────────────────────────────── -#}
+              {#-   < 0       purple  — free / grid paying you                          -#}
+              {#-   ≤ 0.08   green   — cheap / sponge window                            -#}
+              {#-   ≤ 0.25   yellow  — normal                                           -#}
+              {#-   > 0.25   rose    — expensive / spike                                -#}
+              {%- macro buy_bg(v) -%}
+                {%- if v < 0 -%}var(--smiggles-purple-soft-bg)
+                {%- elif v <= 0.08 -%}var(--smiggles-green-soft-bg)
+                {%- elif v <= 0.25 -%}var(--smiggles-yellow-soft-bg)
+                {%- else -%}var(--smiggles-darkred-soft-bg)
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {#- ── Accent text colors (same bands, full-strength color instead of tint) ── -#}
+              {%- macro sell_accent(v) -%}
+                {%- if v >= 0 -%}var(--smiggles-darkred)
+                {%- elif v > -0.05 -%}var(--smiggles-orange)
+                {%- elif v > -0.15 -%}var(--smiggles-yellow)
+                {%- elif v > -0.25 -%}var(--smiggles-green)
+                {%- else -%}var(--smiggles-purple)
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {%- macro buy_accent(v) -%}
+                {%- if v < 0 -%}var(--smiggles-purple)
+                {%- elif v <= 0.08 -%}var(--smiggles-green)
+                {%- elif v <= 0.25 -%}var(--smiggles-yellow)
+                {%- else -%}var(--smiggles-darkred)
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {#- ── Amber Advanced (CSIRO) predicted RAW per_kwh, or '' when absent ────── -#}
+              {#- Shape-agnostic: amber2mqtt (Amber SDK) nests as advanced_price.predicted; -#}
+              {#- HA-native forks flatten to advanced_price_predicted. Returns the raw       -#}
+              {#- (un-negated) per_kwh as a string; caller trims + floats it, and applies    -#}
+              {#- the same colour bands / display-sign rules as the AEMO column it mirrors.  -#}
+              {%- macro pv_raw(item) -%}
+                {%- set ap = item.advanced_price | default(none) -%}
+                {%- if ap is mapping and ap.predicted is defined and ap.predicted is not none -%}{{ ap.predicted }}
+                {%- elif item.advanced_price_predicted is defined and item.advanced_price_predicted is not none -%}{{ item.advanced_price_predicted }}
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {#- ── Table ──────────────────────────────────────────────────────────── -#}
+              {#- idx == 0 = current interval; gets a cyan left border as "now" marker -#}
+              <div class="at6t-wrap">
+                <table class="at6t-tbl">
+                  <thead class="at6t-thead">
+                    <tr>
+                      <th class="at6t-th">Time</th>
+                      <th class="at6t-th">Sell</th>
+                      <th class="at6t-th">SS</th>
+                      <th class="at6t-th">Buy</th>
+                      <th class="at6t-th">SS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {%- for idx in range(sell | length) -%}
+                      {%- set s  = sell[idx] -%}
+                      {%- set b  = buy | selectattr('nem_date','equalto',s.nem_date) | first -%}
+                      {%- set dt = as_datetime(s.nem_date.split('+')[0]) | as_local -%}
+                      {%- set sv = s.per_kwh | float(0) -%}
+                      {%- set bv = b.per_kwh | float(0) if b else 0 -%}
+                      {%- set sp_s = pv_raw(s) | trim -%}
+                      {%- set bp_s = (pv_raw(b) | trim) if b else '' -%}
+                    <tr class="at6t-tr">
+                      <td class="at6t-td at6t-time"{% if idx == 0 %} style="border-left:2px solid var(--smiggles-blue);padding-left:6px"{% endif %}>{{ dt.strftime('%a %H:%M') }}</td>
+                      <td class="at6t-td at6t-price" style="background:{{ sell_bg(sv) }};color:{{ sell_accent(sv) }}">{{ '%.2f' | format((sv * -1) * 100) }}c</td>
+                      {%- if sp_s != '' -%}{%- set sp = sp_s | float(0) -%}
+                      <td class="at6t-td at6t-price" style="background:{{ sell_bg(sp) }};color:{{ sell_accent(sp) }}">{{ '%.2f' | format((sp * -1) * 100) }}c</td>
+                      {%- else -%}<td class="at6t-td at6t-time">—</td>{%- endif -%}
+                      <td class="at6t-td at6t-price" style="background:{{ buy_bg(bv) }};color:{{ buy_accent(bv) }}">{{ '%.2f' | format(bv * 100) }}c</td>
+                      {%- if bp_s != '' -%}{%- set bp = bp_s | float(0) -%}
+                      <td class="at6t-td at6t-price" style="background:{{ buy_bg(bp) }};color:{{ buy_accent(bp) }}">{{ '%.2f' | format(bp * 100) }}c</td>
+                      {%- else -%}<td class="at6t-td at6t-time">—</td>{%- endif -%}
+                    </tr>
+                    {%- endfor -%}
+                  </tbody>
+                </table>
+              </div>
+            {%- endif -%}

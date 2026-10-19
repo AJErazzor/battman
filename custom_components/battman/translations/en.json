@@ -71,7 +71,7 @@
     },
     "missing_dependencies": {
       "title": "Battman needs other dashboard cards",
-      "description": "Battman's dashboard uses cards that aren't installed. Install them with HACS (Frontend), then restart Home Assistant and refresh your browser:\n\n{missing}\n\nThe full list is in DEPENDENCIES.md in the Battman repository."
+      "description": "Battman's dashboard uses things that aren't installed. Install them with HACS (cards under Frontend; browser_mod as an integration, then add it under Settings → Devices & services), then restart Home Assistant and refresh your browser:\n\n{missing}\n\nThe full list is in DEPENDENCIES.md in the Battman repository."
     },
     "restart_required": {
       "title": "Restart to finish updating Battman",

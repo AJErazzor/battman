@@ -1,0 +1,300 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: horizontal-stack
+        cards:
+          - type: custom:button-card
+            version: 0.9.8
+            show_icon: false
+            show_name: false
+            show_state: false
+            triggers_update:
+              - sensor.amber_5min_current_general_price
+              - sensor.amber_5min_current_feed_in_price
+              - sensor.amber_billing_interval_forecasts_feed_in_price
+              - sensor.amber_billing_interval_forecasts_general_price
+              - binary_sensor.solarsystemcontrolestimatedprice
+            custom_fields:
+              card: >-
+                [[[
+
+
+                const buyForecastEntity =
+                  states['sensor.amber_billing_interval_forecasts_general_price'];
+
+                const sellForecastEntity =
+                  states['sensor.amber_billing_interval_forecasts_feed_in_price'];
+
+                const buyForecasts =
+                  buyForecastEntity?.attributes?.Forecasts || [];
+
+                const sellForecasts =
+                  sellForecastEntity?.attributes?.Forecasts || [];
+
+                const fmtC = (v) => {
+                  const n = parseFloat(v);
+                  if (!isFinite(n)) return '—';
+                  const c = n * 100;
+                  return (c < 0 ? '-' : '') + Math.abs(c).toFixed(1) + 'c';
+                };
+
+                const time = (entity) => {
+                  const t = entity?.attributes?.start_time;
+                  if (!t) return '--:--';
+                  return new Date(t).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  });
+                };
+
+                const buyMeta = (v) => {
+                  const n = parseFloat(v);
+                  if (n < 0)     return { bg: 'var(--smiggles-purple-soft-bg)', accent: 'var(--smiggles-purple)', bar: 'var(--smiggles-purple)', border: 'var(--smiggles-purple-border)' };
+                  if (n <= 0.08) return { bg: 'var(--smiggles-green-soft-bg)', accent: 'var(--smiggles-green)', bar: 'var(--smiggles-green)', border: 'var(--smiggles-green-border)' };
+                  if (n <= 0.25) return { bg: 'var(--smiggles-yellow-soft-bg)', accent: 'var(--smiggles-yellow)', bar: 'var(--smiggles-yellow)', border: 'var(--smiggles-yellow-border)' };
+                                 return { bg: 'var(--smiggles-darkred-soft-bg)', accent: 'var(--smiggles-darkred)', bar: 'var(--smiggles-darkred)', border: 'var(--smiggles-darkred-border)' };
+                };
+
+                const sellMeta = (v) => {
+                  const n = parseFloat(v);
+                  if (n < 0)    return { bg: 'var(--smiggles-darkred-soft-bg)', accent: 'var(--smiggles-darkred)', bar: 'var(--smiggles-darkred)', border: 'var(--smiggles-darkred-border)' };
+                  if (n < 0.05) return { bg: 'var(--smiggles-orange-soft-bg)', accent: 'var(--smiggles-orange)', bar: 'var(--smiggles-orange)', border: 'var(--smiggles-orange-border)' };
+                  if (n < 0.15) return { bg: 'var(--smiggles-yellow-soft-bg)', accent: 'var(--smiggles-yellow)', bar: 'var(--smiggles-yellow)', border: 'var(--smiggles-yellow-border)' };
+                  if (n < 0.25) return { bg: 'var(--smiggles-green-soft-bg)', accent: 'var(--smiggles-green)', bar: 'var(--smiggles-green)', border: 'var(--smiggles-green-border)' };
+                                return { bg: 'var(--smiggles-purple-soft-bg)', accent: 'var(--smiggles-purple)', bar: 'var(--smiggles-purple)', border: 'var(--smiggles-purple-border)' };
+                };
+
+
+                const buyNow =
+                states['sensor.amber_5min_current_general_price'];
+
+
+                const sellNow =
+                states['sensor.amber_5min_current_feed_in_price'];
+
+
+
+                const buyPeriods = buyForecasts.slice(0, 8).map(f => ({
+                  state: f.per_kwh,
+                  attributes: {
+                    start_time: f.start_time
+                  }
+                }));
+
+                const sellPeriods = sellForecasts.slice(0, 8).map(f => ({
+                  state: f.per_kwh*-1,
+                  attributes: {
+                    start_time: f.start_time
+                  }
+                }));
+
+                const clamp = (val, lo, hi) =>
+                  Math.max(lo, Math.min(hi, val));
+
+                // 0.9.8: flagged once, above the SELL sparkline, from each
+                5-min mark until the new price lands (~20 s).
+
+                // Amber's own 'estimate' attr is never true here (it just keeps
+                the old price), so use the engine's sensor.
+
+                const est =
+                states['binary_sensor.solarsystemcontrolestimatedprice']?.state
+                === 'on';
+
+                const makeHeroCell = (entity, label, periods, getMeta) => {
+                  const v = parseFloat(entity?.state);
+                  const m = getMeta(v);
+                  const t = time(entity);
+
+                  const vals = [entity, ...periods]
+                    .map(e => parseFloat(e?.state))
+                    .filter(isFinite);
+
+                  let sparkPts = '';
+                  let sparkDot = '';
+
+                  if (vals.length >= 2) {
+                    const lo = label === 'BUY' ? 0 : -0.10;
+                    const hi = label === 'BUY' ? 0.60 : 0.35;
+                    const range = hi - lo;
+
+                    const W = 58;
+                    const H = 32;
+
+                    const toY = val =>
+                      H - ((clamp(val, lo, hi) - lo) / range) * (H - 2);
+
+                    const pts = vals
+                      .map((val, i) =>
+                        `${(i / (vals.length - 1)) * W},${toY(val)}`
+                      )
+                      .join(' ');
+
+                    sparkPts =
+                      `<polyline points="${pts}" fill="none" stroke="${m.accent}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+                    sparkDot =
+                      `<circle cx="0" cy="${toY(vals[0])}" r="3" fill="${m.accent}"/>`;
+                  }
+
+                  return `
+                    <div style="
+                      background:${m.bg};
+                      height:55px;
+                      display:flex;
+                      align-items:center;
+                      padding:0 12px;
+                      position:relative;
+                      overflow:hidden;
+                      border-radius:8px;
+                    ">
+                      <div style="
+                        position:absolute;
+                        width:90px;
+                        height:90px;
+                        border-radius:50%;
+                        background:${m.accent};
+                        opacity:0.07;
+                        top:-25px;
+                        right:-20px;
+                        filter:blur(45px);
+                        pointer-events:none;
+                      "></div>
+                      ${label === 'SELL' && est
+                        ? `<div style="position:absolute;top:2px;right:12px;width:60px;text-align:center;font-size:9px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;line-height:1;color:${m.accent};pointer-events:none;">Estimating</div>`
+                        : ''}
+
+                      <div style="flex:1;text-align:left;">
+                        ${label === 'SELL'
+                          ? `<div style='display:flex;align-items:baseline;margin-bottom:3px;width:100%;'><span style='flex-shrink:0;display:flex;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>${label}</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'>${t}</span></span><span style='flex:1;display:flex;justify-content:center;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>LEFT</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'><amber-countdown></amber-countdown></span></span></div>`
+                          : `<div style='display:flex;align-items:baseline;margin-bottom:3px;width:100%;'><span style='flex-shrink:0;display:flex;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>${label}</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'>${t}</span></span></div>`
+                        }
+
+                        <div style="
+                          font-size:26px;
+                          font-weight:900;
+                          color:${m.accent};
+                          letter-spacing:-0.5px;
+                          line-height:1;
+                        ">
+                          ${fmtC(v)}
+                        </div>
+                      </div>
+
+                      <svg width="60" height="34" style="opacity:0.65;flex-shrink:0;">
+                        ${sparkPts}
+                        ${sparkDot}
+                      </svg>
+                    </div>
+                  `;
+                };
+
+                const makeCell = (entity, labelText, getMeta, prevVal) => {
+                  const v = parseFloat(entity?.state);
+                  const m = getMeta(v);
+                  const arrow = (!isFinite(v) || !isFinite(prevVal) || v === prevVal) ? '→' : (v > prevVal ? '↑' : '↓');
+
+                  return `
+                    <div style="
+                      background:${m.bg};
+                      height:40px;
+                      display:flex;
+                      flex-direction:row;
+                      justify-content:space-between;
+                      align-items:center;
+                      padding:0 10px;
+                      position:relative;
+                      overflow:hidden;
+                      border-radius:8px;
+                      border:1px solid ${m.border};
+                      gap:8px;
+                    ">
+                      <div>
+                        <div style="
+                          font-size:11px;
+                          font-weight:700;
+                          color:${m.accent};
+                          text-transform:uppercase;
+                          letter-spacing:0.08em;
+                          margin-bottom:1px;
+                        ">
+                          ${labelText}
+                        </div>
+
+                        <div style="
+                          font-size:18px;
+                          font-weight:900;
+                          color:${m.accent};
+                          letter-spacing:-0.5px;
+                          line-height:1;
+                        ">
+                          ${fmtC(v)}
+                        </div>
+                      </div>
+
+                      <div style="
+                        font-size:20px;
+                        font-weight:900;
+                        line-height:1;
+                        color:${m.accent};
+                        flex-shrink:0;
+                      ">
+                        ${arrow}
+                      </div>
+                    </div>
+                  `;
+                };
+
+                const strip = (label, nowEntity, periods, getMeta) => {
+                  const heroHTML =
+                    `<div style='grid-column:1/-1;'>${makeHeroCell(nowEntity, label, periods, getMeta)}</div>`;
+
+                  const periodHTML =
+                    periods.map((p, i) => {
+                      const prevVal = i === 0 ? parseFloat(nowEntity?.state) : parseFloat(periods[i - 1]?.state);
+                      return makeCell(p, time(p), getMeta, prevVal);
+                    }).join('');
+
+                  return `
+                    <div style="
+                      display:grid;
+                      grid-template-columns:repeat(4,1fr);
+                      gap:2px;
+                    ">
+                      ${heroHTML}
+                      ${periodHTML}
+                    </div>
+                  `;
+                };
+
+                return `
+                  <div style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:2px;
+                    font-family:var(--smiggles-font,sans-serif);
+                  ">
+                    ${strip('SELL', sellNow, sellPeriods, sellMeta)}
+                    ${strip('BUY', buyNow, buyPeriods, buyMeta)}
+                  </div>
+                `;
+
+                ]]]
+            styles:
+              card:
+                - padding: '0'
+                - overflow: hidden
+                - background: transparent
+                - box-shadow: none
+                - border: none
+                - margin: '0'
+              grid:
+                - grid-template-areas: '"card"'
+              custom_fields:
+                card:
+                  - grid-area: card
+                  - width: 100%
+            tap_action:
+              action: none
+        grid_options:
+          columns: full

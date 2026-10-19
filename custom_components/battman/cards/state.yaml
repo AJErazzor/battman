@@ -1,0 +1,580 @@
+# name: State
+# description: What the engine is doing: curve status, SELL / BUY tiles and the acting side. Tap for the next hours.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-state`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/state.yaml and edit that copy.
+#
+# Tap opens a browser_mod popup with the next hours' projection. A missing sensor shows
+# an error naming it. The projection needs the real battery capacity, SOC and power: if
+# one is unavailable it says so instead of guessing (the original assumed 40.3 kWh).
+# Override settings that are unset still count as 0 = off, as before.
+type: custom:button-card
+entity: '[[map:parameters]]'
+show_icon: false
+show_name: false
+show_state: false
+triggers_update:
+- '[[map:run]]'
+- '[[map:feed_in_price]]'
+- '[[map:buy_price]]'
+- '[[map:battery_soc]]'
+- '[[map:mode]]'
+- '[[map:parameters]]'
+- '[[map:override_timer]]'
+custom_fields:
+  content: |-
+    [[[
+    // Battman: a sensor this card needs is missing -> say which, never draw made-up values.
+    const _gone = ['[[map:run]]', '[[map:parameters]]', '[[map:buy_rules]]', '[[map:sell_rules]]'].filter(e => !states[e]);
+    if (_gone.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">State: missing ' + _gone.join(', ') + '</div>';
+    const _note = '';
+    return (_note ? '<div style="padding:4px 2px 6px;font-size:11px;font-weight:700;line-height:1.4;color:var(--battman-darkred)">' + _note + '</div>' : '') + (() => {
+    // Chill card — curve status (top pill) · SELL / BUY tiles · what the engine is doing (bottom pill)
+    const SC = null;  // sandpit gallery injects mocked scenarios here; null = live
+    const attr = SC ? SC.flags : (states['[[map:run]]']?.attributes || {});
+    const P = states['[[map:parameters]]']?.attributes || {};
+    // Override inputs are read LIVE from the params sensor (what the dock writes), like the dock rows do —
+    // the run sensor only echoes them after the engine re-runs (~2s). Params prices are CENTS, run is DOLLARS.
+    const LIVE = {sellPriceOverride: ['sellOverridePrice', 100], sellAboveOverride: ['sellOverrideSOC', 1],
+      buyPriceOverride: ['buyOverridePrice', 100], buyBelowOverride: ['buyOverrideSOC', 1],
+      sellPriceSolar: ['sellSolarPrice', 100], sellAboveSolar: ['sellSolarSOC', 1],
+      buyPriceAnytime: ['buyAnytimePrice', 100], buyBelowAnytime: ['buyAnytimeSOC', 1],
+      drainBatteryPrice: ['drainBatteryPrice', 100], drainBatterySOC: ['drainBatterySOC', 1]};
+    const g = k => SC ? (SC.v[k] ?? 0)
+      : LIVE[k] && P[LIVE[k][0]] !== undefined ? (parseFloat(P[LIVE[k][0]]) || 0) / LIVE[k][1]
+      : (parseFloat(attr[k]) || 0);
+    const fmtC1 = v => { const r = Math.round(v * 1000) / 10; return (Number.isInteger(r) ? r.toFixed(0) : r.toFixed(1)) + 'c'; },  // decimal only when needed
+       fmtC = v => Math.round(v * 100) + 'c', fmtP = v => Math.round(v) + '%';
+    const cR = v => isFinite(v) ? Math.round(v) + 'c' : '–', pR = v => isFinite(v) ? Math.round(v) + '%' : '–';
+    const mix = (col, pct) => `color-mix(in srgb,${col} ${pct}%,transparent)`;
+    const C = {green: 'var(--battman-green)', yellow: 'var(--battman-yellow)', orange: 'var(--battman-orange)',
+      purple: 'var(--battman-purple)', red: 'var(--battman-red)', darkred: 'var(--battman-darkred)', blue: 'var(--battman-blue)'};
+
+    // engine mode → [mode button colour, theme fx namespace] — a running pill takes the mode's colour (unless an override names it) and its fx
+    const MODE = {'Charge': [C.yellow, 'buy'], 'Discharge': [C.green, 'sell'], 'Self Consume': [C.blue, 'selfconsume'], 'Float': [C.orange, 'sellsolar'],
+      'Drain': [C.red, 'drain'], 'Float Solar Off': [C.yellow, 'houseparty'], 'Charge Solar Off': [C.green, 'hooover']};
+    // engine reason labels — newer engines publish Drain as 'Battery Only' and add 'Solar -ve' / 'Solar Only'
+    const DRAIN = ['Drain', 'Battery Only', 'No, Draining'], SOLAR = ['Solar', 'Solar -ve', 'Solar Only'];
+    // negative-price modes: no rule numbers — the BUY tile shows the live price it's buying at
+    const SOAK = {'Charge Solar Off': ['Hooover', 'Filling up'], 'Float Solar Off': ['House Party', 'Paid to use']};
+
+    const st = attr.needSun   ? {text: 'Needy Curve, No Sun, Panic!', icon: 'mdi:weather-cloudy-alert', color: C.orange}
+             : attr.needPower ? {text: 'Needy Curve, High Consumption, Panic!', icon: 'mdi:kettle-alert', color: C.darkred}
+             :                  {text: 'Normal Curve, Chill.', icon: 'mdi:emoticon-cool-outline', color: C.green};
+
+    const now = new Date(), nm = now.getHours() * 60 + now.getMinutes();
+    const L = SC && SC.live ? SC.live : {
+      fit:  parseFloat(states['[[map:feed_in_price]]']?.state) * 100,
+      buy:  parseFloat(states['[[map:buy_price]]']?.state) * 100,
+      soc:  parseFloat(states['[[map:battery_soc]]']?.state),
+      mode: states['[[map:mode]]']?.state || '',
+      peak: nm >= 17 * 60 && nm < 21 * 60 };
+    const rawSell = attr.sellReason || [false, 0, 'No Sell'], rawBuy = attr.buyReason || [false, 0, 'No Buy'];
+    // The engine only flags a reason as running when the mode it chose matches, so its last run implies a mode.
+    // A different live mode = changed by hand since that run (it re-decides within 5 min): trust the mode, drop the stale reasons.
+    const impliedMode = rawBuy[0] ? (/hoo+ver|free for all/i.test(rawBuy[2]) ? 'Charge Solar Off' : /house party|free for house/i.test(rawBuy[2]) ? 'Float Solar Off' : 'Charge')
+      : rawSell[0] ? (DRAIN.includes(rawSell[2]) ? 'Drain' : SOLAR.includes(rawSell[2]) ? 'Float' : 'Discharge') : 'Self Consume';
+    // (new-engine bug: Sell Solar runs in Float but its flag stays false — don't call that a manual change)
+    const manualMode = !!L.mode && L.mode !== impliedMode && !(L.mode === 'Float' && SOLAR.includes(rawSell[2]));
+    const rSell = manualMode ? [false, 0, 'No Sell'] : rawSell, rBuy = manualMode ? [false, 0, 'No Buy'] : rawBuy;
+    // dashboard button names for engine modes
+    const NAME = {'Charge': 'Buy', 'Discharge': 'Sell', 'Float': 'Sell Solar', 'Charge Solar Off': 'HOOOOVER', 'Float Solar Off': 'House Party'};
+    // Drain moves SOC, not dollars: it never lights the SELL tile — only the pill reports it
+    const isDrain = rSell[1] > 0 && DRAIN.includes(rSell[2]);
+    // PLUGHOLE (sandpit): flag on + engine draining; SKIP = draining at a negative buy (beating House Party)
+    const PLUG = (P.drainBatteryPlughole === true || P.drainBatteryPlughole === 'true') && isDrain && !!rSell[0];
+    const PLUG_SKIP = PLUG && L.buy < 0;
+
+    // One side's thresholds (override wins) + what the engine says about it
+    const side = (kind) => {
+      const sell = kind === 'sell', r = sell ? rSell : rBuy;
+      const base = g(kind + 'Price'), ovr = g(kind + 'PriceOverride'), pxOvr = ovr !== 0;  // any non-zero override, incl. negative buy
+      const ruleWon = sell && (r[2] === 'Rule Active' || (g('sellPriceRule') > 0 && Math.abs(base - g('sellPriceRule')) < 1e-6));
+      const baseSoc = g(sell ? 'sellAbove' : 'buyBelow'), socOvr = g(sell ? 'sellAboveOverride' : 'buyBelowOverride');
+      const s = {kind, sell, r, label: sell ? 'Sell' : 'Buy', color: sell ? C.green : C.yellow, dir: sell ? 'up' : 'down',
+        altLabel: sell ? 'Low' : 'High', alt: fmtC(g(sell ? 'sellPriceLow' : 'buyPriceHigh')),
+        px: (pxOvr ? ovr : base) * 100, line: socOvr > 0 ? socOvr : baseSoc,  // judged thresholds: cents / %
+        price: fmtC1(pxOvr ? ovr : base), priceOld: pxOvr ? fmtC1(base) : null,
+        soc: fmtP(socOvr > 0 ? socOvr : baseSoc), socOld: socOvr > 0 ? fmtP(baseSoc) : null, badge: null};
+      if (!sell && PLUG_SKIP) { s.plug = true; s.badge = {text: 'Plughole', color: C.red}; }
+      else if (!sell && r[0] && SOAK[L.mode]) {                   // Hooover / House Party
+        s.soak = {txt: SOAK[L.mode][1], color: MODE[L.mode][0]}; s.badge = {text: SOAK[L.mode][0], color: s.soak.color}; }
+      else if (r[1] > 0 && (sell ? SOLAR.includes(r[2]) : r[2] === 'Anytime'))  // Sell Solar / Buy Anytime driving → tile shows THEIR numbers
+        Object.assign(s, {price: fmtC1(g(sell ? 'sellPriceSolar' : 'buyPriceAnytime')), priceOld: s.price,
+          soc: fmtP(g(sell ? 'sellAboveSolar' : 'buyBelowAnytime')), socOld: s.soc,
+          badge: {text: sell ? 'Solar' : 'Anytime', color: sell ? C.orange : C.purple}});
+      else if (pxOvr || socOvr > 0)                          s.badge = {text: 'Override', color: s.color};
+      else if (sell && ruleWon)                              s.badge = {text: 'Rule', color: C.purple};
+      else if (sell && g('sellPriceCalc') < g('sellPricePreferred') && Math.abs(base - g('sellPriceCalc')) < 1e-6)  // engine's prorated price is the one in use
+                                                             s.badge = {text: 'Prorated', color: C.orange};
+      else if (sell && g('sellPriceProtect') > 0)            s.badge = {text: 'Protected', color: C.blue};
+      else if (!sell && L.peak)                              s.badge = {text: 'Peak 5–9pm', color: 'var(--primary-text-color)'};
+      // tone: on = acting (glows) · ready = reason true but mode blocks · idle
+      const drainSide = sell && isDrain;
+      s.tone = r[0] && !drainSide ? 'on' : r[1] > 0 && !drainSide && !s.plug ? 'ready' : 'idle';
+      // idle → dim every unmet number, with its live value underneath (peak dims the buy price, no "now")
+      if (s.tone === 'idle' && !s.plug && L.mode !== (sell ? 'Discharge' : 'Charge')) {
+        const socOk = sell ? L.soc > s.line : L.soc < s.line, pxOk = sell ? L.fit >= s.px : L.buy <= s.px, peak = !sell && L.peak;
+        if (!socOk || !pxOk || peak) s.blk = {soc: socOk ? null : pR(L.soc), price: pxOk ? null : cR(sell ? L.fit : L.buy), peak};
+      }
+      return s;
+    };
+    const SELL = side('sell'), BUY = side('buy');
+
+    // Bottom pill: the side that's acting (else a 'would'), its reason, settings and timer
+    const hm = d => ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    const ampm = h => { h = ((h % 24) + 24) % 24; return (h % 12 || 12) + (h < 12 ? 'am' : 'pm'); };
+    // the dock's live timer is the source; watchdogResetOverridesAt is only a fallback
+    const resetAt = SC && SC.live && SC.live.reset !== undefined ? SC.live.reset : (() => {
+      const tm = states['[[map:override_timer]]'];
+      if (tm?.state === 'active') { const f = new Date(tm.attributes.finishes_at); if (isFinite(f) && f > now) return hm(f); }
+      const t = new Date(P.watchdogResetOverridesAt); return isFinite(t) && t > now ? hm(t) : null; })();
+    const ruleTo = (kind) => {
+      if (SC && SC.live && SC.live.ruleTo !== undefined) return SC.live.ruleTo;
+      const r = (states[kind === 'buy' ? '[[map:buy_rules]]' : '[[map:sell_rules]]']?.attributes?.rules || [])[now.getHours()];
+      return r && r.isActive && parseInt(r.hours_ahead) > 0 ? ampm(now.getHours() + parseInt(r.hours_ahead)) : null; };
+    // dock overrides: [pill name, price attr, SOC attr, allow-reset param, dock colour]
+    const OV = {Anytime: ['Buy Anytime', 'buyPriceAnytime', 'buyBelowAnytime', 'buyAnytimeAllowReset', C.purple],
+                Solar:   ['Sell Solar', 'sellPriceSolar', 'sellAboveSolar', 'sellSolarAllowReset', C.orange],
+                Drain:   ['Drain Battery', 'drainBatteryPrice', 'drainBatterySOC', 'drainBatteryAllowReset', C.red]};
+    const act = (() => {
+      if (manualMode) return {s: null, ready: false, named: true, reason: 'Manual mode change · ' + (NAME[L.mode] || L.mode), extra: '', timer: null, col: null};
+      const s = [SELL, BUY].find(x => x.tone === 'on') || (isDrain && rSell[0] ? SELL : null)  // running Drain beats any 'would'
+        || [SELL, BUY].find(x => x.tone === 'ready') || (isDrain ? SELL : null);
+      if (!s) return null;
+      const lbl = String(s.r[2]);
+      const ov = /^Override/.test(lbl)
+        ? [s.sell ? 'Sell Override' : 'Buy Override', s.kind + 'PriceOverride', s.sell ? 'sellAboveOverride' : 'buyBelowOverride', s.kind + 'OverrideAllowReset', s.color]
+        : OV[DRAIN.includes(lbl) ? 'Drain' : SOLAR.includes(lbl) ? 'Solar' : lbl];
+      const a = {s, ready: s.tone !== 'on' && !(s.sell && isDrain && rSell[0]), reason: lbl, extra: '', timer: null, named: !!ov, col: null,
+        verb: s.tone === 'on' ? (s.sell ? 'Selling' : 'Buying') : (s.sell ? 'Would sell' : 'Would buy')};
+      if (ov) {
+        const [name, pk, sk, ak, col] = ov, priceC = g(pk) * 100, soc = g(sk);
+        a.reason = name + (priceC ? ' ' + cR(priceC) : '') + (soc > 0 ? ' ' + (s.sell ? '&gt;' : '&lt;') + pR(soc) : '');
+        if ((SC || P[ak] !== false) && resetAt) a.timer = resetAt;
+        a.col = col;
+        if (PLUG && DRAIN.includes(lbl)) a.reason = 'Plughole · ' + a.reason;
+      }
+      else if (lbl === 'Rule Active') { a.reason = 'Rule'; const to = ruleTo(s.kind); if (to) a.extra = (s.sell ? 'best to ' : 'cheapest to ') + to; }
+      else if (/^Spike/.test(lbl)) a.reason = 'Spike';
+      return a; })();
+
+    // ── render ──
+    const ico = (icon, size, color) => `<ha-icon icon="${icon}" style="display:flex;flex:none;--mdc-icon-size:${size}px;width:${size}px;height:${size}px;color:${color};"></ha-icon>`;
+    const at = (h, area) => h.replace("style='", `style='grid-area:${area};`);
+    const dim = (h, on) => on ? h.replace("style='", "style='opacity:.5;") : h;
+    const num = (v, col, align, size = 32, strike = false) => {
+      const m = String(v).match(/^(-?\d+)(\.\d+)?(\D*)$/) || [null, v, '', ''];  // whole part big; .decimal + unit small
+      return `<div style='justify-self:${align};color:${col};line-height:1;white-space:nowrap;${strike ? 'position:relative;opacity:.6;' : ''}'><span style='font-size:${size}px;font-weight:900;letter-spacing:-1px;'>${m[1]}</span>` +
+        `<span style='font-size:${size / 2}px;font-weight:800;margin-left:${m[2] ? 0 : 1}px;opacity:0.85;'>${(m[2] || '') + m[3]}</span>${strike ? `<span style="position:absolute;left:-4px;right:-4px;top:50%;height:3px;margin-top:-1.5px;border-radius:2px;background:currentColor;"></span>` : ''}</div>`;
+    };
+    const lab = (t, col, align) => `<span style='justify-self:${align};font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:${col};white-space:nowrap;'>${t}</span>`;
+    const old = (v, align) => `<s style='justify-self:${align};font-size:12px;font-weight:700;opacity:0.45;'>${v || ''}</s>`;
+    const liveV = (v, align) => `<span style='justify-self:${align};font-size:13px;font-weight:800;line-height:1;color:var(--primary-text-color);white-space:nowrap;'><span style="font-size:10px;font-weight:700;opacity:.75;letter-spacing:.04em;">now </span>${v}</span>`;
+    const glow = (s) => s.tone === 'on' ? `border-color:${s.color};box-shadow:0 0 12px -2px ${s.color},inset 0 0 14px -6px ${s.color};background:${mix(s.color, 14)};` : '';
+
+    const tile = (s) => {
+      const bd = s.badge, k = s.blk;
+      const top = bd  // badge = thin text-only pill, else Low/High
+        ? `<span style='justify-self:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-weight:800;line-height:1;letter-spacing:0.03em;padding:3px 8px;border-radius:999px;border:1px solid ${mix(bd.color, 60)};background:${mix(bd.color, 10)};color:${bd.color};white-space:nowrap;'>${bd.text}</span>`
+        : `<span style='justify-self:center;font-size:12px;letter-spacing:0.04em;color:var(--battman-text-muted);white-space:nowrap;'>${s.altLabel} <b style='font-size:16px;color:var(--primary-text-color);opacity:0.8;'>${s.alt}</b></span>`;
+      const cond = `<span style='justify-self:center;align-self:end;display:flex;flex-direction:column;align-items:center;margin-top:-8px;font-size:9px;line-height:1;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;color:${s.color};'><span>if</span><span>${s.dir === 'up' ? 'above' : 'below'}</span></span>`;
+      const edge = bd && bd.text !== 'Peak 5–9pm' ? mix(bd.color, 50) : mix(s.color, 22);
+      const pDim = k && (k.price || k.peak), pNow = k && k.price && !k.peak, sDim = k && k.soc;
+      const box = `<div style='flex:1;min-width:0;padding:7px 9px 6px;color:${s.color};background:${mix(s.color, 7)};border:1px solid ${edge};border-radius:10px;${glow(s)}` +
+        `display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:18px 34px 14px;align-items:center;column-gap:2px;'>`;
+      if (s.plug) {  // PLUGHOLE: red tile, the negative price it is NOT buying at (struck), what it is waiting for
+        const ovr = g('buyPriceOverride'), cap = ovr < 0 ? 'Waiting for ' + fmtC1(ovr) : 'Skipping negative buy';
+        return `<div style='flex:1;min-width:0;padding:7px 9px 6px;color:${C.red};background:${mix(C.red, 12)};border:1.5px solid ${C.red};border-radius:10px;box-shadow:0 0 12px -2px ${C.red},inset 0 0 14px -6px ${C.red};` +
+          `display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:18px 34px 14px;align-items:center;column-gap:2px;'>` +
+          at(lab(s.label, C.red, 'start'), '1/1') + at(top, '1/1/2/4') + at(lab(pR(L.soc), C.red, 'end'), '1/3') +
+          at(num(isFinite(L.buy) ? fmtC1(L.buy / 100) : '–', C.red, 'center', 38, true), '2/1/3/4') +
+          at(`<span style='justify-self:center;align-self:end;font-size:10px;line-height:1;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;color:${C.red};'>${cap}</span>`, '3/1/4/4') + `</div>`;
+      }
+      if (s.soak)  // one big live price in the mode colour; live SOC in the corner; no rule numbers
+        return box + at(lab(s.label, s.color, 'start'), '1/1') + at(top, '1/1/2/4') + at(lab(pR(L.soc), s.color, 'end'), '1/3') +
+          at(num(isFinite(L.buy) ? fmtC1(L.buy / 100) : '–', s.soak.color, 'center', 38), '2/1/3/4') +
+          at(`<span style='justify-self:center;align-self:end;font-size:10px;line-height:1;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;color:${s.soak.color};'>${s.soak.txt}</span>`, '3/1/4/4') + `</div>`;
+      return box +
+        // Low/High + IF ABOVE span the full tile width (true centre); the arrow column stays narrow so big numbers fit
+        at(lab(s.label, s.color, 'start'), '1/1') + at(top, '1/1/2/4') + at(lab('SOC', s.color, 'end'), '1/3') +
+        at(dim(num(s.price, s.color, 'start'), pDim), '2/1') +
+        at(`<div style='justify-self:center;'>` + ico(s.dir === 'up' ? 'mdi:menu-up' : 'mdi:menu-down', 32, s.color) + `</div>`, '2/2') +
+        at(dim(num(s.soc, s.color, 'end'), sDim), '2/3') +
+        at(pNow ? liveV(k.price, 'start') : old(s.priceOld, 'start'), '3/1') + at(cond, '3/1/4/4') +
+        at(sDim ? liveV(k.soc, 'end') : old(s.socOld, 'end'), '3/3') + `</div>`;
+    };
+    const pill = (a) => {
+      const m = a.ready ? null : MODE[L.mode], c = a.col || (m ? m[0] : a.s ? a.s.color : 'var(--primary-text-color)'), fx = m && m[1];
+      // theme effects (extra_styles .fxp): the same --fx-<ns>-* vars the mode buttons use; off when the theme doesn't define them
+      const fxv = fx ? `--fx-ring:var(--fx-${fx}-chase-display, none);--fx-chase-gradient:var(--fx-${fx}-chase-gradient, none);--fx-chase-duration:var(--fx-${fx}-chase-duration, 0s);` +
+        `--fx-ring-width:var(--fx-${fx}-ring-width, 2px);--fx-glow-color:var(--fx-${fx}-glow-color, transparent);` +
+        `animation:var(--fx-${fx}-glow-name, none) var(--fx-${fx}-glow-duration, 0s) ease-in-out infinite;border:var(--fx-${fx}-border, 1px solid ${mix(c, 70)});` : '';
+      const tail = a.timer ? ico('mdi:timer-outline', 13, c) + a.timer : a.extra;
+      return `<div class='fxp' style='position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 9px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(c, 70)};${fxv}${PLUG_SKIP ? `border:1.5px solid ${C.red};box-shadow:0 0 10px -2px ${C.red};` : ''}${a.ready ? 'opacity:.7;' : ''}'>` +
+        `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>${a.named ? (a.ready ? 'Would ' : '') : a.verb + ' · '}${a.reason}` +
+        `${tail ? ` <span style="display:inline-flex;align-items:center;gap:2px;vertical-align:-2px;color:${c};">${tail}</span>` : ''}</span></div>`;
+    };
+
+    return `<div style='font-family:var(--primary-font-family,var(--battman-font,sans-serif));font-variant-numeric:tabular-nums;font-feature-settings:"tnum";position:relative;margin-top:11px;margin-bottom:${act ? (act.ready ? 10 : 26) : 0}px;padding:16px 6px ${act ? 16 : 6}px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(st.color, 70)};box-shadow:0 0 10px -4px ${st.color};'>` +
+      `<div style='position:absolute;top:-9px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(st.color, 70)};'>` +
+      ico(st.icon, 16, st.color) + `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${st.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>${st.text}</span></div>` +
+      `<div style='display:flex;gap:6px;'>` + tile(SELL) + tile(BUY) + `</div>` + (act ? pill(act) : '') + `</div>`;
+    })();
+    ]]]
+styles:
+  card:
+  - padding: '0'
+  - background: transparent
+  - box-shadow: none
+  - border: none
+  - margin: '0'
+  - cursor: pointer
+  grid:
+  - grid-template-areas: '"content"'
+  custom_fields:
+    content:
+    - width: 100%
+tap_action:
+  action: fire-dom-event
+  browser_mod:
+    service: browser_mod.popup
+    data:
+      title: ' '
+      style: --mdc-dialog-min-width:min(94vw,480px);--mdc-dialog-max-width:min(94vw,480px);
+      content: |-
+        [[[
+        // Battman: a sensor this card needs is missing -> say which, never draw made-up values.
+        const _gone = ['[[map:run]]', '[[map:parameters]]', '[[map:soc_curves]]', '[[map:price_curves]]', '[[map:battery_capacity]]', '[[map:battery_power]]', '[[map:battery_soc]]', '[[map:buy_forecast]]', '[[map:feed_in_forecast]]', '[[map:buy_rules]]', '[[map:override_timer]]'].filter(e => !states[e]);
+        if (_gone.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Next hours: missing ' + _gone.join(', ') + '</div>';
+        // Battman: the projection needs real numbers (the original assumed 40.3 kWh / 0% / 0 kW).
+        const _na = [['[[map:battery_capacity]]', 'battery capacity'], ['[[map:battery_soc]]', 'battery SOC'], ['[[map:battery_power]]', 'battery power']].filter(x => !isFinite(parseFloat(states[x[0]].state)));
+        if (_na.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Next hours: ' + _na.map(x => x[1] + ' (' + x[0] + ')').join(', ') + ' unavailable, so there is no projection right now.</div>';
+        const _note = ['[[map:solcast_today]]', '[[map:solcast_tomorrow]]'].filter(e => !states[e]).length ? 'No solar forecast (' + ['[[map:solcast_today]]', '[[map:solcast_tomorrow]]'].filter(e => !states[e]).join(', ') + ' missing): this projection assumes no solar.' : '';
+        return (_note ? '<div style="padding:4px 2px 6px;font-size:11px;font-weight:700;line-height:1.4;color:var(--battman-darkred)">' + _note + '</div>' : '') + (() => {
+        // Chill card popup — "Next N hours" event list (lifted from the Curve & Cost look-ahead v1.3.x; chart + ladder left out)
+        const CLR_SELL = 'var(--battman-green)', CLR_BUY = 'var(--battman-yellow)', CLR_INACTIVE = 'var(--primary-text-color)';
+        const attr = states['[[map:run]]']?.attributes || {};
+        const a = k => parseFloat(attr[k]) || 0;
+        const sellAbove = a('sellAbove'), buyBelow = a('buyBelow'), sellPricePreferred = a('sellPricePreferred'),
+              sellPriceLow = a('sellPriceLow'), buyPriceHigh = a('buyPriceHigh');
+        const RATE_KW    = 15;   // assumed battery rate (kW) when the engine sells/buys
+        const LOAD_KW    = 1.4;  // average house load (kW) ≈ 3.5%/h on 40.3 kWh
+        const FLOOR      = 0;    // SOC floor (%) – below this the house imports from grid (battery does reach 0%)
+        const MAX_EVENTS = 14;    // event lines shown before "+N more"
+        // ═════════════════════════════════════════════════════════════════════
+
+        const socCur = states['[[map:soc_curves]]']?.attributes?.curves || {};
+        const prcCur = states['[[map:price_curves]]']?.attributes?.curves || {};
+        const par    = states['[[map:parameters]]']?.attributes || {};
+        const pn = (o,k,d)=>{const n=parseFloat(o?.[k]);return isFinite(n)?n:d;};
+        const bpo=pn(par,'buyProrateSOCOffset',1),  bho=pn(par,'buyHighSOCOffset',10);
+        const spo=pn(par,'sellProrateSOCOffset',30), slo=pn(par,'sellLowSOCOffset',50);
+        const suf = String(attr.needy).toLowerCase()==='true' ? '_high' : '';
+        const MO  = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+        const capk = parseFloat(states['[[map:battery_capacity]]']?.state);
+        const pwk  = parseFloat(states['[[map:battery_power]]']?.state)||0;
+        const soc0 = parseFloat(states['[[map:battery_soc]]']?.state)||0;
+        const buyPricePreferred = a('buyPricePreferred');
+        const fl2 = x => Math.floor(x*100)/100;
+        const clmp = (v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+        const hhmm = t => ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+
+        // ── overrides, read exactly as the engine does: cents from the parameters sensor, each with its own reset ──
+        const pc = k => { const n = parseFloat(par[k]); return isFinite(n) ? n : 0; };     // params: price in cents, SOC in %
+        const _tmr = states['[[map:override_timer]]'];
+        const _tmrEnd = (_tmr && _tmr.state === 'active') ? (new Date(_tmr.attributes.finishes_at).getTime() || null) : null;
+        const ovEnd = ak => (_tmrEnd != null && par[ak] !== false) ? _tmrEnd : Infinity;   // resettable → ends at the shared timer; locked / no timer → persists
+        const OV = {
+          sell:  { px: pc('sellOverridePrice'), soc: pc('sellOverrideSOC'), end: ovEnd('sellOverrideAllowReset'),  label: 'Sell override',  cls: 'sell'  },
+          buy:   { px: pc('buyOverridePrice'),  soc: pc('buyOverrideSOC'),  end: ovEnd('buyOverrideAllowReset'),   label: 'Buy override',   cls: 'buy'   },
+          any:   { px: pc('buyAnytimePrice'),   soc: pc('buyAnytimeSOC'),   end: ovEnd('buyAnytimeAllowReset'),    label: 'Buy anytime',    cls: 'buy'   },
+          solar: { px: pc('sellSolarPrice'),    soc: pc('sellSolarSOC'),    end: ovEnd('sellSolarAllowReset'),      label: 'Sell solar',     cls: 'sell'  },
+          drain: { px: pc('drainBatteryPrice'), soc: pc('drainBatterySOC'), end: ovEnd('drainBatteryAllowReset'),   label: 'Drain battery',  cls: 'drain' },
+        };
+        const SPK1 = pc('sellSpikePrice1'), SPS1 = pc('sellSpikeSOC1'), SPK2 = pc('sellSpikePrice2'), SPS2 = pc('sellSpikeSOC2');
+        const isSet = o => o.px !== 0 || o.soc > 0;                 // buy price may be negative (paid to charge)
+        const live  = (o, ms) => isSet(o) && ms < o.end;           // active only until its own timer hands control back to the curve
+
+        function slotThresh(t){
+          const mk=MO[t.getMonth()], h=t.getHours(), mn=t.getMinutes();
+          const t2=new Date(t.getTime()+3600000), mk2=MO[t2.getMonth()], h2=t2.getHours();
+          const gA=(c,ty)=> (c[mk]?.[ty+suf]||[])[h];
+          const gB=(c,ty)=> (c[mk2]?.[ty+suf]||[])[h2];
+          const bA=gA(socCur,'buy')  ?? buyBelow,  bB=gB(socCur,'buy')  ?? buyBelow;
+          const sA=gA(socCur,'sell') ?? sellAbove, sB=gB(socCur,'sell') ?? sellAbove;
+          const minBuy =fl2(bA+(bB-bA)*mn/60), minSell=fl2(sA+(sB-sA)*mn/60);
+          const P=prcCur[mk]||{};
+          const defBuy=(P['buy'+suf]?.low||[])[h]  ?? buyPricePreferred*100;
+          const hiBuy =(P['buy'+suf]?.high||[])[h] ?? buyPriceHigh*100;
+          const defSell=(P['sell'+suf]?.high||[])[h]?? sellPricePreferred*100;
+          const loSell=(P['sell'+suf]?.low||[])[h] ?? sellPriceLow*100;
+          return {minBuy,minSell,defBuy,hiBuy,defSell,loSell,
+                  bPro:Math.max(minBuy-bpo,0), bHi:Math.max(minBuy-bho,0),
+                  sLow:Math.min(minSell+slo,101), sPro:Math.min(minSell+spo,101), h};
+        }
+        function priceAt(T,soc){
+          let buy;
+          if (T.bHi<T.minBuy && soc<=T.bHi) buy=T.hiBuy;
+          else if (T.bHi<T.minBuy && T.bPro>T.bHi && soc<=T.bPro) buy=T.defBuy-(T.hiBuy-T.defBuy)*((soc-T.bPro)/(T.bPro-T.bHi));
+          else buy=T.defBuy;
+          let sell;
+          if (T.sLow>T.minSell && soc>=T.sLow) sell=T.loSell;
+          else if (T.sPro>T.minSell && T.sLow>T.sPro && soc>=T.sPro) sell=T.defSell-(T.defSell-T.loSell)*((soc-T.sPro)/(T.sLow-T.sPro));
+          else sell=T.defSell;
+          return {buy,sell};
+        }
+
+        // ── forecasts ──
+        const gen = states['[[map:buy_forecast]]']?.attributes?.Forecasts || [];
+        const finBy = {};
+        (states['[[map:feed_in_forecast]]']?.attributes?.Forecasts || [])
+          .forEach(f => { finBy[f.start_time] = f.per_kwh; });
+        const pvF = [].concat(
+          states['[[map:solcast_today]]']?.attributes?.detailedForecast || [],
+          states['[[map:solcast_tomorrow]]']?.attributes?.detailedForecast || []
+        ).map(p => ({s:new Date(p.period_start).getTime(), kw:parseFloat(p.pv_estimate)||0}));
+        const pvAt = ms => { for (const p of pvF) if (ms>=p.s && ms<p.s+1800000) return p.kw; return 0; };
+
+        // ── engine buy rules: read from the sensor the engine uses, same maths ──
+        const brS   = states['[[map:buy_rules]]'];
+        const brOn  = String(brS?.state).toLowerCase()==='true';
+        const brAll = brS?.attributes?.rules || [];
+        function buyRuleAt(ms){   // $/kWh, 0 = no rule this hour
+          if (!brOn) return 0;
+          const r = brAll[new Date(ms).getHours()];
+          if (!r || !r.isActive || !(parseInt(r.hours_ahead)>0)) return 0;
+          const cut = new Date(ms + r.hours_ahead*3600000); cut.setMinutes(0,0,0);
+          const per = Math.max(1, Math.floor((parseInt(r.grouping_minutes)||60)/5));
+          const s5 = [];
+          for (const f of gen){
+            const st=new Date(f.start_time).getTime(), en=new Date(f.end_time).getTime();
+            if (en<=ms) continue; if (st>=cut.getTime()) break;
+            const n=Math.max(1,Math.floor((parseInt(f.duration)||5)/5));
+            for (let i=0;i<n;i++) s5.push(parseFloat(f.per_kwh)||0);
+          }
+          if (!s5.length) return 0;
+          const avgs=[]; for (let i=0;i<s5.length;i+=per){ const c=s5.slice(i,i+per); avgs.push(c.reduce((x,y)=>x+y,0)/c.length); }
+          let res = Math.min(...avgs) + (parseFloat(r.offset)||0)/100;
+          if (r.roundTo>0){ const k=Math.pow(10,r.roundTo), v=res*k;
+            res = (r.roundtype==='floor' ? Math.floor(v+1e-9) : (r.roundtype==='ceil' ? Math.ceil(v-1e-9) : Math.round(v)))/k; }
+          return Math.max(0,res);
+        }
+        const isPeak = ms => { const d=new Date(ms), m=d.getHours()*60+d.getMinutes(); return m>=17*60 && m<20*60+59; };
+
+        // ── simulate ──
+        const nowMs = Date.now();
+        let soc = soc0;
+        const sim = [];
+        for (const g of gen){
+          const st=new Date(g.start_time).getTime(), en=new Date(g.end_time).getTime();
+          if (en<=nowMs) continue;
+          const from=Math.max(st,nowMs), hrs=(en-from)/3600000;
+          if (hrs<=0) continue;
+          const fiRaw=finBy[g.start_time];
+          const fit = fiRaw==null ? null : -parseFloat(fiRaw)*100;
+          const buy = parseFloat(g.per_kwh)*100;
+          const T = slotThresh(new Date(from));
+          const socIn = soc;
+          let act='hold', kwh=0, money=0;
+          const soak = buy < 0;   // negative buy → engine soaks (Hooover / House Party); the house runs off the grid, not the battery
+          soc = clmp(soc + (pvAt(from) - (soak?0:LOAD_KW))*hrs/capk*100, 0, 100);
+          if (!soak && soc < FLOOR){ const k=(FLOOR-soc)/100*capk; soc=FLOOR; money -= k*buy/100; }
+          const P = priceAt(T, soc);
+          // engine: a buy rule below the high price replaces the curve price (cheaper, or in the prorate band)
+          const rule = buyRuleAt(from)*100;
+          let buyThr = P.buy, ruled = false;
+          if (rule!==0 && rule < T.hiBuy){
+            if (rule < buyThr){ buyThr = rule; ruled = true; }
+            else if (rule > buyThr && soc>T.bHi && soc<T.bPro){ buyThr = rule; ruled = true; }
+          }
+          const peak = isPeak(from);
+          // ── decision: faithful port of the engine's sellReason / buyReason priority cascade ──
+          // prices in cents (fit = currentSellPrice, buy = currentBuyPrice); each override is zeroed once its own timer resets it
+          const sp = P.sell, bp = buyThr, mS = T.minSell, mB = T.minBuy;
+          const vfx = (o,f) => live(o,from) ? o[f] : 0;                 // override value in its live window, else 0 (reset by timer)
+          const oSP=vfx(OV.sell,'px'),  oSS=vfx(OV.sell,'soc');
+          const oBP=live(OV.buy,from)?OV.buy.px:0, oBS=vfx(OV.buy,'soc');
+          const oAP=vfx(OV.any,'px'),   oAS=vfx(OV.any,'soc');
+          const oLP=vfx(OV.solar,'px'), oLS=vfx(OV.solar,'soc');
+          const oDP=vfx(OV.drain,'px'), oDS=vfx(OV.drain,'soc');
+          // SELL cascade (override → spike → solar → drain), first match wins
+          let sFire=false, sFloor=mS, sThr=sp, sCode=null;
+          if (fit!=null){
+                 if (oSP>0 && oSS>0  && fit>=oSP && soc>oSS){ sFire=true; sFloor=oSS; sThr=oSP; sCode='sell'; }
+            else if (oSP>0 && oSS==0 && fit>=oSP && soc>mS ){ sFire=true; sFloor=mS;  sThr=oSP; sCode='sell'; }
+            else if (oSS>0 && oSP==0 && fit>=sp  && soc>oSS){ sFire=true; sFloor=oSS; sThr=sp;  sCode='sell'; }
+            else if (oSP==0&& oSS==0 && fit>=sp  && soc>mS ){ sFire=true; sFloor=mS;  sThr=sp;  }
+            else if (SPK1>0 && fit>SPK1 && soc>SPS1){ sFire=true; sFloor=SPS1; sThr=SPK1; sCode='spike'; }
+            else if (SPK2>0 && fit>SPK2 && soc>SPS2){ sFire=true; sFloor=SPS2; sThr=SPK2; sCode='spike'; }
+            else if (oLP>0 && oLS>0 && fit>oLP && soc>oLS){ sFire=true; sFloor=oLS; sThr=oLP; sCode='solar'; }
+            else if (oLP==0&& oLS>0 && soc>oLS){ sFire=true; sFloor=oLS; sThr=0; sCode='solar'; }
+            else if (oDP>0 && oDS>0 && buy<oDP && soc>oDS){ sFire=true; sFloor=oDS; sThr=oDP; sCode='drain'; }
+            else if (oDP>0 && oDS==0&& buy<oDP && soc>mB ){ sFire=true; sFloor=mB;  sThr=oDP; sCode='drain'; }
+          }
+          // BUY cascade — SOAK (−ve buy) wins: engine → Charge Solar Off (Hooover) or Float Solar Off (House Party)
+          let bFire=false, bCeil=mB, bThr=bp, bCode=null, houseParty=false;
+          if (soak){
+            const soakCharge = oBP<0 ? (buy<=oBP) : true;   // −ve override → only once buy drops below it; else charge on any −ve price
+            if (soakCharge){ bFire=true; bCeil=100; bThr=buy; bCode='hooover'; }    // Charge Solar Off → fill to 100%, ignore the curve
+            else { houseParty=true; bThr=buy; bCode='houseparty'; }                 // Float Solar Off → float the battery, run the house off grid
+          }
+          else if (oBP<0){ /* −ve override set but price not −ve → don't buy */ }
+          else if (oBP>0 && oBS>0 ){ if (buy<=oBP && soc<=oBS){ bFire=true; bCeil=oBS; bThr=oBP; bCode='buy'; } }
+          else if (oBP>0 && oBS==0){ if (buy<=oBP && soc<mB ){ bFire=true; bCeil=mB;  bThr=oBP; bCode='buy'; } }
+          else if (oBS>0 && oBP==0){ if (buy<=bp  && soc<=oBS){ bFire=true; bCeil=oBS; bThr=bp;  bCode='buy'; } }
+          else if (peak){ /* No Buy in Peak Tariff */ }
+          else if (buy<=bp && soc<mB){ bFire=true; bCeil=mB; bThr=bp; }
+          else if (oAP>0 && buy<=oAP && soc<oAS){ bFire=true; bCeil=oAS; bThr=oAP; bCode='anytime'; }
+          // apply — the engine charges before it discharges, so buy wins a tie (they rarely overlap)
+          let code=null, drain=false;
+          if (houseParty){                                        // Float Solar Off: battery holds (ESS charge capped ~0.1kW), house runs off the (paid) grid
+            soc = socIn; const gridKwh = LOAD_KW*hrs; kwh=gridKwh; money -= gridKwh*buy/100; act='buy'; code='houseparty';
+          }
+          else if (bFire){
+            const d=Math.min(bCeil-soc, RATE_KW*hrs/capk*100);
+            if (d>0 || bCode==='hooover'){ const rise=Math.max(0,d); soc+=rise; const battKwh=rise/100*capk;
+              const gridKwh = bCode==='hooover' ? battKwh + LOAD_KW*hrs : battKwh;   // Hooover also pays you for the house load it imports
+              kwh=gridKwh; money-=gridKwh*buy/100; act='buy'; code=bCode; }
+          }
+          // Sell Solar → mode Float exports PV and holds the battery, so it never drains SOC — it stays a header note only
+          if (act==='hold' && sFire && sCode!=='solar'){
+            const d=Math.min(soc-sFloor, RATE_KW*hrs/capk*100); if (d>0){ soc-=d; kwh=d/100*capk; act='sell'; code=sCode; drain=(sCode==='drain');
+              if (!drain && fit!=null) money+=kwh*fit/100; }   // Drain moves SOC, not dollars (matches the Chill card)
+          }
+          let wait = false, spike = false;
+          if (act==='hold'){
+            wait  = soc<mB && (peak || (ruled && buy > buyThr));
+            spike = fit!=null && soc>mS+1;
+          }
+          const sOv = act==='sell' && (code==='sell'||code==='solar'||code==='drain');
+          const bOv = act==='buy'  && (code==='buy'||code==='anytime');
+          sim.push({st:from,en,act,socIn,soc,kwh,money,fit,buy,
+            sellThr: act==='sell'?sThr:(oSP>0?oSP:sp), buyThr: act==='buy'?bThr:(oBP>0?oBP:buyThr),
+            ruled, peak, wait, spike, minSell: act==='sell'?sFloor:mS, minBuy: act==='buy'?bCeil:mB, sOv, bOv, code, drain,
+            sLive: live(OV.sell,from) && OV.sell.px>0, bLive: live(OV.buy,from) && OV.buy.px!==0});
+        }
+        // ── events: collapse runs of the same action ──
+        const groups=[];
+        // v1.3.1: "Do nothing" also splits where the spike-sell price changes (≥2c) or the battery crosses the sell line,
+        // so each block's "will sell if Amber spikes" price is true for that whole block.
+        // v1.3.3: same for the buy side — split where the battery crosses the buy line or the buy price changes (≥2c).
+        const spk = s => s.act==='hold' && s.spike ? Math.round(s.sellThr) : null;
+        const bpk = s => s.act!=='hold' || !(s.soc < s.minBuy) ? null : (s.peak ? 'P' : Math.round(s.buyThr));
+        const near = (x,y) => (x===null)===(y===null) && (x===null || x===y || (typeof x==='number' && typeof y==='number' && Math.abs(x-y)<2));
+        sim.forEach(s=>{ const g=groups[groups.length-1];
+          const same = g && g.act===s.act && (s.act!=='hold' || (near(spk(s),g.spk) && near(bpk(s),g.bpk))) && (s.act!=='buy' || (s.buy<0)===(g.items[0].buy<0)) && s.code===g.items[0].code;  // buy blocks split where Amber's price goes negative; any block splits where an override starts/ends (the timer) or the driving reason changes
+          if (same) g.items.push(s); else groups.push({act:s.act,items:[s],spk:spk(s),bpk:bpk(s)}); });
+        const rng=(arr,dp)=>{ const v=arr.filter(n=>n!=null&&isFinite(n)); if(!v.length) return '–'; const lo=Math.min(...v),hi=Math.max(...v); return Math.abs(hi-lo)<0.05?lo.toFixed(dp)+'c':lo.toFixed(dp)+'–'+hi.toFixed(dp)+'c'; };
+        const money$=m=>(m>=0?'+$':'−$')+Math.abs(m).toFixed(2);
+        const d1=v=>{ const r=Math.round(v*10)/10; return Number.isInteger(r)?r.toFixed(0):r.toFixed(1); };  // one decimal, but only when non-zero
+        let total=0, evHtml='';
+        groups.forEach((g,gi)=>{
+          const f=g.items[0], l=g.items[g.items.length-1];
+          const kwh=g.items.reduce((p,s)=>p+s.kwh,0), m=g.items.reduce((p,s)=>p+s.money,0); total+=m;
+          if (gi>=MAX_EVENTS) return;
+          const from=gi===0?'Now':hhmm(new Date(f.st)), to=hhmm(new Date(l.en));
+          const s0=Math.round(f.socIn), s1=Math.round(l.soc);
+          const holdCol = m<-0.005 ? 'var(--battman-orange)' : (s1>s0 ? 'var(--battman-green)' : 'var(--battman-blue)');  // grid use / solar filling / draining
+          const neg = g.act==='buy' && g.items.reduce((p,s)=>p+(s.buy||0),0)/g.items.length < 0;   // Amber pays you to take power → Hooover (battery rising) / House Party (not)
+          const negMode = neg ? (g.items[0].code==='houseparty' ? ['House Party','var(--battman-purple)'] : ['Hooover','var(--battman-purple)']) : null;
+          const cc = (g.act==='sell'&&g.items[0].code==='drain')?'var(--battman-red)':g.act==='sell'?CLR_SELL:(g.act==='buy'?(neg?negMode[1]:CLR_BUY):holdCol);
+          const avg=k=>g.items.reduce((p,s)=>p+(s[k]||0),0)/g.items.length;
+          const code=g.items[0].code;
+          const sTag = code==='solar'?' (sell solar)':(code==='spike'?' (spike)':(code==='sell'?' (override)':''));
+          const bTag = code==='anytime'?' (anytime)':(code==='buy'?' (override)':'');
+          const holdS = g.items.some(s=>s.sLive)?' (override)':'', holdB = g.items.some(s=>s.bLive)?' (override)':'';
+          let head, sub;
+          if (g.act==='sell' && code==='drain'){ head=`Drain ${kwh.toFixed(0)} kWh, battery ${s0}% → ${s1}%`;
+            sub=`Grid price under ${d1(avg('sellThr'))}c — draining the battery (moves charge, not dollars).`; }
+          else if (g.act==='sell'){ head=`Sell ${kwh.toFixed(0)} kWh, battery ${s0}% → ${s1}%`;
+            sub=`Amber pays ${d1(avg('fit'))}c. BATTMAN sells at ${d1(avg('sellThr'))}c or more${sTag}.`; }
+          else if (g.act==='buy'){ const ab=avg('buy');
+            if (code==='hooover'){ head=`Buy ${kwh.toFixed(0)} kWh, battery ${s0}% → ${s1}%`;
+              sub=`Amber pays you ${d1(-ab)}c to use power — charging to 100%, ignoring the curve.`; }
+            else if (code==='houseparty'){ head=`Run the house off the grid, battery holds at ${s1}%`;
+              sub=`Amber pays you ${d1(-ab)}c to use power — holding the battery, no grid charge.`; }
+            else { head=`Buy ${kwh.toFixed(0)} kWh, battery ${s0}% → ${s1}%`;
+              sub=(ab<0?`Amber pays you ${d1(-ab)}c to use power.`:`Amber charges ${d1(ab)}c.`)+` BATTMAN buys at ${d1(avg('buyThr'))}c or less${g.items.some(s=>s.ruled)?' (buy rule)':bTag}.`; } }
+          else { head=`Do nothing, battery ${s0}% → ${s1}%`;
+            const w = g.items.filter(s=>s.wait), sp = g.items.filter(s=>s.spike);
+            if (m<-0.005) sub = `Battery runs low, house uses the grid.`;
+            else sub = s1>s0 ? `Solar fills the battery.` : `House runs off the battery.`;
+            if (g.bpk==='P') sub += `<br><span style='color:var(--battman-yellow);font-weight:700;'>Below the buy line, but no buying in peak (5–9pm)</span>`;
+            else if (g.bpk!==null) sub += `<br><span style='color:var(--battman-yellow);font-weight:700;'>Buys if Amber charges ${d1(Math.max(...g.items.map(s=>s.buyThr)))}c or less${g.items.some(s=>s.ruled)?' (buy rule)':holdB}</span>`;
+            if (sp.length) sub += `<br><span style='color:var(--battman-orange);font-weight:700;'>Sells if Amber pays ${d1(Math.min(...sp.map(s=>s.sellThr)))}c or more${holdS}</span>`; }
+          const wash = 'color-mix(in srgb, '+cc+' '+(g.act==='hold'?12:16)+'%, transparent)';
+          evHtml+=`<div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:${wash};border:1px solid color-mix(in srgb, ${cc} ${g.act==='hold'?28:40}%, transparent);'>`+
+            `<div style='width:4px;border-radius:2px;background:${cc};flex-shrink:0;'></div>`+
+            `<div style='flex:1;min-width:0;'>`+
+              `<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;'>`+
+                `<span style='font-size:17px;font-weight:800;color:${g.act==='hold'?'var(--primary-text-color)':cc};font-variant-numeric:tabular-nums;'>${from} – ${to}</span>`+
+                `<span style='font-size:18px;font-weight:900;color:${m>0.005?CLR_SELL:(m<-0.005?CLR_BUY:CLR_INACTIVE)};'>${Math.abs(m)>=0.005?money$(m):''}</span></div>`+
+              `<div style='font-size:16px;font-weight:700;color:var(--primary-text-color);line-height:1.3;margin-top:1px;'>${neg?`<span style='display:inline-block;font-size:11px;font-weight:800;line-height:1;letter-spacing:.03em;padding:3px 8px;margin-right:6px;border-radius:999px;border:1px solid color-mix(in srgb, ${cc} 60%, transparent);background:color-mix(in srgb, ${cc} 10%, transparent);color:${cc};vertical-align:1px;'>${negMode[0]}</span>`:''}${head}</div>`+
+              `<div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;'>${sub}</div>`+
+            `</div></div>`;
+        });
+        if (groups.length>MAX_EVENTS) evHtml+=`<div style='font-size:14px;color:var(--primary-text-color);padding-top:3px;'>+${groups.length-MAX_EVENTS} more</div>`;
+        const horizonH = sim.length ? Math.round((sim[sim.length-1].en-nowMs)/3600000) : 0;
+        const dirTxt = `SOC ${soc0.toFixed(0)}% · ${pwk>0.05?'↑':(pwk<-0.05?'↓':'')}${Math.abs(pwk).toFixed(1)} kW`;
+        const stCol = attr.needSun ? 'var(--battman-orange)' : (attr.needPower ? 'var(--battman-darkred)' : 'var(--battman-green)');  // Chill / No Sun / High Consumption
+        const statusTxt = attr.needSun ? 'No Sun · Panic' : (attr.needPower ? 'High Use · Panic' : 'Chill');  // mirrors the Chill card's top pill
+        // override story row(s): what the Chill card is overriding, and when the timer hands it back to the curve
+        const endTxt = e => e===Infinity ? 'until changed' : 'until '+hhmm(new Date(e));
+        let ovHtml='';
+        { const rows=[], col={sell:CLR_SELL,buy:CLR_BUY,drain:'var(--battman-red)'}, R=v=>Math.round(v), Rp=v=>d1(v);
+          const add=(o,t)=>rows.push([o.label, t+' · '+endTxt(o.end), col[o.cls]]);
+          const S=OV.sell,B=OV.buy,A=OV.any,L=OV.solar,D=OV.drain;
+          if (isSet(S)) add(S, `Sell above ${Rp(S.px)}c`+(S.soc>0?` · down to ${R(S.soc)}%`:''));
+          if (isSet(B)) add(B, B.px<0?`Amber pays ${Rp(-B.px)}c+ to charge`:`Buy below ${Rp(B.px)}c`+(B.soc>0?` · up to ${R(B.soc)}%`:''));
+          if (isSet(A)) add(A, `Below ${Rp(A.px)}c`+(A.soc>0?` · up to ${R(A.soc)}%`:'')+` · off-peak`);
+          if (isSet(L)) add(L, L.px>0?`Above ${Rp(L.px)}c`+(L.soc>0?` · down to ${R(L.soc)}%`:''):`Down to ${R(L.soc)}%`);
+          if (isSet(D)) add(D, `While grid under ${Rp(D.px)}c`+(D.soc>0?` · to ${R(D.soc)}%`:''));
+          ovHtml = rows.map(([lbl,t,c])=>`<div style='display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;line-height:1.3;padding:7px 10px;margin-top:6px;border-radius:8px;color:var(--primary-text-color);background:color-mix(in srgb, ${c} 14%, transparent);border:1px solid color-mix(in srgb, ${c} 45%, transparent);'><span style='flex:none;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;color:${c};border:1px solid color-mix(in srgb, ${c} 55%, transparent);'>${lbl}</span><span>${t}</span></div>`).join(''); }
+        const body = sim.length
+          ? `<div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;background:color-mix(in srgb, ${stCol} 16%, transparent);border:1px solid color-mix(in srgb, ${stCol} 45%, transparent);'>`+
+              `<span style='color:${stCol};'>${statusTxt}</span><span style='font-weight:600;text-transform:none;letter-spacing:0;'>Next ${horizonH}h · ${dirTxt}</span></div>${ovHtml}${evHtml}`+
+            `<div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 10px;margin-top:8px;border-radius:8px;background:color-mix(in srgb, ${total>=0?CLR_SELL:CLR_BUY} 16%, transparent);border:1px solid color-mix(in srgb, ${total>=0?CLR_SELL:CLR_BUY} 45%, transparent);'>`+
+              `<span style='font-size:15px;font-weight:700;'>Total, next ${horizonH} hours</span><b style='font-size:22px;font-weight:900;color:${total>=0?CLR_SELL:CLR_BUY};'>${money$(total)}</b></div>`
+          : `<div style='padding:8px 0;font-size:14px;'>No Amber forecast available.</div>`;
+        const out = `<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'>${body}</div>`;
+        // the popup dialog sits outside the themed view, so resolve var(--x) to real values from the card's own computed style
+        let cs = null;
+        try { cs = getComputedStyle((this && this.nodeType === 1) ? this : document.documentElement); } catch (e) {}
+        if (!cs) return out;
+        let res = out;
+        for (let i = 0; i < 6 && /var\(--/.test(res); i++) {
+          res = res.replace(/var\((--[\w-]+)(?:\s*,([^()]*))?\)/g, (m, name, fb) => {
+            const v = cs.getPropertyValue(name).trim();
+            return v || (fb !== undefined ? fb.trim() : m);
+          });
+        }
+        return res;
+        })();
+        ]]]
+hold_action:
+  action: none
+extra_styles: |
+  @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+  @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+  @keyframes fx-glow-rainbow {
+    0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+    33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+    66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+    100%{box-shadow:0 0 16px 4px var(--battman-red);}
+  }
+  ha-card { overflow: visible !important; }
+  /* bottom pill — same fx harness as the mode buttons; the chase spins a conic layer behind a centre mask */
+  .fxp { overflow: hidden; }
+  .fxp::before {
+    content:''; position:absolute; z-index:0; top:50%; left:50%; width:600px; height:600px; transform: translate(-50%,-50%);
+    background: var(--fx-chase-gradient, none); animation: fx-spin var(--fx-chase-duration, 0s) linear infinite; display: var(--fx-ring, none);
+  }
+  .fxp::after {
+    content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:999px;
+    background: var(--battman-surface-popup); display: var(--fx-ring, none);
+  }
+  .fxp > * { position: relative; z-index: 2; }
+  @media (prefers-reduced-motion: reduce) { .fxp, .fxp::before { animation: none !important; } }

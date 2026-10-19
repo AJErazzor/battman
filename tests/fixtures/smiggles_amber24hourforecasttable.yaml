@@ -1,0 +1,12 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: horizontal-stack
+        cards:
+          - type: custom:html-card
+            version: 0.9.5
+            content: >
+              [[
+              sensor.solarsystemcontrolamberforecast.attributes.friendly_table
+              ]]
+        grid_options:
+          columns: full

@@ -1,0 +1,108 @@
+# name: Amber forecast table
+# description: Every Amber forecast interval: Sell, its Amber Advanced (SS) prediction, Buy and its SS, colour banded.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-amber24hourforecasttable`, and it
+# updates with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/amber24hourforecasttable.yaml and edit that copy.
+#
+# Built by the card itself from Amber's two billing-interval forecast sensors (the same
+# table as the original template sensor v6.7, which it no longer needs).
+# Sign convention: Sell is printed negated (positive = earning feed-in, negative = paying
+# to export); Buy as-is. Colour bands key on Amber's raw per_kwh.
+# Times are each interval's NEM time (nem_date), as the original showed them.
+# A missing price shows — (never 0.00c); missing sensors or no forecasts show an error
+# naming the sensors.
+type: horizontal-stack
+cards:
+  - type: custom:button-card
+    show_icon: false
+    show_name: false
+    show_state: false
+    triggers_update:
+      - '[[map:feed_in_forecast]]'
+      - '[[map:buy_forecast]]'
+    custom_fields:
+      card: |
+        [[[
+          const E_SELL = '[[map:feed_in_forecast]]';
+          const E_BUY  = '[[map:buy_forecast]]';
+          const sell = states[E_SELL]?.attributes?.Forecasts || [];
+          const buy  = states[E_BUY]?.attributes?.Forecasts || [];
+          if (!sell.length || !buy.length)
+            return '<div style="color:var(--battman-darkred);padding:12px;font-size:14px;background:var(--battman-surface-popup);border-radius:8px;">'
+              + 'Missing Amber forecast data. Check sensors:<br>' + E_SELL + '<br>' + E_BUY + '</div>';
+
+          // ── colour bands (raw per_kwh sign) ──
+          // sell: >= 0 paying to export (rose) · > -0.05 near-zero FIT · > -0.15 low · > -0.25 good · else excellent
+          const sellBand = v => v >= 0 ? 'darkred' : v > -0.05 ? 'orange' : v > -0.15 ? 'yellow' : v > -0.25 ? 'green' : 'purple';
+          // buy: < 0 free (purple) · <= 0.08 cheap · <= 0.25 normal · else expensive
+          const buyBand  = v => v < 0 ? 'purple' : v <= 0.08 ? 'green' : v <= 0.25 ? 'yellow' : 'darkred';
+
+          const num = x => { if (x === null || x === undefined || x === '') return null; const n = Number(x); return isFinite(n) ? n : null; };
+          // Amber Advanced (CSIRO) prediction: nested advanced_price.predicted, or flat advanced_price_predicted
+          const pred = it => {
+            const ap = it?.advanced_price;
+            if (ap && typeof ap === 'object' && ap.predicted !== undefined && ap.predicted !== null) return num(ap.predicted);
+            if (it && it.advanced_price_predicted !== undefined && it.advanced_price_predicted !== null) return num(it.advanced_price_predicted);
+            return null;
+          };
+          const f2 = x => (Object.is(x, -0) ? '-' : '') + x.toFixed(2);
+          const DASH = '<td class="at6t-td at6t-time">—</td>';
+          const cell = (v, band, shown) => v === null ? DASH
+            : '<td class="at6t-td at6t-price" style="background:var(--battman-' + band(v) + '-soft-bg);color:var(--battman-' + band(v) + ')">' + f2(shown(v)) + 'c</td>';
+          const sellCell = v => cell(v, sellBand, x => (x * -1) * 100);
+          const buyCell  = v => cell(v, buyBand, x => x * 100);
+
+          // NEM time, read straight from nem_date ("2026-10-20T14:30:00+10:00" -> "Tue 14:30")
+          const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const when = nd => {
+            const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(nd || ''));
+            return m ? DAYS[new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay()] + ' ' + m[4] + ':' + m[5] : '—';
+          };
+
+          const css = '<style>'
+            + '.at6t-wrap { background:var(--battman-surface-popup); max-height:550px; overflow-y:auto; -webkit-overflow-scrolling:touch; border-radius:8px; }'
+            + '.at6t-tbl { border-collapse:collapse; width:100%; }'
+            + '.at6t-thead { position:sticky; top:0; z-index:1; background:var(--battman-surface-card); }'
+            + '.at6t-th { color:var(--battman-text-muted); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:7px 8px; text-align:left; border-bottom:1px solid var(--battman-border-neutral-soft); }'
+            + '.at6t-tr { border-bottom:1px solid var(--battman-border-neutral-soft); }'
+            + '.at6t-td { padding:6px 8px; vertical-align:middle; }'
+            + '.at6t-time { color:var(--battman-text-muted); font-size:13px; white-space:nowrap; }'
+            + '.at6t-price { color:var(--battman-text-bright); font-size:15px; font-weight:700; white-space:nowrap; }'
+            + '.at6t-pred { font-size:15px; font-weight:600; margin-left:6px; white-space:nowrap; vertical-align:0px; }'
+            + '</style>';
+
+          const rows = sell.map((s, idx) => {
+            const b = buy.find(x => x.nem_date === s.nem_date);
+            const now = idx === 0 ? ' style="border-left:2px solid var(--battman-blue);padding-left:6px"' : '';
+            return '<tr class="at6t-tr">'
+              + '<td class="at6t-td at6t-time"' + now + '>' + when(s.nem_date) + '</td>'
+              + sellCell(num(s.per_kwh)) + sellCell(pred(s))
+              + buyCell(b ? num(b.per_kwh) : null) + buyCell(b ? pred(b) : null)
+              + '</tr>';
+          }).join('');
+
+          return css + '<div class="at6t-wrap"><table class="at6t-tbl"><thead class="at6t-thead"><tr>'
+            + '<th class="at6t-th">Time</th><th class="at6t-th">Sell</th><th class="at6t-th">SS</th>'
+            + '<th class="at6t-th">Buy</th><th class="at6t-th">SS</th>'
+            + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+        ]]]
+    styles:
+      card:
+        - padding: '0'
+        - margin: '0'
+        - overflow: hidden
+        - background: transparent
+        - box-shadow: none
+        - border: none
+      grid:
+        - grid-template-areas: '"card"'
+      custom_fields:
+        card:
+          - grid-area: card
+          - width: 100%
+    tap_action:
+      action: none
+grid_options:
+  columns: full

@@ -132,12 +132,26 @@ Smiggles), section 2 price strip · limits, section 3 gauges · charts · foreca
 2. ✅ Cost strip → Profit / Loss, `battman-profitloss` (v0.12.0). Unavailable values show —
    (Smiggles showed $0.00); the border's network charge now comes from the parameters sensor's
    `dailyNetworkCharge`, like the figures (Smiggles read `input_number.solarsystemcontroldailynetworkcharge`).
-3. Price strip · 4. Amber forecast · 5. PV chart (apexcharts) · 6. Solar forecast
-7. SA generation / demand mix (OpenNEM) · 8. Gauges · 9. State card · 10. Battery mode stack
+3. ✅ Price strip → `battman-amber5minpricegrid` (v0.13.0). Unknown prices are neutral with —
+   (Smiggles showed a price band); missing sensors / empty forecasts say so. Countdown is
+   Battman's `<battman-countdown>`.
+4. ✅ Amber forecast → `battman-amber24hourforecasttable` (v0.13.0). Built by the card from the two
+   Amber forecast sensors; `sensor.solarsystemcontrolamberforecast` (template sensor v6.7) is no
+   longer needed by Battman. Same table; missing prices show — (Smiggles printed 0.00c). Times are
+   NEM time (nem_date, always UTC+10), as Smiggles showed them: 30 min off Adelaide clock time
+   (behind in daylight saving, ahead in winter).
+5. ✅ State card (Chill) → `battman-state` (v0.13.0), with its browser_mod "Next hours" popup.
+   Battery capacity no longer falls back to 40.3 kWh (and SOC / power no longer to 0): the popup
+   says what's unavailable. Missing Solcast: a note, projection assumes no solar.
+6. PV chart (apexcharts) · 7. Solar forecast
+8. SA generation / demand mix (OpenNEM) · 9. Gauges · 10. Battery mode stack
 11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
 
 ## 9. Notes for the engine stage
 
+- **State popup assumptions.** The "Next hours" projection uses fixed RATE_KW = 15 (battery
+  rate when buying/selling) and LOAD_KW = 1.4 (house load), kept as they were. When the engine
+  moves these should be settings (or measured), like everything else.
 - **Settings stored as attributes → Battman entities.** Smiggles keeps its settings (e.g. the
   Amber alert's notify target `alertNotifyTarget`, thresholds, switches) as attributes on
   `sensor.solarsystemcontrolparameters`, changed by firing the parameters event. When Battman takes

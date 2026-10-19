@@ -65,7 +65,7 @@ async def test_missing_dependencies_repair(hass: HomeAssistant) -> None:
     issues = ir.async_get(hass)
     issue = issues.async_get_issue(DOMAIN, "missing_dependencies")
     assert issue is not None                                   # nothing installed in the test HA
-    for name in ("button-card", "card-mod", "html-card"):
+    for name in ("button-card", "card-mod", "html-card", "browser_mod"):
         assert name in issue.translation_placeholders["missing"]
 
     # install them as dashboard resources, check again -> Repair goes away
@@ -75,6 +75,7 @@ async def test_missing_dependencies_repair(hass: HomeAssistant) -> None:
                 "/hacsfiles/lovelace-card-mod/card-mod.js",
                 "/hacsfiles/lovelace-html-card/html-card.js"):
         await res.async_create_item({"res_type": "module", "url": url})
+    MockConfigEntry(domain="browser_mod", data={}).add_to_hass(hass)   # browser_mod: an integration
     from custom_components.battman import dependencies
 
     assert await dependencies.async_check(hass) == []
