@@ -13,8 +13,14 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from . import blueprint_install, dashboard, dependencies, themes, update_check
-from .api import BattmanDashboardView, BattmanEntityMapView, BattmanThemeSaveView
+from . import blueprint_install, cards, dashboard, dependencies, themes, update_check
+from .api import (
+    BattmanCardsView,
+    BattmanCardView,
+    BattmanDashboardView,
+    BattmanEntityMapView,
+    BattmanThemeSaveView,
+)
 from .const import DOMAIN, STATIC_URL
 from .services import (
     async_create_dashboard_and_report,
@@ -48,8 +54,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanEntityMapView(str(integration.version)))
     hass.http.register_view(BattmanDashboardView())
     hass.http.register_view(BattmanThemeSaveView())
+    hass.http.register_view(BattmanCardsView())
+    hass.http.register_view(BattmanCardView())
     # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
+    # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
+    # start are passed along so the cards exist before any dashboard draws them.
+    local = cards.local_dir(hass)
+    card_list = await hass.async_add_executor_job(cards.list_cards, local)
+    cards.update_issue(hass, [c["id"] for c in card_list if c["source"] != "battman"])
+    ids = ",".join(c["id"] for c in card_list)
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-cards.js?v={integration.version}&cards={ids}")
     async_register_services(hass)
     # "Battman updated, restart to finish" Repair, checked every few minutes
     update_check.async_start(hass, str(integration.version))

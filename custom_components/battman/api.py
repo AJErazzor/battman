@@ -12,8 +12,8 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.http import KEY_HASS
 
-from . import themes
-from .const import DASHBOARD_URL, DOMAIN, ENTITY_MAP_DEFAULTS, ENTITY_MAP_URL, THEMES_URL
+from . import cards, themes
+from .const import CARDS_URL, DASHBOARD_URL, DOMAIN, ENTITY_MAP_DEFAULTS, ENTITY_MAP_URL, THEMES_URL
 
 VIEWS_DIR = Path(__file__).parent / "views"
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
@@ -117,3 +117,36 @@ class BattmanThemeSaveView(HomeAssistantView):
             return self.json({"message": str(err), "exists": err.exists}, status_code=err.status)
         await themes.async_reload(hass)
         return self.json({"message": "saved", "file": str(path.relative_to(hass.config.config_dir))})
+
+
+class BattmanCardsView(HomeAssistantView):
+    """GET /api/battman/cards -> {"cards": [{id, name, description, source}]}."""
+
+    url = CARDS_URL
+    name = "api:battman:cards"
+    requires_auth = True
+
+    async def get(self, request):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        local = cards.local_dir(hass)
+        result = await hass.async_add_executor_job(cards.list_cards, local)
+        cards.update_issue(hass, [c["id"] for c in result if c["source"] != "battman"])
+        return self.json({"cards": result})
+
+
+class BattmanCardView(HomeAssistantView):
+    """GET /api/battman/cards/{card_id} -> the card's config with the map filled in."""
+
+    url = CARDS_URL + "/{card_id}"
+    name = "api:battman:card"
+    requires_auth = True
+
+    async def get(self, request, card_id: str):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        local = cards.local_dir(hass)
+        try:
+            card = await hass.async_add_executor_job(cards.get_card, local, card_id, entity_map(hass))
+        except cards.CardError as err:
+            return self.json({"message": str(err)}, status_code=err.status)
+        cards.update_issue(hass, await hass.async_add_executor_job(cards.local_ids, local))
+        return self.json(card)

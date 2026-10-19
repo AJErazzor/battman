@@ -119,6 +119,17 @@ These live only in your HA (UI-created or in `configuration.yaml`):
 | Release | every merge (patch unless told) | only when a commit starts `major:` / `minor:` / `patch:` |
 | Version in files | tag only | tag + `manifest.json` |
 
+## 8b. Power view → Battman cards
+
+Each Power view card becomes a Battman card (`custom:battman-<id>`, a plain YAML file in
+`cards/`, see docs/cards.md), one at a time, each checked side by side against Smiggles.
+The home / power-flow card stays A.J.'s own (not a Battman card).
+
+1. ✅ Limits (v0.11.0)
+2. Price strip · 3. Cost strip · 4. Amber forecast · 5. PV chart (apexcharts) · 6. Solar forecast
+7. SA generation / demand mix (OpenNEM) · 8. Gauges · 9. State card · 10. Battery mode stack
+11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
+
 ## 9. Notes for the engine stage
 
 - **Settings stored as attributes → Battman entities.** Smiggles keeps its settings (e.g. the

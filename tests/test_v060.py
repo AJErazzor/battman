@@ -143,7 +143,8 @@ async def test_restart_fix_flow(hass: HomeAssistant, hass_client) -> None:
 async def test_correct_totals_subview(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
-    fin, sub = data["views"][0], data["views"][1]
+    by_path = {v["path"]: v for v in data["views"]}
+    fin, sub = by_path["finances"], by_path["correct-totals"]
     assert sub["path"] == "correct-totals" and sub["subview"] is True       # hidden: no tab
     assert sub["cards"][0]["url"] == "/battman/correct-energy.html"
     billing = fin["sections"][0]["cards"][2]
