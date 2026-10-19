@@ -10,6 +10,10 @@ Home battery automation for Home Assistant.
 2. Install **Battman**, then restart Home Assistant.
 3. Settings → Devices & services → **Add integration** → Battman.
 
+## Updating
+
+New versions appear in Home Assistant under **Settings → Updates** once HACS sees a new GitHub Release. Install the update, then restart Home Assistant.
+
 ## License
 
 MIT
