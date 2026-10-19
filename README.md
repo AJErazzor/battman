@@ -45,7 +45,9 @@ strategy:
 
 so Battman builds its views (from `custom_components/battman/views/*.yaml`), and
 new or changed views arrive with Battman updates. Views so far: **Finances**,
-**Log** and **Theme** (the theme studio).
+**Log** and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
+tab), opened from the button at the bottom of the Finances Billing card, for
+fixing the buy/sell totals of a period. It asks before changing anything.
 
 To theme the whole managed dashboard, use **Make Active** in the Theme view. It
 sets one line in the dashboard config, so the dashboard stays managed:

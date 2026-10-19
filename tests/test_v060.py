@@ -30,7 +30,7 @@ async def test_log_and_theme_views(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
     assert data["errors"] == []
-    log, theme = data["views"][1], data["views"][2]
+    log, theme = data["views"][2], data["views"][3]
     assert log["cards"][0]["url"] == "/battman/log.html"
     assert theme["cards"][0]["url"].startswith("/battman/theme-studio.html")
     text = json.dumps(data["views"][1:])
@@ -137,3 +137,14 @@ async def test_restart_fix_flow(hass: HomeAssistant, hass_client) -> None:
     assert (await r.json())["type"] == "create_entry"
     await hass.async_block_till_done()
     assert len(calls) == 1                                             # HA restart requested
+
+
+async def test_correct_totals_subview(hass: HomeAssistant, hass_client) -> None:
+    await _setup(hass)
+    data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
+    fin, sub = data["views"][0], data["views"][1]
+    assert sub["path"] == "correct-totals" and sub["subview"] is True       # hidden: no tab
+    assert sub["cards"][0]["url"] == "/battman/correct-energy.html"
+    billing = fin["sections"][0]["cards"][2]
+    assert "/correct-totals" in billing["custom_fields"]["row9"] and "Correct Totals" in billing["custom_fields"]["row9"]
+    assert "row9" in billing["styles"]["grid"][0]["grid-template-areas"]

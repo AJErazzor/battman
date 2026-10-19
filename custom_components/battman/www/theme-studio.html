@@ -109,12 +109,12 @@ select{cursor:pointer}
   border-radius:14px;padding:14px;
 }
 .panel+.panel{margin-top:14px}
-.panel>h2{
+.panel>h2,details.panel>summary h2{   /* expandable sections get the same small heading */
   font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;
   margin:0 0 12px;color:var(--secondary-text-color,#c9b8c0);
   display:flex;align-items:center;gap:8px;
 }
-.panel>h2 .hint{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px;color:var(--disabled-text-color,#8a7d86)}
+.panel>h2 .hint,details.panel>summary h2 .hint{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px;color:var(--disabled-text-color,#8a7d86)}
 details.panel>summary{list-style:none;cursor:pointer;margin:-14px;padding:14px;}
 details.panel>summary::-webkit-details-marker{display:none}
 details.panel>summary h2{margin:0}

@@ -57,6 +57,7 @@ sections:
           "row6"
           "row7"
           "row8"
+          "row9"
       - grid-template-columns: 1fr
       - row-gap: '0'
       custom_fields:
@@ -110,6 +111,11 @@ sections:
         - width: 100%
         - margin: 0
         - padding: 0
+        row9:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
     custom_fields:
       header: '[[[ return `<div style="padding:12px 16px;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-text-bright);background:var(--battman-surface-card);border-bottom:1px solid var(--battman-border-neutral);">Billing</div>`; ]]]'
       row1: |-
@@ -142,7 +148,9 @@ sections:
           const total=(banked+(sell-buy-days*fee)).toFixed(2);
           return `<div style="padding:12px 16px 6px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;{{parameters_update_event}}&quot;,event_data:{action:&quot;SetAttribute&quot;,energyIncome:&quot;${total}&quot;}});" style="width:100%;height:40px;border:1px solid var(--battman-green);border-radius:8px;background:var(--battman-green-soft-bg);color:var(--battman-green);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Bank New Income</button></div>`;
         ]]]
-      row8: '[[[ return `<div style="padding:6px 16px 14px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;{{totals_update_event}}&quot;,event_data:{attribute:&quot;ResetTotals&quot;}});" style="width:100%;height:38px;border:1px solid var(--battman-red);border-radius:8px;background:transparent;color:var(--battman-red);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Reset New Income</button></div>`; ]]]'
+      row8: '[[[ return `<div style="padding:6px 16px 6px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;{{totals_update_event}}&quot;,event_data:{attribute:&quot;ResetTotals&quot;}});" style="width:100%;height:38px;border:1px solid var(--battman-red);border-radius:8px;background:transparent;color:var(--battman-red);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Reset New Income</button></div>`; ]]]'
+      # Correct totals: opens the Correct totals subview on this same dashboard (works on /battman-2 too)
+      row9: '[[[ return `<div style="padding:6px 16px 14px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();const d=location.pathname.split(&quot;/&quot;)[1];history.pushState(null,&quot;&quot;,&quot;/&quot;+d+&quot;/correct-totals&quot;);window.dispatchEvent(new CustomEvent(&quot;location-changed&quot;));" style="width:100%;height:38px;border:1px solid var(--battman-amber);border-radius:8px;background:transparent;color:var(--battman-amber);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Correct Totals</button></div>`; ]]]'
     grid_options:
       columns: full
   - type: vertical-stack
