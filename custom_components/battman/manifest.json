@@ -1,0 +1,13 @@
+{
+  "domain": "battman",
+  "name": "Battman",
+  "codeowners": ["@AJErazzor"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/AJErazzor/battman",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/AJErazzor/battman/issues",
+  "requirements": [],
+  "version": "0.0.1"
+}
