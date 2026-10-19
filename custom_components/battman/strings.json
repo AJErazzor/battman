@@ -9,5 +9,24 @@
     "abort": {
       "already_configured": "Battman is already set up."
     }
+  },
+  "entity": {
+    "button": {
+      "create_dashboard": {
+        "name": "Create dashboard"
+      }
+    }
+  },
+  "services": {
+    "create_dashboard": {
+      "name": "Create dashboard",
+      "description": "Creates a managed Battman dashboard in the sidebar. Does nothing if one already exists; dashboards you have taken control of are never touched."
+    }
+  },
+  "issues": {
+    "dashboard_unavailable": {
+      "title": "Battman could not create its dashboard",
+      "description": "Home Assistant's dashboard internals have changed, so Battman could not create its dashboard ({error}). Create it by hand: Settings → Dashboards → Add dashboard → New dashboard from scratch, then ⋮ → Raw configuration editor and replace everything with:\n\n```yaml\nstrategy:\n  type: custom:battman\n```"
+    }
   }
 }
