@@ -1,0 +1,107 @@
+# name: Profit / Loss
+# description: Today's sell and buy totals, gross, and net after the daily network charge.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-profitloss`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/profitloss.yaml and edit that copy.
+#
+# Unavailable values show —, never $0.00. A sensor that doesn't exist at all shows
+# an error naming it. The network charge is the dailyNetworkCharge attribute of the
+# parameters sensor, for both the figures and the border colour.
+type: horizontal-stack
+cards:
+  - type: horizontal-stack
+    cards:
+      - type: custom:button-card
+        show_icon: false
+        show_name: false
+        show_state: false
+        show_label: false
+        triggers_update:
+          - '[[map:sell_total]]'
+          - '[[map:buy_total]]'
+          - '[[map:parameters]]'
+        custom_fields:
+          card: |
+            [[[
+              const E_SELL = '[[map:sell_total]]';
+              const E_BUY  = '[[map:buy_total]]';
+              const E_PAR  = '[[map:parameters]]';
+
+              const gone = [E_SELL, E_BUY, E_PAR].filter(e => !states[e]);
+              if (gone.length)
+                return '<div style="display:flex;align-items:center;height:44px;padding:0 14px;font-size:11px;font-weight:700;line-height:1.3;color:var(--battman-darkred)">'
+                  + 'Profit / Loss: missing ' + gone.join(', ') + '</div>';
+
+              const num = (e, a) => { const n = parseFloat(states[e].attributes?.[a]); return isNaN(n) ? null : n; };
+              const sellDay = num(E_SELL, 'day');
+              const buyDay  = num(E_BUY, 'day');
+              const netCost = num(E_PAR, 'dailyNetworkCharge');
+              const gross   = (sellDay === null || buyDay === null) ? null : sellDay - buyDay;
+              const net     = (gross === null || netCost === null) ? null : gross - netCost;
+
+              const EM = 'var(--battman-green)', RO = 'var(--battman-darkred)', NU = 'var(--battman-text-muted)';
+              const fmt  = v => v === null ? '—' : (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+              const sign = v => v === null ? NU : (v >= 0 ? EM : RO);
+
+              const vcol = (label, val, col) =>
+                '<div style="display:flex;flex-direction:column;justify-content:center;flex:none">'
+              +   '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:' + col + '">' + label + '</span>'
+              +   '<span style="font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:' + col + '">' + val + '</span>'
+              + '</div>';
+
+              const left =
+                '<div style="display:flex;gap:15px">'
+              +   vcol('SELL', fmt(sellDay), sellDay === null ? NU : EM)
+              +   vcol('BUY',  fmt(buyDay),  buyDay === null ? NU : RO)
+              + '</div>';
+
+              const right =
+                '<div style="margin-left:auto;text-align:right;line-height:1.15;white-space:nowrap">'
+              +   '<div style="font-size:10px;font-weight:700;letter-spacing:0.06em;opacity:0.7;color:' + sign(gross) + '">GROSS ' + fmt(gross) + '</div>'
+              +   '<div style="font-size:22px;font-weight:900;line-height:1.05;color:' + sign(net) + '">' + fmt(net)
+              +     '<span style="font-size:10px;font-weight:800;letter-spacing:0.08em;opacity:0.6;margin-left:4px">NET</span></div>'
+              + '</div>';
+
+              return '<div style="display:flex;align-items:center;height:44px;padding:0 14px">'
+              +   left
+              +   right
+              + '</div>';
+            ]]]
+        styles:
+          card:
+            - padding: '0'
+            - margin: '0'
+            - box-shadow: none
+            - overflow: hidden
+            - border-radius: 8px
+            - height: 44px
+            - min-height: 44px
+            - max-height: 44px
+            - background: var(--battman-surface-card)
+            - border: |
+                [[[
+                  const g = e => { const s = states[e]; const n = s ? parseFloat(s.attributes?.day) : NaN; return isNaN(n) ? null : n; };
+                  const p = states['[[map:parameters]]'];
+                  const c = p ? parseFloat(p.attributes?.dailyNetworkCharge) : NaN;
+                  const s = g('[[map:sell_total]]'), b = g('[[map:buy_total]]');
+                  if (s === null || b === null || isNaN(c)) return '1px solid var(--battman-border-neutral-soft)';
+                  return '1px solid ' + ((s - b - c) >= 0 ? 'var(--battman-green-border)' : 'var(--battman-darkred-border)');
+                ]]]
+          grid:
+            - grid-template-areas: '"card"'
+            - grid-template-rows: 44px
+          custom_fields:
+            card:
+              - grid-area: card
+              - width: 100%
+              - height: 44px
+        tap_action:
+          action: none
+    grid_options:
+      rows: auto
+      columns: full
+grid_options:
+  rows: auto
+  columns: full

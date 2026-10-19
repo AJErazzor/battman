@@ -9,7 +9,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 DOMAIN = "battman"
-ORIG = Path("/tmp/claude-0/-home-claude/2d3171da-396a-55b0-b9a7-efa29ef35ade/scratchpad/limits_orig.yaml")
+ORIG = Path(__file__).parent / "fixtures" / "smiggles_limits.yaml"
 
 
 async def _setup(hass):
@@ -25,7 +25,8 @@ async def test_power_view_first(hass: HomeAssistant, hass_client) -> None:
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
     power = data["views"][0]
     assert power["path"] == "power" and power["title"] == "Power" and power["theme"] == "Battman Nord"
-    assert power["sections"][0]["cards"] == [{"type": "custom:battman-limits"}]
+    assert power["sections"][0]["cards"] == [{"type": "custom:battman-profitloss"}]
+    assert power["sections"][1]["cards"] == [{"type": "custom:battman-limits"}]
 
 
 async def test_cards_api(hass: HomeAssistant, hass_client) -> None:

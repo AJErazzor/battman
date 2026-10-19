@@ -16,10 +16,16 @@ Copy and paste it anywhere like any card. Every copy updates when Battman does.
 
 **Make one copy your own:** open the card's editor → **Convert to plain YAML**. You
 get the full card YAML with your entities filled in; that copy stops updating.
+The editor is only there on a dashboard you can edit. Battman's own dashboard is built
+by Battman, so HA offers **Take control** instead of an editor. Taking control makes it an
+ordinary dashboard you can rearrange: its Battman cards keep updating, but changes to the
+views themselves (new cards, layout) stop arriving. To go back, set its raw configuration
+to `strategy: {type: custom:battman}`.
 
 | Card | What it shows | Needs |
 |---|---|---|
 | `battman-limits` | Grid export, PV max and max charge limits; tap one to change it | button-card, card-mod |
+| `battman-profitloss` | Today's sell, buy, gross, and net after the daily network charge | button-card |
 
 ## How a card is made
 
