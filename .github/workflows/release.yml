@@ -1,0 +1,81 @@
+name: Release
+
+# Push to main with a commit message starting with:
+#   major: ...  -> 1.0.0 -> 2.0.0
+#   minor: ...  -> 0.1.0 -> 0.2.0
+#   patch: ...  -> 0.1.0 -> 0.1.1
+# Anything else: no release.
+# The workflow writes the new version into manifest.json, commits it,
+# tags vX.Y.Z and publishes a GitHub Release (which HACS picks up).
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out bump from commit message
+        id: bump
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          first_line="$(printf '%s' "$MSG" | head -n1)"
+          case "$first_line" in
+            major:*) echo "kind=major" >> "$GITHUB_OUTPUT" ;;
+            minor:*) echo "kind=minor" >> "$GITHUB_OUTPUT" ;;
+            patch:*) echo "kind=patch" >> "$GITHUB_OUTPUT" ;;
+            *)       echo "kind=none"  >> "$GITHUB_OUTPUT" ;;
+          esac
+          echo "title=${first_line#*: }" >> "$GITHUB_OUTPUT"
+
+      - name: Calculate next version
+        if: steps.bump.outputs.kind != 'none'
+        id: ver
+        run: |
+          last="$(git tag --list 'v*' --sort=-v:refname | head -n1)"
+          last="${last#v}"
+          if [ -z "$last" ]; then
+            last="$(jq -r .version custom_components/battman/manifest.json)"
+          fi
+          IFS=. read -r MA MI PA <<< "$last"
+          case "${{ steps.bump.outputs.kind }}" in
+            major) MA=$((MA+1)); MI=0; PA=0 ;;
+            minor) MI=$((MI+1)); PA=0 ;;
+            patch) PA=$((PA+1)) ;;
+          esac
+          echo "version=$MA.$MI.$PA" >> "$GITHUB_OUTPUT"
+
+      - name: Write version into manifest.json
+        if: steps.bump.outputs.kind != 'none'
+        run: |
+          f=custom_components/battman/manifest.json
+          jq --indent 2 --arg v "${{ steps.ver.outputs.version }}" '.version = $v' "$f" > "$f.tmp"
+          mv "$f.tmp" "$f"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$f"
+          git commit -m "Release v${{ steps.ver.outputs.version }}" || echo "manifest already at this version"
+          git tag "v${{ steps.ver.outputs.version }}"
+          git push origin HEAD:main --tags
+
+      - name: Publish GitHub Release
+        if: steps.bump.outputs.kind != 'none'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.ver.outputs.version }}" \
+            --title "v${{ steps.ver.outputs.version }}: ${{ steps.bump.outputs.title }}" \
+            --generate-notes
