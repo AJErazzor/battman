@@ -1,0 +1,83 @@
+blueprint:
+  name: Battman Live Activity – updates
+  author: Battman
+  description: >-
+    While the Live Activity switch is on, pushes an update when any of the watched
+    entities change, at most once every few minutes (iOS limits how often a Live
+    Activity can update), plus one trailing push so the latest values always land.
+
+
+    Needs a script made from the "Battman Live Activity – push" blueprint.
+    Installed and updated by the Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    push_script:
+      name: Push script
+      description: The script you made from "Battman Live Activity – push".
+      selector:
+        entity:
+          domain: script
+    live_switch:
+      name: On/off switch
+      default: switch.battman_live_activity
+      selector:
+        entity:
+          domain:
+            - switch
+            - input_boolean
+    watch:
+      name: Push when these change
+      default:
+        - sensor.sigen_plant_battery_state_of_charge
+        - sensor.amber_5min_current_feed_in_price
+        - sensor.amber_5min_current_general_price
+        - input_select.solarsystemcontrolmode
+      selector:
+        entity:
+          multiple: true
+    min_gap:
+      name: At most every (minutes)
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 30
+          unit_of_measurement: min
+
+# single + the delay below = the rate limit; changes during the wait are dropped
+# on purpose, and the trailing push after the wait sends the latest values
+mode: single
+max_exceeded: silent
+
+triggers:
+  # to: null -> any state change (including to unavailable, which shows as "—"),
+  # but not attribute-only changes
+  - trigger: state
+    entity_id: !input watch
+    to: ~
+
+conditions:
+  - condition: state
+    entity_id: !input live_switch
+    state: "on"
+
+actions:
+  - action: script.turn_on
+    target:
+      entity_id: !input push_script
+    data:
+      variables:
+        alert: false
+  - delay:
+      minutes: !input min_gap
+  - condition: state
+    entity_id: !input live_switch
+    state: "on"
+  - action: script.turn_on
+    target:
+      entity_id: !input push_script
+    data:
+      variables:
+        alert: false

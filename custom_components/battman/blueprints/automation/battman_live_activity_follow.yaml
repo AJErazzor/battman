@@ -1,0 +1,69 @@
+blueprint:
+  name: Battman Live Activity – follow an entity
+  author: Battman
+  description: >-
+    Turns the Live Activity switch on when an entity goes to one state and off once
+    it has been in another state for a while. For example: on when the car's
+    ignition turns ON, off once it's been OFF for 2 minutes, so a quick stop doesn't
+    restart it.
+
+
+    Installed and updated by the Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    follow:
+      name: Follow this entity
+      selector:
+        entity: {}
+    on_state:
+      name: Turn on when it becomes
+      default: "ON"
+      selector:
+        text: {}
+    off_state:
+      name: Turn off when it becomes
+      default: "OFF"
+      selector:
+        text: {}
+    off_after:
+      name: …and has stayed that way for (minutes)
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: min
+    live_switch:
+      name: On/off switch
+      default: switch.battman_live_activity
+      selector:
+        entity:
+          domain:
+            - switch
+            - input_boolean
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input follow
+    to: !input on_state
+    id: "on"
+  - trigger: state
+    entity_id: !input follow
+    to: !input off_state
+    for:
+      minutes: !input off_after
+    id: "off"
+
+conditions:
+  # coming back from unavailable/unknown isn't a real change (e.g. after a restart)
+  - condition: template
+    value_template: "{{ trigger.from_state.state not in ['unavailable', 'unknown'] }}"
+
+actions:
+  - action: "homeassistant.turn_{{ trigger.id }}"
+    target:
+      entity_id: !input live_switch

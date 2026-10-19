@@ -1,0 +1,126 @@
+blueprint:
+  name: Battman Live Activity – on/off
+  author: Battman
+  description: >-
+    Shows the battery Live Activity while the switch is on and clears it when it's
+    turned off. Restarts it every few hours while on (iOS ends a Live Activity after
+    about 8 hours), and pushes it with a sound when the feed-in price spikes.
+
+
+    Needs a script made from the "Battman Live Activity – push" blueprint.
+    Installed and updated by the Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    push_script:
+      name: Push script
+      description: The script you made from "Battman Live Activity – push".
+      selector:
+        entity:
+          domain: script
+    live_switch:
+      name: On/off switch
+      default: switch.battman_live_activity
+      selector:
+        entity:
+          domain:
+            - switch
+            - input_boolean
+    keep_alive_hours:
+      name: Restart every (hours)
+      description: iOS ends a Live Activity after about 8 hours.
+      default: 7
+      selector:
+        number:
+          min: 1
+          max: 8
+          unit_of_measurement: h
+    feed_in_price:
+      name: Feed-in price ($/kWh)
+      default: sensor.amber_5min_current_feed_in_price
+      selector:
+        entity:
+          domain: sensor
+    spike_above:
+      name: Feed-in spike alert above ($/kWh)
+      description: Pushes with a sound when the feed-in price rises above this.
+      default: 0.3
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 0.01
+          mode: box
+          unit_of_measurement: $/kWh
+
+mode: queued
+max: 10
+
+triggers:
+  - trigger: state
+    entity_id: !input live_switch
+    to: "on"
+    id: "on"
+  - trigger: state
+    entity_id: !input live_switch
+    to: "off"
+    id: "off"
+  - trigger: state
+    entity_id: !input live_switch
+    to: "on"
+    for:
+      hours: !input keep_alive_hours
+    id: keep_alive
+  - trigger: numeric_state
+    entity_id: !input feed_in_price
+    above: !input spike_above
+    id: spike
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: "on"
+        sequence:
+          - action: script.turn_on
+            target:
+              entity_id: !input push_script
+            data:
+              variables:
+                alert: false
+      - conditions:
+          - condition: trigger
+            id: "off"
+        sequence:
+          - action: script.turn_on
+            target:
+              entity_id: !input push_script
+            data:
+              variables:
+                clear: true
+      - conditions:
+          - condition: trigger
+            id: keep_alive
+        sequence:
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input live_switch
+          - delay:
+              seconds: 5
+          - action: homeassistant.turn_on
+            target:
+              entity_id: !input live_switch
+      - conditions:
+          - condition: trigger
+            id: spike
+          - condition: state
+            entity_id: !input live_switch
+            state: "on"
+        sequence:
+          - action: script.turn_on
+            target:
+              entity_id: !input push_script
+            data:
+              variables:
+                alert: true
