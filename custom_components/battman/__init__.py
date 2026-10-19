@@ -6,12 +6,24 @@ import logging
 import shutil
 from pathlib import Path
 
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
+
+from .api import BattmanEntityMapView
+from .const import DOMAIN, STATIC_URL
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[str] = []
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+# Pages and scripts shipped inside the integration, served at STATIC_URL.
+WWW_DIR = Path(__file__).parent / "www"
 
 # Themes shipped inside the integration, installed into <config>/themes/battman/.
 THEMES_SRC = Path(__file__).parent / "themes"
@@ -49,6 +61,18 @@ def _remove_themes(dst: Path) -> bool:
 async def _reload_themes(hass: HomeAssistant) -> None:
     if hass.services.has_service("frontend", "reload_themes"):
         await hass.services.async_call("frontend", "reload_themes", blocking=True)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Once per HA start: serve Battman's pages and its entity-map API."""
+    integration = await async_get_integration(hass, DOMAIN)
+    # cache_headers=False: browsers re-check files, so a new release shows up
+    # without ?v= tricks on the URL.
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(STATIC_URL, str(WWW_DIR), cache_headers=False)]
+    )
+    hass.http.register_view(BattmanEntityMapView(str(integration.version)))
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
