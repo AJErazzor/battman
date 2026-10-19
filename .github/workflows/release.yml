@@ -1,6 +1,7 @@
 name: Release
 
-# Push to main with a commit message starting with:
+# Push or merge to main with a commit message (or a commit in the merged PR)
+# starting with:
 #   major: ...  -> 1.0.0 -> 2.0.0
 #   minor: ...  -> 0.1.0 -> 0.2.0
 #   patch: ...  -> 0.1.0 -> 0.1.1
@@ -27,19 +28,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Work out bump from commit message
+      - name: Work out bump from commit messages
         id: bump
-        env:
-          MSG: ${{ github.event.head_commit.message }}
+        # Looks at every commit in the push, so it works for direct pushes,
+        # squash merges and normal PR merges ("Merge pull request #n ..." with
+        # the branch's own minor:/patch: commits underneath). Highest bump wins;
+        # the release title comes from the first line carrying that prefix.
         run: |
-          first_line="$(printf '%s' "$MSG" | head -n1)"
-          case "$first_line" in
-            major:*) echo "kind=major" >> "$GITHUB_OUTPUT" ;;
-            minor:*) echo "kind=minor" >> "$GITHUB_OUTPUT" ;;
-            patch:*) echo "kind=patch" >> "$GITHUB_OUTPUT" ;;
-            *)       echo "kind=none"  >> "$GITHUB_OUTPUT" ;;
-          esac
-          echo "title=${first_line#*: }" >> "$GITHUB_OUTPUT"
+          lines="$(jq -r '.commits[].message, (.head_commit.message // "")' "$GITHUB_EVENT_PATH" | grep -E '^(major|minor|patch):' || true)"
+          kind=none
+          for k in patch minor major; do
+            if printf '%s\n' "$lines" | grep -q "^$k:"; then kind=$k; fi
+          done
+          title=""
+          if [ "$kind" != none ]; then
+            title="$(printf '%s\n' "$lines" | grep -m1 "^$kind:" | sed "s/^$kind: *//")"
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+          echo "bump: $kind ($title)"
 
       - name: Calculate next version
         if: steps.bump.outputs.kind != 'none'
