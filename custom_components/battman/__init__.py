@@ -58,6 +58,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanCardView())
     # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
+    # <battman-countdown>: the 5-minute Amber countdown some Battman cards show.
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-countdown.js?v={integration.version}")
     # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
     # start are passed along so the cards exist before any dashboard draws them.
     local = cards.local_dir(hass)

@@ -16,6 +16,9 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "sell_total": "sensor.solarsystemcontrolselltotal",
     "network_fee_total": "sensor.solarsystemcontrolnetworkaccessfee",
     "parameters": "sensor.solarsystemcontrolparameters",
+    "run": "sensor.solarsystemcontrolrun",
+    "estimated_price": "binary_sensor.solarsystemcontrolestimatedprice",
+    "override_timer": "timer.solarsystemoverridetimer",
     # Other integrations: these stay on the map
     "battery_soc": "sensor.sigen_plant_battery_state_of_charge",
     "buy_price": "sensor.amber_5min_current_general_price",
@@ -65,6 +68,8 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     # Sigen inverter solar only (pv_power is Sigen + third-party)
     "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
     "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
+    "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
+    "battery_capacity": "sensor.sigen_inverter_rated_battery_capacity",
     "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
     "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
 }

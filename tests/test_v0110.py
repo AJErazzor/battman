@@ -25,8 +25,7 @@ async def test_power_view_first(hass: HomeAssistant, hass_client) -> None:
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
     power = data["views"][0]
     assert power["path"] == "power" and power["title"] == "Power" and power["theme"] == "Battman Nord"
-    assert power["sections"][0]["cards"] == [{"type": "custom:battman-profitloss"}]
-    assert power["sections"][1]["cards"] == [{"type": "custom:battman-limits"}]
+    assert {"type": "custom:battman-limits"} in power["sections"][1]["cards"]   # layout: test_v0130
 
 
 async def test_cards_api(hass: HomeAssistant, hass_client) -> None:
