@@ -22,8 +22,9 @@ frontend:
 ```
 
 That folder belongs to Battman and is replaced on every update, so don't edit the
-files there. Every theme also defines the old `--smiggles-*` names, pointing at the
-`--battman-*` ones, so existing Smiggles cards keep working.
+files there. Battman themes define only `--battman-*` colours: anything still using
+`--smiggles-*` won't get colours on a Battman theme, so keep Smiggles views on
+Smiggles themes until they move.
 
 ## Pages
 
