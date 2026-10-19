@@ -13,6 +13,10 @@ from homeassistant.helpers import selector
 from .const import DOMAIN, ENTITY_MAP_DEFAULTS, MAP_TEXT_ENTRIES
 
 
+# HA text treats {...} as a placeholder, so the PV pattern's {n} is passed in
+PLACEHOLDERS = {"marker": "{n}", "example": "sensor.sigen_inverter_pv{n}_power"}
+
+
 class BattmanConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Battman."""
 
@@ -44,13 +48,20 @@ class BattmanOptionsFlow(OptionsFlow):
             if "{n}" not in (user_input.get("pv_string") or ""):
                 errors["pv_string"] = "pv_pattern"
             if errors:
-                return self.async_show_form(step_id="init", data_schema=self._schema(user_input), errors=errors)
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=self._schema(user_input),
+                    errors=errors,
+                    description_placeholders=PLACEHOLDERS,
+                )
             # store only what differs from Battman's defaults; a default changing
             # in a future release then still reaches you
             return self.async_create_entry(
                 data={k: v for k, v in user_input.items() if v and v != ENTITY_MAP_DEFAULTS.get(k)}
             )
-        return self.async_show_form(step_id="init", data_schema=self._schema(current))
+        return self.async_show_form(
+            step_id="init", data_schema=self._schema(current), description_placeholders=PLACEHOLDERS
+        )
 
     @staticmethod
     def _schema(values: dict[str, Any]) -> vol.Schema:

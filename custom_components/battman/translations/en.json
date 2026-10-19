@@ -48,7 +48,7 @@
     "step": {
       "init": {
         "title": "Battman entity map",
-        "description": "Which entity (or event, file, pattern) each Battman name points at. Battman pages and views use these. Leave an entry as it is to keep Battman's default; changes apply the next time a Battman page or dashboard loads.",
+        "description": "Which entity (or event, file, pattern) each Battman name points at. Battman pages and views use these. Leave an entry as it is to keep Battman's default; changes apply the next time a Battman page or dashboard loads. In the solar string pattern, {marker} stands for the string number (1–12).",
         "data": {
           "buy_total": "Buy total ($ odometer)",
           "sell_total": "Sell total ($ odometer)",
@@ -63,7 +63,7 @@
           "home_power": "Home consumption power",
           "battery_power": "Battery power",
           "third_party_pv": "Third-party solar power (optional)",
-          "pv_string": "Solar string pattern ('{n}' = string number)",
+          "pv_string": "Solar string pattern",
           "mode": "Battery mode (select)",
           "debug_log_start": "Log range start (date/time helper)",
           "debug_log_end": "Log range end (date/time helper)",
@@ -77,7 +77,7 @@
       }
     },
     "error": {
-      "pv_pattern": "The pattern must contain '{n}', e.g. sensor.sigen_inverter_pv'{n}'_power"
+      "pv_pattern": "The pattern must contain {marker}, e.g. {example}"
     }
   }
 }
