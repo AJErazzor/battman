@@ -14,6 +14,9 @@
     "button": {
       "create_dashboard": {
         "name": "Create dashboard"
+      },
+      "create_live_activity": {
+        "name": "Create Live Activity automations"
       }
     },
     "sensor": {
@@ -25,12 +28,40 @@
       "live_activity": {
         "name": "Live Activity"
       }
+    },
+    "select": {
+      "live_activity_phone": {
+        "name": "Live Activity phone"
+      }
+    },
+    "text": {
+      "live_activity_follow": {
+        "name": "Live Activity follow"
+      },
+      "live_activity_follow_on": {
+        "name": "Live Activity follow on"
+      },
+      "live_activity_follow_off": {
+        "name": "Live Activity follow off"
+      }
+    },
+    "number": {
+      "live_activity_follow_delay": {
+        "name": "Live Activity follow delay"
+      },
+      "live_activity_spike_alert": {
+        "name": "Live Activity spike alert"
+      }
     }
   },
   "services": {
     "create_dashboard": {
       "name": "Create dashboard",
       "description": "Creates a managed Battman dashboard in the sidebar. Does nothing if one already exists; dashboards you have taken control of are never touched."
+    },
+    "create_live_activity": {
+      "name": "Create Live Activity automations",
+      "description": "Creates any missing Battman Live Activity automations and script from Battman's blueprints. Never changes ones that exist."
     }
   },
   "issues": {
@@ -52,6 +83,10 @@
           }
         }
       }
+    },
+    "live_activity_not_loaded": {
+      "title": "Battman Live Activity automations didn't load",
+      "description": "Battman added {missing} to automations.yaml / scripts.yaml, but Home Assistant didn't load them. Check that configuration.yaml has `automation: !include automations.yaml` and `script: !include scripts.yaml` (they're there by default), then press Create Live Activity automations on the Battman device again."
     }
   },
   "options": {

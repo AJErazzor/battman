@@ -16,15 +16,21 @@ from homeassistant.loader import async_get_integration
 from . import blueprint_install, dashboard, dependencies, themes, update_check
 from .api import BattmanDashboardView, BattmanEntityMapView, BattmanThemeSaveView
 from .const import DOMAIN, STATIC_URL
-from .services import async_create_dashboard_and_report, async_register_services
+from .services import (
+    async_create_dashboard_and_report,
+    async_create_live_activity_and_report,
+    async_register_services,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["button", "sensor", "switch"]
+PLATFORMS: list[str] = ["button", "number", "select", "sensor", "switch", "text"]
 
 # Set in the config entry once the install-time dashboard has been made, so it
 # only ever happens once. After that, use the button or battman.create_dashboard.
 DASHBOARD_DONE = "dashboard_created_on_install"
+# Same idea for the Live Activity automations/script (button: Create Live Activity automations).
+LIVE_ACTIVITY_DONE = "live_activity_created_on_install"
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -69,6 +75,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_update_entry(entry, data={**entry.data, DASHBOARD_DONE: True})
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    if not entry.data.get(LIVE_ACTIVITY_DONE):
+        result = await async_create_live_activity_and_report(hass, notify=False)
+        _LOGGER.info("Battman Live Activity: %s", result["message"])
+        if not result["message"].startswith("Could not"):
+            hass.config_entries.async_update_entry(entry, data={**entry.data, LIVE_ACTIVITY_DONE: True})
     return True
 
 

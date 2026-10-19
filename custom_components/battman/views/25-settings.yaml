@@ -3083,14 +3083,16 @@ sections:
             [[[
               const p = entity.attributes;
               const notifyList = Object.keys((hass.services && hass.services.notify) || {}).sort();
-              const notifyTarget = (p.alertNotifyTarget != null) ? p.alertNotifyTarget : 'mobile_app_ajs_iphone_16';
+              const notifyTarget = (p.alertNotifyTarget != null) ? p.alertNotifyTarget : null;   // nothing chosen: say so, no built-in phone
               const devSlug = function(x){ return (x||'').replace(/['’]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); };
               const devMap = {};
               try { Object.keys(hass.devices||{}).forEach(function(id){ var dv=hass.devices[id]; var nm=dv.name_by_user||dv.name; if(nm) devMap[devSlug(nm)]=nm; }); } catch(e){}
               const titleCase = function(str){ return str.split('_').map(function(w){ return w ? w.charAt(0).toUpperCase()+w.slice(1) : w; }).join(' '); };
               const prettyNotify = function(svc){ if (svc.indexOf('mobile_app_')===0){ var k=svc.slice(11); return devMap[k] || titleCase(k); } if (svc.indexOf('alexa_media_')===0){ return titleCase(svc.slice(12))+' (Alexa)'; } return titleCase(svc); };
               const blankOpt = `<option value=""${notifyTarget === '' ? ' selected' : ''}>— Off (no alerts) —</option>`;
-              const notifyOptions = blankOpt + notifyList.map(function(n){ return `<option value="${n}"${n === notifyTarget ? ' selected' : ''}>${prettyNotify(n)}</option>`; }).join('');
+              const notSetOpt = notifyTarget === null ? '<option value="" disabled selected>Not set</option>' : '';
+              const goneOpt = (notifyTarget && notifyList.indexOf(notifyTarget) < 0) ? `<option value="${notifyTarget}" selected>${notifyTarget} (not found)</option>` : '';
+              const notifyOptions = notSetOpt + goneOpt + blankOpt + notifyList.map(function(n){ return `<option value="${n}"${n === notifyTarget ? ' selected' : ''}>${prettyNotify(n)}</option>`; }).join('');
               const alertThresh = (p.amberBuyAlertThreshold != null) ? p.amberBuyAlertThreshold : 8;
               const negOn = !!p.amberNegativeBuyAlert;
               const negSwitch = `<ha-switch ontouchstart="event.stopPropagation()" ${negOn?'checked':''} onclick="event.stopPropagation();document.querySelector('home-assistant').hass.connection.sendMessage({type:'fire_event',event_type:'{{parameters_update_event}}',event_data:{action:'SetAttribute','amberNegativeBuyAlert':${negOn?'false':'true'}}})"></ha-switch>`;
@@ -3104,6 +3106,275 @@ sections:
                   <div class="row"><div class="lbl"><div class="name">Alert threshold</div><div class="desc">Notify when the buy price drops below this value</div></div><div class="field"><input type="text" inputmode="decimal" min="0" max="99" value="${alertThresh}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onchange="(function(el){var v=parseFloat(el.value);if(isNaN(v))return;if(v<0)v=0;if(v>99)v=99;el.value=v;document.querySelector('home-assistant').hass.connection.sendMessage({type:'fire_event',event_type:'{{parameters_update_event}}',event_data:{action:'SetAttribute','amberBuyAlertThreshold':v}})})(this)"><span class="sfx">c/kWh</span></div></div>
                   <div class="row"><div class="lbl"><div class="name">Notify target</div><div class="desc">Which HA notify service receives alerts (Off disables them)</div></div><select onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onchange="document.querySelector('home-assistant').hass.connection.sendMessage({type:'fire_event',event_type:'{{parameters_update_event}}',event_data:{action:'SetAttribute','alertNotifyTarget':this.value}})">${notifyOptions}</select></div>
                   <div class="row"><div class="lbl"><div class="name">Alert on negative price</div><div class="desc">Also notify when the buy price goes below zero (paid to import)</div></div>${negSwitch}</div>
+                </div>
+              </div>`;
+            ]]]
+      - type: custom:button-card
+        entity: switch.battman_live_activity
+        show_icon: false
+        show_state: false
+        show_name: false
+        tap_action:
+          action: none
+        hold_action:
+          action: none
+        styles:
+          card:
+            - padding: 0
+            - box-shadow: none
+            - border-radius: var(--ha-card-border-radius, 8px)
+            - background: var(--battman-surface-card)
+            - border: 1px solid var(--battman-border-neutral)
+            - pointer-events: none
+          custom_fields:
+            content:
+              - pointer-events: all
+              - width: 100%
+              - display: block
+              - text-align: left
+        extra_styles: >
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+
+          .glabel      { display: flex; align-items: center; justify-content:
+          space-between; font-size: 15px; font-weight: 600; padding: 16px 16px
+          0; gap: 8px; letter-spacing: 0.01em; }
+
+          .glabel-left { display: flex; align-items: center; gap: 7px; }
+
+          .glabel ha-icon { --mdc-icon-size: 18px; color:
+          var(--battman-green); flex-shrink: 0; }
+
+          .note { font-size: 12px; line-height: 1.5; color:
+          var(--battman-green); background:
+          var(--battman-green-soft-bg); border: 1px solid
+          var(--battman-green-border); border-radius:
+          var(--ha-card-border-radius,8px); padding: 9px 12px; margin: 10px 16px
+          0; white-space: normal; word-break: break-word; }
+
+          .rows           { margin-top: 10px; border-top: 1px solid
+          var(--battman-border-neutral); }
+
+          .row            { display: flex; align-items: center; gap: 16px;
+          padding: 14px 16px; border-bottom: 1px solid
+          var(--battman-border-neutral); min-width: 0;
+          min-height: 52px; }
+
+          .row:last-child { border-bottom: none; }
+
+          .lbl            { flex: 1; min-width: 0; white-space: normal; }
+
+          .name           { font-size: 14px; font-weight: 500; word-break:
+          break-word; }
+
+          .desc           { font-size: 12px; color:
+          var(--battman-text-muted); margin-top:
+          2px; line-height: 1.3; word-break: break-word; overflow: hidden; }
+
+          .subdiv { font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+          text-transform: uppercase; color:
+          var(--battman-text-muted); background:
+          var(--battman-surface-popup);
+          padding: 6px 16px; border-bottom: 1px solid
+          var(--battman-border-neutral); border-top: 1px
+          solid var(--battman-border-neutral); }
+
+          .field            { margin-top: 1px; display: inline-flex;
+          align-items: center; width: 130px; min-width: 130px; max-width: 130px;
+          background:
+          var(--battman-surface-popup);
+          border: 1px solid var(--battman-border-neutral);
+          border-radius: 4px; overflow: hidden; flex-shrink: 0; min-height:
+          40px; }
+
+          .field input      { background: transparent; border: none; outline:
+          none; color: var(--battman-text-bright);
+          font-size: 14px; font-family: var(--battman-font); padding: 6px 8px;
+          flex: 1; min-width: 0; text-align: right; -moz-appearance: textfield;
+          touch-action: manipulation; }
+
+          .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+          .field .sfx       { font-size: 12px; color:
+          var(--battman-text-muted); padding: 0 8px
+          0 2px; white-space: nowrap; flex-shrink: 0; }
+
+          .field:focus-within { border-color:
+          var(--battman-green); }
+
+          input[type=time], input[type=date] { background:
+          var(--battman-surface-popup);
+          border: 1px solid var(--battman-border-neutral);
+          border-radius: 4px; color:
+          var(--battman-text-bright); font-size:
+          14px; font-family: var(--battman-font); padding: 6px 8px; width:
+          130px; min-width: 130px; max-width: 130px; flex-shrink: 0; text-align:
+          right; min-height: 40px; box-sizing: border-box; }
+
+          input[type=time]:focus, input[type=date]:focus { outline: none;
+          border-color: var(--battman-green); }
+
+          input[type=time]::-webkit-calendar-picker-indicator,
+          input[type=date]::-webkit-calendar-picker-indicator { display: none; }
+
+          select       { background:
+          var(--battman-surface-popup);
+          border: 1px solid var(--battman-border-neutral);
+          border-radius: 4px; color:
+          var(--battman-text-bright); font-size:
+          14px; font-family: var(--battman-font); padding: 6px 10px; width:
+          130px; appearance: none; cursor: pointer; flex-shrink: 0; min-height:
+          40px; box-sizing: border-box; }
+
+          select:focus { outline: none; border-color:
+          var(--battman-green); }
+
+          button.rst       { background:
+          var(--battman-green-soft-bg); border: 1px solid
+          var(--battman-border-neutral); border-radius:
+          4px; color: var(--battman-text-muted);
+          font-size: 12px; font-family: var(--battman-font); padding: 4px 10px;
+          cursor: pointer; flex-shrink: 0; }
+
+          button.rst:hover { border-color:
+          var(--battman-green); color:
+          var(--battman-green); }
+
+          .hpick       { display: flex; align-items: center; gap: 4px;
+          flex-shrink: 0; }
+
+          .hbtn        { width: 40px; height: 40px; background:
+          var(--battman-surface-popup);
+          border: 1px solid var(--battman-border-neutral);
+          border-radius: 4px; color:
+          var(--battman-text-muted); font-size:
+          18px; cursor: pointer; display: flex; align-items: center;
+          justify-content: center; padding: 0; flex-shrink: 0; }
+
+          .hbtn:hover  { border-color:
+          var(--battman-green); color:
+          var(--battman-green); }
+
+          .hval        { min-width: 36px; text-align: center; font-size: 14px;
+          padding: 5px 8px; background:
+          var(--battman-surface-popup);
+          border: 1px solid var(--battman-border-neutral);
+          border-radius: 4px; color:
+          var(--battman-text-bright); min-height:
+          40px; box-sizing: border-box; display: flex; align-items: center;
+          justify-content: center; }
+
+          .qdaily { font-size: 11px; color:
+          var(--battman-text-muted); margin-top:
+          2px; }
+
+          .def-row  { display: flex; align-items: center; justify-content:
+          space-between; gap: 10px; padding: 7px 14px; background:
+          var(--battman-surface-popup);
+          border-bottom: 1px solid
+          var(--battman-border-neutral); }
+
+          .def-label { font-size: 12px; color:
+          var(--battman-text-muted); flex: 1; }
+
+          .def-ctrl  { display: flex; align-items: center; gap: 5px;
+          flex-shrink: 0; }
+
+          .def-ctrl input { width: 64px; font-size: 12px; padding: 4px 7px;
+          background:
+          var(--battman-surface-popup);
+          border: 1px solid var(--battman-border-neutral);
+          border-radius: 4px; color:
+          var(--battman-text-bright); text-align:
+          right; -moz-appearance: textfield; }
+
+          .def-ctrl input::-webkit-inner-spin-button { -webkit-appearance: none;
+          }
+
+          .def-unit  { font-size: 11px; color:
+          var(--battman-text-muted); opacity: 0.6;
+          }
+
+          .def-head  { grid-column: 1/-1; background:
+          var(--battman-surface-card); padding:
+          6px 16px; font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+          text-transform: uppercase; color:
+          var(--battman-text-muted); border-bottom:
+          1px solid var(--battman-border-neutral);
+          opacity: 0.7; }
+
+          .pad { padding-bottom: 12px; }
+
+          ha-switch { flex-shrink: 0; width: 55px; min-width: 55px; display:
+          block; touch-action: manipulation;
+          --ha-switch-checked-background-color:
+          var(--battman-green-border-strong);
+          --ha-switch-checked-border-color:
+          var(--battman-green-border-strong);
+          --ha-switch-checked-thumb-background-color:
+          var(--battman-green); }
+        custom_fields:
+          content: |-
+            [[[
+              // Live Activity (Battman v0.10.0): every setting is a Battman entity; the
+              // automations and script Battman made read them. Nothing here is made up:
+              // a missing setting entity, phone or followed entity is shown as a problem.
+              const H = "document.querySelector('home-assistant').hass";
+              const ID = { sw: 'switch.battman_live_activity', phone: 'select.battman_live_activity_phone',
+                           follow: 'text.battman_live_activity_follow', on: 'text.battman_live_activity_follow_on',
+                           off: 'text.battman_live_activity_follow_off', delay: 'number.battman_live_activity_follow_delay',
+                           spike: 'number.battman_live_activity_spike_alert' };
+              const esc = function(v){ return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); };
+              const stop = 'onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"';
+              const head = `<div class="glabel"><div class="glabel-left"><ha-icon icon="mdi:cellphone-information"></ha-icon>Live Activity</div></div>`;
+              const gone = Object.keys(ID).filter(function(k){ return !states[ID[k]]; }).map(function(k){ return ID[k]; });
+              if (gone.length) {
+                return `<div class="pad">${head}<div class="note" style="color:var(--battman-red);background:var(--battman-red-soft-bg);border-color:var(--battman-red)">Battman setting not found: ${esc(gone.join(', '))}. Is Battman v0.10.0 or later installed and set up?</div></div>`;
+              }
+              const devSlug = function(x){ return (x||'').replace(/['’]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); };
+              const devMap = {};
+              try { Object.keys(hass.devices||{}).forEach(function(id){ var dv=hass.devices[id]; var nm=dv.name_by_user||dv.name; if(nm) devMap[devSlug(nm)]=nm; }); } catch(e){}
+              const titleCase = function(str){ return str.split('_').map(function(w){ return w ? w.charAt(0).toUpperCase()+w.slice(1) : w; }).join(' '); };
+              const prettyNotify = function(svc){ if (svc.indexOf('mobile_app_')===0){ var k=svc.slice(11); return devMap[k] || titleCase(k); } return titleCase(svc); };
+              const problem = function(id){ var p = states[id].attributes.problem; return p ? `<div class="desc" style="color:var(--battman-red)">⚠ ${esc(p)}</div>` : ''; };
+
+              const swOn = states[ID.sw].state === 'on';
+              const swHtml = `<ha-switch ontouchstart="event.stopPropagation()" ${swOn?'checked':''} onclick="event.stopPropagation();${H}.callService('switch','toggle',{entity_id:'${ID.sw}'})"></ha-switch>`;
+
+              const ph = states[ID.phone];
+              const phoneOpts = (ph.attributes.options || []).map(function(o){
+                var label = o === 'Off' ? '— Off —' : prettyNotify(o) + (o === ph.state && ph.attributes.problem ? ' (not found)' : '');
+                return `<option value="${esc(o)}"${o === ph.state ? ' selected' : ''}>${esc(label)}</option>`; }).join('');
+              const phoneHtml = `<select ${stop} onchange="${H}.callService('select','select_option',{entity_id:'${ID.phone}',option:this.value})">${phoneOpts}</select>`;
+
+              const textField = function(id, width){ return `<div class="field" style="width:${width}px;min-width:${width}px;max-width:55%"><input type="text" value="${esc(states[id].state)}" ${stop} onchange="${H}.callService('text','set_value',{entity_id:'${id}',value:this.value})" style="text-align:left"></div>`; };
+              const numField = function(id, step, sfx){ return `<div class="field"><input type="text" inputmode="decimal" value="${esc(states[id].state)}" ${stop} onchange="${H}.callService('number','set_value',{entity_id:'${id}',value:this.value})"><span class="sfx">${sfx}</span></div>`; };
+
+              const f = (states[ID.follow].state || '').trim();
+              const fe = f ? states[f] : null;
+              const followNow = !f ? 'Blank = not following anything (use the switch)'
+                : fe ? `Now: ${esc((fe.attributes && fe.attributes.friendly_name) || f)} is ${esc(fe.state)}` : '';
+
+              const made = ['script.battman_live_activity_push','automation.battman_live_activity_on_off','automation.battman_live_activity_updates','automation.battman_live_activity_follow'];
+              const notMade = made.filter(function(id){ return !states[id]; });
+              const madeDesc = notMade.length
+                ? `<span style="color:var(--battman-red)">Not found: ${esc(notMade.join(', '))} (deleted or renamed)</span>`
+                : 'The script and 3 automations Battman made are all there';
+
+              return `<div class="pad">
+                ${head}
+                <div class="note">Your battery on your phone's lock screen. Pick a phone, then switch it on, or let it follow something like your car's ignition.</div>
+                <div class="rows">
+                  <div class="row"><div class="lbl"><div class="name">Live Activity</div><div class="desc">On shows it, off clears it</div></div>${swHtml}</div>
+                  <div class="row"><div class="lbl"><div class="name">Phone</div><div class="desc">Which HA notify service gets it (Off sends nothing)</div>${problem(ID.phone)}</div>${phoneHtml}</div>
+                  <div class="subdiv">Follow an entity</div>
+                  <div class="row"><div class="lbl"><div class="name">Entity</div><div class="desc">${followNow}</div>${problem(ID.follow)}</div>${textField(ID.follow, 220)}</div>
+                  <div class="row"><div class="lbl"><div class="name">On when it becomes</div></div>${textField(ID.on, 130)}</div>
+                  <div class="row"><div class="lbl"><div class="name">Off when it becomes</div><div class="desc">…and has stayed that way for the time below</div></div>${textField(ID.off, 130)}</div>
+                  <div class="row"><div class="lbl"><div class="name">Off after</div><div class="desc">So a quick stop doesn't restart it</div></div>${numField(ID.delay, 1, 'min')}</div>
+                  <div class="subdiv">Alerts</div>
+                  <div class="row"><div class="lbl"><div class="name">Feed-in spike alert</div><div class="desc">Push with a sound when feed-in rises above this</div></div>${numField(ID.spike, 0.01, '$/kWh')}</div>
+                  <div class="subdiv">Automations</div>
+                  <div class="row"><div class="lbl"><div class="name">Battman's automations</div><div class="desc">${madeDesc}</div></div><button class="rst" ${stop.replace('onclick="event.stopPropagation()"','')} onclick="event.stopPropagation();${H}.callService('battman','create_live_activity',{})">Create missing</button></div>
                 </div>
               </div>`;
             ]]]

@@ -5,49 +5,60 @@ Assistant Companion app): feed-in price, buy price, today's net $, battery SOC a
 the progress bar, the battery mode as the icon and the mode's theme colour as the
 bar colour.
 
-Battman provides:
+## What Battman sets up for you
 
-| Piece | What it is |
+Nothing to build by hand. On first start Battman creates, from its own blueprints:
+
+| Made by Battman | What it does |
 |---|---|
-| `switch.battman_live_activity` | On/off switch on the Battman device (keeps its state over restarts) |
-| `sensor.battman_theme_mode_colours` | The Battman dashboard theme's mode colours (pick a theme under Settings → Dashboard options) |
-| **Battman Live Activity – push** (script blueprint) | Sends or clears the Live Activity on the phone you pick |
-| **Battman Live Activity – on/off** (automation blueprint) | Push when the switch turns on, clear when off, restart every 7 h, alert on a feed-in spike |
-| **Battman Live Activity – updates** (automation blueprint) | Push when SOC / prices / mode change, at most every 2 min, plus a trailing push |
-| **Battman Live Activity – follow an entity** (automation blueprint) | Optional: flip the switch from another entity (e.g. a car's ignition) |
+| `script.battman_live_activity_push` | Sends or clears the Live Activity on the chosen phone |
+| `automation.battman_live_activity_on_off` | Push when the switch turns on, clear when off, restart every 7 h (iOS ends them after ~8 h), alert on a feed-in spike |
+| `automation.battman_live_activity_updates` | Push when SOC / prices / mode change, at most every 2 min, plus a trailing push |
+| `automation.battman_live_activity_follow` | Flip the switch from another entity (e.g. a car's ignition), if you set one |
 
-The blueprints are installed into `config/blueprints/automation/battman/` and
-`config/blueprints/script/battman/` and updated with each Battman release.
-What you make from them are normal automations and scripts: edit them like any other.
+They read their settings from Battman entities, which you set on the Battman
+dashboard under **Settings → Live Activity**:
+
+| Setting | Entity | Default |
+|---|---|---|
+| On/off | `switch.battman_live_activity` | off |
+| Phone | `select.battman_live_activity_phone` (HA's notify services, or Off) | **Off** |
+| Follow entity | `text.battman_live_activity_follow` (blank = don't follow) | blank |
+| On / off states | `text.battman_live_activity_follow_on` / `_follow_off` | `ON` / `OFF` |
+| Off after | `number.battman_live_activity_follow_delay` (minutes) | 2 |
+| Feed-in spike alert | `number.battman_live_activity_spike_alert` ($/kWh) | 0.30 |
+
+With the phone on **Off** nothing is sent, so a new install is harmless until you pick one.
+
+## Yours to edit; getting Battman's version back
+
+- They're normal automations and a script (in `automations.yaml` / `scripts.yaml`).
+  Edit them if you like: Battman never overwrites one that exists.
+- **Create Live Activity automations** (button on the Battman device, or the action
+  `battman.create_live_activity`) creates any that are **missing**. To reset one to
+  Battman's version: delete it, then press the button. The Settings card shows if any are missing.
+- Because they're made from Battman's blueprints, fixes in a Battman release reach them
+  automatically (Battman updates the blueprints and reloads). If you **take control** of
+  one, it stops following the blueprint.
+- If HA can't load them (e.g. `automation: !include automations.yaml` was removed from
+  configuration.yaml), a Repair says so.
 
 Nothing is made up: a value that isn't available shows as "—", an unknown battery
 mode shows a red "?" icon, and with no dashboard theme picked the bar is grey.
 
-## Set up
-
-1. Settings → Automations & scenes → **Blueprints**.
-2. **Battman Live Activity – push** → Create script. Pick your phone. The entities
-   are pre-filled with Battman's defaults; change any that differ. Save.
-3. **Battman Live Activity – on/off** → Create automation. Push script = the one from
-   step 2. Save.
-4. **Battman Live Activity – updates** → Create automation. Push script = the one from
-   step 2. Save.
-5. Optional: **Battman Live Activity – follow an entity** → Create automation, e.g.
-   your car's ignition sensor, `ON` / `OFF`, 2 minutes.
-6. Turn on `switch.battman_live_activity` to test. Turn it off to clear.
-
 ## Swapping over from the Smiggles automations
 
-Do steps 1–5 above, then:
-
-1. **Disable** (don't delete) the old ones: *Battery Live Activity – car, start, stop,
+1. Update Battman and restart. Check Settings → Automations: the three
+   "Battman Live Activity" automations and the script are there.
+2. Battman dashboard → **Settings → Live Activity**: pick your phone, set Follow to your
+   car's ignition sensor (`ON` / `OFF`, 2 min).
+3. **Disable** (don't delete) the old ones: *Battery Live Activity – car, start, stop,
    update, keep-alive, FIT spike alert* and the script *Battery Live Activity – push*.
-2. Make sure a theme is picked on the Battman dashboard (Settings → Dashboard options),
-   or the bar will be grey.
-3. Flip `switch.battman_live_activity` on and off, and drive somewhere.
-4. When you're happy, delete the old automations and script, and the helpers
-   `input_boolean.battery_live_activity` and `input_text.theme_mode_colours`.
+4. Pick a theme on the Battman dashboard (Settings → Dashboard options), or the bar is grey.
+5. Flip the Live Activity switch on and off, and drive somewhere.
+6. When you're happy: delete the old automations and script. Before deleting the helpers
+   `input_boolean.battery_live_activity` and `input_text.theme_mode_colours`, open each one →
+   ⋮ → **Related** to make sure nothing else uses them.
 
-Differences from the Smiggles version: the tap-through opens `/battman` (set "Open when
-tapped" to `/battery-time` to keep the old one), the update automation also pushes when
-a value goes unavailable (so the "—" shows), and the built-in iOS fallback colours are gone.
+The tap-through opens `/battman`; change "Open when tapped" in the push script if you
+want somewhere else.

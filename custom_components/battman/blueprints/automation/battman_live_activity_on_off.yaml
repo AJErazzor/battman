@@ -7,15 +7,17 @@ blueprint:
     about 8 hours), and pushes it with a sound when the feed-in price spikes.
 
 
-    Needs a script made from the "Battman Live Activity – push" blueprint.
-    Installed and updated by the Battman integration.
+    Uses the script made from the "Battman Live Activity – push" blueprint. Battman
+    creates this automation and that script for you; settings are on the Battman
+    dashboard (Settings → Live Activity). Installed and updated by the Battman integration.
   domain: automation
   homeassistant:
     min_version: "2024.10.0"
   input:
     push_script:
       name: Push script
-      description: The script you made from "Battman Live Activity – push".
+      description: The script made from "Battman Live Activity – push" (Battman creates it for you).
+      default: script.battman_live_activity_push
       selector:
         entity:
           domain: script
@@ -29,7 +31,7 @@ blueprint:
             - input_boolean
     keep_alive_hours:
       name: Restart every (hours)
-      description: iOS ends a Live Activity after about 8 hours.
+      description: iOS ends a Live Activity after about 8 hours. Not a dashboard setting on purpose.
       default: 7
       selector:
         number:
@@ -43,16 +45,14 @@ blueprint:
         entity:
           domain: sensor
     spike_above:
-      name: Feed-in spike alert above ($/kWh)
-      description: Pushes with a sound when the feed-in price rises above this.
-      default: 0.3
+      name: Feed-in spike alert above
+      description: The Battman setting (number, $/kWh) to compare the feed-in price with.
+      default: number.battman_live_activity_spike_alert
       selector:
-        number:
-          min: 0
-          max: 20
-          step: 0.01
-          mode: box
-          unit_of_measurement: $/kWh
+        entity:
+          domain:
+            - number
+            - input_number
 
 mode: queued
 max: 10
