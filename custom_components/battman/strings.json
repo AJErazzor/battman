@@ -15,6 +15,11 @@
       "create_dashboard": {
         "name": "Create dashboard"
       }
+    },
+    "sensor": {
+      "theme_mode_colours": {
+        "name": "Theme mode colours"
+      }
     }
   },
   "services": {
@@ -83,7 +88,14 @@
           "sigen_pv_power": "Sigen solar power (Sigen inverter only)",
           "solcast_today": "Solcast forecast today",
           "buy_forecast": "Buy price forecast",
-          "feed_in_forecast": "Feed-in price forecast"
+          "feed_in_forecast": "Feed-in price forecast",
+          "buy_rules": "Buy rules store (sensor)",
+          "sell_rules": "Sell rules store (sensor)",
+          "buy_rules_event": "Buy rules update event name",
+          "sell_rules_event": "Sell rules update event name",
+          "power_provider_buy": "Power provider buy tariffs (sensor)",
+          "power_provider_sell": "Power provider sell tariffs (sensor)",
+          "power_provider_event": "Power provider update event name"
         }
       }
     },

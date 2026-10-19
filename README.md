@@ -45,12 +45,13 @@ strategy:
 
 so Battman builds its views (from `custom_components/battman/views/*.yaml`), and
 new or changed views arrive with Battman updates. Views so far: **Finances**,
-**Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log** and **Theme**
-(the theme studio). **Correct Totals** is a hidden view (no
+**Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log**, **Settings**
+and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
 tab), opened from the button at the bottom of the Finances Billing card, for
 fixing the buy/sell totals of a period. It asks before changing anything.
 
-To theme the whole managed dashboard, use **Make Active** in the Theme view. It
+To theme the whole managed dashboard, pick a theme under **Settings → Dashboard
+options**, or use **Make Active** in the Theme view (they do the same thing). It
 sets one line in the dashboard config, so the dashboard stays managed:
 
 ```yaml
@@ -81,6 +82,15 @@ url: /battman/cost-chart.html
 Pages find their entities through Battman's **entity map** (Battman name →
 entity in your HA) and take their colours from a **Battman theme**. If an entity
 or theme colour is missing, the page shows an error saying exactly what.
+
+## Theme mode colours sensor
+
+`sensor.battman_theme_mode_colours` holds the six mode colours of the Battman
+dashboard's theme as hex, e.g. `{"green":"#a3be8c","yellow":"#e9d8a6",…}`, with each
+colour also as an attribute. It's for things that can't read theme colours, like an
+iPhone Live Activity. It updates by itself when the dashboard theme changes. Until a
+dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
+`problem` attribute says why.
 
 ## Entity map (Configure)
 
