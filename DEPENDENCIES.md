@@ -15,4 +15,16 @@ Coming with later moves (not checked yet):
 |---|---|---|---|
 | browser_mod | Integration | Override cards (popups) | https://github.com/thomasloven/hass-browser_mod |
 
-Battman pages also load **Chart.js** from the internet (cdnjs / jsdelivr), so the charts need internet access.
+Battman pages also load from the internet:
+
+- **Chart.js** (cdnjs / jsdelivr): charts on the cost, compare and log pages.
+- **Google Fonts**: only the theme studio's font browser, and themes that turn on a custom font.
+
+The Log and Theme views are plain iframe pages and need no extra cards.
+
+Battman's own pieces that other parts rely on:
+
+- **Entity map** (`/api/battman/entities`): every Battman page. Change it under Configure.
+- **Battman theme** (`--battman-*` colours): every Battman page shows an error without one.
+- **`battman-lib.js`**: the theme studio's live previews (the override cards still use Smiggles' `ssc-lib.js` until they move).
+- **Debug log file + load script** (`debug_log_file`, `load_debug_log_script` in the map): the Log page's log panel. Both still come from Smiggles.

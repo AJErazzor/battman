@@ -15,3 +15,10 @@ def auto_enable_custom_integrations(enable_custom_integrations):
     if REPO_COMPONENTS not in custom_components.__path__:
         custom_components.__path__.append(REPO_COMPONENTS)
     yield
+
+
+@pytest.fixture(autouse=True)
+def own_config_dir(hass, tmp_path):
+    """Each test gets its own config folder, so theme files don't leak between tests."""
+    hass.config.config_dir = str(tmp_path)
+    yield

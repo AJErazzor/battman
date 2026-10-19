@@ -27,7 +27,8 @@ async def test_dashboard_api_fills_the_map(hass: HomeAssistant, hass_client) -> 
     assert r.status == 200
     data = await r.json()
     assert data["errors"] == []
-    (view,) = data["views"]
+    assert [v["path"] for v in data["views"]] == ["finances", "log", "theme"]
+    view = data["views"][0]
     assert view["title"] == "Finances" and view["path"] == "finances"
     assert view["theme"] == "Battman Coffee"
     text = json.dumps(view)
@@ -47,6 +48,8 @@ async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
     await _setup(hass)
     client = await hass_client_no_auth()
     for path in ("/battman/cost-compare.html", "/battman/images/finances-line.webp",
+                 "/battman/log.html", "/battman/theme-studio.html", "/battman/battman-lib.js",
+                 "/battman/images/battman-toilet-mirror.webp", "/battman/images/logs-line.webp",
                  "/battman/images/battman-coins.webp", "/battman/battman-strategy.js"):
         r = await client.get(path)
         assert r.status == 200, path
