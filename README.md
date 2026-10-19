@@ -26,6 +26,27 @@ files there. Battman themes define only `--battman-*` colours: anything still us
 `--smiggles-*` won't get colours on a Battman theme, so keep Smiggles views on
 Smiggles themes until they move.
 
+## The Battman dashboard
+
+When you first add the integration, Battman creates a **Battman** dashboard in the
+sidebar. It's *managed*: its whole config is
+
+```yaml
+strategy:
+  type: custom:battman
+```
+
+so Battman builds its views, and new or changed views arrive with Battman updates.
+
+- **Want to edit it?** Edit dashboard → **Take control**. It becomes a normal
+  dashboard you own (rename it, change anything). Battman never touches it again.
+- **Want a managed one back?** Press **Create dashboard** on the Battman device
+  (Settings → Devices & services → Battman), or run the action
+  `battman.create_dashboard`. It creates a new managed dashboard at the next free
+  address (`/battman`, `/battman-2`, …) and does nothing if one already exists.
+- **Removing Battman** deletes managed dashboards only; ones you've taken control
+  of stay.
+
 ## Pages
 
 Battman serves its pages from `/battman/`, for example the cost chart:

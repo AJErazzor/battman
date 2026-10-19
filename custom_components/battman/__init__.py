@@ -6,6 +6,7 @@ import logging
 import shutil
 from pathlib import Path
 
+from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -13,12 +14,18 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
+from . import dashboard
 from .api import BattmanEntityMapView
 from .const import DOMAIN, STATIC_URL
+from .services import async_create_dashboard_and_report, async_register_services
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = []
+PLATFORMS: list[str] = ["button"]
+
+# Set in the config entry once the install-time dashboard has been made, so it
+# only ever happens once. After that, use the button or battman.create_dashboard.
+DASHBOARD_DONE = "dashboard_created_on_install"
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -59,8 +66,13 @@ def _remove_themes(dst: Path) -> bool:
 
 
 async def _reload_themes(hass: HomeAssistant) -> None:
-    if hass.services.has_service("frontend", "reload_themes"):
+    """Ask HA to re-read themes. Never lets a failure stop anything else."""
+    if not hass.services.has_service("frontend", "reload_themes"):
+        return
+    try:
         await hass.services.async_call("frontend", "reload_themes", blocking=True)
+    except Exception as err:  # noqa: BLE001
+        _LOGGER.error("Battman could not reload themes: %s", err)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -72,6 +84,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         [StaticPathConfig(STATIC_URL, str(WWW_DIR), cache_headers=False)]
     )
     hass.http.register_view(BattmanEntityMapView(str(integration.version)))
+    # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
+    async_register_services(hass)
     return True
 
 
@@ -85,6 +100,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except OSError as err:
         _LOGGER.error("Could not install Battman themes into %s: %s", dst, err)
 
+    if not entry.data.get(DASHBOARD_DONE):
+        await async_create_dashboard_and_report(hass, notify=False)
+        hass.config_entries.async_update_entry(entry, data={**entry.data, DASHBOARD_DONE: True})
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -95,7 +114,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Battman removed: take its themes away too."""
+    """Battman removed: take its themes and managed dashboards away too.
+
+    Dashboards you've taken control of are left alone.
+    """
+    try:
+        removed = await dashboard.async_remove_managed(hass)
+        if removed:
+            _LOGGER.info("Removed managed Battman dashboard(s): %s", removed)
+    except dashboard.DashboardUnavailable as err:
+        _LOGGER.warning("Could not remove the managed Battman dashboard: %s", err)
     dst = Path(hass.config.path(*THEMES_DST_PARTS))
     if await hass.async_add_executor_job(_remove_themes, dst):
         await _reload_themes(hass)
