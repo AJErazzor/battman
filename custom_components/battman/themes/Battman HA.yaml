@@ -1,0 +1,350 @@
+"Battman HA":
+  # font-version: 1 (2026-09-30) — font-ready (scaffold, commented)
+  # ── THEME FONT (optional) ── uncomment the lines below + pick a font to enable it.
+  #    Loads via card-mod, applies everywhere incl. iframes & browser_mod popups.
+  #    To use: set the family in `battman-font` and its Google Fonts URL in the @import.
+  # battman-font: "Inter, Roboto, sans-serif"
+  # card-mod-theme: "Battman HA"
+  # card-mod-root: |
+  #   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  #   html { font-family: var(--battman-font) !important; }
+  #   ha-card, .card-content, .primary, .secondary, .name, .state, .value, .label,
+  #   .toolbar, .main-title, .title, ha-tabs, ha-tab, paper-tab, mwc-tab,
+  #   hui-view-header, .view-header, .subview, ha-top-app-bar-fixed {
+  #     font-family: var(--battman-font) !important;
+  #   }
+  #   ha-dialog, ha-dialog *, .mdc-dialog, .mdc-dialog__content, browser-mod-popup, browser-mod-popup * {
+  #     font-family: var(--battman-font) !important;
+  #   }
+  # primary-font-family: "var(--battman-font)"
+  # ha-font-family-body: "var(--primary-font-family)"
+  # ha-font-family-heading: "var(--primary-font-family)"
+  # ha-font-family-code: "var(--primary-font-family)"
+  # mdc-typography-font-family: "var(--primary-font-family)"
+  # paper-font-common-base_-_font-family: "var(--primary-font-family)"
+  # paper-font-body1_-_font-family: "var(--primary-font-family)"
+  # ha-font-family: "var(--primary-font-family)"
+  # mdc-typography-headline6-font-family: "var(--primary-font-family)"
+  # mdc-typography-button-font-family: "var(--primary-font-family)"
+  # mdc-typography-subtitle1-font-family: "var(--primary-font-family)"
+  # mdc-typography-body2-font-family: "var(--primary-font-family)"
+  # paper-font-headline_-_font-family: "var(--primary-font-family)"
+  # paper-font-title_-_font-family: "var(--primary-font-family)"
+  # paper-font-subhead_-_font-family: "var(--primary-font-family)"
+  # "Looks like stock HA" theme. The base hue tokens map to Home Assistant's
+  # native semantic colours (green->success, red->error, etc.), but every
+  # DERIVED token (-wash/-border*/-bg/-soft-bg) maps to a neutral native
+  # structural var (divider / card background) instead of a coloured tint --
+  # so cards lose the Battman glass/accent variations and render like stock
+  # HA. No mode: and no base-var overrides, so it follows the default theme
+  # and light/dark automatically. No color-mix() used.
+
+  # ── Red (→ var(--error-color)) ──
+  battman-red: "var(--error-color)"
+  battman-red-wash: "transparent"
+  battman-red-border: "var(--divider-color)"
+  battman-red-border-soft: "var(--divider-color)"
+  battman-red-border-light: "var(--divider-color)"
+  battman-red-border-strong: "var(--divider-color)"
+  battman-red-bg: "var(--card-background-color)"
+  battman-red-soft-bg: "transparent"
+
+  # ── Darkred (→ var(--error-color)) ──
+  battman-darkred: "var(--error-color)"
+  battman-darkred-wash: "transparent"
+  battman-darkred-border: "var(--divider-color)"
+  battman-darkred-border-soft: "var(--divider-color)"
+  battman-darkred-border-light: "var(--divider-color)"
+  battman-darkred-border-strong: "var(--divider-color)"
+  battman-darkred-bg: "var(--card-background-color)"
+  battman-darkred-soft-bg: "transparent"
+
+  # ── Orange (→ var(--warning-color)) ──
+  battman-orange: "var(--warning-color)"
+  battman-orange-wash: "transparent"
+  battman-orange-border: "var(--divider-color)"
+  battman-orange-border-soft: "var(--divider-color)"
+  battman-orange-border-light: "var(--divider-color)"
+  battman-orange-border-strong: "var(--divider-color)"
+  battman-orange-bg: "var(--card-background-color)"
+  battman-orange-soft-bg: "transparent"
+
+  # ── Amber (→ var(--accent-color)) ──
+  battman-amber: "var(--accent-color)"
+  battman-amber-wash: "transparent"
+  battman-amber-border: "var(--divider-color)"
+  battman-amber-border-soft: "var(--divider-color)"
+  battman-amber-border-light: "var(--divider-color)"
+  battman-amber-border-strong: "var(--divider-color)"
+  battman-amber-bg: "var(--card-background-color)"
+  battman-amber-soft-bg: "transparent"
+
+  # ── Yellow (→ var(--warning-color)) ──
+  battman-yellow: "var(--warning-color)"
+  battman-yellow-wash: "transparent"
+  battman-yellow-border: "var(--divider-color)"
+  battman-yellow-border-soft: "var(--divider-color)"
+  battman-yellow-border-light: "var(--divider-color)"
+  battman-yellow-border-strong: "var(--divider-color)"
+  battman-yellow-bg: "var(--card-background-color)"
+  battman-yellow-soft-bg: "transparent"
+
+  # ── Green (→ var(--success-color)) ──
+  battman-green: "var(--success-color)"
+  battman-green-wash: "transparent"
+  battman-green-border: "var(--divider-color)"
+  battman-green-border-soft: "var(--divider-color)"
+  battman-green-border-light: "var(--divider-color)"
+  battman-green-border-strong: "var(--divider-color)"
+  battman-green-bg: "var(--card-background-color)"
+  battman-green-soft-bg: "transparent"
+
+  # ── Blue (→ var(--info-color)) ──
+  battman-blue: "var(--info-color)"
+  battman-blue-wash: "transparent"
+  battman-blue-border: "var(--divider-color)"
+  battman-blue-border-soft: "var(--divider-color)"
+  battman-blue-border-light: "var(--divider-color)"
+  battman-blue-border-strong: "var(--divider-color)"
+  battman-blue-bg: "var(--card-background-color)"
+  battman-blue-soft-bg: "transparent"
+
+  # ── Purple (→ var(--primary-color)) ──
+  battman-purple: "var(--primary-color)"
+  battman-purple-wash: "transparent"
+  battman-purple-border: "var(--divider-color)"
+  battman-purple-border-soft: "var(--divider-color)"
+  battman-purple-border-light: "var(--divider-color)"
+  battman-purple-border-strong: "var(--divider-color)"
+  battman-purple-bg: "var(--card-background-color)"
+  battman-purple-soft-bg: "transparent"
+
+  # ── Darkpurple (→ var(--primary-color)) ──
+  battman-darkpurple: "var(--primary-color)"
+  battman-darkpurple-wash: "transparent"
+  battman-darkpurple-border: "var(--divider-color)"
+  battman-darkpurple-border-soft: "var(--divider-color)"
+  battman-darkpurple-border-light: "var(--divider-color)"
+  battman-darkpurple-border-strong: "var(--divider-color)"
+  battman-darkpurple-bg: "var(--card-background-color)"
+  battman-darkpurple-soft-bg: "transparent"
+
+  # ── Teal (→ var(--info-color); HA has no teal -> info-color) ──
+  battman-teal: "var(--info-color)"
+  battman-teal-wash: "transparent"
+  battman-teal-border: "var(--divider-color)"
+  battman-teal-border-soft: "var(--divider-color)"
+  battman-teal-border-light: "var(--divider-color)"
+  battman-teal-border-strong: "var(--divider-color)"
+  battman-teal-bg: "var(--card-background-color)"
+  battman-teal-soft-bg: "transparent"
+
+  # ── Pink (→ var(--accent-color); HA has no pink -> accent-color) ──
+  battman-pink: "var(--accent-color)"
+  battman-pink-wash: "transparent"
+  battman-pink-border: "var(--divider-color)"
+  battman-pink-border-soft: "var(--divider-color)"
+  battman-pink-border-light: "var(--divider-color)"
+  battman-pink-border-strong: "var(--divider-color)"
+  battman-pink-bg: "var(--card-background-color)"
+  battman-pink-soft-bg: "transparent"
+
+  # ── Sky (→ var(--primary-color); HA has no sky -> primary-color) ──
+  battman-sky: "var(--primary-color)"
+  battman-sky-wash: "transparent"
+  battman-sky-border: "var(--divider-color)"
+  battman-sky-border-soft: "var(--divider-color)"
+  battman-sky-border-light: "var(--divider-color)"
+  battman-sky-border-strong: "var(--divider-color)"
+  battman-sky-bg: "var(--card-background-color)"
+  battman-sky-soft-bg: "transparent"
+
+  # ── Text (→ native HA text vars) ──
+  battman-text-bright: "var(--primary-text-color)"
+  battman-text-muted: "var(--secondary-text-color)"
+  battman-text-dim: "var(--disabled-text-color)"
+
+  # ── Surfaces (→ native HA background vars) ──
+  battman-surface-card: "var(--card-background-color)"
+  battman-surface-popup: "var(--secondary-background-color)"
+
+  # ── Structural ──
+  battman-border-neutral: "var(--divider-color)"
+  battman-border-neutral-soft: "var(--divider-color)"
+
+  # ═══════════ Button FX (disco) — uncomment to enable ═══════════
+  # Shipped commented. Remove the leading '# ' from a button's lines to
+  # enable it. Colours follow THIS theme's palette automatically.
+  # Optional: fx-<ns>-ring-width:"2px"; for a single-colour glow use
+  #   fx-<ns>-glow-name:"fx-glow-mono" + fx-<ns>-glow-color:"var(--battman-<hue>)".
+  # ── Active (enable) ──
+  # fx-enable-chase-display: "block"
+  # fx-enable-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-enable-chase-duration: "2.5s"
+  # fx-enable-border: "none"
+  # fx-enable-glow-name: "fx-glow-rainbow"
+  # fx-enable-glow-duration: "3s"
+  # ── Curtail (curtail) ──
+  # fx-curtail-chase-display: "block"
+  # fx-curtail-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-curtail-chase-duration: "2.5s"
+  # fx-curtail-border: "none"
+  # fx-curtail-glow-name: "fx-glow-rainbow"
+  # fx-curtail-glow-duration: "3s"
+  # ── Buy (buy) ──
+  # fx-buy-chase-display: "block"
+  # fx-buy-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-buy-chase-duration: "2.5s"
+  # fx-buy-border: "none"
+  # fx-buy-glow-name: "fx-glow-rainbow"
+  # fx-buy-glow-duration: "3s"
+  # ── Sell (sell) ──
+  # fx-sell-chase-display: "block"
+  # fx-sell-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-sell-chase-duration: "2.5s"
+  # fx-sell-border: "none"
+  # fx-sell-glow-name: "fx-glow-rainbow"
+  # fx-sell-glow-duration: "3s"
+  # ── Self Consume (selfconsume) ──
+  # fx-selfconsume-chase-display: "block"
+  # fx-selfconsume-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-selfconsume-chase-duration: "2.5s"
+  # fx-selfconsume-border: "none"
+  # fx-selfconsume-glow-name: "fx-glow-rainbow"
+  # fx-selfconsume-glow-duration: "3s"
+  # ── Sell Solar (sellsolar) ──
+  # fx-sellsolar-chase-display: "block"
+  # fx-sellsolar-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-sellsolar-chase-duration: "2.5s"
+  # fx-sellsolar-border: "none"
+  # fx-sellsolar-glow-name: "fx-glow-rainbow"
+  # fx-sellsolar-glow-duration: "3s"
+  # ── Drain (drain) ──
+  # fx-drain-chase-display: "block"
+  # fx-drain-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  # fx-drain-chase-duration: "2.5s"
+  # fx-drain-border: "none"
+  # fx-drain-glow-name: "fx-glow-rainbow"
+  # fx-drain-glow-duration: "3s"
+  # ── House Party (houseparty) ──
+  fx-houseparty-chase-display: "block"
+  fx-houseparty-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  fx-houseparty-chase-duration: "2.5s"
+  fx-houseparty-border: "none"
+  # fx-houseparty-glow-name: "fx-glow-rainbow"
+  # fx-houseparty-glow-duration: "3s"
+  # ── HOOOOVER (hooover) ──
+  fx-hooover-chase-display: "block"
+  fx-hooover-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+  fx-hooover-chase-duration: "2.5s"
+  fx-hooover-border: "none"
+  fx-hooover-glow-name: "fx-glow-rainbow"
+  fx-hooover-glow-duration: "3s"
+
+
+  # ── Smiggles compatibility (temporary) ──
+  # Old --smiggles-* names point at the Battman ones so existing cards
+  # keep working. Remove once nothing references --smiggles-* any more.
+  smiggles-amber: "var(--battman-amber)"
+  smiggles-amber-bg: "var(--battman-amber-bg)"
+  smiggles-amber-border: "var(--battman-amber-border)"
+  smiggles-amber-border-light: "var(--battman-amber-border-light)"
+  smiggles-amber-border-soft: "var(--battman-amber-border-soft)"
+  smiggles-amber-border-strong: "var(--battman-amber-border-strong)"
+  smiggles-amber-soft-bg: "var(--battman-amber-soft-bg)"
+  smiggles-amber-wash: "var(--battman-amber-wash)"
+  smiggles-blue: "var(--battman-blue)"
+  smiggles-blue-bg: "var(--battman-blue-bg)"
+  smiggles-blue-border: "var(--battman-blue-border)"
+  smiggles-blue-border-light: "var(--battman-blue-border-light)"
+  smiggles-blue-border-soft: "var(--battman-blue-border-soft)"
+  smiggles-blue-border-strong: "var(--battman-blue-border-strong)"
+  smiggles-blue-soft-bg: "var(--battman-blue-soft-bg)"
+  smiggles-blue-wash: "var(--battman-blue-wash)"
+  smiggles-border-neutral: "var(--battman-border-neutral)"
+  smiggles-border-neutral-soft: "var(--battman-border-neutral-soft)"
+  smiggles-darkpurple: "var(--battman-darkpurple)"
+  smiggles-darkpurple-bg: "var(--battman-darkpurple-bg)"
+  smiggles-darkpurple-border: "var(--battman-darkpurple-border)"
+  smiggles-darkpurple-border-light: "var(--battman-darkpurple-border-light)"
+  smiggles-darkpurple-border-soft: "var(--battman-darkpurple-border-soft)"
+  smiggles-darkpurple-border-strong: "var(--battman-darkpurple-border-strong)"
+  smiggles-darkpurple-soft-bg: "var(--battman-darkpurple-soft-bg)"
+  smiggles-darkpurple-wash: "var(--battman-darkpurple-wash)"
+  smiggles-darkred: "var(--battman-darkred)"
+  smiggles-darkred-bg: "var(--battman-darkred-bg)"
+  smiggles-darkred-border: "var(--battman-darkred-border)"
+  smiggles-darkred-border-light: "var(--battman-darkred-border-light)"
+  smiggles-darkred-border-soft: "var(--battman-darkred-border-soft)"
+  smiggles-darkred-border-strong: "var(--battman-darkred-border-strong)"
+  smiggles-darkred-soft-bg: "var(--battman-darkred-soft-bg)"
+  smiggles-darkred-wash: "var(--battman-darkred-wash)"
+  smiggles-green: "var(--battman-green)"
+  smiggles-green-bg: "var(--battman-green-bg)"
+  smiggles-green-border: "var(--battman-green-border)"
+  smiggles-green-border-light: "var(--battman-green-border-light)"
+  smiggles-green-border-soft: "var(--battman-green-border-soft)"
+  smiggles-green-border-strong: "var(--battman-green-border-strong)"
+  smiggles-green-soft-bg: "var(--battman-green-soft-bg)"
+  smiggles-green-wash: "var(--battman-green-wash)"
+  smiggles-orange: "var(--battman-orange)"
+  smiggles-orange-bg: "var(--battman-orange-bg)"
+  smiggles-orange-border: "var(--battman-orange-border)"
+  smiggles-orange-border-light: "var(--battman-orange-border-light)"
+  smiggles-orange-border-soft: "var(--battman-orange-border-soft)"
+  smiggles-orange-border-strong: "var(--battman-orange-border-strong)"
+  smiggles-orange-soft-bg: "var(--battman-orange-soft-bg)"
+  smiggles-orange-wash: "var(--battman-orange-wash)"
+  smiggles-pink: "var(--battman-pink)"
+  smiggles-pink-bg: "var(--battman-pink-bg)"
+  smiggles-pink-border: "var(--battman-pink-border)"
+  smiggles-pink-border-light: "var(--battman-pink-border-light)"
+  smiggles-pink-border-soft: "var(--battman-pink-border-soft)"
+  smiggles-pink-border-strong: "var(--battman-pink-border-strong)"
+  smiggles-pink-soft-bg: "var(--battman-pink-soft-bg)"
+  smiggles-pink-wash: "var(--battman-pink-wash)"
+  smiggles-purple: "var(--battman-purple)"
+  smiggles-purple-bg: "var(--battman-purple-bg)"
+  smiggles-purple-border: "var(--battman-purple-border)"
+  smiggles-purple-border-light: "var(--battman-purple-border-light)"
+  smiggles-purple-border-soft: "var(--battman-purple-border-soft)"
+  smiggles-purple-border-strong: "var(--battman-purple-border-strong)"
+  smiggles-purple-soft-bg: "var(--battman-purple-soft-bg)"
+  smiggles-purple-wash: "var(--battman-purple-wash)"
+  smiggles-red: "var(--battman-red)"
+  smiggles-red-bg: "var(--battman-red-bg)"
+  smiggles-red-border: "var(--battman-red-border)"
+  smiggles-red-border-light: "var(--battman-red-border-light)"
+  smiggles-red-border-soft: "var(--battman-red-border-soft)"
+  smiggles-red-border-strong: "var(--battman-red-border-strong)"
+  smiggles-red-soft-bg: "var(--battman-red-soft-bg)"
+  smiggles-red-wash: "var(--battman-red-wash)"
+  smiggles-sky: "var(--battman-sky)"
+  smiggles-sky-bg: "var(--battman-sky-bg)"
+  smiggles-sky-border: "var(--battman-sky-border)"
+  smiggles-sky-border-light: "var(--battman-sky-border-light)"
+  smiggles-sky-border-soft: "var(--battman-sky-border-soft)"
+  smiggles-sky-border-strong: "var(--battman-sky-border-strong)"
+  smiggles-sky-soft-bg: "var(--battman-sky-soft-bg)"
+  smiggles-sky-wash: "var(--battman-sky-wash)"
+  smiggles-surface-card: "var(--battman-surface-card)"
+  smiggles-surface-popup: "var(--battman-surface-popup)"
+  smiggles-teal: "var(--battman-teal)"
+  smiggles-teal-bg: "var(--battman-teal-bg)"
+  smiggles-teal-border: "var(--battman-teal-border)"
+  smiggles-teal-border-light: "var(--battman-teal-border-light)"
+  smiggles-teal-border-soft: "var(--battman-teal-border-soft)"
+  smiggles-teal-border-strong: "var(--battman-teal-border-strong)"
+  smiggles-teal-soft-bg: "var(--battman-teal-soft-bg)"
+  smiggles-teal-wash: "var(--battman-teal-wash)"
+  smiggles-text-bright: "var(--battman-text-bright)"
+  smiggles-text-dim: "var(--battman-text-dim)"
+  smiggles-text-muted: "var(--battman-text-muted)"
+  smiggles-yellow: "var(--battman-yellow)"
+  smiggles-yellow-bg: "var(--battman-yellow-bg)"
+  smiggles-yellow-border: "var(--battman-yellow-border)"
+  smiggles-yellow-border-light: "var(--battman-yellow-border-light)"
+  smiggles-yellow-border-soft: "var(--battman-yellow-border-soft)"
+  smiggles-yellow-border-strong: "var(--battman-yellow-border-strong)"
+  smiggles-yellow-soft-bg: "var(--battman-yellow-soft-bg)"
+  smiggles-yellow-wash: "var(--battman-yellow-wash)"

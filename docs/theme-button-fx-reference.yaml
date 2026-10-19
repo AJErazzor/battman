@@ -1,0 +1,109 @@
+# =====================================================================
+# Battman Button-FX — reference & copy-paste example  (COMMENTED OUT)
+# =====================================================================
+# This whole file is comments, so it adds NO theme by itself (safe to keep).
+# It documents the button effects system and gives a ready example theme.
+#
+# HOW IT WORKS
+#   - The effect CSS ('harness') lives on each mode/control button on the
+#     Battery Time > Power view (button-card `extra_styles`). It is generic
+#     and reads `--fx-*` variables. It does nothing unless a THEME sets them.
+#   - A button only animates when it is ACTIVE (its mode/toggle is on) AND
+#     the current theme defines that button's fx vars. Otherwise it is plain.
+#   - Colours come from the theme palette, so each theme's effect uses its
+#     own hues automatically.
+#
+# TO ENABLE: copy the block below into a real theme (e.g. 'Battman Hunk'),
+# remove the leading '# ' from the lines you want, then: Developer Tools >
+# YAML > Reload Themes (or `frontend.reload_themes`).
+#
+# PER-BUTTON VARIABLE CATALOGUE  (replace <ns> with a namespace below)
+#   fx-<ns>-chase-display : block            # turn the rotating border ring ON
+#   fx-<ns>-chase-gradient: "<gradient>"     # ring colours (conic-gradient)
+#   fx-<ns>-chase-duration: "2.5s"           # ring rotation speed
+#   fx-<ns>-ring-width    : "2px"            # ring thickness (optional)
+#   fx-<ns>-border        : "none"           # hide the normal border so the ring is the frame
+#   fx-<ns>-glow-name     : "fx-glow-rainbow" # colour-cycling halo  (or 'fx-glow-mono')
+#   fx-<ns>-glow-color    : "var(--battman-yellow)"  # only for fx-glow-mono
+#   fx-<ns>-glow-duration : "3s"             # glow pulse speed
+#
+# NAMESPACES (button -> <ns> -> identity colour -> active when mode/toggle =):
+#   enable       Active (system enable)   green   active: 'on'
+#   curtail      Curtail (no-export)      amber   active: 'on'
+#   buy          Buy                      green   active: 'Charge'
+#   sell         Sell                     amber   active: 'Discharge'
+#   selfconsume  Self Consume             blue    active: 'Self Consume'
+#   sellsolar    Sell Solar               purple  active: 'Float'
+#   drain        Drain                    red     active: 'Drain'
+#   houseparty   House Party              yellow  active: 'Float Solar Off'
+#   hooover      HOOOOVER                 green   active: 'Charge Solar Off'
+#
+# ---------------------------------------------------------------------
+# EXAMPLE THEME: chase + rainbow glow on every button (uncomment to use)
+# ---------------------------------------------------------------------
+# "Battman FX Example":
+#   # inherits nothing — for a real look, paste these into a full Battman theme
+#   # Active (system enable)
+#   fx-enable-chase-display: "block"
+#   fx-enable-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-enable-chase-duration: "2.5s"
+#   fx-enable-border: "none"
+#   fx-enable-glow-name: "fx-glow-rainbow"
+#   fx-enable-glow-duration: "3s"
+#   # Curtail (no-export)
+#   fx-curtail-chase-display: "block"
+#   fx-curtail-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-curtail-chase-duration: "2.5s"
+#   fx-curtail-border: "none"
+#   fx-curtail-glow-name: "fx-glow-rainbow"
+#   fx-curtail-glow-duration: "3s"
+#   # Buy
+#   fx-buy-chase-display: "block"
+#   fx-buy-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-buy-chase-duration: "2.5s"
+#   fx-buy-border: "none"
+#   fx-buy-glow-name: "fx-glow-rainbow"
+#   fx-buy-glow-duration: "3s"
+#   # Sell
+#   fx-sell-chase-display: "block"
+#   fx-sell-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-sell-chase-duration: "2.5s"
+#   fx-sell-border: "none"
+#   fx-sell-glow-name: "fx-glow-rainbow"
+#   fx-sell-glow-duration: "3s"
+#   # Self Consume
+#   fx-selfconsume-chase-display: "block"
+#   fx-selfconsume-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-selfconsume-chase-duration: "2.5s"
+#   fx-selfconsume-border: "none"
+#   fx-selfconsume-glow-name: "fx-glow-rainbow"
+#   fx-selfconsume-glow-duration: "3s"
+#   # Sell Solar
+#   fx-sellsolar-chase-display: "block"
+#   fx-sellsolar-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-sellsolar-chase-duration: "2.5s"
+#   fx-sellsolar-border: "none"
+#   fx-sellsolar-glow-name: "fx-glow-rainbow"
+#   fx-sellsolar-glow-duration: "3s"
+#   # Drain
+#   fx-drain-chase-display: "block"
+#   fx-drain-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-drain-chase-duration: "2.5s"
+#   fx-drain-border: "none"
+#   fx-drain-glow-name: "fx-glow-rainbow"
+#   fx-drain-glow-duration: "3s"
+#   # House Party
+#   fx-houseparty-chase-display: "block"
+#   fx-houseparty-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-houseparty-chase-duration: "2.5s"
+#   fx-houseparty-border: "none"
+#   fx-houseparty-glow-name: "fx-glow-rainbow"
+#   fx-houseparty-glow-duration: "3s"
+#   # HOOOOVER
+#   fx-hooover-chase-display: "block"
+#   fx-hooover-chase-gradient: "conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))"
+#   fx-hooover-chase-duration: "2.5s"
+#   fx-hooover-border: "none"
+#   fx-hooover-glow-name: "fx-glow-rainbow"
+#   fx-hooover-glow-duration: "3s"
+# =====================================================================
