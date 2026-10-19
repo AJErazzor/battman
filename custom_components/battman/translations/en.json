@@ -72,7 +72,18 @@
           "grid_power": "Grid power",
           "debug_log_file": "Filtered log file URL",
           "parameters_update_event": "Settings update event name",
-          "totals_update_event": "Totals update event name"
+          "totals_update_event": "Totals update event name",
+          "soc_curves": "SOC curves store (sensor)",
+          "price_curves": "Price curves store (sensor)",
+          "soc_curves_update_event": "SOC curves update event name",
+          "price_curves_update_event": "Price curves update event name",
+          "control_script": "Battery control script",
+          "load_30m_avg": "Load, 30-min average",
+          "high_consumption": "High consumption threshold",
+          "sigen_pv_power": "Sigen solar power (Sigen inverter only)",
+          "solcast_today": "Solcast forecast today",
+          "buy_forecast": "Buy price forecast",
+          "feed_in_forecast": "Feed-in price forecast"
         }
       }
     },

@@ -30,7 +30,8 @@ async def test_log_and_theme_views(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
     assert data["errors"] == []
-    log, theme = data["views"][1], data["views"][2]
+    by_path = {v["path"]: v for v in data["views"]}
+    log, theme = by_path["log"], by_path["theme"]
     assert log["cards"][0]["url"] == "/battman/log.html"
     assert theme["cards"][0]["url"].startswith("/battman/theme-studio.html")
     text = json.dumps(data["views"][1:])
@@ -137,3 +138,26 @@ async def test_restart_fix_flow(hass: HomeAssistant, hass_client) -> None:
     assert (await r.json())["type"] == "create_entry"
     await hass.async_block_till_done()
     assert len(calls) == 1                                             # HA restart requested
+
+
+async def test_correct_totals_subview(hass: HomeAssistant, hass_client) -> None:
+    await _setup(hass)
+    data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
+    fin, sub = data["views"][0], data["views"][1]
+    assert sub["path"] == "correct-totals" and sub["subview"] is True       # hidden: no tab
+    assert sub["cards"][0]["url"] == "/battman/correct-energy.html"
+    billing = fin["sections"][0]["cards"][2]
+    assert "/correct-totals" in billing["custom_fields"]["row9"] and "Correct Totals" in billing["custom_fields"]["row9"]
+    assert "row9" in billing["styles"]["grid"][0]["grid-template-areas"]
+
+
+async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
+    await _setup(hass)
+    client = await hass_client()
+    by_path = {v["path"]: v for v in (await (await client.get("/api/battman/dashboard")).json())["views"]}
+    assert by_path["curvy"]["cards"][0]["url"] == "/battman/curvy.html" and by_path["curvy"]["theme"] == "Battman Nord"
+    assert by_path["pricy"]["cards"][0]["url"] == "/battman/pricy.html" and by_path["pricy"]["title"] == "Pricy"
+    emap = (await (await client.get("/api/battman/entities")).json())["entities"]
+    assert emap["sigen_pv_power"] == "sensor.sigen_plant_sigen_pv_power"      # Sigen-only, separate from pv_power
+    assert emap["pv_power"] == "sensor.sigen_plant_pv_power"
+    assert emap["soc_curves_update_event"] == "solar_system_control_soc_curves_update"

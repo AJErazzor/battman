@@ -40,10 +40,32 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     # Smiggles events (not entities): cards fire these to change settings / totals
     "parameters_update_event": "solarsystemcontrolparametersupdate",
     "totals_update_event": "solarsystemcontroltotalattribute",
+    # Curvy (SOC curves) and Pricy (price curves): Smiggles curve stores, their
+    # events, and the Smiggles control script the editors can run
+    "soc_curves": "sensor.solar_system_control_soc_curves",
+    "price_curves": "sensor.solar_system_control_price_curves",
+    "soc_curves_update_event": "solar_system_control_soc_curves_update",
+    "price_curves_update_event": "solar_system_control_price_curves_update",
+    "control_script": "script.solarsystemcontrol",
+    "load_30m_avg": "sensor.solarsystemcontrolload30mavg",
+    "high_consumption": "input_number.solarsystemcontrolhighconsumption",
+    # Other integrations used by Curvy / Pricy
+    # Sigen inverter solar only (pv_power is Sigen + third-party)
+    "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
+    "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
+    "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
+    "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
 }
 
 # Entries that aren't entities (the Configure screen shows a text box for these).
-MAP_TEXT_ENTRIES = {"pv_string", "debug_log_file", "parameters_update_event", "totals_update_event"}
+MAP_TEXT_ENTRIES = {
+    "pv_string",
+    "debug_log_file",
+    "parameters_update_event",
+    "totals_update_event",
+    "soc_curves_update_event",
+    "price_curves_update_event",
+}
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.
 THEMES_URL = "/api/battman/themes"
