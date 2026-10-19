@@ -7,6 +7,7 @@
 // with entity names filled from Battman's entity map), every time it opens, so new
 // and changed views arrive with Battman updates. "Take control" in HA turns it into
 // a normal dashboard you own, and Battman never touches it again.
+// Add `theme: <name>` under `strategy:` to put every Battman view on one theme.
 //
 // No fallbacks: if Battman can't build the views, the dashboard says exactly why.
 
@@ -42,6 +43,9 @@ class BattmanDashboardStrategy {
     if (data.errors && data.errors.length) {
       return { title: "Battman", views: [errorView(data.errors)] };
     }
+    // Optional dashboard-wide theme (set by the theme studio's Make Active, or by
+    // hand):  strategy: {type: custom:battman, theme: Battman Neon Drift}
+    if (config && config.theme) data.views.forEach((v) => { v.theme = config.theme; });
     return { title: "Battman", views: data.views };
   }
 }

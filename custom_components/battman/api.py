@@ -12,15 +12,20 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.http import KEY_HASS
 
-from .const import DASHBOARD_URL, ENTITY_MAP_DEFAULTS, ENTITY_MAP_URL
+from . import themes
+from .const import DASHBOARD_URL, DOMAIN, ENTITY_MAP_DEFAULTS, ENTITY_MAP_URL, THEMES_URL
 
 VIEWS_DIR = Path(__file__).parent / "views"
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
 
 
 def entity_map(hass: HomeAssistant) -> dict[str, str]:
-    """The current entity map (defaults for now; Configure screen overrides later)."""
-    return dict(ENTITY_MAP_DEFAULTS)
+    """The entity map: Battman's defaults, with your Configure-screen choices on top."""
+    emap = dict(ENTITY_MAP_DEFAULTS)
+    entries = hass.config_entries.async_entries(DOMAIN)
+    if entries:
+        emap.update({k: v for k, v in entries[0].options.items() if k in emap and v})
+    return emap
 
 
 def _load_views() -> list[tuple[str, Any]]:
@@ -82,3 +87,33 @@ class BattmanDashboardView(HomeAssistantView):
     async def get(self, request):
         hass: HomeAssistant = request.app[KEY_HASS]
         return self.json(await async_build_dashboard(hass))
+
+
+class BattmanThemeSaveView(HomeAssistantView):
+    """POST /api/battman/themes {name, yaml, overwrite} -> saves one of your themes.
+
+    Admin only. Writes <config>/themes/battman/custom/<name>.yaml and reloads themes.
+    """
+
+    url = THEMES_URL
+    name = "api:battman:themes"
+    requires_auth = True
+
+    async def post(self, request):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        user = request.get("hass_user")
+        if user is None or not user.is_admin:
+            return self.json({"message": "Only an administrator can save themes."}, status_code=403)
+        try:
+            body = await request.json()
+        except ValueError:
+            return self.json({"message": "Request isn't valid JSON."}, status_code=400)
+        dst = themes.dst_dir(hass)
+        try:
+            path = await hass.async_add_executor_job(
+                themes.save_custom, dst, body.get("name", ""), body.get("yaml", ""), bool(body.get("overwrite"))
+            )
+        except themes.ThemeSaveError as err:
+            return self.json({"message": str(err), "exists": err.exists}, status_code=err.status)
+        await themes.async_reload(hass)
+        return self.json({"message": "saved", "file": str(path.relative_to(hass.config.config_dir))})

@@ -1,0 +1,12 @@
+# Battman managed dashboard view: Theme studio
+# Edit like any dashboard YAML. Files in this folder become views, in filename order.
+type: panel
+path: theme
+title: Theme
+icon: mdi:palette
+show_icon_and_title: true
+theme: Battman Coffee
+cards:
+  - type: iframe
+    url: /battman/theme-studio.html?theme=Battman%20Neon%20Drift
+    aspect_ratio: "100:100"

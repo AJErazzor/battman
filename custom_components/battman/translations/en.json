@@ -31,6 +31,53 @@
     "missing_dependencies": {
       "title": "Battman needs other dashboard cards",
       "description": "Battman's dashboard uses cards that aren't installed. Install them with HACS (Frontend), then restart Home Assistant and refresh your browser:\n\n{missing}\n\nThe full list is in DEPENDENCIES.md in the Battman repository."
+    },
+    "restart_required": {
+      "title": "Restart to finish updating Battman",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restart Home Assistant",
+            "description": "Battman {new} is installed, but Home Assistant is still running Battman {running}. Restart now to finish the update?"
+          }
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Battman entity map",
+        "description": "Which entity (or event, file, pattern) each Battman name points at. Battman pages and views use these. Leave an entry as it is to keep Battman's default; changes apply the next time a Battman page or dashboard loads.",
+        "data": {
+          "buy_total": "Buy total ($ odometer)",
+          "sell_total": "Sell total ($ odometer)",
+          "network_fee_total": "Network fee total ($ odometer)",
+          "parameters": "Settings store (parameters sensor)",
+          "battery_soc": "Battery state of charge (%)",
+          "buy_price": "Buy price (current)",
+          "feed_in_price": "Feed-in price (current)",
+          "grid_export_today": "Grid export today (kWh, resets daily)",
+          "grid_import_today": "Grid import today (kWh, resets daily)",
+          "pv_power": "Solar power (total)",
+          "home_power": "Home consumption power",
+          "battery_power": "Battery power",
+          "third_party_pv": "Third-party solar power (optional)",
+          "pv_string": "Solar string pattern ('{n}' = string number)",
+          "mode": "Battery mode (select)",
+          "debug_log_start": "Log range start (date/time helper)",
+          "debug_log_end": "Log range end (date/time helper)",
+          "load_debug_log_script": "Load-log script",
+          "load_30m": "Load, 30-min",
+          "grid_power": "Grid power",
+          "debug_log_file": "Filtered log file URL",
+          "parameters_update_event": "Settings update event name",
+          "totals_update_event": "Totals update event name"
+        }
+      }
+    },
+    "error": {
+      "pv_pattern": "The pattern must contain '{n}', e.g. sensor.sigen_inverter_pv'{n}'_power"
     }
   }
 }

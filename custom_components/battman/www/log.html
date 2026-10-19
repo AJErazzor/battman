@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<!-- Battman Log (readout shows mode block duration in minutes) -->
+<!-- Served by the Battman integration at /battman/log.html. Entities come from Battman's entity map; colours from a Battman theme (no fallbacks). -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Battman Log</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ha-bg:     var(--primary-background-color, #111318);
+    --ha-card:   var(--card-background-color, #1c1e24);
+    --ha-text:   var(--primary-text-color, #c9d1d9);
+    --ha-muted:  var(--secondary-text-color, #6e7681);
+    --ha-border: var(--divider-color, #2a2d35);
+    --ha-accent: var(--accent-color, #4da6ff);
+    --chip:      var(--battman-blue);
+    --chip-brd:  var(--battman-blue-border);
+    --chip-bg:   var(--battman-surface-card);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--ha-bg); }
+  input, textarea, select, button { font-family: inherit; }
+  body {
+    color: var(--ha-text);
+    font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif);
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 20px;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  .hdr h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  @media (max-width: 600px) { .hdr h1 { font-size: 18px; } }
+
+  .card {
+    background: var(--ha-card);
+    border: 1px solid var(--ha-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  }
+  .card > .title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ha-muted);
+    margin-bottom: 12px;
+  }
+
+  /* --- quick-range chips (styled after the Power override panel) --- */
+  .chips { display: flex; flex-wrap: wrap; }
+  .chip {
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 6px;
+    background: var(--chip-bg);
+    border: 1px solid var(--battman-border-neutral);
+    color: var(--chip);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+    margin: 0 6px 6px 0;
+    transition: background .12s ease, border-color .12s ease, transform .1s ease;
+    user-select: none;
+  }
+  .chip:active { transform: scale(0.94); }
+  /* selected = ghost wash + colour border (not a flat full fill) */
+  .chip.active { background: color-mix(in srgb, var(--chip) 18%, transparent); border-color: var(--chip); color: var(--chip); }
+  .pager { display: flex; align-items: center; gap: 12px; margin: 8px 0 2px; }
+  .chip.pgr { min-width: 40px; justify-content: center; font-size: 18px; font-weight: 800; padding: 0 10px; }
+  .chip.disabled { opacity: 0.35; pointer-events: none; }
+  .pgrspan { font-size: 12px; color: var(--ha-muted); font-variant-numeric: tabular-nums; }
+
+  /* --- always-visible range editor (From/To value + Set button) --- */
+  .rangeEditor {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--ha-border);
+    border-radius: 10px;
+    background: var(--ha-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .editWrap { position: relative; display: inline-flex; }
+  .overlayPicker {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; color-scheme: dark;
+  }
+  .crow { display: flex; align-items: center; gap: 10px; }
+  .crow .clabel { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ha-muted); width: 42px; }
+  .crow .cval { flex: 1; font-size: 14px; font-variant-numeric: tabular-nums; }
+  /* ghost-wash buttons, matching the Curvy action buttons */
+  button.btn {
+    --c: var(--battman-blue);
+    --c-fill: var(--battman-blue-soft-bg);
+    background: var(--c-fill);
+    color: var(--c);
+    border: 1px solid var(--battman-border-neutral);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+  }
+  button.btn.small { padding: 6px 12px; font-size: 12px; }
+  @media (hover: hover) { button.btn:hover { border-color: var(--c); } }
+  button.btn:active { background: color-mix(in srgb, var(--c) 32%, transparent); border-color: var(--c); transform: scale(0.96); }
+  .hiddenPicker { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px; }
+
+  /* --- filters --- */
+  #filters { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+  #filters label {
+    color: var(--ha-text); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px; user-select: none;
+  }
+  #filters label.heading { color: var(--ha-muted); font-size: 12px; cursor: default; margin-right: 2px; }
+  #filters input[type="checkbox"] { accent-color: var(--mode-accent, var(--ha-accent)); width: 15px; height: 15px; cursor: pointer; }
+  .divider { width: 1px; height: 20px; background: var(--ha-border); margin: 0 4px; }
+
+  /* --- log --- */
+  .logHead { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; margin-bottom: 0; }
+  .logHead .chev { transition: transform .15s ease; color: var(--ha-muted); font-size: 22px; line-height: 1; }
+  .logBody { margin-top: 12px; }
+  #logCard.collapsed .logBody { display: none; }
+  #logCard.collapsed .chev { transform: rotate(-90deg); }
+  #log { display: flex; flex-direction: column; gap: 8px; }
+  .entry { background: var(--ha-bg); border-radius: 8px; padding: 10px 14px; border-left: 3px solid var(--ha-accent); }
+  .section { padding: 2px 0; color: var(--ha-text); }
+  .empty { color: var(--ha-muted); text-align: center; padding: 40px 20px; font-size: 16px; }
+  .count { color: var(--ha-muted); font-size: 13px; text-align: right; padding-bottom: 6px; border-bottom: 1px solid var(--ha-border); margin-bottom: 4px; }
+
+  /* --- history --- */
+  .subttl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ha-muted); margin-bottom: 6px; }
+  .histPanel { margin-top: 16px; }
+  .chartWrap { position: relative; height: 170px; touch-action: pan-y; }
+  .chart-empty { color: var(--ha-muted); text-align: center; padding: 24px; font-size: 14px; }
+  /* mode state-timeline strip */
+  .mbar { display: flex; height: 26px; border: 1px solid var(--ha-border); border-radius: 6px; overflow: hidden; background: var(--ha-bg); touch-action: none; position: relative; }
+  .mseg { height: 100%; }
+  /* tap/scrub marker — a red line showing the selected point on the timeline */
+  .mmark { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px; background: #ff3b30;
+           box-shadow: 0 0 0 1px rgba(255,255,255,0.55); opacity: 0; pointer-events: none; transition: opacity .1s ease; }
+  .mreadout { margin-top: 8px; min-height: 18px; font-size: 12px; color: var(--ha-text); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .mreadout b { color: var(--ha-text); font-weight: 700; }
+  .mreadout .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+  .mreadout .hint { color: var(--ha-muted); }
+  .mreadout .ro-dur { color: var(--ha-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mreadout .ro-extra { color: var(--ha-muted); font-variant-numeric: tabular-nums; }
+  .mreadout button { font: inherit; font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--ha-border); background: transparent; color: var(--ha-text); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .mreadout button:active { background: color-mix(in srgb, var(--ha-accent) 25%, transparent); }
+  .mreadout .periodClear { color: var(--ha-muted); }
+  .mticks { position: relative; height: 13px; margin-top: 4px; font-size: 10px; color: var(--ha-muted); font-variant-numeric: tabular-nums; }
+  .mticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .mlegend { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 8px; font-size: 11px; color: var(--ha-muted); }
+  .mlegend .li { display: flex; align-items: center; gap: 5px; }
+  .mlegend .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+  /* --- drag-to-reorder blocks --- */
+  .reorder { display: flex; flex-direction: column; gap: 14px; }
+  /* synced scrubber guide — a thin 1px line inside each chart's plot area only */
+  .cline { position: absolute; width: 1px; margin-left: -0.5px; background: #ff3b30;
+    box-shadow: 0 0 0 0.5px rgba(0,0,0,0.25); opacity: 0; pointer-events: none;
+    z-index: 3; transition: opacity .1s ease; }
+  .cardHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .logLeft { display: flex; align-items: center; gap: 8px; }
+  /* the usual six-dot grip, drawn in CSS (2 cols x 3 rows) — no image asset */
+  .grip {
+    width: 12px; height: 18px; flex: none; align-self: center;
+    color: var(--ha-muted); opacity: 0.7; cursor: grab; touch-action: none;
+    background-image: radial-gradient(circle at center, currentColor 1.3px, transparent 1.7px);
+    background-size: 6px 6px; background-position: 0 0; background-repeat: repeat;
+  }
+  .grip:hover { opacity: 1; }
+  .grip:active { cursor: grabbing; }
+  .reCard.dragging { box-shadow: 0 10px 30px rgba(0,0,0,0.45); opacity: 0.97; }
+  .re-placeholder { border: 2px dashed var(--ha-border); border-radius: 12px;
+    background: color-mix(in srgb, var(--ha-accent) 7%, transparent); }
+
+</style>
+</head>
+<body>
+<label class="hiddenPicker" aria-hidden="true"><input type="checkbox" switch id="hapticSwitch"></label>
+<div class="wrap">
+
+  <div class="hdr"><h1 style="display:flex;align-items:center;gap:10px;margin:0;"><img src="/battman/images/battman-toilet-mirror.webp" alt="Battman" style="height:56px;width:auto;flex:none;"><img src="/battman/images/logs-line.webp" alt="Logs" style="height:30px;width:auto;max-width:100%;min-width:0;flex:0 1 auto;"></h1></div>
+
+  <!-- Reorderable stack: Filter Log + Log + Mode + chart panels (drag the ⠿ grip; order saved per-device) -->
+  <div class="reorder" id="reorder">
+
+    <!-- Filter Log controls -->
+    <div class="card reCard" id="controlsCard" data-block="controls">
+      <div class="title cardHead"><span>Filter Log</span><span class="grip" data-grip></span></div>
+    <div class="chips" id="rangeChips"></div>
+    <div class="pager">
+      <button class="chip pgr" id="pagePrev" aria-label="Previous window">‹</button>
+      <span class="pgrspan" id="pgrSpan"></span>
+      <button class="chip pgr" id="pageNext" aria-label="Next window">›</button>
+    </div>
+    <div class="rangeEditor">
+      <div class="crow">
+        <span class="clabel">From</span>
+        <span class="cval" id="fromLabel">—</span>
+        <span class="editWrap"><button class="btn small">Set</button><input type="datetime-local" id="fromDt" step="300" class="overlayPicker"></span>
+      </div>
+      <div class="crow">
+        <span class="clabel">To</span>
+        <span class="cval" id="toLabel">—</span>
+        <span class="editWrap"><button class="btn small">Set</button><input type="datetime-local" id="toDt" step="300" class="overlayPicker"></span>
+      </div>
+    </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card reCard collapsed" id="logCard" data-block="log">
+      <div class="title logHead" id="logToggle">
+        <span class="logLeft"><span class="chev">▾</span><span>Log</span></span>
+        <span class="grip" data-grip></span>
+      </div>
+      <div class="logBody" id="logBody">
+        <div id="filters"></div>
+        <div id="log"><div class="empty">Loading&hellip;</div></div>
+      </div>
+    </div>
+
+    <!-- Mode -->
+    <div class="card reCard" id="modeCard" data-block="mode">
+      <div class="title cardHead"><span>Mode</span><span class="grip" data-grip></span></div>
+      <div id="modeStrip"><div class="chart-empty">Loading&hellip;</div></div>
+    </div>
+
+    <!-- chart panel cards injected here by JS -->
+  </div>
+
+</div>
+
+<script>
+  // ------------------------------------------------------------------ state
+  let last = '';
+  let allLines = [];
+  let changesOnly = false;
+
+  const HISTORY_HOURS = 5;
+  // Entity IDs come from Battman's entity map (GET /api/battman/entities); this page
+  // only knows the Battman names. Panels are built once the map has loaded.
+  const NEEDS = ['mode', 'debug_log_start', 'debug_log_end', 'load_debug_log_script', 'debug_log_file',
+                 'buy_price', 'feed_in_price', 'pv_power', 'home_power', 'battery_power', 'load_30m',
+                 'grid_power', 'battery_soc', 'pv_string', 'third_party_pv'];
+  // must exist in HA (pv_string is a pattern, third_party_pv is optional hardware, the log file isn't an entity)
+  const NEED_ENTITIES = NEEDS.filter(k => !['pv_string', 'third_party_pv', 'debug_log_file'].includes(k));
+  let M = {};                 // the entity map
+  let MODE_ENTITY = null;
+  let PANELS = [];
+  let HISTORY_ENTITIES = [];
+
+  function buildPanels() {
+    MODE_ENTITY = M.mode;
+    // Line-chart panels (mirrors the History view's traces). Each panel becomes its own
+    // synced chart; Buy+Sell share one (same units). unit '' = read the sensor's own unit.
+    PANELS = [
+      { id: 'price', title: 'Price (c/kWh)', unit: 'c', series: [
+          { id: M.buy_price,     label: 'Buy',  token: '--battman-red',   mul: 100 },
+          { id: M.feed_in_price, label: 'Sell', token: '--battman-green', mul: 100 },
+        ] },
+      { id: 'power', title: 'Power (kW)', unit: 'kW', series: [
+          { id: M.pv_power,      label: 'Solar',   token: '--battman-amber' },
+          { id: M.home_power,    label: 'Home',    token: '--battman-blue' },
+          { id: M.battery_power, label: 'Battery', token: '--battman-purple' },
+          { id: M.load_30m,      label: 'Load',    token: '--battman-red' },
+        ] },
+      { id: 'grid', title: 'Grid (kWh)', unit: '', series: [ { id: M.grid_power, label: 'Grid', token: '--battman-teal' } ] },
+      { id: 'soc', title: 'Battery SOC (%)', unit: '%', series: [ { id: M.battery_soc, label: 'SOC', token: '--battman-green' } ] },
+    ];
+
+    // Solar per-string panel: auto-detects however many strings (from the map's pv_string
+    // pattern, {n} = 1..12) are PRESENT and AVAILABLE, plus the plant total and an optional
+    // third-party feed.
+    const h = haObj();
+    const palette = ['--battman-blue', '--battman-green', '--battman-purple', '--battman-teal',
+                     '--battman-red', '--battman-yellow', '--battman-orange'];
+    const avail = id => { const st = h && h.states && h.states[id]; return !!(st && st.state !== 'unavailable' && st.state !== 'unknown'); };
+    // use a custom friendly name (e.g. "North Solar") when the entity's been renamed;
+    // fall back to the generic label if it's still the default "…PVn Power" name
+    const nameFor = (id, generic) => {
+      const st = h && h.states && h.states[id];
+      const fn = ((st && st.attributes && st.attributes.friendly_name) || '').replace(/\s*power$/i, '').trim();
+      return (fn && !/pv\s*\d+\b/i.test(fn)) ? fn : generic;
+    };
+    const series = [{ id: M.pv_power, label: 'Total', token: '--battman-amber' }];
+    let ci = 0;
+    for (let n = 1; n <= 12; n++) {
+      const id = M.pv_string.replace('{n}', n);
+      if (avail(id)) { series.push({ id: id, label: nameFor(id, 'String ' + n), token: palette[ci % palette.length] }); ci++; }
+    }
+    if (M.third_party_pv && avail(M.third_party_pv)) {
+      series.push({ id: M.third_party_pv, label: nameFor(M.third_party_pv, '3rd Party'), token: palette[ci % palette.length] }); ci++;
+    }
+    PANELS.push({ id: 'solar', title: 'Solar per String (kW)', unit: 'kW', series: series }); // at the bottom
+    HISTORY_ENTITIES = [MODE_ENTITY].concat(PANELS.reduce((acc, pn) => acc.concat(pn.series.map(x => x.id)), []));
+  }
+
+  const modes = ['Self Consume', 'Charge', 'Charge Solar Off', 'Float', 'Float Solar Off', 'Discharge', 'Solar Soak', 'Drain'];
+  let activeModes = new Set(modes);
+  let periodFilter = null;     // { start, end, mode } — limit the log to a tapped mode period
+  let lastOut = null;          // last fetched raw history (for price/SOC readout lookups)
+
+  // Matches the Power-view Mode card button colours (same live theme tokens, so this
+  // tracks the card automatically). Mode→token from each mode button's `state`:
+  // Buy/Charge=green, Self Consume=blue, Sell Solar/Float=purple,
+  // House Party/Float Solar Off=yellow, Sell/Discharge=amber, Drain=red.
+  // Two engine modes have no button there, so they take the free tokens to stay distinct:
+  // Charge Solar Off (HOOOOVER, green on the card) → orange, Solar Soak → teal.
+  const modeToken = {
+    'Self Consume':    '--battman-blue',
+    'Charge':          '--battman-green',
+    'Charge Solar Off':'--battman-orange',
+    'Float':           '--battman-purple',
+    'Float Solar Off': '--battman-yellow',
+    'Discharge':       '--battman-amber',
+    'Solar Soak':      '--battman-teal',
+    'Drain':           '--battman-red',
+  };
+  let modeColor = {};
+  let accentHex = '#4da6ff';
+  // every Battman theme colour this page uses; all must come from the view's theme
+  const THEME_VARS = ['--battman-blue', '--battman-green', '--battman-red', '--battman-orange',
+    '--battman-purple', '--battman-amber', '--battman-teal', '--battman-yellow', '--battman-text-muted',
+    '--battman-blue-border', '--battman-blue-soft-bg', '--battman-surface-card', '--battman-surface-popup',
+    '--battman-border-neutral'];
+  let FATAL = null;   // set when the page can't run; shown instead of everything else
+
+  // -------------------------------------------------------------- HA access
+  function haObj() {
+    try { return parent.document.querySelector('home-assistant').hass; } catch(e) { return null; }
+  }
+  function getHaToken() {
+    const h = haObj();
+    return (h && h.auth && h.auth.data && h.auth.data.access_token) || null;
+  }
+  async function haCall(domain, service, data) {
+    const token = getHaToken();
+    if (!token) return;
+    await fetch('/api/services/' + domain + '/' + service, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data || {})
+    });
+  }
+
+  function pad(n) { return n.toString().padStart(2, '0'); }
+  function fmtDt(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' +
+           pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  function toInputVal(d) {
+    // Round to nearest 5 min (matches picker step="300") and drop seconds.
+    const r = new Date(d.getTime());
+    r.setSeconds(0, 0);
+    r.setMinutes(Math.round(r.getMinutes() / 5) * 5);
+    return r.getFullYear() + '-' + pad(r.getMonth()+1) + '-' + pad(r.getDate()) + 'T' +
+           pad(r.getHours()) + ':' + pad(r.getMinutes());
+  }
+  function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  // ----------------------------------------------------------------- theme
+  function syncTheme() {
+    let el;
+    try { el = window.frameElement || parent.document.documentElement; } catch(e) { return; }
+    const ps = parent.getComputedStyle(el);
+    const base = {
+      '--ha-bg': '--primary-background-color',
+      '--ha-card': '--card-background-color',
+      '--ha-text': '--primary-text-color',
+      '--ha-muted': '--secondary-text-color',
+      '--ha-border': '--divider-color',
+      '--ha-accent': '--primary-color',
+      '--primary-font-family': '--primary-font-family',
+    };
+    for (const [local, themeVar] of Object.entries(base)) {
+      const val = ps.getPropertyValue(themeVar).trim();
+      if (val) document.documentElement.style.setProperty(local, val);
+    }
+    // Canvas text can't read CSS var() — set Chart.js's font from the live theme font.
+    if (window.Chart) { const ff = getComputedStyle(document.documentElement).getPropertyValue('--primary-font-family').trim(); if (ff) Chart.defaults.font.family = ff; }
+    const surf = ps.getPropertyValue('--battman-surface-card').trim();
+    if (surf) document.documentElement.style.setProperty('--ha-card', surf);
+    const pop = ps.getPropertyValue('--battman-surface-popup').trim();
+    if (pop) document.documentElement.style.setProperty('--ha-bg', pop);
+    const acc = getComputedStyle(document.documentElement).getPropertyValue('--ha-accent').trim();
+    if (acc) accentHex = acc;
+    // copy the Battman palette into this iframe so CSS and gc() can resolve colours
+    THEME_VARS.forEach(t => {
+      const v = ps.getPropertyValue(t).trim();
+      if (v) document.documentElement.style.setProperty(t, v);
+    });
+    modeColor = {};
+    for (const [mode, token] of Object.entries(modeToken)) {
+      const val = ps.getPropertyValue(token).trim();
+      if (val) modeColor[mode] = val;
+    }
+  }
+
+  // --------------------------------------------------------------- filters
+  const emojiList = ['🕐','🔄','💰','🔋','📊','☀️','⚡','📈','📉','ℹ️'];
+  const emojiRegex = new RegExp('(' + emojiList.map(e => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
+
+  const filtersEl = document.getElementById('filters');
+  const modesHeading = document.createElement('label');
+  modesHeading.className = 'heading';
+  modesHeading.textContent = 'Modes:';
+  filtersEl.appendChild(modesHeading);
+
+  const modeCheckboxes = {};
+  modes.forEach(mode => {
+    const lbl = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.onchange = () => {
+      if (cb.checked) activeModes.add(mode); else activeModes.delete(mode);
+      renderLog();
+    };
+    modeCheckboxes[mode] = cb;
+    lbl.appendChild(cb);
+    lbl.appendChild(document.createTextNode(mode));
+    filtersEl.appendChild(lbl);
+  });
+
+  function applyModeColors() {
+    for (const [mode, cb] of Object.entries(modeCheckboxes)) {
+      if (modeColor[mode]) cb.style.setProperty('--mode-accent', modeColor[mode]);
+    }
+  }
+
+  const dv = document.createElement('div');
+  dv.className = 'divider';
+  filtersEl.appendChild(dv);
+
+  const changesLbl = document.createElement('label');
+  const changesCb = document.createElement('input');
+  changesCb.type = 'checkbox';
+  changesCb.checked = false;
+  changesCb.onchange = () => { changesOnly = changesCb.checked; renderLog(); };
+  changesLbl.appendChild(changesCb);
+  changesLbl.appendChild(document.createTextNode('Changes Only'));
+  filtersEl.appendChild(changesLbl);
+
+  // ---------------------------------------------------------- log parsing
+  function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fixDollars(t) { return t.replace(/hBc/g, '$-').replace(/bash\./g, '$0.'); }
+  // strip a trailing "(...)" variant so e.g. "Charge (Anytime)" matches the "Charge" checkbox
+  function baseMode(m) { return m.replace(/\s*\([^)]*\)\s*$/, '').trim(); }
+  function getMode(line) {
+    const match = line.match(/→\s*([^💰🔋📊☀⚡📈📉ℹ🕐]+)/);
+    return match ? baseMode(match[1].trim()) : '';
+  }
+  function isChange(line) {
+    const fromMatch = line.match(/Mode:\s*(.+?)\s*→/);
+    const from = fromMatch ? baseMode(fromMatch[1].trim()) : '';
+    const to = getMode(line);
+    return from !== '' && to !== '' && from !== to;
+  }
+  function format(line) {
+    const pipeIdx = line.indexOf('|');
+    if (pipeIdx < 0) return '';
+    let msg = fixDollars(line.substring(pipeIdx + 1).trim());
+    let sections = msg.split(emojiRegex);
+    let lines = [];
+    for (let i = 0; i < sections.length; i++) {
+      const s = sections[i].trim();
+      if (!s) continue;
+      if (emojiList.includes(s)) {
+        let next = (sections[i+1] || '').trim();
+        lines.push(escapeHtml(s + ' ' + next));
+        i++;
+      } else {
+        lines.push(escapeHtml(s));
+      }
+    }
+    const mode = getMode(line);
+    const border = modeColor[mode] ? ' style="border-left-color:' + modeColor[mode] + '"' : '';
+    return '<div class="entry"' + border + '>' + lines.map(l => '<div class="section">' + l + '</div>').join('') + '</div>';
+  }
+
+  function setLogCount(txt) {
+    const lc = document.getElementById('logCount');
+    if (lc) lc.textContent = txt;
+  }
+
+  function renderLog() {
+    const el = document.getElementById('log');
+    if (allLines.length === 0) {
+      setLogCount('');
+      el.innerHTML = '<div class="empty">Pick a range above to load the log</div>';
+      return;
+    }
+    const filtered = allLines.filter(line => {
+      if (line.indexOf('(Est)') >= 0) return false;   // drop the preliminary estimate line (one entry per 5-min)
+      const mode = getMode(line);
+      if (!activeModes.has(mode)) return false;
+      if (changesOnly && !isChange(line)) return false;
+      if (periodFilter) {
+        const p = line.indexOf('|');
+        const tt = p > 0 ? Date.parse(line.slice(0, p)) : NaN;
+        if (!isNaN(tt) && (tt < periodFilter.start || tt >= periodFilter.end)) return false;
+      }
+      return true;
+    });
+    setLogCount(filtered.length + ' / ' + allLines.length);
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="empty">No entries match filters' + (periodFilter ? ' (block ' + escapeHtml(periodFilter.label || '') + ')' : '') + '</div>';
+      return;
+    }
+    const periodNote = periodFilter ? ' · block ' + escapeHtml(periodFilter.label || '') + ' (' + escapeHtml(periodFilter.mode) + ')' : '';
+    const countHtml = '<div class="count">' + filtered.length + ' of ' + allLines.length + ' entries' + periodNote + '</div>';
+    el.innerHTML = countHtml + filtered.slice().reverse().map(format).join('');
+  }
+
+  // collapse / expand the log to reach the chart quickly
+  (function () {
+    const logCard = document.getElementById('logCard');
+    document.getElementById('logToggle').onclick = () => { haptic(); logCard.classList.toggle('collapsed'); };
+  })();
+
+  function load() {
+    fetch(M.debug_log_file + '?t=' + Date.now())
+      .then(r => r.text())
+      .then(t => {
+        if (t !== last) {
+          last = t;
+          allLines = t.trim() ? t.trim().split('\n').filter(l => l.trim()) : [];
+          renderLog();
+        }
+      })
+      .catch(() => { document.getElementById('log').innerHTML = '<div class="empty">No log file found</div>'; });
+  }
+
+  // ------------------------------------------------------- range controls
+  async function setRangeAndLoad(start, end) {
+    await haCall('input_datetime', 'set_datetime', {
+      entity_id: M.debug_log_start, datetime: fmtDt(start)
+    });
+    await haCall('input_datetime', 'set_datetime', {
+      entity_id: M.debug_log_end, datetime: fmtDt(end)
+    });
+    const sc = M.load_debug_log_script.split('.');
+    await haCall(sc[0], sc.slice(1).join('.'), {});
+    setTimeout(load, 1500);
+    setTimeout(load, 3500);
+  }
+
+  // haptic feedback: Vibration API (Android/PWA) + the iOS switch-toggle trick
+  function haptic() {
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch(e) {}
+    try { const s = document.getElementById('hapticSwitch'); if (s) s.click(); } catch(e) {}
+  }
+
+  // quick-range chips + always-visible From/To editor
+  const rangePresets = [['5m', 5], ['10m', 10], ['15m', 15], ['30m', 30], ['1h', 60], ['2h', 120], ['4h', 240], ['8h', 480], ['12h', 720], ['24h', 1440]];
+  const chipsEl = document.getElementById('rangeChips');
+  const fromEl = document.getElementById('fromDt');
+  const toEl = document.getElementById('toDt');
+  const fromLabel = document.getElementById('fromLabel');
+  const toLabel = document.getElementById('toLabel');
+  let curStart = null, curEnd = null;
+
+  function fmtStamp(d) {
+    return d.toLocaleString([], { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  function setActiveChip(chip) {
+    chipsEl.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    if (chip) chip.classList.add('active');
+  }
+  function renderSummary() {
+    fromLabel.textContent = curStart ? fmtStamp(curStart) : '—';
+    toLabel.textContent = curEnd ? fmtStamp(curEnd) : '—';
+  }
+  function applyRange(start, end, chip) {
+    curStart = start; curEnd = end;
+    periodFilter = null;   // a new range/pill clears any tapped mode-period filter
+    lastTapMs = null;      // and drops the tapped-point marker/anchor
+    setActiveChip(chip);
+    renderSummary();
+    fromEl.value = toInputVal(start);
+    toEl.value = toInputVal(end);
+    setRangeAndLoad(start, end);
+    refreshChart();   // keep the history chart on the same window as the log
+    updatePager();
+  }
+  function loadPreset(mins, chip) {
+    haptic();
+    const now = new Date();
+    applyRange(new Date(now.getTime() - mins * 60 * 1000), now, chip);
+  }
+
+  rangePresets.forEach(([label, mins]) => {
+    const c = document.createElement('span');
+    c.className = 'chip';
+    c.textContent = label;
+    c.onclick = () => loadPreset(mins, c);
+    chipsEl.appendChild(c);
+  });
+
+  // The native pickers overlay the "Set" buttons, so a tap opens them directly
+  // (reliable on iOS); showPicker() is a desktop convenience. Editing either end
+  // clears the active preset chip (it's now a custom range).
+  function wirePicker(inp, isFrom) {
+    inp.addEventListener('click', () => { haptic(); try { inp.showPicker && inp.showPicker(); } catch(e) {} });
+    inp.addEventListener('change', () => {
+      if (!inp.value) return;
+      // iOS shows every minute regardless of step, so snap to nearest 5 min here.
+      const picked = new Date(inp.value);
+      picked.setSeconds(0, 0);
+      picked.setMinutes(Math.round(picked.getMinutes() / 5) * 5);
+      if (isFrom) applyRange(picked, curEnd || new Date(), null);
+      else applyRange(curStart || new Date(Date.now() - 15 * 60000), picked, null);
+    });
+  }
+  wirePicker(fromEl, true);
+  wirePicker(toEl, false);
+
+  // ‹ › pager: step the window backward/forward by its own span (like HA history)
+  const pagePrev = document.getElementById('pagePrev');
+  const pageNext = document.getElementById('pageNext');
+  const pgrSpan = document.getElementById('pgrSpan');
+  function fmtSpan(ms) {
+    const m = Math.round(ms / 60000);
+    if (m < 60) return m + 'm';
+    if (m % 1440 === 0) return (m / 1440) + 'd';
+    if (m % 60 === 0) return (m / 60) + 'h';
+    return (m / 60).toFixed(1) + 'h';
+  }
+  function updatePager() {
+    if (!curStart || !curEnd) { pgrSpan.textContent = ''; return; }
+    pgrSpan.textContent = fmtSpan(curEnd.getTime() - curStart.getTime()) + ' window';
+    pageNext.classList.toggle('disabled', (Date.now() - curEnd.getTime()) < 60000);
+  }
+  function shiftRange(dir) {
+    if (!curStart || !curEnd) return;
+    haptic();
+    const D = curEnd.getTime() - curStart.getTime();
+    const now = Date.now();
+    let ns = curStart.getTime() + dir * D;
+    let ne = curEnd.getTime() + dir * D;
+    if (ne > now) { ne = now; ns = now - D; }   // don't page into the future; snap to live
+    applyRange(new Date(ns), new Date(ne), chipsEl.querySelector('.chip.active'));
+  }
+  pagePrev.onclick = () => shiftRange(-1);
+  pageNext.onclick = () => shiftRange(1);
+
+  // ----------------------------------------------------------- history chart
+  // Same graph base as Curvy: Chart.js 4.4 (canvas), colours read live from theme.
+  const charts = {};   // panel id -> Chart instance
+  const HIST_BUCKETS = 60;
+  let modeStripState = null;   // { pts, t0, t1 } for the tap-readout on the mode strip
+  let lastTapMs = null;        // last tapped/scrubbed time on the strip (for the marker + zoom anchor)
+  let restoreScrub = null;     // re-applies the scrub guide after a refresh (set by the scrub IIFE)
+
+  // tap / drag on the mode strip -> show mode + time + price + SOC at that point, and
+  // optionally limit the log below to that mode period.
+  (function () {
+    const strip = document.getElementById('modeStrip');
+    let lastReadSeg = null, lastT = null, downX = null, moved = false;
+
+    // scrub guide = a thin line drawn inside each chart's own plot area (see drawChartLines)
+    const reorder = document.getElementById('reorder');
+
+    // price + SOC come from the nearest log line at-or-before t (the 5-min price
+    // sensors are recorder-excluded, so their history is empty — the log text is the
+    // only surviving contemporaneous source).
+    function nearestLine(t) {
+      let best = null, bestDiff = Infinity;
+      for (let i = 0; i < allLines.length; i++) {
+        const p = allLines[i].indexOf('|'); if (p < 0) continue;
+        const tt = Date.parse(allLines[i].slice(0, p));
+        if (isNaN(tt)) continue;
+        const diff = Math.abs(tt - t);
+        if (diff < bestDiff) { bestDiff = diff; best = allLines[i]; }
+      }
+      return best;   // closest line in time, either side
+    }
+    function valsAt(t) {
+      const line = nearestLine(t); if (!line) return {};
+      const soc = (line.match(/Battery:\s*(-?[\d.]+)%/) || [])[1];
+      const buy = (line.match(/Buy:\s*\$[^()]*\(Current:\s*\$(-?[\d.]+)\)/) || [])[1];
+      const sell = (line.match(/Sell:\s*\$[^()]*\(Current:\s*\$(-?[\d.]+)\)/) || [])[1];
+      return {
+        soc: soc != null ? parseFloat(soc) : null,
+        buy: buy != null ? parseFloat(buy) : null,
+        sell: sell != null ? parseFloat(sell) : null,
+      };
+    }
+
+    // Core scrub: given a wall-clock time, draw the strip marker + the full-stack guide
+    // line + the readout. Time-based so the strip OR any chart can drive it, and so it can
+    // be re-applied after a refresh (the strip bar is the shared geometry reference — it's
+    // inset to the charts' plot area, so one screen-x maps to the same time in all panels).
+    function scrubToTime(t) {
+      if (!modeStripState) return;
+      const bar = strip.querySelector('.mbar');
+      const out = strip.querySelector('#modeReadout');
+      if (!bar || !out) return;
+      const t0 = modeStripState.t0, t1 = modeStripState.t1, span = Math.max(1, t1 - t0);
+      t = Math.max(t0, Math.min(t1, t));
+      lastTapMs = t;
+      const frac = (t - t0) / span;
+      const mark = strip.querySelector('#modeMark');
+      if (mark) { mark.style.left = (frac * 100).toFixed(3) + '%'; mark.style.opacity = '1'; }
+      drawChartLines(frac);
+      const pts = modeStripState.pts;
+      let m = pts.length ? pts[0].m : '';
+      let segStart = t0, segEnd = t1, idx = -1;
+      for (let i = 0; i < pts.length; i++) {
+        if (pts[i].t <= t) { m = pts[i].m; idx = i; segStart = Math.max(t0, pts[i].t); segEnd = (i + 1 < pts.length) ? pts[i + 1].t : t1; }
+        else break;
+      }
+      segEnd = Math.min(t1, segEnd);
+      lastReadSeg = { start: segStart, end: segEnd, mode: m };
+      lastT = t;
+
+      // how long this mode block runs before it switches, from the mode entity's real
+      // change times (so it's the true length even if it spills past the window edges).
+      // Last block has no next change yet → "so far"; a block whose start sits at the
+      // window's left edge may have begun earlier → "+".
+      let durTxt = '';
+      if (idx >= 0) {
+        const realStart = pts[idx].t;
+        const realEnd = (idx + 1 < pts.length) ? pts[idx + 1].t : null;
+        if (realEnd == null) {
+          durTxt = Math.max(0, Math.round((t1 - realStart) / 60000)) + ' min so far';
+        } else {
+          durTxt = Math.max(1, Math.round((realEnd - realStart) / 60000)) + ' min' + (realStart <= t0 ? '+' : '');
+        }
+      }
+
+      const cents = v => v == null ? '—' : (v * 100).toFixed(1) + 'c';
+      const pct = v => v == null ? '—' : v.toFixed(1) + '%';
+      const v = valsAt(t);
+      // show the same 5-min block the tap would filter (anchored to the nearest log line)
+      const line = nearestLine(t);
+      let dispT = t;
+      if (line) { const a = Date.parse(line.slice(0, line.indexOf('|'))); if (!isNaN(a)) dispT = Math.floor(a / 300000) * 300000; }
+      out.innerHTML =
+        '<span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' +
+        hhmm(new Date(dispT)) + ' &middot; <b>' + escapeHtml(m) + '</b>' +
+        (durTxt ? ' &middot; <span class="ro-dur">' + durTxt + '</span>' : '') +
+        '<span class="ro-extra">buy ' + cents(v.buy) + ' · sell ' + cents(v.sell) + ' · SOC ' + pct(v.soc) + '</span>';
+    }
+
+    // keep the guide alive across the 60-s auto-refresh (the refresh rebuilds the strip)
+    restoreScrub = () => { if (lastTapMs != null) scrubToTime(lastTapMs); };
+
+    // draw the guide as a thin line inside each visible chart's plot area (not across the
+    // whole stack) — same x-fraction everywhere since all panels share the plot range.
+    function drawChartLines(frac) {
+      Object.keys(charts).forEach(id => {
+        const ch = charts[id];
+        const wrap = document.getElementById('wrap-' + id);
+        if (!wrap) return;
+        let line = wrap.querySelector('.cline');
+        if (!ch || !ch.chartArea || wrap.style.display === 'none') { if (line) line.style.opacity = '0'; return; }
+        if (!line) { line = document.createElement('div'); line.className = 'cline'; wrap.appendChild(line); }
+        const ca = ch.chartArea;
+        line.style.left = (ca.left + frac * (ca.right - ca.left)).toFixed(1) + 'px';
+        line.style.top = ca.top.toFixed(1) + 'px';
+        line.style.height = Math.max(0, ca.bottom - ca.top).toFixed(1) + 'px';
+        line.style.opacity = '1';
+      });
+    }
+
+    // strip -> time (clientX within the strip bar)
+    function readAt(clientX) {
+      if (!modeStripState) return;
+      const bar = strip.querySelector('.mbar'); if (!bar) return;
+      const rect = bar.getBoundingClientRect();
+      let frac = (clientX - rect.left) / rect.width;
+      frac = Math.max(0, Math.min(1, frac));
+      scrubToTime(modeStripState.t0 + frac * (modeStripState.t1 - modeStripState.t0));
+    }
+
+    // chart -> time (clientX within a chart's plot area; all panels share t0..t1)
+    function chartUnder(e) {
+      const wrap = e.target && e.target.closest && e.target.closest('.chartWrap');
+      if (!wrap) return null;
+      const ch = charts[wrap.id.replace(/^wrap-/, '')];
+      return (ch && ch.chartArea) ? ch : null;
+    }
+    function readChart(ch, clientX) {
+      if (!modeStripState) return;
+      const r = ch.canvas.getBoundingClientRect(), ca = ch.chartArea;
+      let frac = (clientX - r.left - ca.left) / Math.max(1, ca.right - ca.left);
+      frac = Math.max(0, Math.min(1, frac));
+      scrubToTime(modeStripState.t0 + frac * (modeStripState.t1 - modeStripState.t0));
+    }
+
+    // tap = filter the log to the 5-minute block around the tapped point; drag = just scrub.
+    // We anchor to the NEAREST actual log line and take ±2.5 min around it, so it never
+    // depends on timestamps being exactly on the 5-min mark and always contains that line
+    // (never empty). Pick a pill up top to reset.
+    function setFilter() {
+      if (lastT == null) return;
+      const line = nearestLine(lastT);
+      if (!line) return;                       // nothing to anchor to -> leave the log as-is
+      const anchor = Date.parse(line.slice(0, line.indexOf('|')));
+      if (isNaN(anchor)) return;
+      const HALF = 150 * 1000, FIVE = 300 * 1000;   // ±2.5 min window; label as its 5-min block
+      const blk = Math.floor(anchor / FIVE) * FIVE;
+      periodFilter = {
+        start: anchor - HALF, end: anchor + HALF,
+        mode: lastReadSeg ? lastReadSeg.mode : '',
+        label: hhmm(new Date(blk)) + '–' + hhmm(new Date(blk + FIVE)),
+      };
+      renderLog();
+    }
+    strip.addEventListener('pointerdown', e => { downX = e.clientX; moved = false; readAt(e.clientX); });
+    strip.addEventListener('pointermove', e => {
+      if (!(e.buttons || e.pressure > 0)) return;
+      if (downX != null && Math.abs(e.clientX - downX) > 6) moved = true;
+      readAt(e.clientX);
+    });
+    strip.addEventListener('pointerup', e => { if (!moved) { setFilter(); readAt(e.clientX); } downX = null; });
+
+    // scrub on the charts too: tap or horizontal-drag over any chart moves the guide line
+    // (touch-action:pan-y keeps vertical scrolling working). Charts only scrub — they don't
+    // touch the log filter (that stays the strip's tap job).
+    reorder.addEventListener('pointerdown', e => { const ch = chartUnder(e); if (ch) readChart(ch, e.clientX); });
+    reorder.addEventListener('pointermove', e => {
+      if (!(e.buttons || e.pressure > 0)) return;
+      const ch = chartUnder(e); if (ch) readChart(ch, e.clientX);
+    });
+  })();
+
+  // build a chart panel card per PANELS entry, appended into the reorder stack
+  function buildPanelCards() {
+    const host = document.getElementById('reorder');
+    PANELS.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'card reCard';
+      div.setAttribute('data-block', p.id);
+      div.innerHTML =
+        '<div class="title cardHead"><span>' + p.title + '</span><span class="grip" data-grip></span></div>' +
+        '<div class="chartWrap" id="wrap-' + p.id + '" style="display:none"><canvas id="cv-' + p.id + '"></canvas></div>' +
+        '<div class="chart-empty" id="empty-' + p.id + '">Loading&hellip;</div>';
+      host.appendChild(div);
+    });
+  }
+
+  // ---- drag-to-reorder (grip only) with per-device localStorage persistence ----
+  function initReorder() {
+    const container = document.getElementById('reorder');
+    const KEY = 'battman.logOrder';
+    // one-time move of the order saved by the old Smiggles page
+    try {
+      const old = localStorage.getItem('smigglesLogOrderV1');
+      if (old !== null) { if (localStorage.getItem(KEY) === null) localStorage.setItem(KEY, old); localStorage.removeItem('smigglesLogOrderV1'); }
+    } catch (e) {}
+    let dragEl = null, placeholder = null, startY = 0, startTop = 0, startLeft = 0, w = 0;
+
+    const cards = () => Array.from(container.querySelectorAll('.reCard'));
+
+    function saveOrder() {
+      try { localStorage.setItem(KEY, JSON.stringify(cards().map(c => c.getAttribute('data-block')))); } catch (e) {}
+    }
+    function applyOrder() {
+      let order = null;
+      try { order = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+      if (!order || !order.length) return;
+      order.forEach(id => {
+        const el = container.querySelector('.reCard[data-block="' + id + '"]');
+        if (el) container.appendChild(el);   // unknown/new ids just stay after, in default order
+      });
+    }
+
+    function onDown(e) {
+      const grip = e.target.closest('[data-grip]');
+      if (!grip) return;
+      const card = grip.closest('.reCard');
+      if (!card) return;
+      e.preventDefault(); e.stopPropagation();
+      haptic();
+      dragEl = card;
+      const rect = card.getBoundingClientRect();
+      w = rect.width; startLeft = rect.left; startTop = rect.top; startY = e.clientY;
+      placeholder = document.createElement('div');
+      placeholder.className = 're-placeholder';
+      placeholder.style.height = rect.height + 'px';
+      card.parentNode.insertBefore(placeholder, card.nextSibling);
+      card.classList.add('dragging');
+      card.style.position = 'fixed'; card.style.zIndex = '999'; card.style.width = w + 'px';
+      card.style.left = startLeft + 'px'; card.style.top = startTop + 'px';
+      card.style.margin = '0'; card.style.pointerEvents = 'none';
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp, { once: true });
+    }
+    function onMove(e) {
+      if (!dragEl) return;
+      const y = e.clientY;
+      dragEl.style.top = (startTop + (y - startY)) + 'px';
+      let inserted = false;
+      for (const c of cards()) {
+        if (c === dragEl) continue;
+        const r = c.getBoundingClientRect();
+        if (y < r.top + r.height / 2) { container.insertBefore(placeholder, c); inserted = true; break; }
+      }
+      if (!inserted) container.appendChild(placeholder);
+      const vh = window.innerHeight;
+      if (y < 70) window.scrollBy(0, -14);
+      else if (y > vh - 70) window.scrollBy(0, 14);
+    }
+    function onUp() {
+      document.removeEventListener('pointermove', onMove);
+      if (!dragEl) return;
+      container.insertBefore(dragEl, placeholder);
+      placeholder.remove(); placeholder = null;
+      dragEl.classList.remove('dragging');
+      dragEl.style.position = ''; dragEl.style.zIndex = ''; dragEl.style.width = '';
+      dragEl.style.left = ''; dragEl.style.top = ''; dragEl.style.margin = ''; dragEl.style.pointerEvents = '';
+      dragEl = null;
+      saveOrder();
+      try { Object.values(charts).forEach(ch => ch && ch.resize()); requestAnimationFrame(alignModeStrip); } catch (e) {}
+    }
+    container.addEventListener('pointerdown', onDown);
+    // a tap/click on the grip must not toggle the log collapse
+    container.addEventListener('click', e => {
+      if (e.target.closest('[data-grip]')) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+
+    applyOrder();
+  }
+
+  function gc(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  async function fetchHistoryRaw() {
+    // sync the chart window to the log's selected range (fallback: last 5 h)
+    const end = curEnd ? new Date(curEnd) : new Date();
+    const start = curStart ? new Date(curStart) : new Date(end.getTime() - HISTORY_HOURS * 3600 * 1000);
+    const h = haObj();
+    const path = 'history/period/' + start.toISOString() +
+      '?filter_entity_id=' + HISTORY_ENTITIES.join(',') +
+      '&end_time=' + end.toISOString() + '&minimal_response';
+    try {
+      let arr = null;
+      if (h && h.callApi) arr = await h.callApi('GET', path);
+      else {
+        const token = getHaToken(); if (!token) return null;
+        const r = await fetch('/api/' + path, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!r.ok) return null; arr = await r.json();
+      }
+      const out = {};
+      (arr || []).forEach(ser => { if (ser && ser.length && ser[0].entity_id) out[ser[0].entity_id] = ser; });
+      return { out, start, end };
+    } catch(e) { return null; }
+  }
+
+  function bucketize(series, start, end, n, parse) {
+    const pts = (series || []).map(s => ({ t: new Date(s.last_changed || s.last_updated).getTime(), raw: s.state }))
+      .filter(p => !isNaN(p.t)).sort((a,b) => a.t - b.t);
+    const t0 = start.getTime(), step = (end.getTime() - t0) / n;
+    const out = []; let j = 0, cur = null;
+    for (let i = 0; i < n; i++) {
+      const tt = t0 + step * (i + 0.5);
+      while (j < pts.length && pts[j].t <= tt) { cur = pts[j].raw; j++; }
+      out.push(cur == null ? null : (parse ? parse(cur) : cur));
+    }
+    return out;
+  }
+
+  // Shared 5-min bucket grid so the Mode strip and every line panel cover an identical
+  // x-domain. 5-min buckets (price/mode cadence); 1-min on sub-hour windows for detail
+  // (1 min divides 5, so 5-min alignment still holds). Floors start / ceils end to whole
+  // buckets — the same domain every consumer then maps onto.
+  function gridDomain(start, end) {
+    const FIVE = 300000, ONE = 60000;
+    const width = ((end.getTime() - start.getTime()) / FIVE >= 12) ? FIVE : ONE;
+    const t0 = Math.floor(start.getTime() / width) * width;
+    const n = Math.max(1, Math.ceil((end.getTime() - t0) / width));
+    return { t0: t0, tEnd: t0 + n * width, width: width, n: n };
+  }
+
+  // Mode is its own state-timeline strip (like the original history-graph), NOT
+  // mixed into the price chart.
+  function renderModeStrip(modeRaw, start, end) {
+    const el = document.getElementById('modeStrip');
+    document.querySelectorAll('.cline').forEach(l => l.style.opacity = '0');
+    // Lock the strip to the SAME 5-min grid the line panels use, so a time on the
+    // strip sits directly above the same column in the charts below.
+    const { t0, tEnd, width, n } = gridDomain(start, end);
+    const t1 = tEnd, span = Math.max(1, t1 - t0);
+    const pts = (modeRaw || []).map(s => ({ t: new Date(s.last_changed || s.last_updated).getTime(), m: s.state }))
+      .filter(p => !isNaN(p.t)).sort((a, b) => a.t - b.t);
+    if (!pts.length) { modeStripState = null; el.innerHTML = '<div class="chart-empty">No mode history</div>'; return; }
+    modeStripState = { pts: pts, t0: t0, t1: t1 };
+
+    let bar = '';
+    const seen = [];
+    for (let i = 0; i < pts.length; i++) {
+      // back-fill the first mode across the leading <5-min sliver (t0..first point) so the
+      // bar fills from the grid's left edge, mirroring the charts' first bucket.
+      const segStart = (i === 0) ? t0 : Math.max(t0, pts[i].t);
+      const segEnd = Math.min(t1, (i + 1 < pts.length) ? pts[i + 1].t : t1);
+      if (segEnd <= segStart) continue;
+      const w = ((segEnd - segStart) / span) * 100;
+      const col = modeColor[pts[i].m] || accentHex;
+      if (seen.indexOf(pts[i].m) < 0) seen.push(pts[i].m);
+      bar += '<div class="mseg" style="width:' + w.toFixed(3) + '%;background:' + col + '" title="' +
+             escapeHtml(pts[i].m) + '"></div>';
+    }
+    // ticks at the same bucket positions (band centres) + times as the chart x-labels
+    const every = Math.max(1, Math.round(n / 8));
+    let ticks = '';
+    for (let i = 0; i < n; i += every) {
+      const frac = ((i + 0.5) / n) * 100;
+      ticks += '<span style="left:' + frac.toFixed(3) + '%">' + hhmm(new Date(t0 + width * i)) + '</span>';
+    }
+    let legend = seen.map(m =>
+      '<span class="li"><span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' + escapeHtml(m) + '</span>'
+    ).join('');
+    el.innerHTML = '<div class="mbar">' + bar + '<div class="mmark" id="modeMark"></div></div><div class="mticks">' + ticks + '</div>' +
+                   '<div class="mreadout" id="modeReadout"><span class="hint">Tap the timeline for the mode at a point</span></div>' +
+                   '<div class="mlegend">' + legend + '</div>';
+  }
+
+  // Generic line panel (Curvy Chart.js base); one or more series sharing a unit.
+  function renderLinePanel(panel, data) {
+    const wrap = document.getElementById('wrap-' + panel.id);
+    const empty = document.getElementById('empty-' + panel.id);
+    function showEmpty(msg) { if (empty) { empty.style.display = ''; empty.textContent = msg; } if (wrap) wrap.style.display = 'none'; }
+    if (typeof Chart === 'undefined') return showEmpty('Chart library unavailable (offline?)');
+    if (!data) return showEmpty('History unavailable');
+    const { out, start, end } = data;
+    if (!panel.series.some(s => out[s.id] && out[s.id].length)) return showEmpty('No data in range');
+    if (empty) empty.style.display = 'none';
+    if (wrap) wrap.style.display = '';
+
+    // Unified time grid for EVERY panel, aligned to the 5-min price/mode cadence so all
+    // panels line up vertically. 5-min buckets, falling back to 1-min on sub-hour windows
+    // for detail (1 min still divides 5 min, so alignment holds). Panel-independent, so
+    // price, power, solar, battery, SOC and grid all share the same columns.
+    const { t0, tEnd, width, n } = gridDomain(start, end);
+    const gStart = new Date(t0), gEnd = new Date(tEnd), step = width;
+    const every = Math.max(1, Math.round(n / 8));
+    const labels = Array.from({length: n}, (_, i) => (i % every === 0) ? hhmm(new Date(t0 + step * i)) : '');
+    const grid = gc('--ha-border');
+    const muted = gc('--battman-text-muted');
+
+    const h = haObj();
+    let unit = panel.unit;
+    if (unit === '') { const st = h && h.states[panel.series[0].id]; unit = (st && st.attributes && st.attributes.unit_of_measurement) || ''; }
+
+    const datasets = panel.series.map(s => {
+      const col = gc(s.token);
+      const arr = bucketize(out[s.id], gStart, gEnd, n, v => { const f = parseFloat(v); return isFinite(f) ? (s.mul ? f * s.mul : f) : null; });
+      return {
+        label: s.label, data: arr, borderColor: col, backgroundColor: col + '20',
+        fill: panel.series.length === 1, tension: 0, stepped: true, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, spanGaps: true
+      };
+    });
+
+    const cfg = {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: panel.series.length > 1, position: 'top', labels: { boxWidth: 20, boxHeight: 3, padding: 10, color: muted, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y == null ? '—' : c.parsed.y.toFixed(1) + (unit ? ' ' + unit : '')) } }
+        },
+        scales: {
+          // fixed y-axis width → every panel's plot area starts at the same x, so the
+          // panels line up with each other AND the Mode strip can be inset to match.
+          y: { afterFit: (s) => { s.width = 52; }, title: { display: !!unit, text: unit, font: { size: 11, weight: 'bold' }, color: muted }, ticks: { color: muted }, grid: { color: grid } },
+          // offset:true centres each point in its time-band (band i → (i+0.5)/n), the
+          // same linear mapping the Mode strip uses, so columns align across all of them.
+          x: { offset: true, ticks: { color: muted, maxRotation: 0, autoSkip: false }, grid: { color: grid } }
+        }
+      }
+    };
+
+    if (charts[panel.id]) charts[panel.id].destroy();
+    charts[panel.id] = new Chart(document.getElementById('cv-' + panel.id).getContext('2d'), cfg);
+  }
+
+  // Inset the Mode strip's bar + ticks to sit exactly over the charts' plot area
+  // (left = y-axis gutter, right = chart's right padding), measured from a live chart.
+  // The strip card and the chart cards share an identical content width, so chartArea
+  // pixels map 1:1 onto the strip.
+  function alignModeStrip() {
+    const strip = document.getElementById('modeStrip');
+    if (!strip) return;
+    const bar = strip.querySelector('.mbar');
+    const ticks = strip.querySelector('.mticks');
+    const ref = Object.values(charts).find(c => c && c.chartArea && c.width);
+    const apply = (l, r) => { [bar, ticks].forEach(elm => { if (elm) { elm.style.marginLeft = l; elm.style.marginRight = r; } }); };
+    if (!bar || !ref) { apply('', ''); return; }
+    const ca = ref.chartArea, cw = ref.width;
+    apply(ca.left.toFixed(1) + 'px', Math.max(0, cw - ca.right).toFixed(1) + 'px');
+  }
+
+  async function refreshChart() {
+    const data = await fetchHistoryRaw();
+    const modeEl = document.getElementById('modeStrip');
+    if (!data) {
+      lastOut = null;
+      if (modeEl) modeEl.innerHTML = '<div class="chart-empty">History unavailable</div>';
+      PANELS.forEach(p => renderLinePanel(p, null));
+      return;
+    }
+    lastOut = data.out;
+    renderModeStrip(data.out[MODE_ENTITY], data.start, data.end);
+    PANELS.forEach(p => renderLinePanel(p, data));
+    // re-align the strip, then re-draw the scrub guide if one was active (range changes
+    // null lastTapMs, so a new range correctly clears it; a plain refresh keeps it).
+    requestAnimationFrame(() => { alignModeStrip(); if (restoreScrub) restoreScrub(); });
+  }
+
+  // ----------------------------------------------------------------- boot
+  // Startup checks: entity map + Battman theme. Problems are shown, never papered over.
+  function showFatal(msg) {
+    FATAL = msg;
+    document.getElementById('reorder').innerHTML =
+      '<div class="card"><div class="title">Battman Log problem</div><div class="empty">' + escapeHtml(msg) + '</div></div>';
+  }
+  async function loadEntityMap() {
+    const tok = getHaToken();
+    if (!tok) throw new Error('Not logged in to Home Assistant (no access token from the parent page).');
+    const r = await fetch('/api/battman/entities', { headers: { Authorization: 'Bearer ' + tok } });
+    if (!r.ok) throw new Error('Battman entity map unavailable (HTTP ' + r.status + '). Is the Battman integration installed and set up?');
+    const m = (await r.json()).entities || {};
+    const missing = NEEDS.filter(k => k !== 'third_party_pv' && !m[k]);
+    if (missing.length) throw new Error('Battman entity map has no entry for: ' + missing.join(', '));
+    if (m.pv_string.indexOf('{n}') < 0) throw new Error('Battman entity map: pv_string must contain {n} (e.g. sensor.sigen_inverter_pv{n}_power).');
+    M = m;
+  }
+  function checkEntities() {
+    const h = haObj(); if (!h) return 'Home Assistant not reachable from this page.';
+    const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' \u2192 ' + M[k]);
+    return bad.length ? 'Battman entity map: entity not found: ' + bad.join(', ') : null;
+  }
+  function checkTheme() {
+    let ps; try { ps = parent.getComputedStyle(window.frameElement || parent.document.documentElement); } catch (e) { return 'Cannot read the dashboard theme.'; }
+    const missing = THEME_VARS.filter(v => !ps.getPropertyValue(v).trim());
+    return missing.length ? 'Theme colour ' + missing.join(', ') + ' not found \u2014 this view needs a Battman theme.' : null;
+  }
+
+  (async function start() {
+    try { await loadEntityMap(); } catch (e) { showFatal(e.message); return; }
+    const problem = checkTheme() || checkEntities();
+    if (problem) { showFatal(problem); return; }
+    syncTheme();
+    applyModeColors();
+    buildPanels();
+    buildPanelCards();
+    initReorder();
+    setInterval(() => { syncTheme(); applyModeColors(); renderLog(); }, 3000);
+    // default view: last 4 hours, no haptic on load
+    const now = new Date();
+    const chip4h = Array.from(chipsEl.querySelectorAll('.chip')).find(c => c.textContent === '4h');
+    applyRange(new Date(now.getTime() - 4 * 60 * 60 * 1000), now, chip4h);
+    setTimeout(load, 2000);
+    setInterval(load, 3000);
+    setInterval(refreshChart, 60000);
+    window.addEventListener('resize', () => requestAnimationFrame(alignModeStrip));
+  })();
+</script>
+</body>
+</html>
