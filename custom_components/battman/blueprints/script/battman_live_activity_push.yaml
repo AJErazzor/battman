@@ -12,19 +12,21 @@ blueprint:
     mode shows a red "?" icon, and with no Battman dashboard theme picked the bar is grey.
 
 
-    Make one script from this, then point the Battman Live Activity on/off and updates
-    automations at it. Installed and updated by the Battman integration.
+    The phone is chosen on the Battman dashboard (Settings → Live Activity), stored in
+    select.battman_live_activity_phone. "Off" sends nothing. Battman creates a script
+    from this blueprint for you (script.battman_live_activity_push).
+    Installed and updated by the Battman integration.
   domain: script
   homeassistant:
     min_version: "2024.10.0"
   input:
-    phone:
-      name: Phone
-      description: The phone (Companion app) to show the Live Activity on.
+    phone_setting:
+      name: Phone setting
+      description: The Battman setting that says which notify service (phone) to send to, or Off.
+      default: select.battman_live_activity_phone
       selector:
-        device:
-          filter:
-            - integration: mobile_app
+        entity:
+          domain: select
     entities:
       name: Battery and prices
       input:
@@ -143,6 +145,8 @@ max: 10
 
 sequence:
   - variables:
+      phone_setting: !input phone_setting
+  - variables:
       soc_e: !input battery_soc
       fit_e: !input feed_in_price
       buy_e: !input buy_price
@@ -155,16 +159,28 @@ sequence:
       mode_hues: !input mode_hues
       tag: !input tag
       url: !input url
+      phone: "{{ states(phone_setting) }}"
+  # Off: nothing to send. No phone setting at all is a fault: stop with an error.
+  - if:
+      - condition: template
+        value_template: "{{ phone in ['unknown', 'unavailable', ''] }}"
+    then:
+      - stop: The Live Activity phone setting isn't available, so there's no phone to send to
+        error: true
+  - if:
+      - condition: template
+        value_template: "{{ phone == 'Off' }}"
+    then:
+      - stop: Live Activity phone is Off
   - if:
       - condition: template
         value_template: "{{ clear | default(false) }}"
     then:
-      - domain: mobile_app
-        type: notify
-        device_id: !input phone
-        message: clear_notification
+      - action: "notify.{{ phone }}"
         data:
-          tag: "{{ tag }}"
+          message: clear_notification
+          data:
+            tag: "{{ tag }}"
     else:
       - variables:
           soc_ok: "{{ states(soc_e) | is_number }}"
@@ -194,10 +210,9 @@ sequence:
               'progress_bar_color': colour, 'url': url } %}
             {% if soc_ok %}{% set d = dict(d, progress=(states(soc_e) | float | round(0) | int), progress_max=100) %}{% endif %}
             {{ d }}
-      - domain: mobile_app
-        type: notify
-        device_id: !input phone
-        title: "{{ '⚡ ' if alert | default(false) else '' }}FIT {{ fit }}{{ 'c' if fit != '—' else '' }}"
-        message: >-
-          {{ '' if soc_ok else 'SOC — · ' }}{{ buy }}{{ 'c' if buy != '—' else '' }}·{{ net }}
-        data: "{{ payload }}"
+      - action: "notify.{{ phone }}"
+        data:
+          title: "{{ '⚡ ' if alert | default(false) else '' }}FIT {{ fit }}{{ 'c' if fit != '—' else '' }}"
+          message: >-
+            {{ '' if soc_ok else 'SOC — · ' }}{{ buy }}{{ 'c' if buy != '—' else '' }}·{{ net }}
+          data: "{{ payload }}"

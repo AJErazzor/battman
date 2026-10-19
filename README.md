@@ -94,9 +94,10 @@ dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
 
 ## Live Activity
 
-A phone lock-screen Live Activity for your battery, made from Battman blueprints
-(installed and updated by Battman) plus `switch.battman_live_activity`. See
-[docs/live-activity.md](docs/live-activity.md) for set-up and swapping over from Smiggles.
+Your battery on your phone's lock screen. Battman creates the automations and script
+for it (from its own blueprints) and keeps them updated; you pick the phone and what
+it follows on the Battman dashboard, **Settings → Live Activity**. See
+[docs/live-activity.md](docs/live-activity.md).
 
 ## Entity map (Configure)
 

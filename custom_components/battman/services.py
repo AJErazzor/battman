@@ -6,10 +6,11 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.helpers import issue_registry as ir
 
-from . import dashboard
+from . import dashboard, live_activity
 from .const import DOMAIN
 
 SERVICE_CREATE_DASHBOARD = "create_dashboard"
+SERVICE_CREATE_LIVE_ACTIVITY = "create_live_activity"
 ISSUE_DASHBOARD = "dashboard_unavailable"
 
 
@@ -43,6 +44,24 @@ async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -
     return result
 
 
+async def async_create_live_activity_and_report(hass: HomeAssistant, notify: bool) -> dict:
+    """Create any missing Live Activity automations/script and say what happened."""
+    try:
+        result = await live_activity.async_create_missing(hass)
+    except live_activity.LiveActivityError as err:
+        result = {"created": [], "existing": [], "message": f"Could not create the Live Activity automations: {err}"}
+    else:
+        if result["created"]:
+            result["message"] = "Created: " + ", ".join(result["created"]) + "."
+        else:
+            result["message"] = "All Live Activity automations and the script already exist; nothing changed."
+    if notify:
+        persistent_notification.async_create(
+            hass, result["message"], title="Battman Live Activity", notification_id="battman_live_activity"
+        )
+    return result
+
+
 def async_register_services(hass: HomeAssistant) -> None:
     async def _create(call: ServiceCall) -> ServiceResponse:
         result = await async_create_dashboard_and_report(hass, notify=not call.return_response)
@@ -50,4 +69,12 @@ def async_register_services(hass: HomeAssistant) -> None:
 
     hass.services.async_register(
         DOMAIN, SERVICE_CREATE_DASHBOARD, _create, supports_response=SupportsResponse.OPTIONAL
+    )
+
+    async def _create_live(call: ServiceCall) -> ServiceResponse:
+        result = await async_create_live_activity_and_report(hass, notify=not call.return_response)
+        return result if call.return_response else None
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_CREATE_LIVE_ACTIVITY, _create_live, supports_response=SupportsResponse.OPTIONAL
     )

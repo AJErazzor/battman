@@ -8,33 +8,40 @@ blueprint:
     restart it.
 
 
-    Installed and updated by the Battman integration.
+    Which entity, which states and how long are Battman settings on the Battman
+    dashboard (Settings → Live Activity). A blank entity means nothing is followed.
+    Battman creates this automation for you. Installed and updated by the Battman
+    integration.
   domain: automation
   homeassistant:
     min_version: "2024.10.0"
   input:
-    follow:
-      name: Follow this entity
+    follow_setting:
+      name: Entity to follow (setting)
+      default: text.battman_live_activity_follow
       selector:
-        entity: {}
-    on_state:
-      name: Turn on when it becomes
-      default: "ON"
+        entity:
+          domain: text
+    on_setting:
+      name: "'On' state (setting)"
+      default: text.battman_live_activity_follow_on
       selector:
-        text: {}
-    off_state:
-      name: Turn off when it becomes
-      default: "OFF"
+        entity:
+          domain: text
+    off_setting:
+      name: "'Off' state (setting)"
+      default: text.battman_live_activity_follow_off
       selector:
-        text: {}
-    off_after:
-      name: …and has stayed that way for (minutes)
-      default: 2
+        entity:
+          domain: text
+    delay_setting:
+      name: Off after, minutes (setting)
+      default: number.battman_live_activity_follow_delay
       selector:
-        number:
-          min: 0
-          max: 60
-          unit_of_measurement: min
+        entity:
+          domain:
+            - number
+            - input_number
     live_switch:
       name: On/off switch
       default: switch.battman_live_activity
@@ -46,22 +53,32 @@ blueprint:
 
 mode: restart
 
+trigger_variables:
+  follow_setting: !input follow_setting
+  on_setting: !input on_setting
+  off_setting: !input off_setting
+  delay_setting: !input delay_setting
+
 triggers:
-  - trigger: state
-    entity_id: !input follow
-    to: !input on_state
+  - trigger: template
+    value_template: >-
+      {% set e = states(follow_setting) | trim %}
+      {{ e not in ['', 'unknown', 'unavailable'] and states(e) == states(on_setting) }}
     id: "on"
-  - trigger: state
-    entity_id: !input follow
-    to: !input off_state
+  - trigger: template
+    value_template: >-
+      {% set e = states(follow_setting) | trim %}
+      {{ e not in ['', 'unknown', 'unavailable'] and states(e) == states(off_setting) }}
     for:
-      minutes: !input off_after
+      minutes: "{{ states(delay_setting) | int }}"
     id: "off"
 
 conditions:
   # coming back from unavailable/unknown isn't a real change (e.g. after a restart)
   - condition: template
-    value_template: "{{ trigger.from_state.state not in ['unavailable', 'unknown'] }}"
+    value_template: >-
+      {{ trigger.from_state is none
+         or trigger.from_state.state not in ['unavailable', 'unknown'] }}
 
 actions:
   - action: "homeassistant.turn_{{ trigger.id }}"

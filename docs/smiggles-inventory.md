@@ -107,6 +107,8 @@ These live only in your HA (UI-created or in `configuration.yaml`):
    - ✅ First automation set: the iPhone Live Activity (6 automations + push script) → Battman
      blueprints + `switch.battman_live_activity` (v0.9.0). The car trigger became the generic
      "follow an entity" blueprint. See docs/live-activity.md.
+   - ✅ v0.10.0: Battman creates those automations/script itself; their settings (phone, follow,
+     spike) are Battman entities set on the Settings card.
 10. Engine: packages, scripts, automations → blueprints / Battman entities, one area at a time, each with an entity cutover (Smiggles stays in charge of the battery until then)
 
 ## 8. Release conventions — Smiggles vs Battman
@@ -116,3 +118,15 @@ These live only in your HA (UI-created or in `configuration.yaml`):
 | Path to main | PR + **squash and merge** | PR + squash and merge |
 | Release | every merge (patch unless told) | only when a commit starts `major:` / `minor:` / `patch:` |
 | Version in files | tag only | tag + `manifest.json` |
+
+## 9. Notes for the engine stage
+
+- **Settings stored as attributes → Battman entities.** Smiggles keeps its settings (e.g. the
+  Amber alert's notify target `alertNotifyTarget`, thresholds, switches) as attributes on
+  `sensor.solarsystemcontrolparameters`, changed by firing the parameters event. When Battman takes
+  over the engine, these should become Battman entities (select / number / switch / text on the
+  Battman device), like the Live Activity settings (v0.10.0): restored over restarts, visible in
+  history, usable by any automation.
+- **Hidden defaults in the engine.** The parameters package defaults `alertNotifyTarget` to
+  `mobile_app_ajs_iphone_16` when it isn't set. The Battman Settings card now shows "Not set"
+  (v0.10.0), but the engine's default stays until the engine moves.

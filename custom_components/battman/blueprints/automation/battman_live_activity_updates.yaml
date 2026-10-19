@@ -7,15 +7,17 @@ blueprint:
     Activity can update), plus one trailing push so the latest values always land.
 
 
-    Needs a script made from the "Battman Live Activity – push" blueprint.
-    Installed and updated by the Battman integration.
+    Uses the script made from the "Battman Live Activity – push" blueprint. Battman
+    creates this automation and that script for you; settings are on the Battman
+    dashboard (Settings → Live Activity). Installed and updated by the Battman integration.
   domain: automation
   homeassistant:
     min_version: "2024.10.0"
   input:
     push_script:
       name: Push script
-      description: The script you made from "Battman Live Activity – push".
+      description: The script made from "Battman Live Activity – push" (Battman creates it for you).
+      default: script.battman_live_activity_push
       selector:
         entity:
           domain: script
