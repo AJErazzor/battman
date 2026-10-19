@@ -57,6 +57,10 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "power_provider_buy": "sensor.solarsystemcontrolpowerproviderbuy",
     "power_provider_sell": "sensor.solarsystemcontrolpowerprovidersell",
     "power_provider_event": "solarsystemcontrolpowerproviderupdate",
+    # Power view: Sigen limits (Limits card)
+    "grid_export_limit": "number.sigen_plant_grid_export_limitation",
+    "pv_max_limit": "number.sigen_plant_pv_max_power_limit",
+    "max_charge_limit": "number.sigen_plant_ess_max_charging_limit",
     # Other integrations used by Curvy / Pricy
     # Sigen inverter solar only (pv_power is Sigen + third-party)
     "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
@@ -80,6 +84,9 @@ MAP_TEXT_ENTRIES = {
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.
 THEMES_URL = "/api/battman/themes"
+
+# Battman cards (custom:battman-<id>): list, and one card with the map filled in.
+CARDS_URL = "/api/battman/cards"
 
 # Authenticated API that hands the managed dashboard its views (views/*.yaml with
 # {{name}} placeholders filled from the entity map).

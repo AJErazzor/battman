@@ -44,7 +44,7 @@ strategy:
 ```
 
 so Battman builds its views (from `custom_components/battman/views/*.yaml`), and
-new or changed views arrive with Battman updates. Views so far: **Finances**,
+new or changed views arrive with Battman updates. Views so far: **Power** (built from Battman cards), **Finances**,
 **Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log**, **Settings**
 and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
 tab), opened from the button at the bottom of the Finances Billing card, for
@@ -91,6 +91,12 @@ colour also as an attribute. It's for things that can't read theme colours, like
 iPhone Live Activity. It updates by itself when the dashboard theme changes. Until a
 dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
 `problem` attribute says why.
+
+## Battman cards
+
+Cards you can add to any dashboard (Add card → search "Battman"), and that update
+with Battman releases. Each is a plain YAML file you can copy and try changes on.
+See [docs/cards.md](docs/cards.md).
 
 ## Live Activity
 

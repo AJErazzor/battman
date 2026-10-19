@@ -87,6 +87,10 @@
     "live_activity_not_loaded": {
       "title": "Battman Live Activity automations didn't load",
       "description": "Battman added {missing} to automations.yaml / scripts.yaml, but Home Assistant didn't load them. Check that configuration.yaml has `automation: !include automations.yaml` and `script: !include scripts.yaml` (they're there by default), then press Create Live Activity automations on the Battman device again."
+    },
+    "local_cards": {
+      "title": "Battman is using your own card files",
+      "description": "These Battman cards come from your files in config/{folder}/ instead of the ones Battman ships: {cards}. That folder is for trying out changes; delete a file there to go back to Battman's version."
     }
   },
   "options": {
@@ -135,7 +139,10 @@
           "sell_rules_event": "Sell rules update event name",
           "power_provider_buy": "Power provider buy tariffs (sensor)",
           "power_provider_sell": "Power provider sell tariffs (sensor)",
-          "power_provider_event": "Power provider update event name"
+          "power_provider_event": "Power provider update event name",
+          "grid_export_limit": "Grid export limit (number)",
+          "pv_max_limit": "PV max power limit (number)",
+          "max_charge_limit": "Max charging limit (number)"
         }
       }
     },

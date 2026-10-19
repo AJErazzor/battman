@@ -1,0 +1,121 @@
+# name: Limits
+# description: Grid export, PV max and max charge limits. Tap one to change it.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-limits`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/limits.yaml and edit that copy.
+type: vertical-stack
+version: 0.9.5
+cards:
+  - type: horizontal-stack
+    cards:
+      - type: custom:button-card
+        entity: '[[map:grid_export_limit]]'
+        show_icon: false
+        show_name: false
+        show_state: false
+        tap_action:
+          action: more-info
+        custom_fields:
+          c: |
+            [[[
+              var n = parseFloat(entity.state), v = isNaN(n) ? '—' : Math.round(n), u = entity.attributes.unit_of_measurement;   // unavailable shows —, never NaN
+              return '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%">'
+                + '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--battman-text-muted);opacity:0.7;margin-bottom:3px;white-space:nowrap">Grid Export Limit</span>'
+                + '<span style="font-size:18px;font-weight:900;line-height:1;color:var(--battman-blue);font-variant-numeric:tabular-nums;white-space:nowrap">' + v
+                +   (u && !isNaN(n) ? '<span style="font-size:11px;font-weight:700;opacity:0.5;margin-left:3px">' + u + '</span>' : '')
+                + '</span></div>';
+            ]]]
+        styles:
+          card:
+            - padding: 0 12px
+            - height: 44px
+            - min-height: 44px
+            - max-height: 44px
+            - border-radius: 8px
+            - box-shadow: none
+            - background: var(--battman-surface-card)
+            - border: 1px solid var(--battman-border-neutral-soft)
+          grid:
+            - grid-template-areas: '"c"'
+          custom_fields:
+            c:
+              - justify-self: center
+              - width: 100%
+      - type: custom:button-card
+        entity: '[[map:pv_max_limit]]'
+        show_icon: false
+        show_name: false
+        show_state: false
+        tap_action:
+          action: more-info
+        custom_fields:
+          c: |
+            [[[
+              var n = parseFloat(entity.state), v = isNaN(n) ? '—' : Math.round(n), u = entity.attributes.unit_of_measurement;   // unavailable shows —, never NaN
+              return '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%">'
+                + '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--battman-text-muted);opacity:0.7;margin-bottom:3px;white-space:nowrap">PV Max Limit</span>'
+                + '<span style="font-size:18px;font-weight:900;line-height:1;color:var(--battman-blue);font-variant-numeric:tabular-nums;white-space:nowrap">' + v
+                +   (u && !isNaN(n) ? '<span style="font-size:11px;font-weight:700;opacity:0.5;margin-left:3px">' + u + '</span>' : '')
+                + '</span></div>';
+            ]]]
+        styles:
+          card:
+            - padding: 0 12px
+            - height: 44px
+            - min-height: 44px
+            - max-height: 44px
+            - border-radius: 8px
+            - box-shadow: none
+            - background: var(--battman-surface-card)
+            - border: 1px solid var(--battman-border-neutral-soft)
+          grid:
+            - grid-template-areas: '"c"'
+          custom_fields:
+            c:
+              - justify-self: center
+              - width: 100%
+      - type: custom:button-card
+        entity: '[[map:max_charge_limit]]'
+        show_icon: false
+        show_name: false
+        show_state: false
+        tap_action:
+          action: more-info
+        custom_fields:
+          c: |
+            [[[
+              var n = parseFloat(entity.state), v = isNaN(n) ? '—' : Math.round(n), u = entity.attributes.unit_of_measurement;   // unavailable shows —, never NaN
+              return '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%">'
+                + '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--battman-text-muted);opacity:0.7;margin-bottom:3px;white-space:nowrap">Max Charge Limit</span>'
+                + '<span style="font-size:18px;font-weight:900;line-height:1;color:var(--battman-blue);font-variant-numeric:tabular-nums;white-space:nowrap">' + v
+                +   (u && !isNaN(n) ? '<span style="font-size:11px;font-weight:700;opacity:0.5;margin-left:3px">' + u + '</span>' : '')
+                + '</span></div>';
+            ]]]
+        styles:
+          card:
+            - padding: 0 12px
+            - height: 44px
+            - min-height: 44px
+            - max-height: 44px
+            - border-radius: 8px
+            - box-shadow: none
+            - background: var(--battman-surface-card)
+            - border: 1px solid var(--battman-border-neutral-soft)
+          grid:
+            - grid-template-areas: '"c"'
+          custom_fields:
+            c:
+              - justify-self: center
+              - width: 100%
+    card_mod:
+      style:
+        .: >-
+          :host { --stack-card-gap: 4px; --horizontal-stack-card-gap:
+          4px; }
+        $: '.content { gap: 4px !important; }'
+card_mod:
+  style:
+    .: ':host { --stack-card-gap: 4px; }'
+    $: '.content { gap: 4px !important; }'
