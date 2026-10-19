@@ -36,7 +36,8 @@ strategy:
   type: custom:battman
 ```
 
-so Battman builds its views, and new or changed views arrive with Battman updates.
+so Battman builds its views (from `custom_components/battman/views/*.yaml`), and
+new or changed views arrive with Battman updates. Views so far: **Finances**.
 
 - **Want to edit it?** Edit dashboard → **Take control**. It becomes a normal
   dashboard you own (rename it, change anything). Battman never touches it again.
@@ -49,7 +50,8 @@ so Battman builds its views, and new or changed views arrive with Battman update
 
 ## Pages
 
-Battman serves its pages from `/battman/`, for example the cost chart:
+Battman serves its pages and images from `/battman/` (`cost-chart.html`,
+`cost-compare.html`, `images/…`), for example:
 
 ```yaml
 type: iframe
@@ -59,6 +61,11 @@ url: /battman/cost-chart.html
 Pages find their entities through Battman's **entity map** (Battman name →
 entity in your HA) and take their colours from a **Battman theme**. If an entity
 or theme colour is missing, the page shows an error saying exactly what.
+
+## Dependencies
+
+Battman's dashboard needs some HACS cards (button-card, card-mod, html-card).
+See [DEPENDENCIES.md](DEPENDENCIES.md). Battman raises a Repair if any are missing.
 
 ## Updating
 

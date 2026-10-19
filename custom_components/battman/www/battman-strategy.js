@@ -3,40 +3,22 @@
 // A dashboard whose whole config is
 //     strategy:
 //       type: custom:battman
-// is "managed": Battman builds its views here, every time it opens, so new and
-// changed views arrive with Battman updates. "Take control" in HA turns it into
+// is "managed": its views come from Battman (custom_components/battman/views/*.yaml,
+// with entity names filled from Battman's entity map), every time it opens, so new
+// and changed views arrive with Battman updates. "Take control" in HA turns it into
 // a normal dashboard you own, and Battman never touches it again.
+//
+// No fallbacks: if Battman can't build the views, the dashboard says exactly why.
 
-const BATTMAN_THEME = "Battman Coffee";
-
-// Full-bleed iframe styling for Battman pages (needs card-mod).
-const IFRAME_CARD_MOD = {
-  style:
-    "ha-card { height: 100%; background: transparent; border: none; box-shadow: none; padding: 0; overflow: hidden; }\n" +
-    ".wrapper { height: 100% !important; padding: 0 !important; }\n" +
-    "iframe { height: 100% !important; width: 100% !important; border: 0 !important; }",
-};
-
-function pageView({ title, path, icon, url, rows }) {
+function errorView(lines) {
   return {
-    title,
-    path,
-    icon,
-    theme: BATTMAN_THEME,
-    type: "sections",
-    max_columns: 4,
-    sections: [
+    title: "Battman",
+    path: "battman-error",
+    cards: [
       {
-        type: "grid",
-        column_span: 4,
-        cards: [
-          {
-            type: "iframe",
-            url,
-            grid_options: { columns: "full", rows },
-            card_mod: IFRAME_CARD_MOD,
-          },
-        ],
+        type: "markdown",
+        content:
+          "## Battman dashboard problem\n\n" + lines.map((l) => "- " + l).join("\n"),
       },
     ],
   };
@@ -44,18 +26,23 @@ function pageView({ title, path, icon, url, rows }) {
 
 class BattmanDashboardStrategy {
   static async generate(config, hass) {
-    return {
-      title: "Battman",
-      views: [
-        pageView({
-          title: "Cost",
-          path: "cost",
-          icon: "mdi:cash-multiple",
-          url: "/battman/cost-chart.html",
-          rows: 9,
-        }),
-      ],
-    };
+    let data;
+    try {
+      data = await hass.callApi("GET", "battman/dashboard");
+    } catch (err) {
+      return {
+        title: "Battman",
+        views: [errorView([
+          "Could not load the dashboard from the Battman integration (" +
+            ((err && (err.message || err.body || err.status_code)) || err) + ").",
+          "Is Battman installed, set up, and has Home Assistant been restarted since updating?",
+        ])],
+      };
+    }
+    if (data.errors && data.errors.length) {
+      return { title: "Battman", views: [errorView(data.errors)] };
+    }
+    return { title: "Battman", views: data.views };
   }
 }
 
