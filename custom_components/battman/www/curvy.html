@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<!-- Battman Curvy: SOC curve editor (from Smiggles editorv139).
+     Entities and events come from Battman's entity map; colours from a Battman theme.
+     No fallbacks: anything missing is shown as an error. -->
+<html lang="en">
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battman Curvy</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    /* ════════════════════════════════════════════
+       Battman Curvy (SOC Curve Editor, from v139)
+       Pure HA-variable CSS — transitions seamlessly
+       with any HA theme, light or dark.
+       All colour decisions delegated to the host.
+    ════════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: var(--primary-font-family,
+        -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        Roboto, Oxygen, Ubuntu, Cantarell, sans-serif);
+      margin: 0;
+      padding: 12px;
+      background: var(--primary-background-color, #f5f5f5);
+      color: var(--primary-text-color, #1a1a1a);
+    }
+
+    @media (min-width: 600px) { body { padding: 20px; } }
+
+    /* ── Card ── */
+    .container {
+      max-width: 2200px;
+      margin: 0 auto;
+      background: var(--card-background-color, #fff);
+      border-radius: var(--ha-card-border-radius, 14px);
+      padding: 20px;
+      box-shadow: var(--ha-card-box-shadow,
+        0 2px 4px rgba(0,0,0,0.08),
+        0 8px 24px rgba(0,0,0,0.06));
+      border: 1px solid var(--divider-color, rgba(0,0,0,0.06));
+    }
+    @media (min-width: 600px) { .container { padding: 28px; } }
+
+    /* ── Heading ── */
+    /* ── Mode toggle row ── */
+    .mode-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .mode-toggle-left { display: flex; gap: 8px; align-items: stretch; }
+
+    /* Segmented toggle matching the Power view's battery-mode buttons:
+       inactive = surface fill + neutral border + uppercase muted label;
+       active = hue soft-fill + hue border + hue label. */
+    .mode-btn {
+      padding: 5px 14px;
+      border: 1px solid var(--battman-border-neutral);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+      background: var(--battman-surface-card);
+      color: var(--battman-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+    .mode-btn-month.active {
+      background: var(--battman-blue-soft-bg);
+      border-color: var(--battman-blue-border-strong);
+      color: var(--battman-blue);
+    }
+    .mode-btn-season.active {
+      background: var(--battman-amber-soft-bg);
+      border-color: var(--battman-amber-border-strong);
+      color: var(--battman-amber);
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--divider-color, #e5e7eb);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 16px;
+      border: none; background: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px; font-weight: 500;
+      color: var(--secondary-text-color, #666);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--primary-text-color, #333); }
+    .tab.active {
+      color: var(--primary-color, #2563eb);
+      border-bottom-color: var(--primary-color, #2563eb);
+      font-weight: 600;
+    }
+
+    /* Curve-type tabs → segmented ghost buttons (active glows in the curve colour) */
+    .tabs { border-bottom: none; gap: 10px 6px; align-items: center; }
+    .ctab {
+      padding: 7px 13px;
+      border: 1px solid var(--battman-border-neutral);
+      border-bottom-width: 1px;
+      border-radius: 8px;
+      background: var(--battman-surface-card);
+      color: var(--battman-text-muted);
+      margin-bottom: 0;
+      font-weight: 600;
+      transition: background .12s ease, border-color .12s ease, color .12s ease;
+    }
+    .ctab.active {
+      background: color-mix(in srgb, var(--active-curve, var(--battman-blue)) 14%, transparent);
+      border-color: var(--active-curve, var(--battman-blue));
+      color: var(--active-curve, var(--battman-blue));
+    }
+
+    /* Months → compact pills (active glows in the current curve colour) */
+    .month-tabs, .season-tabs {
+      margin-left: auto; display: flex; gap: 6px 4px; flex-wrap: wrap;
+    }
+    .month-tabs .tab, .season-tabs .tab {
+      padding: 4px 12px;
+      border: 1px solid var(--battman-border-neutral);
+      border-bottom-width: 1px;
+      border-radius: 999px;
+      background: var(--battman-surface-popup);
+      color: var(--battman-text-muted);
+      margin-bottom: 0;
+      font-size: 12px;
+    }
+    .month-tabs .tab.active, .season-tabs .tab.active {
+      background: color-mix(in srgb, var(--active-curve, var(--battman-blue)) 14%, transparent);
+      border-color: var(--active-curve, var(--battman-blue));
+      color: var(--active-curve, var(--battman-blue));
+      font-weight: 600;
+    }
+    .season-tabs { display: none; }
+    .month-tabs .tab, .season-tabs .tab { font-size: 12px; padding: 4px 12px; }
+
+    /* ── Chart controls ── */
+    .chart-controls {
+      display: flex; gap: 10px; margin-bottom: 10px;
+      flex-wrap: wrap; align-items: center;
+    }
+    .chart-controls label {
+      font-size: 12px; font-weight: 500;
+      color: var(--secondary-text-color, #666);
+      display: flex; align-items: center; gap: 5px; cursor: pointer;
+    }
+    .chart-controls select,
+    .chart-controls input[type="date"] {
+      padding: 5px 10px;
+      border: 1px solid var(--divider-color, #e5e7eb);
+      border-radius: 999px;
+      background: var(--secondary-background-color, #f3f4f6);
+      color: var(--primary-text-color, #1a1a1a);
+      font-size: 12px; font-family: inherit; cursor: pointer;
+    }
+    .chart-controls input[type="checkbox"] {
+      width: 15px; height: 15px; cursor: pointer;
+      accent-color: var(--primary-color, #2563eb);
+    }
+    .chart-controls .btn-small {
+      padding: 5px 10px; font-size: 11px;
+      background: var(--secondary-background-color, #e5e7eb);
+      color: var(--secondary-text-color, #555);
+    }
+
+
+    /* ── Chart container ── */
+    .chart-container {
+      height: 280px;
+      margin-bottom: 24px;
+      background: var(--secondary-background-color, #f9fafb);
+      padding: 12px;
+      border-radius: calc(var(--ha-card-border-radius, 14px) - 2px);
+      border: 1px solid var(--divider-color, rgba(0,0,0,0.06));
+      position: relative;
+    }
+    @media (min-width: 600px) { .chart-container { height: 340px; padding: 16px; } }
+
+    /* ── Hour controls ── */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .control-group label {
+      font-size: 10px; font-weight: 600;
+      color: var(--secondary-text-color, #888);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .control-group .value-input {
+      width: 100%; text-align: center;
+      font-size: 13px; font-weight: 600;
+      color: var(--primary-text-color, #1a1a1a);
+      background: var(--secondary-background-color, #f3f4f6);
+      padding: 8px 2px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+      font-variant-numeric: tabular-nums;
+    }
+    .control-group .value-input:hover {
+      border-color: var(--divider-color, #d1d5db);
+    }
+    .control-group .value-input:focus {
+      outline: none;
+      border-color: var(--primary-color, #2563eb);
+      background: var(--card-background-color, #fff);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #2563eb) 15%, transparent);
+    }
+
+    /* ── Hide number input spinners (all browsers) ── */
+    .value-input::-webkit-inner-spin-button,
+    .value-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .value-input { -moz-appearance: textfield; appearance: textfield; }
+
+    /* ── Chart-hover highlight on input boxes ── */
+    .control-group .value-input.chart-hover {
+      border-color: var(--primary-color, #2563eb);
+      background: color-mix(in srgb, var(--primary-color, #2563eb) 12%, var(--card-background-color, #fff));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #2563eb) 20%, transparent);
+    }
+    .control-group .value-input.chart-click {
+      border-color: var(--accent-color, #f59e0b);
+      background: color-mix(in srgb, var(--accent-color, #f59e0b) 12%, var(--card-background-color, #fff));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color, #f59e0b) 22%, transparent);
+      animation: pulse-click 0.6s ease-out;
+    }
+    @keyframes pulse-click {
+      0%   { box-shadow: 0 0 0 0px color-mix(in srgb, var(--accent-color, #f59e0b) 50%, transparent); }
+      60%  { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-color, #f59e0b) 0%, transparent); }
+      100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color, #f59e0b) 22%, transparent); }
+    }
+
+    /* ── Hour Details Cards ── */
+    .hd-card {
+      background: var(--battman-surface-popup);
+      border: 1px solid var(--battman-border-neutral);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .hd-card-main { min-width: 0; }
+    .hd-card-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .hd-card-value {
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1.1;
+      color: var(--battman-text-bright);
+      white-space: nowrap;
+    }
+    .hd-card-value .unit {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--battman-text-muted);
+    }
+    .hd-card-sub {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+      gap: 3px;
+      font-size: 12px;
+      color: var(--battman-text-dim);
+      line-height: 1.35;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .hd-card-sub > span { display: block; }
+    /* Threshold card is split: value on the left half, time standing out on the right */
+    .hd-card.hd-card-threshold { display: flex; align-items: stretch; padding: 0; }
+    .hd-card-threshold .hd-thr-main { flex: 1; padding: 12px 14px; }
+    .hd-card-threshold .hd-thr-time {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 12px 14px; min-width: 60px;
+      border-left: 1px solid var(--battman-border-neutral);
+    }
+    .hd-thr-time-val {
+      font-size: 24px; font-weight: 600; line-height: 1;
+      color: var(--battman-text-bright);
+    }
+    .hd-thr-time-tag {
+      font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--battman-text-dim); margin-top: 4px;
+    }
+
+    .debug-box {
+      background: var(--battman-red-soft-bg);
+      border: 1px solid var(--battman-red);
+      padding: 12px 14px; border-radius: 10px;
+      margin-bottom: 16px; font-size: 12px; line-height: 1.6;
+      color: var(--battman-text-bright);
+      font-family: 'Courier New', monospace;
+      max-height: 200px; overflow-y: auto;
+    }
+    .debug-box .btn { font-family: var(--primary-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif); }
+    /* Form controls don't inherit font-family by default — make them follow the theme */
+    input, textarea, select, button { font-family: inherit; }
+
+    /* ── Action buttons ── */
+    .actions {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    /* Soft-filled buttons matching the Power view: a faint hue fill defines the
+       (small) button, a quiet neutral border at rest brightens to the hue on
+       hover, and the colour coding is carried by the text/icon. Pressed = a
+       noticeably stronger fill so the tap registers. Each variant just sets
+       --c (hue) and --c-fill (rest background). */
+    .btn {
+      --c:      var(--battman-blue);
+      --c-fill: var(--battman-blue-soft-bg);
+      padding: 8px 14px;
+      border: 1px solid var(--battman-border-neutral);
+      border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+      background: var(--c-fill, transparent);
+      color: var(--c, var(--primary-text-color));
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: inherit;
+    }
+    @media (min-width: 600px) { .btn { padding: 9px 16px; font-size: 13px; } }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* hover only on real pointers, so the coloured border doesn't stick after a
+       tap on touch screens (phone / wall panel) */
+    @media (hover: hover) {
+      .btn:hover:not(:disabled) { border-color: var(--c, var(--divider-color)); }
+    }
+    .btn:active:not(:disabled) { background: color-mix(in srgb, var(--c) 32%, transparent); border-color: var(--c); transform: scale(0.96); }
+    /* JS-driven pressed state (reliable on iOS where :active often won't fire) */
+    .btn.pressed:not(:disabled) { background: color-mix(in srgb, var(--c) 34%, transparent); border-color: var(--c); transform: scale(0.95); }
+    .mode-btn.pressed { transform: scale(0.95); }
+
+    /* Per-variant hue (text/icon + fill); rest border stays neutral. */
+    .btn-save { /* primary — coloured border at rest + bold to stand out */
+      --c: var(--battman-green); --c-fill: var(--battman-green-soft-bg);
+      border-color: var(--battman-green-border-strong); font-weight: 700;
+    }
+    /* Presets group — purple */
+    .btn-save-defaults, .btn-load-defaults, .btn-preset, .btn-manage-presets {
+      --c: var(--battman-purple); --c-fill: var(--battman-purple-soft-bg);
+    }
+    /* Period group — teal */
+    .btn-copy, .btn-paste, .btn-export, .btn-import {
+      --c: var(--battman-teal); --c-fill: var(--battman-teal-soft-bg);
+    }
+    /* Ungrouped utilities (Factory Defaults, Match Actual) — blue */
+    .btn-misc {
+      --c: var(--battman-blue); --c-fill: var(--battman-blue-soft-bg);
+    }
+    .btn-run-script { /* destructive — the only red one */
+      --c: var(--battman-red); --c-fill: var(--battman-red-soft-bg);
+    }
+
+    /* ── Preset dropdowns ── */
+    .preset-menu { position: relative; display: inline-block; }
+    .preset-dropdown {
+      display: none; position: absolute;
+      bottom: 100%; left: 0;
+      background: var(--card-background-color, #fff);
+      border: 1px solid var(--divider-color, #e5e7eb);
+      border-radius: var(--ha-card-border-radius, 12px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      padding: 6px; margin-bottom: 6px;
+      min-width: 200px; z-index: 1000;
+      max-height: 60vh; overflow-y: auto;
+    }
+    .preset-dropdown.show { display: block; }
+    .preset-option {
+      padding: 8px 10px; cursor: pointer;
+      border-radius: calc(var(--ha-card-border-radius, 12px) - 4px);
+      font-size: 12px; transition: background 0.15s;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .preset-option:hover { background: var(--secondary-background-color, #f3f4f6); }
+    .preset-option .preset-name  { font-weight: 600; color: var(--primary-text-color, #1a1a1a); }
+    .preset-option .preset-status{ font-size: 10px; color: var(--secondary-text-color, #888); }
+
+    /* ── Modal ── */
+    .modal {
+      display: none; position: fixed; z-index: 2000;
+      left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: fadeIn 0.2s;
+    }
+    .modal.show { display: flex; align-items: center; justify-content: center; }
+    .modal-content {
+      background: var(--card-background-color, #fff);
+      padding: 22px; border-radius: var(--ha-card-border-radius, 14px);
+      max-width: 480px; width: 90%;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+      border: 1px solid var(--divider-color, rgba(0,0,0,0.08));
+    }
+    .modal-header {
+      font-size: 17px; font-weight: 700;
+      margin-bottom: 16px; color: var(--primary-text-color, #1a1a1a);
+      letter-spacing: -0.015em;
+    }
+    .preset-list { display: flex; flex-direction: column; gap: 10px; }
+    .preset-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: var(--secondary-background-color, #f3f4f6);
+      border-radius: calc(var(--ha-card-border-radius, 14px) - 4px);
+    }
+    .preset-item label { font-size: 11px; font-weight: 600; color: var(--secondary-text-color, #666); min-width: 60px; }
+    .preset-item input[type="text"] {
+      flex: 1; padding: 7px 10px;
+      border: 1px solid var(--divider-color, #e5e7eb);
+      border-radius: 6px;
+      background: var(--card-background-color, #fff);
+      color: var(--primary-text-color, #1a1a1a);
+      font-size: 13px; font-family: inherit;
+    }
+    .preset-item input[type="text"]:focus {
+      outline: none; border-color: var(--primary-color, #2563eb);
+    }
+    .preset-item .preset-info { font-size: 10px; color: var(--secondary-text-color, #888); min-width: 70px; text-align: right; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── Auto-save ── */
+    .auto-save {
+      display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+      background: var(--secondary-background-color, #f3f4f6);
+      border-radius: calc(var(--ha-card-border-radius, 14px) - 4px);
+      font-size: 12px; color: var(--primary-text-color, #1a1a1a);
+    }
+    .auto-save input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary-color, #2563eb); }
+
+    /* ── Status ── */
+    .status {
+      display: inline-block; padding: 4px 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 600; margin-left: 10px;
+    }
+    .status.success { background: rgba(22,163,74,0.12); color: var(--success-color, #15803d); }
+    .status.error   { background: rgba(239,68,68,0.12);  color: var(--error-color, #991b1b); }
+    .status.info    { background: rgba(37,99,235,0.12);   color: var(--info-color, #1e40af); }
+
+    /* ── Info box ── */
+    .info-box {
+      background: var(--battman-surface-popup);
+      border: 1px solid var(--battman-green);
+      padding: 12px 14px; border-radius: 10px; margin-top: 20px;
+      font-size: 12px; line-height: 1.6; color: var(--battman-text-bright);
+    }
+    .info-box strong { color: var(--primary-color, #1e40af); }
+    .info-box code {
+      background: var(--secondary-background-color, rgba(0,0,0,0.08));
+      color: var(--primary-text-color, #1a1a1a);
+      padding: 1px 5px; border-radius: 4px;
+      font-size: 12px; font-family: inherit;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--divider-color, rgba(0,0,0,0.15));
+      border-radius: 3px;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 540px) {
+      .tabs  { gap: 8px 6px; }
+      .tab   { padding: 9px 9px; font-size: 12px; }
+      .month-tabs .tab { padding: 4px 11px; font-size: 11px; }
+      .controls { grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); gap: 5px; }
+      .control-group .value-input { font-size: 12px; padding: 7px 1px; }
+      .actions { gap: 6px; }
+      .btn { padding: 8px 10px; font-size: 11px; }
+      h1 { font-size: 17px; }
+    }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2 style="margin:0 0 16px;display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;letter-spacing:-0.015em;color:var(--primary-text-color,#f9fafb);"><img src="/battman/images/battman-lying.webp" alt="Battman" style="height:44px;width:auto;flex:none;"><img src="/battman/images/soc-curve-editor-line.webp" alt="SOC Curve Editor" style="width:300px;max-width:100%;min-width:0;height:auto;flex:0 1 auto;"><span id="status"></span></h2>
+    <div class="mode-toggle">
+      <div class="mode-toggle-left">
+        <button class="mode-btn mode-btn-month active" onclick="switchEditMode('month')">Month</button>
+        <button class="mode-btn mode-btn-season" onclick="switchEditMode('season')">Season</button>
+        <span id="solar-forecast-badge" style="
+          font-size:12px;font-weight:600;padding:5px 10px;
+          border-radius:8px;
+          background:var(--secondary-background-color,rgba(0,0,0,0.05));
+          border:1px solid var(--divider-color,rgba(0,0,0,0.1));
+          color:var(--secondary-text-color,#6b7280);
+          display:none;
+        "></span>
+      </div>
+      <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:12px;">
+      </div><!-- end right wrapper -->
+    </div><!-- end mode-toggle -->
+    
+    <div class="tabs">
+      <button class="tab ctab active" onclick="switchCurveType('sell')">Sell</button>
+      <button class="tab ctab" onclick="switchCurveType('sell_high')">Sell High Consumption</button>
+      <button class="tab ctab" onclick="switchCurveType('buy')">Buy</button>
+      <button class="tab ctab" onclick="switchCurveType('buy_high')">Buy High Consumption</button>
+      <div class="month-tabs" id="month-tabs">
+        <button class="tab" onclick="switchPeriod('jan')" id="tab-jan">Jan</button>
+        <button class="tab" onclick="switchPeriod('feb')" id="tab-feb">Feb</button>
+        <button class="tab" onclick="switchPeriod('mar')" id="tab-mar">Mar</button>
+        <button class="tab" onclick="switchPeriod('apr')" id="tab-apr">Apr</button>
+        <button class="tab" onclick="switchPeriod('may')" id="tab-may">May</button>
+        <button class="tab" onclick="switchPeriod('jun')" id="tab-jun">Jun</button>
+        <button class="tab" onclick="switchPeriod('jul')" id="tab-jul">Jul</button>
+        <button class="tab" onclick="switchPeriod('aug')" id="tab-aug">Aug</button>
+        <button class="tab" onclick="switchPeriod('sep')" id="tab-sep">Sep</button>
+        <button class="tab" onclick="switchPeriod('oct')" id="tab-oct">Oct</button>
+        <button class="tab" onclick="switchPeriod('nov')" id="tab-nov">Nov</button>
+        <button class="tab" onclick="switchPeriod('dec')" id="tab-dec">Dec</button>
+      </div>
+      <div class="season-tabs" id="season-tabs">
+        <button class="tab" onclick="switchPeriod('summer')" id="tab-summer">Summer</button>
+        <button class="tab" onclick="switchPeriod('autumn')" id="tab-autumn">Autumn</button>
+        <button class="tab" onclick="switchPeriod('winter')" id="tab-winter">Winter</button>
+        <button class="tab" onclick="switchPeriod('spring')" id="tab-spring">Spring</button>
+      </div>
+    </div>
+    
+    <div class="chart-controls">
+      <label>
+        <input type="checkbox" id="show-actual" onchange="toggleActualSOC()" checked>
+        Show Actual SOC
+      </label>
+      <select id="actual-mode" onchange="updateActualSOC()" disabled>
+        <option value="yesterday" selected>Yesterday</option>
+        <option value="average1">Average (1 day)</option>
+        <option value="average2">Average (2 days)</option>
+        <option value="average3">Average (3 days)</option>
+        <option value="average4">Average (4 days)</option>
+        <option value="average5">Average (5 days)</option>
+        <option value="average6">Average (6 days)</option>
+        <option value="average7">Average (7 days)</option>
+        <option value="average14">Average (14 days)</option>
+        <option value="average30">Average (30 days)</option>
+        <option value="daterange">Specific Dates</option>
+      </select>
+      <div id="date-range-controls" style="display: none;">
+        <label style="font-size: 11px;">Start:</label>
+        <input type="date" id="actual-date-start" onchange="updateActualSOC()" disabled>
+        <label style="font-size: 11px;">End:</label>
+        <input type="date" id="actual-date-end" onchange="updateActualSOC()" disabled>
+      </div>
+      <label>
+        <input type="checkbox" id="show-today" onchange="toggleTodaySOC()" checked>
+        Show Today's SOC
+      </label>
+      <label>
+        <input type="checkbox" id="show-hour-details" onchange="toggleHourDetails()" checked>
+        Show Hour Details
+      </label>
+      <label>
+        <input type="checkbox" id="show-debug" onchange="toggleDebugger()">
+        Show Debug
+      </label>
+    </div>
+
+    <!-- Hour Details panel — shown on chart hover when checkbox ticked -->
+    <div id="hour-details-panel" style="background:var(--card-background-color,#1f2937);border:1px solid var(--divider-color,rgba(255,255,255,0.1));border-radius:8px;padding:10px 14px;margin:6px 0;">
+      <div id="hour-details-content" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;min-height:60px;">
+        <span style="color:var(--battman-text-muted);font-size:13px;align-self:center;">Hover over the chart to see hour details</span>
+      </div>
+    </div>
+
+    
+    
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+    
+    <div class="controls" id="controls"></div>
+    
+    <div class="actions">
+      <button class="btn btn-save" onclick="saveToHA()">Save</button>
+      <div class="preset-menu">
+        <button class="btn btn-preset" onclick="togglePresetMenu('save')">Save Preset ▼</button>
+        <div class="preset-dropdown" id="save-preset-menu">
+          <div class="preset-option" onclick="savePreset(1)"><span class="preset-name" id="save-preset-1-name">Preset 1</span><span class="preset-status" id="save-preset-1-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(2)"><span class="preset-name" id="save-preset-2-name">Preset 2</span><span class="preset-status" id="save-preset-2-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(3)"><span class="preset-name" id="save-preset-3-name">Preset 3</span><span class="preset-status" id="save-preset-3-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(4)"><span class="preset-name" id="save-preset-4-name">Preset 4</span><span class="preset-status" id="save-preset-4-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(5)"><span class="preset-name" id="save-preset-5-name">Preset 5</span><span class="preset-status" id="save-preset-5-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(6)"><span class="preset-name" id="save-preset-6-name">Preset 6</span><span class="preset-status" id="save-preset-6-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(7)"><span class="preset-name" id="save-preset-7-name">Preset 7</span><span class="preset-status" id="save-preset-7-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(8)"><span class="preset-name" id="save-preset-8-name">Preset 8</span><span class="preset-status" id="save-preset-8-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(9)"><span class="preset-name" id="save-preset-9-name">Preset 9</span><span class="preset-status" id="save-preset-9-status">Empty</span></div>
+          <div class="preset-option" onclick="savePreset(10)"><span class="preset-name" id="save-preset-10-name">Preset 10</span><span class="preset-status" id="save-preset-10-status">Empty</span></div>
+        </div>
+      </div>
+      <div class="preset-menu">
+        <button class="btn btn-preset" onclick="togglePresetMenu('load')">Load Preset ▼</button>
+        <div class="preset-dropdown" id="load-preset-menu">
+          <div class="preset-option" onclick="loadPreset(1)" id="load-preset-1"><span class="preset-name" id="load-preset-1-name">Preset 1</span><span class="preset-status" id="load-preset-1-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(2)" id="load-preset-2"><span class="preset-name" id="load-preset-2-name">Preset 2</span><span class="preset-status" id="load-preset-2-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(3)" id="load-preset-3"><span class="preset-name" id="load-preset-3-name">Preset 3</span><span class="preset-status" id="load-preset-3-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(4)" id="load-preset-4"><span class="preset-name" id="load-preset-4-name">Preset 4</span><span class="preset-status" id="load-preset-4-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(5)" id="load-preset-5"><span class="preset-name" id="load-preset-5-name">Preset 5</span><span class="preset-status" id="load-preset-5-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(6)" id="load-preset-6"><span class="preset-name" id="load-preset-6-name">Preset 6</span><span class="preset-status" id="load-preset-6-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(7)" id="load-preset-7"><span class="preset-name" id="load-preset-7-name">Preset 7</span><span class="preset-status" id="load-preset-7-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(8)" id="load-preset-8"><span class="preset-name" id="load-preset-8-name">Preset 8</span><span class="preset-status" id="load-preset-8-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(9)" id="load-preset-9"><span class="preset-name" id="load-preset-9-name">Preset 9</span><span class="preset-status" id="load-preset-9-status">Empty</span></div>
+          <div class="preset-option" onclick="loadPreset(10)" id="load-preset-10"><span class="preset-name" id="load-preset-10-name">Preset 10</span><span class="preset-status" id="load-preset-10-status">Empty</span></div>
+        </div>
+      </div>
+      <button class="btn btn-manage-presets" onclick="openManagePresets()">Manage Presets</button>
+      <button class="btn btn-copy" onclick="copyCurve()">Copy Period</button>
+      <button class="btn btn-paste" onclick="pasteCurve()" id="paste-btn" disabled>Paste Period</button>
+      <button class="btn btn-export" onclick="exportPeriod()">Export Period</button>
+      <button class="btn btn-import" onclick="document.getElementById('import-file').click()">Import Period</button>
+      <input type="file" id="import-file" accept=".json" onchange="importPeriod(event)" style="display:none">
+      <button class="btn btn-misc" onclick="loadFactoryDefaults()">Factory Defaults</button>
+      <button class="btn btn-misc" onclick="copyFromActualSOC()" id="copy-actual-btn" disabled>Match Actual</button>
+      <button class="btn btn-run-script" onclick="runScript()">Run Script</button>
+      <div class="auto-save">
+        <input type="checkbox" id="auto-save" onchange="toggleAutoSave()">
+        <label for="auto-save">Auto-save</label>
+      </div>
+    </div>
+    
+    <!-- Manage Presets Modal -->
+    <div class="modal" id="manage-presets-modal">
+      <div class="modal-content">
+        <div class="modal-header">Manage Presets</div>
+        <div class="preset-list">
+          <div class="preset-item"><label>Preset 1:</label><input type="text" id="preset-1-name-input" placeholder="e.g., Hot Weather"><span class="preset-info" id="preset-1-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 2:</label><input type="text" id="preset-2-name-input" placeholder="e.g., Rainy Day"><span class="preset-info" id="preset-2-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 3:</label><input type="text" id="preset-3-name-input" placeholder="e.g., Regular Day"><span class="preset-info" id="preset-3-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 4:</label><input type="text" id="preset-4-name-input" placeholder="e.g., Weekend"><span class="preset-info" id="preset-4-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 5:</label><input type="text" id="preset-5-name-input" placeholder="e.g., Special Event"><span class="preset-info" id="preset-5-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 6:</label><input type="text" id="preset-6-name-input" placeholder="e.g., ..."><span class="preset-info" id="preset-6-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 7:</label><input type="text" id="preset-7-name-input" placeholder="e.g., ..."><span class="preset-info" id="preset-7-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 8:</label><input type="text" id="preset-8-name-input" placeholder="e.g., ..."><span class="preset-info" id="preset-8-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 9:</label><input type="text" id="preset-9-name-input" placeholder="e.g., ..."><span class="preset-info" id="preset-9-info">Empty</span></div>
+          <div class="preset-item"><label>Preset 10:</label><input type="text" id="preset-10-name-input" placeholder="e.g., ..."><span class="preset-info" id="preset-10-info">Empty</span></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-save" onclick="savePresetNames()">Save Names</button>
+          <button class="btn" style="background: var(--battman-surface-popup); color: var(--battman-text-muted);" onclick="closeManagePresets()">Close</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="debug-box" class="debug-box" style="display: none;">
+      <button class="btn" onclick="clearDebugLog()" style="float: right; margin-top: -4px; padding: 4px 10px; font-size: 11px; background: var(--battman-surface-popup); border-color: var(--battman-border-neutral); color: var(--battman-text-muted);">Clear</button>
+      <div id="debug-content"></div>
+    </div>
+    <div class="info-box">
+      <strong>Currently Editing:</strong><br>
+      <span id="edit-info">Loading...</span>
+    </div>
+  </div>
+
+  <script>
+
+    // ───────────── Battman: entity map + startup checks (no fallbacks) ─────────────
+    let M = null;                 // Battman entity map
+    let CURVE_GAPS = [];
+    let OPTIONAL_MISSING = [];
+    const NEEDS = ['soc_curves', 'soc_curves_update_event', 'control_script', 'battery_soc', 'mode',
+                   'buy_price', 'feed_in_price', 'load_30m_avg', 'high_consumption', 'sigen_pv_power', 'solcast_today'];
+    const NEED_ENTITIES = ['soc_curves', 'control_script', 'battery_soc', 'mode', 'buy_price', 'feed_in_price',
+                           'load_30m_avg', 'high_consumption'];
+    // shown if missing, but the editor still works without them (they only add overlays)
+    const OPTIONAL_ENTITIES = { sigen_pv_power: 'actual solar overlay', solcast_today: 'solar forecast' };
+    const THEME_VARS = ['--battman-amber', '--battman-amber-border-strong', '--battman-amber-soft-bg', '--battman-blue', '--battman-blue-border-strong', '--battman-blue-soft-bg', '--battman-border-neutral', '--battman-green', '--battman-green-border-strong', '--battman-green-soft-bg', '--battman-orange', '--battman-purple', '--battman-purple-soft-bg', '--battman-red', '--battman-red-soft-bg', '--battman-surface-card', '--battman-surface-popup', '--battman-teal', '--battman-teal-soft-bg', '--battman-text-bright', '--battman-text-dim', '--battman-text-muted', '--battman-yellow'];
+
+    function getToken() { const h = getHass(); return h && h.auth && h.auth.data && h.auth.data.access_token; }
+    async function battmanStartupChecks() {
+      const tok = getToken();
+      if (!tok) return 'Not logged in to Home Assistant (no access token from the parent page).';
+      let r;
+      try { r = await fetch('/api/battman/entities', { headers: { Authorization: 'Bearer ' + tok } }); }
+      catch (e) { return 'Battman entity map unavailable (' + e.message + ').'; }
+      if (!r.ok) return 'Battman entity map unavailable (HTTP ' + r.status + '). Is the Battman integration installed and set up?';
+      M = (await r.json()).entities || {};
+      const noEntry = NEEDS.filter(k => !M[k]);
+      if (noEntry.length) return 'Battman entity map has no entry for: ' + noEntry.join(', ');
+      let ps; try { ps = window.parent.getComputedStyle(window.frameElement || window.parent.document.documentElement); }
+      catch (e) { return 'Cannot read the dashboard theme.'; }
+      const missingVars = THEME_VARS.filter(v => !ps.getPropertyValue(v).trim());
+      if (missingVars.length) return 'Theme colour ' + missingVars.slice(0, 4).join(', ') + (missingVars.length > 4 ? ' (+' + (missingVars.length - 4) + ' more)' : '') + ' not found — this view needs a Battman theme.';
+      const h = getHass();
+      if (!h) return 'Home Assistant not reachable from this page.';
+      const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' → ' + M[k]);
+      if (bad.length) return 'Battman entity map: entity not found: ' + bad.join(', ');
+      OPTIONAL_MISSING = Object.keys(OPTIONAL_ENTITIES).filter(k => !h.states[M[k]])
+        .map(k => 'No ' + OPTIONAL_ENTITIES[k] + ': ' + k + ' → ' + M[k] + ' not found');
+      return null;
+    }
+    function showFatal(msg) {
+      document.body.innerHTML = '<div style="padding:24px;font-family:sans-serif;color:#ccc;background:#1c1c1c;min-height:100vh"><b style="display:block;margin-bottom:12px;letter-spacing:.05em">BATTMAN CURVY PROBLEM</b><div id="bm-fatal"></div></div>';
+      document.getElementById('bm-fatal').textContent = msg;
+    }
+    function showNote(msg) {
+      const n = document.createElement('div');
+      n.style.cssText = 'margin:0 0 10px;padding:6px 10px;border-radius:6px;font-size:12px;color:var(--battman-amber);background:var(--battman-amber-soft-bg);border:1px solid var(--battman-amber-border-strong)';
+      n.textContent = msg;
+      const c = document.querySelector('.container') || document.body;
+      c.insertBefore(n, c.firstChild);
+    }
+
+    function hourLabel(h) {
+      if (h === 0)  return '12am';
+      if (h < 12)  return `${h}am`;
+      if (h === 12) return '12pm';
+      return `${h - 12}pm`;
+    }
+
+    function applyHATheme() {
+      try {
+        // Read from our own <iframe> element, not the home-assistant root:
+        // per-view themes are applied on the view container (an ancestor of
+        // this iframe) and custom properties inherit downward, so the iframe
+        // element resolves them whereas the document root (above the view)
+        // does not. Fall back to the ha root if frameElement is unavailable.
+        const src = window.frameElement || window.parent.document.querySelector('home-assistant');
+        if (src) {
+          const computedStyle = window.parent.getComputedStyle(src);
+          const varsToCopy = ['--primary-color','--accent-color','--primary-background-color','--secondary-background-color','--card-background-color','--primary-text-color','--secondary-text-color','--disabled-text-color','--divider-color','--ha-card-border-radius','--ha-card-box-shadow','--success-color','--error-color','--warning-color','--info-color','--battman-blue','--battman-orange','--battman-green','--battman-purple','--battman-yellow','--battman-teal','--battman-red','--battman-green-soft-bg','--battman-purple-soft-bg','--battman-teal-soft-bg','--battman-blue-soft-bg','--battman-red-soft-bg','--battman-amber-soft-bg','--battman-green-border-strong','--battman-blue-border-strong','--battman-amber-border-strong','--battman-text-bright','--battman-text-muted','--battman-text-dim','--battman-surface-card','--battman-surface-popup','--battman-border-neutral','--primary-font-family'];
+          varsToCopy.forEach(varName => {
+            const value = computedStyle.getPropertyValue(varName);
+            if (value) document.documentElement.style.setProperty(varName, value);
+          });
+        }
+      } catch (e) {}
+    }
+
+    // Canvas / Chart.js can't resolve CSS var() -- read the resolved value in JS.
+    // Battman colours are checked at startup, so no fallback for them here.
+    function gc(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (v) return v;
+      if (fallback === undefined) throw new Error('Theme colour ' + name + ' not found');
+      return fallback;
+    }
+    // Re-point the chart series colours at the live theme tokens (mutates the
+    // const colorMap object's properties, which is allowed).
+    function syncSeriesColors() {
+      colorMap.sell      = gc('--battman-blue');
+      colorMap.sell_high = gc('--battman-orange');
+      colorMap.buy       = gc('--battman-green');
+      colorMap.buy_high  = gc('--battman-purple');
+      // Canvas text can't read CSS var() — set Chart.js's font from the live theme font.
+      if (window.Chart) Chart.defaults.font.family = gc('--primary-font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+    }
+    // Pick black/white button text automatically from the button's own resolved
+    // background luminance (YIQ). No hardcoding -- adapts to whatever theme is
+    // active, including light backgrounds like lime green where white is invisible.
+    
+    const data = {};
+    const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    
+    let seasonMonths = {};
+    let seasonNames = {};
+    let hemisphere = 'south';
+    let clipboard = null;
+    let lastLoadedPreset = {};
+    let modifiedPeriods = {};
+
+    
+    months.forEach(month => {
+      data[month] = {
+        sell: Array(24).fill(0),
+        sell_high: Array(24).fill(0),
+        buy: Array(24).fill(0),
+        buy_high: Array(24).fill(0)
+      };
+    });
+    
+    const colorMap = {
+      sell: '#2563eb',
+      sell_high: '#f97316',
+      buy: '#16a34a',
+      buy_high: '#8b5cf6'
+    };
+    
+    const curveNames = {
+      sell: 'Sell (Normal)',
+      sell_high: 'Sell (High Consumption)',
+      buy: 'Buy (Normal)',
+      buy_high: 'Buy (High Consumption)'
+    };
+    
+    let editMode = 'month';
+    let currentPeriod = months[new Date().getMonth()];
+    let currentCurveType = 'sell';
+    let chart = null;
+    let autoSave = false;
+    let saveTimeout = null;
+    let showActual = true;
+    let showToday = true;
+    let showDebugBox = false;
+    let controlModeData = { actual: {}, today: {} };
+    let pricingData = { actual: { fit: {}, buy: {} }, today: { fit: {}, buy: {} } };
+    let solarData = { actual: {}, today: {} };   // avg actual PV (kW) per hour-of-day
+    let solarFcst = {};                          // today's hourly solar forecast (kW)
+
+    // Average actual PV power (map: sigen_pv_power, Sigen inverter only) per hour-of-day
+    // over [startTime, endTime]. Bucketing by hour-of-day averages across days,
+    // so a multi-day Actual range gives the typical solar at each hour.
+    async function fetchSolar(startTime, endTime, key) {
+      const hass = getHass(); if (!hass) { solarData[key] = {}; return; }
+      try {
+        const history = await hass.callApi('GET', `history/period/${startTime.toISOString()}?filter_entity_id=${M.sigen_pv_power}&end_time=${endTime.toISOString()}&minimal_response&no_attributes`);
+        if (!history || !history[0] || !history[0].length) { solarData[key] = {}; return; }
+        const sums = {}, counts = {};
+        for (const s of history[0]) {
+          const val = parseFloat(s.state); if (isNaN(val)) continue;
+          const h = new Date(s.last_changed).getHours();
+          sums[h] = (sums[h] || 0) + val; counts[h] = (counts[h] || 0) + 1;
+        }
+        const avg = {};
+        for (let h = 0; h < 24; h++) if (counts[h]) avg[h] = sums[h] / counts[h];
+        solarData[key] = avg;
+      } catch (e) { solarData[key] = {}; }
+    }
+
+    // Today's hourly solar forecast (avg pv_estimate kW per hour) from Solcast.
+    function loadSolarForecastHourly() {
+      solarFcst = {};
+      const hass = getHass(); if (!hass) return;
+      const st = hass.states[M.solcast_today];
+      const arr = st?.attributes?.detailedForecast || st?.attributes?.detailedHourly;
+      if (!arr) return;
+      const today = new Date().toDateString();
+      const sums = {}, counts = {};
+      for (const p of arr) {
+        if (new Date(p.period_start).toDateString() !== today) continue;
+        const v = (p.pv_estimate ?? p.pv_estimate10); if (v == null) continue;
+        const h = new Date(p.period_start).getHours();
+        sums[h] = (sums[h] || 0) + v; counts[h] = (counts[h] || 0) + 1;
+      }
+      for (let h = 0; h < 24; h++) if (counts[h]) solarFcst[h] = sums[h] / counts[h];
+    }
+
+    let showHourDetails = true;
+
+    function toggleHourDetails() {
+      showHourDetails = document.getElementById('show-hour-details').checked;
+      const panel = document.getElementById('hour-details-panel');
+      panel.style.display = showHourDetails ? 'block' : 'none';
+    }
+
+    function updateHourDetailsPanel(hour, datasets) {
+      if (!showHourDetails) return;
+      const content = document.getElementById('hour-details-content');
+      if (hour === null) {
+        content.innerHTML = '<span style="color:var(--battman-text-muted);font-size:13px;align-self:center;">Hover over the chart to see hour details</span>';
+        return;
+      }
+
+      // accent = the dataset's own line colour (ds.borderColor), so cards stay
+      // in sync with the chart lines automatically. value uses the text token.
+      function card(label, value, accent, sub) {
+        const valueHtml = value !== null
+          ? `<div class="hd-card-value">${value}<span class="unit">%</span></div>`
+          : `<div class="hd-card-value" style="opacity:0.35;">—</div>`;
+        const subHtml = sub ? `<div class="hd-card-sub">${sub}</div>` : '';
+        return `<div class="hd-card" style="border-color:${accent}">
+          <div class="hd-card-main">
+            <div class="hd-card-label" style="color:${accent}">${label}</div>
+            ${valueHtml}
+          </div>
+          ${subHtml}
+        </div>`;
+      }
+
+      // Threshold card: value on the left half, the hour standing out on the right.
+      function thresholdCard(value, accent, time) {
+        const valueHtml = value !== null
+          ? `<div class="hd-card-value">${value}<span class="unit">%</span></div>`
+          : `<div class="hd-card-value" style="opacity:0.35;">—</div>`;
+        return `<div class="hd-card hd-card-threshold" style="border-color:${accent}">
+          <div class="hd-thr-main">
+            <div class="hd-card-label" style="color:${accent}">Threshold</div>
+            ${valueHtml}
+          </div>
+          <div class="hd-thr-time">
+            <div class="hd-thr-time-val">${time}</div>
+            <div class="hd-thr-time-tag">Hour</div>
+          </div>
+        </div>`;
+      }
+
+      // Single dot-separated sub-line: "Self Consume · FIT $0.08 · Buy $0.24 · Solar 2.3kW"
+      // solarAct = avg actual PV (kW) this hour; solarFc = forecast PV (kW), today only.
+      function subLine(modePart, price, solarAct, solarFc) {
+        const lines = [];
+        if (modePart) lines.push(modePart);
+        const pr = [];
+        if (price.fit[hour]) pr.push(`FIT $${price.fit[hour]}`);
+        if (price.buy[hour]) pr.push(`Buy $${price.buy[hour]}`);
+        if (pr.length) lines.push(pr.join(' · '));   // FIT and Buy share a line
+        if (solarAct != null && solarFc != null) lines.push(`Solar ${solarAct.toFixed(1)}kW (forecast ${solarFc.toFixed(1)}kW)`);
+        else if (solarAct != null)               lines.push(`Solar ${solarAct.toFixed(1)}kW`);
+        else if (solarFc != null)                 lines.push(`Solar forecast ${solarFc.toFixed(1)}kW`);
+        return lines.length ? lines.map(l => `<span>${l}</span>`).join('') : null;
+      }
+
+      const socCards = [];
+
+      datasets.forEach(ds => {
+        const val = ds.data[hour];
+        const accent = ds.borderColor || 'var(--battman-text-muted)';
+        const label = ds.label || '';
+        const hasVal = val !== null && val !== undefined;
+        const v = hasVal ? (val.toFixed ? val.toFixed(1) : val) : null;
+
+        if (label === 'Threshold') {
+          socCards.unshift(thresholdCard(v, accent, hourLabel(hour)));
+        } else if (label.startsWith('Actual SOC')) {
+          // actual PV only for the Actual curve
+          const sub = hasVal ? subLine(controlModeData.actual[hour] || '', pricingData.actual, solarData.actual[hour], null) : null;
+          socCards.push(card('Actual SOC', v, accent, sub));
+        } else if (label.startsWith("Today's SOC")) {
+          // both actual + forecast for Today
+          const sub = hasVal ? subLine(controlModeData.today[hour] || '', pricingData.today, solarData.today[hour], solarFcst[hour]) : null;
+          socCards.push(card("Today's SOC", v, accent, sub));
+        }
+      });
+
+      content.innerHTML = socCards.join('');
+    }
+
+    async function checkHighConsumption() {
+      const hass = getHass();
+      if (!hass) { debugLog('❌ No hass context for consumption check'); return false; }
+      try {
+        const load30mAvg = parseFloat(hass.states[M.load_30m_avg].state);
+        const highConsumptionThreshold = parseFloat(hass.states[M.high_consumption].state);
+        if (isNaN(load30mAvg) || isNaN(highConsumptionThreshold)) {
+          showNote('load_30m_avg or high_consumption has no number (' + hass.states[M.load_30m_avg].state + ' / ' + hass.states[M.high_consumption].state + ') — starting on the normal curve');
+          return false;
+        }
+        const isHighConsumption = load30mAvg > highConsumptionThreshold;
+        debugLog(`📊 Load: ${load30mAvg.toFixed(2)}, Threshold: ${highConsumptionThreshold.toFixed(2)} → High: ${isHighConsumption}`);
+        return isHighConsumption;
+      } catch (error) {
+        debugLog(`⚠️ Consumption check error: ${error.message}`);
+        return false;
+      }
+    }
+    
+    async function determineDefaultCurveType() {
+      const now = new Date();
+      const hour = now.getHours();
+      const isHighConsumption = await checkHighConsumption();
+      if (hour >= 17 && hour < 22) {
+        if (isHighConsumption) { debugLog(`🕐 ${hour}:00 + High Consumption → Sell High`); return 'sell_high'; }
+        else { debugLog(`🕐 ${hour}:00 + Normal Consumption → Sell`); return 'sell'; }
+      } else {
+        if (isHighConsumption) { debugLog(`🕐 ${hour}:00 + High Consumption → Buy High`); return 'buy_high'; }
+        else { debugLog(`🕐 ${hour}:00 + Normal Consumption → Buy`); return 'buy'; }
+      }
+    }
+    
+    function toggleDebugger() {
+      showDebugBox = document.getElementById('show-debug').checked;
+      const debugBox = document.getElementById('debug-box');
+      if (!showDebugBox) {
+        debugBox.style.display = 'none';
+      } else if (document.getElementById('debug-content').innerHTML.trim() !== '') {
+        debugBox.style.display = 'block';
+      }
+    }
+    
+    function debugLog(message) {
+      const debugBox = document.getElementById('debug-box');
+      const debugContent = document.getElementById('debug-content');
+      if (showDebugBox) debugBox.style.display = 'block';
+      const timestamp = new Date().toLocaleTimeString();
+      const clean = String(message).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/^\s+/, '');
+      debugContent.innerHTML += `[${timestamp}] ${clean}<br>`;
+      debugBox.scrollTop = debugBox.scrollHeight;
+    }
+    
+    function clearDebugLog() { document.getElementById('debug-content').innerHTML = ''; }
+    
+    function getHass() {
+      try {
+        if (window.parent && window.parent.document.querySelector('home-assistant')) return window.parent.document.querySelector('home-assistant').hass;
+        if (document.querySelector('home-assistant')) return document.querySelector('home-assistant').hass;
+      } catch (e) {}
+      return null;
+    }
+    
+    function detectHemisphere() {
+      const hass = getHass();
+      if (hass && hass.config && hass.config.latitude) hemisphere = hass.config.latitude < 0 ? 'south' : 'north';
+      if (hemisphere === 'south') {
+        seasonMonths = { summer: ['dec','jan','feb'], autumn: ['mar','apr','may'], winter: ['jun','jul','aug'], spring: ['sep','oct','nov'] };
+        seasonNames = { summer: 'Summer (Dec-Feb)', autumn: 'Autumn (Mar-May)', winter: 'Winter (Jun-Aug)', spring: 'Spring (Sep-Nov)' };
+      } else {
+        seasonMonths = { spring: ['mar','apr','may'], summer: ['jun','jul','aug'], autumn: ['sep','oct','nov'], winter: ['dec','jan','feb'] };
+        seasonNames = { spring: 'Spring (Mar-May)', summer: 'Summer (Jun-Aug)', autumn: 'Autumn (Sep-Nov)', winter: 'Winter (Dec-Feb)' };
+      }
+    }
+    
+    function getCurrentCurve() {
+      if (editMode === 'season') return data[seasonMonths[currentPeriod][0]][currentCurveType];
+      return data[currentPeriod][currentCurveType];
+    }
+    
+    function setCurrentCurve(values) {
+      if (editMode === 'season') {
+        seasonMonths[currentPeriod].forEach(month => { data[month][currentCurveType] = [...values]; });
+      } else {
+        data[currentPeriod][currentCurveType] = values;
+      }
+    }
+    
+    function copyCurve() {
+      clipboard = { mode: editMode, period: currentPeriod, periodName: editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)], data: {} };
+      const src = editMode === 'season' ? data[seasonMonths[currentPeriod][0]] : data[currentPeriod];
+      clipboard.data = { sell: [...src.sell], sell_high: [...src.sell_high], buy: [...src.buy], buy_high: [...src.buy_high] };
+      document.getElementById('paste-btn').disabled = false;
+      showStatus(`📋 Copied: ${clipboard.periodName}`, 'success');
+    }
+    
+    function pasteCurve() {
+      if (!clipboard) { showStatus('Nothing to paste', 'error'); return; }
+      const targetName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+      if (!confirm(`Paste all curves from "${clipboard.periodName}" to "${targetName}"?\n\nThis will copy all 4 curve types.`)) return;
+      const months_ = editMode === 'season' ? seasonMonths[currentPeriod] : [currentPeriod];
+      months_.forEach(month => {
+        data[month].sell = [...clipboard.data.sell];
+        data[month].sell_high = [...clipboard.data.sell_high];
+        data[month].buy = [...clipboard.data.buy];
+        data[month].buy_high = [...clipboard.data.buy_high];
+      });
+      renderControls();
+      { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } }
+      chart.update();
+      const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+      delete lastLoadedPreset[presetKey]; delete modifiedPeriods[presetKey];
+      showStatus(`✅ Pasted all curves from ${clipboard.periodName}`, 'success');
+      updateDisplay();
+      savePresetTracking();
+    }
+    
+    function copyFromActualSOC() {
+      if (!showActual) { showStatus('Actual SOC not loaded', 'error'); return; }
+      const actualDataset = chart.data.datasets.find(ds => ds.label && ds.label.startsWith('Actual SOC'));
+      if (!actualDataset || !actualDataset.data) { showStatus('No Actual SOC data available', 'error'); return; }
+      const periodName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+      const validCount = actualDataset.data.filter(v => v !== null && !isNaN(v)).length;
+      if (validCount === 0) { showStatus('No valid Actual SOC data', 'error'); return; }
+      if (!confirm(`Match ${curveNames[currentCurveType]} curve to Actual SOC for ${periodName}?\n\n${validCount} of 24 hours have data.\nMissing hours will be interpolated.`)) return;
+      const curve = getCurrentCurve();
+      const actualData = actualDataset.data;
+      for (let hour = 0; hour < 24; hour++) {
+        const v = actualData[hour];
+        if (v !== null && !isNaN(v)) curve[hour] = Math.max(0, Math.min(100, Math.round(v)));
+      }
+      for (let hour = 0; hour < 24; hour++) {
+        if (actualData[hour] === null || isNaN(actualData[hour])) {
+          let prev = hour - 1; while (prev >= 0 && (actualData[prev] === null || isNaN(actualData[prev]))) prev--;
+          let next = hour + 1; while (next < 24 && (actualData[next] === null || isNaN(actualData[next]))) next++;
+          if (prev >= 0 && next < 24) curve[hour] = Math.round(curve[prev] + (curve[next] - curve[prev]) * (hour - prev) / (next - prev));
+          else if (prev >= 0) curve[hour] = curve[prev];
+          else if (next < 24) curve[hour] = curve[next];
+        }
+      }
+      setCurrentCurve(curve);
+      renderControls();
+      { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } }
+      chart.update();
+      const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+      delete lastLoadedPreset[presetKey]; delete modifiedPeriods[presetKey];
+      showStatus(`✅ Matched to Actual SOC (${validCount} hrs + interpolation)`, 'success');
+      updateDisplay();
+      savePresetTracking();
+    }
+    
+    function exportPeriod() {
+      const periodName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+      const src = editMode === 'season' ? data[seasonMonths[currentPeriod][0]] : data[currentPeriod];
+      const exportData = { mode: editMode, period: currentPeriod, periodName, exported: new Date().toISOString(), data: { sell: [...src.sell], sell_high: [...src.sell_high], buy: [...src.buy], buy_high: [...src.buy_high] } };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `soc_curves_${currentPeriod}_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      showStatus(`📤 Exported: ${periodName}`, 'success');
+    }
+    
+    function importPeriod(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importData = JSON.parse(e.target.result);
+          if (!importData.data || !importData.data.sell || !importData.data.sell_high || !importData.data.buy || !importData.data.buy_high) { showStatus('Invalid file format', 'error'); return; }
+          const targetName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+          const sourceName = importData.periodName || 'Unknown';
+          if (!confirm(`Import curves from "${sourceName}" to "${targetName}"?`)) return;
+          const months_ = editMode === 'season' ? seasonMonths[currentPeriod] : [currentPeriod];
+          months_.forEach(month => { data[month].sell = [...importData.data.sell]; data[month].sell_high = [...importData.data.sell_high]; data[month].buy = [...importData.data.buy]; data[month].buy_high = [...importData.data.buy_high]; });
+          renderControls(); { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } } chart.update();
+          const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+          delete lastLoadedPreset[presetKey]; delete modifiedPeriods[presetKey];
+          showStatus(`📥 Imported from ${sourceName}`, 'success'); updateDisplay(); savePresetTracking();
+        } catch (error) { showStatus('Import failed: ' + error.message, 'error'); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+    
+    async function runScript() {
+      const hass = getHass();
+      if (!hass) { showStatus('Not in HA context', 'error'); return; }
+      try {
+        debugLog('🏃 Running ' + M.control_script);
+        showStatus('Running script...', 'info');
+        await hass.callService('script', M.control_script.split('.').slice(1).join('.'), {});
+        debugLog('✅ Script executed successfully');
+        showStatus('✅ Script executed', 'success');
+      } catch (error) {
+        debugLog(`❌ Script error: ${error.message}`);
+        showStatus('Script failed', 'error');
+      }
+    }
+    
+    function updateDisplay() {
+      let infoText = '';
+      const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+      const presetInfo = lastLoadedPreset[presetKey];
+      if (editMode === 'month') {
+        infoText = `Mode: <code>Month</code><br>Editing: <code>${monthNames[months.indexOf(currentPeriod)]}</code><br>Curve: <code>${curveNames[currentCurveType]}</code><br>Affects: <code>1 month</code>`;
+      } else {
+        const affectedMonths = seasonMonths[currentPeriod].map(m => monthNames[months.indexOf(m)]).join(', ');
+        infoText = `Mode: <code>Season</code> ⚠️ Edits apply to all months in season<br>Editing: <code>${seasonNames[currentPeriod]}</code><br>Curve: <code>${curveNames[currentCurveType]}</code><br>Affects: <code>${affectedMonths}</code>`;
+      }
+      if (presetInfo) {
+        const isModified = modifiedPeriods[presetKey];
+        infoText += `<br>Based on: <code>${presetInfo}</code>${isModified ? ' <span style="color: var(--battman-amber); font-weight: 700;">✏️ modified</span>' : ''}`;
+      }
+      if (clipboard) infoText += `<br><br>📋 Clipboard: <code>${clipboard.periodName}</code> (ready to paste)`;
+      document.getElementById('edit-info').innerHTML = infoText;
+    }
+    
+    async function fetchControlMode(startTime, endTime, storageKey) {
+      const hass = getHass(); if (!hass) return;
+      try {
+        const history = await hass.callApi('GET', `history/period/${startTime.toISOString()}?filter_entity_id=${M.mode}&end_time=${endTime.toISOString()}&minimal_response&no_attributes`);
+        if (!history || history.length === 0 || !history[0] || history[0].length === 0) { controlModeData[storageKey] = {}; return; }
+        const states = history[0]; const hourlyModes = {};
+        for (let hour = 0; hour < 24; hour++) {
+          const hourEnd = new Date(startTime); hourEnd.setHours(hour, 59, 59, 999);
+          for (let i = states.length - 1; i >= 0; i--) {
+            if (new Date(states[i].last_changed) <= hourEnd) { hourlyModes[hour] = states[i].state; break; }
+          }
+        }
+        controlModeData[storageKey] = hourlyModes;
+      } catch (error) { controlModeData[storageKey] = {}; }
+    }
+    
+    async function fetchPricing(startTime, endTime, storageKey) {
+      const hass = getHass(); if (!hass) return;
+      try {
+        const [fitHistory, buyHistory] = await Promise.all([
+          hass.callApi('GET', `history/period/${startTime.toISOString()}?filter_entity_id=${M.feed_in_price}&end_time=${endTime.toISOString()}&minimal_response&no_attributes`),
+          hass.callApi('GET', `history/period/${startTime.toISOString()}?filter_entity_id=${M.buy_price}&end_time=${endTime.toISOString()}&minimal_response&no_attributes`)
+        ]);
+        const calcAvg = (history) => {
+          const prices = {};
+          if (history && history.length > 0 && history[0]) {
+            history[0].forEach(state => {
+              const t = new Date(state.last_changed); const h = t.getHours(); const v = parseFloat(state.state);
+              if (!isNaN(v)) { if (!prices[h]) prices[h] = {sum:0,count:0}; prices[h].sum += v; prices[h].count++; }
+            });
+          }
+          const result = {};
+          Object.keys(prices).forEach(h => { result[h] = (prices[h].sum / prices[h].count).toFixed(2); });
+          return result;
+        };
+        pricingData[storageKey] = { fit: calcAvg(fitHistory), buy: calcAvg(buyHistory) };
+      } catch (error) { pricingData[storageKey] = { fit: {}, buy: {} }; }
+    }
+    
+    function initChart() {
+      const ctx = document.getElementById('chart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+      plugins: [inputHoverColumnPlugin],
+        data: {
+          labels: Array.from({length: 24}, (_, i) => hourLabel(i)),
+          datasets: [{
+            label: 'Threshold',
+            data: getCurrentCurve(),
+            borderColor: colorMap[currentCurveType],
+            backgroundColor: colorMap[currentCurveType] + '20',
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            order: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onHover: function(event, elements) {
+            // Highlight the matching input box when hovering over a chart point
+            document.querySelectorAll('.value-input.chart-hover').forEach(el => el.classList.remove('chart-hover'));
+            if (elements && elements.length > 0) {
+              const hour = elements[0].index;
+              const inp = document.getElementById('value-' + hour);
+              if (inp) inp.classList.add('chart-hover');
+              document.getElementById('chart').style.cursor = 'pointer';
+              updateHourDetailsPanel(hour, this.data.datasets);
+            } else {
+              document.getElementById('chart').style.cursor = '';
+              updateHourDetailsPanel(null, []);
+            }
+          },
+          onClick: function(event, elements) {
+            // Click a chart point → scroll to + focus + pulse that input box
+            if (elements && elements.length > 0) {
+              const hour = elements[0].index;
+              const inp = document.getElementById('value-' + hour);
+              if (inp) {
+                inp.classList.remove('chart-click');
+                // Force reflow so animation restarts
+                void inp.offsetWidth;
+                inp.classList.add('chart-click');
+                inp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                inp.focus();
+                // Clean up click class after animation
+                setTimeout(() => inp.classList.remove('chart-click'), 1200);
+              }
+            }
+          },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: true, position: 'top',
+              labels: {
+                /* a thin wide box = a line segment in the series colour */
+                boxWidth: 26,
+                boxHeight: 3,
+                padding: 14,
+                color: gc('--battman-text-muted'),
+                font: { size: 12 }
+              }
+            },
+            tooltip: { enabled: false }
+          },
+          scales: {
+            y: { min: 0, max: 105, title: { display: true, text: 'SOC %', font: { size: 14, weight: 'bold' } }, ticks: { callback: v => v + '%' } },
+            x: { title: { display: true, text: 'Hour of Day', font: { size: 14, weight: 'bold' } } }
+          }
+        }
+      });
+    }
+    
+    async function fetchActualSOC() {
+      const hass = getHass(); if (!hass) { debugLog('❌ No hass'); return null; }
+      const mode = document.getElementById('actual-mode').value;
+      let days = 7, startDate = null, endDate = null;
+      if (mode === 'yesterday') { const y = new Date(); y.setDate(y.getDate()-1); startDate = endDate = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`; }
+      else if (mode.startsWith('average')) days = parseInt(mode.replace('average',''));
+      let startTime, endTime;
+      if (mode === 'daterange' || mode === 'yesterday') {
+        if (mode === 'daterange') { startDate = document.getElementById('actual-date-start').value; endDate = document.getElementById('actual-date-end').value; if (!startDate || !endDate) return null; }
+        startTime = new Date(startDate + 'T00:00:00');
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        endTime = endDate === todayStr ? new Date() : new Date(endDate + 'T23:59:59');
+        if (startDate === endDate) { await fetchControlMode(startTime, endTime, 'actual'); await fetchPricing(startTime, endTime, 'actual'); }
+        else { controlModeData.actual = {}; pricingData.actual = { fit: {}, buy: {} }; }
+      } else {
+        endTime = new Date(); startTime = new Date(endTime); startTime.setDate(startTime.getDate() - days);
+        controlModeData.actual = {}; pricingData.actual = { fit: {}, buy: {} };
+      }
+      await fetchSolar(startTime, endTime, 'actual');
+      try {
+        const history = await hass.callApi('GET', `history/period/${startTime.toISOString()}?filter_entity_id=${M.battery_soc}&end_time=${endTime.toISOString()}&minimal_response&no_attributes`);
+        if (!history || !history.length || !history[0] || !history[0].length) return null;
+        const states = history[0];
+        const isSingleDay = (mode === 'daterange' && startDate === endDate) || days === 1 || mode === 'yesterday';
+        if (isSingleDay) {
+          const hourlyData = Array(24).fill(null);
+          for (let h = 0; h < 24; h++) {
+            const hStart = new Date(startTime); hStart.setHours(h, 0, 0, 0);
+            const hEnd   = new Date(startTime); hEnd.setHours(h, 59, 59, 999);
+            let best = null;
+            states.forEach(s => {
+              const t = new Date(s.last_changed);
+              if (t >= hStart && t <= hEnd) best = s; // last reading in this hour wins
+            });
+            if (best) { const v = parseFloat(best.state); if (!isNaN(v)) hourlyData[h] = v; }
+          }
+          return hourlyData;
+        } else {
+          const acc = Array(24).fill(0).map(() => ({sum:0,count:0}));
+          states.forEach(s => { const v = parseFloat(s.state); if (isNaN(v)) return; const h = new Date(s.last_changed).getHours(); acc[h].sum += v; acc[h].count++; });
+          return acc.map(h => h.count > 0 ? h.sum / h.count : null);
+        }
+      } catch (error) { debugLog(`❌ ${error.message}`); return null; }
+    }
+    
+    async function fetchTodaySOC() {
+      const hass = getHass(); if (!hass) return null;
+      const today = new Date(); const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0); const now = new Date();
+      await fetchControlMode(startOfDay, now, 'today'); await fetchPricing(startOfDay, now, 'today'); await fetchSolar(startOfDay, now, 'today'); loadSolarForecastHourly();
+      try {
+        const history = await hass.callApi('GET', `history/period/${startOfDay.toISOString()}?filter_entity_id=${M.battery_soc}&end_time=${now.toISOString()}&minimal_response&no_attributes`);
+        if (!history || !history.length || !history[0] || !history[0].length) return null;
+        const states = history[0]; const hourlyData = Array(24).fill(null); const currentHour = now.getHours();
+        for (let h = 0; h <= currentHour; h++) {
+          const hm = new Date(startOfDay); hm.setHours(h, 0, 0, 0);
+          let best = null, bestDiff = Infinity;
+          states.forEach(s => { const d = Math.abs(new Date(s.last_changed) - hm); if (d < 30*60*1000 && d < bestDiff) { bestDiff = d; best = s; } });
+          if (best) { const v = parseFloat(best.state); if (!isNaN(v)) hourlyData[h] = v; }
+        }
+        return hourlyData;
+      } catch (error) { return null; }
+    }
+    
+    async function toggleActualSOC() {
+      showActual = document.getElementById('show-actual').checked;
+      const modeSelect = document.getElementById('actual-mode');
+      const drc = document.getElementById('date-range-controls');
+      const ds = document.getElementById('actual-date-start'); const de = document.getElementById('actual-date-end');
+      modeSelect.disabled = !showActual;
+      if (showActual) {
+        debugLog('🔄 Loading today SOC...');
+        const _d = new Date(); const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+        if (!ds.value) ds.value = today; if (!de.value) de.value = today;
+        await updateActualSOC();
+      } else {
+
+        chart.data.datasets = chart.data.datasets.filter(ds => ds.label === 'Threshold' || ds.label.startsWith("Today's SOC") || ds.label === '🤖 AI Recommended' || ds.label === '🌤 Today Rec' || ds.label === '⚡ Min Load SOC');
+        chart.update(); drc.style.display = 'none'; ds.disabled = true; de.disabled = true;
+        document.getElementById('copy-actual-btn').disabled = true;
+      }
+    }
+    
+    async function toggleTodaySOC() {
+      showToday = document.getElementById('show-today').checked;
+      if (showToday) {
+        debugLog('🔄 Loading today SOC...');
+        const socData = await fetchTodaySOC();
+        if (socData) {
+          chart.data.datasets = chart.data.datasets.filter(ds => !ds.label.startsWith("Today's SOC"));
+          chart.data.datasets.push({ label: "Today's SOC", data: socData, borderColor: gc('--battman-teal'), backgroundColor: 'rgba(6, 182, 212, 0.1)', tension: 0.3, pointRadius: 3, borderWidth: 2, borderDash: [5,5], order: 1, spanGaps: false });
+          chart.update();
+          updateHourDetailsPanel(new Date().getHours(), chart.data.datasets);
+        }
+      } else {
+
+        chart.data.datasets = chart.data.datasets.filter(ds => !ds.label.startsWith("Today's SOC"));
+        chart.update();
+      }
+    }
+
+    async function updateActualSOC() {
+      if (!showActual) return;
+      const mode = document.getElementById('actual-mode').value;
+      const drc = document.getElementById('date-range-controls');
+      const ds = document.getElementById('actual-date-start'); const de = document.getElementById('actual-date-end');
+      if (mode === 'daterange') {
+        drc.style.display = 'inline-flex'; drc.style.gap = '8px'; drc.style.alignItems = 'center';
+        ds.disabled = false; de.disabled = false;
+        const _d = new Date(); const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+        if (!ds.value) ds.value = today; if (!de.value) de.value = today;
+      } else { drc.style.display = 'none'; ds.disabled = true; de.disabled = true; }
+      const socData = await fetchActualSOC();
+      if (socData) {
+        chart.data.datasets = chart.data.datasets.filter(d => d.label === 'Threshold' || d.label.startsWith("Today's SOC") || d.label === '🤖 AI Recommended' || d.label === '🌤 Today Rec' || d.label === '⚡ Min Load SOC');
+        const dayMap = { yesterday:'Yesterday', average1:'1-day avg', average2:'2-day avg', average3:'3-day avg', average4:'4-day avg', average5:'5-day avg', average6:'6-day avg', average7:'7-day avg', average14:'14-day avg', average30:'30-day avg' };
+        let label;
+        if (mode === 'daterange') { label = `Actual SOC (${new Date(ds.value).toLocaleDateString()} - ${new Date(de.value).toLocaleDateString()})`; }
+        else { label = `Actual SOC (${dayMap[mode]})`; }
+        chart.data.datasets.push({ label, data: socData, borderColor: gc('--battman-red'), backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [5,5], order: 1, spanGaps: true });
+        chart.update();
+        document.getElementById('copy-actual-btn').disabled = false;
+        updateHourDetailsPanel(new Date().getHours(), chart.data.datasets);
+      }
+    }
+    
+    function renderControls() {
+      const controls = document.getElementById('controls');
+      const curve = getCurrentCurve();
+      controls.innerHTML = curve.map((val, hour) => {
+        return `<div class="control-group">
+          <label>${hourLabel(hour)}</label>
+          <input type="number" min="0" max="100" step="5" value="${val}" class="value-input" id="value-${hour}" data-hour="${hour}" oninput="updateValueFromInput(${hour}, this.value)">
+        </div>`;
+      }).join('');
+      // Wire up input hover → highlight chart point
+      controls.querySelectorAll('.value-input').forEach(inp => {
+        const hour = parseInt(inp.dataset.hour);
+        inp.addEventListener('mouseenter', () => { highlightChartPoint(hour); updateHourDetailsPanel(hour, chart.data.datasets); });
+        inp.addEventListener('mouseleave', () => { unhighlightChartPoint(); updateHourDetailsPanel(new Date().getHours(), chart.data.datasets); });
+      });
+    }
+
+    // Always find the Threshold dataset by label — never rely on index 0,
+    // because inserted overlays (e.g. Today's SOC) can shift Threshold off index 0.
+    function getThresholdDataset() {
+      return chart.data.datasets.find(ds => ds.label === 'Threshold');
+    }
+
+    function updateThresholdDisplay() {
+      const ds = getThresholdDataset();
+      if (!ds) return;
+      ds.data = getCurrentCurve();
+      ds.borderColor = colorMap[currentCurveType];
+      ds.backgroundColor = colorMap[currentCurveType] + '20';
+    }
+
+    let _inputHoverHour = null;
+
+    // Plugin: draws a soft vertical column highlight when hovering an input box
+    const inputHoverColumnPlugin = {
+      id: 'inputHoverColumn',
+      afterDraw(chart) {
+        if (_inputHoverHour === null) return;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data[_inputHoverHour]) return;
+        const pt = meta.data[_inputHoverHour];
+        const { top, bottom } = chart.chartArea;
+        const ctx = chart.ctx;
+        // Width of one "column" — half the gap between points
+        const xScale = chart.scales.x;
+        const colHalfW = xScale.width / (xScale.max - xScale.min + 1) / 2;
+        ctx.save();
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.12)';
+        ctx.fillRect(pt.x - colHalfW, top, colHalfW * 2, bottom - top);
+        // Tick mark at the top
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.5)';
+        ctx.fillRect(pt.x - colHalfW, top, colHalfW * 2, 3);
+        ctx.restore();
+      }
+    };
+
+    function highlightChartPoint(hour) {
+      if (!chart) return;
+      _inputHoverHour = hour;
+      chart.draw();
+    }
+
+    function unhighlightChartPoint() {
+      if (!chart) return;
+      _inputHoverHour = null;
+      chart.draw();
+    }
+    
+    function updateValueFromInput(hour, value) {
+      let intValue = parseInt(value);
+      if (isNaN(intValue)) intValue = 0;
+      if (intValue < 0) intValue = 0;
+      if (intValue > 100) intValue = 100;
+      const curve = getCurrentCurve();
+      curve[hour] = intValue;
+      setCurrentCurve(curve);
+      document.getElementById(`value-${hour}`).value = intValue;
+      { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } }
+      chart.update();
+      const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+      modifiedPeriods[presetKey] = true;
+      updateDisplay();
+      if (lastLoadedPreset[presetKey]) savePresetTracking();
+      if (autoSave) { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => saveToHA(true), 1000); }
+    }
+    
+    function switchCurveType(type) {
+      currentCurveType = type;
+      document.documentElement.style.setProperty('--active-curve', colorMap[currentCurveType] || gc('--battman-blue'));
+      document.querySelectorAll('.tabs > .tab:not([id^="tab-"])').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } }
+      { const _ds = getThresholdDataset(); if (_ds) _ds.borderColor = colorMap[currentCurveType]; }
+      { const _ds = getThresholdDataset(); if (_ds) _ds.backgroundColor = colorMap[currentCurveType] + '20'; }
+      renderControls();
+      updateDisplay();
+      chart.update();
+    }
+    
+    function switchPeriod(period) {
+      currentPeriod = period;
+      const tabPrefix = editMode === 'season' ? 'season-tabs' : 'month-tabs';
+      document.querySelectorAll(`#${tabPrefix} .tab`).forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + period).classList.add('active');
+      renderControls();
+      { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } }
+      chart.update();
+      updateDisplay();
+    }
+    
+    function switchEditMode(mode) {
+      if (mode === 'season' && editMode === 'month') {
+        if (!confirm('⚠️ Switching to Season mode will group months together.\n\nSeason curves will be initialized from the first month of each season.\n\nContinue?')) return;
+        Object.keys(seasonMonths).forEach(season => {
+          const fm = seasonMonths[season][0];
+          const src = { sell: [...data[fm].sell], sell_high: [...data[fm].sell_high], buy: [...data[fm].buy], buy_high: [...data[fm].buy_high] };
+          seasonMonths[season].forEach(month => { data[month].sell = [...src.sell]; data[month].sell_high = [...src.sell_high]; data[month].buy = [...src.buy]; data[month].buy_high = [...src.buy_high]; });
+        });
+        const mk = months[new Date().getMonth()];
+        for (const [season, list] of Object.entries(seasonMonths)) { if (list.includes(mk)) { currentPeriod = season; break; } }
+      } else if (mode === 'month') { currentPeriod = months[new Date().getMonth()]; }
+      editMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      if (mode === 'season') { document.getElementById('month-tabs').style.display = 'none'; document.getElementById('season-tabs').style.display = 'flex'; }
+      else { document.getElementById('month-tabs').style.display = 'flex'; document.getElementById('season-tabs').style.display = 'none'; }
+      document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + currentPeriod).classList.add('active');
+      renderControls(); { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } } chart.update(); updateDisplay();
+    }
+    
+    function toggleAutoSave() {
+      autoSave = document.getElementById('auto-save').checked;
+      if (autoSave) showStatus('Auto-save enabled', 'info');
+    }
+    
+    function getFactoryDefaults() {
+      const sellNormal = [25,25,20,20,15,15,15,15,15,15,30,30,50,50,50,50,50,50,45,45,40,40,35,35];
+      const sellHigh = [30,30,25,25,15,15,15,15,15,15,30,30,50,50,50,50,70,70,60,60,50,50,40,40];
+      const buyNormal = [6,6,6,6,6,6,6,6,10,10,25,25,35,35,50,50,40,40,30,30,20,20,10,10];
+      const buyHigh = [...buyNormal];
+      return { sell: sellNormal, sell_high: sellHigh, buy: buyNormal, buy_high: buyHigh };
+    }
+    
+    async function loadFactoryDefaults() {
+      const periodName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+      if (!confirm(`Load factory defaults for ${periodName}?`)) return;
+      const fd = getFactoryDefaults();
+      const months_ = editMode === 'season' ? seasonMonths[currentPeriod] : [currentPeriod];
+      months_.forEach(month => { data[month].sell = [...fd.sell]; data[month].sell_high = [...fd.sell_high]; data[month].buy = [...fd.buy]; data[month].buy_high = [...fd.buy_high]; });
+      renderControls(); { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } } chart.update();
+      const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+      delete lastLoadedPreset[presetKey]; delete modifiedPeriods[presetKey];
+      showStatus('Factory defaults loaded', 'success'); updateDisplay(); await savePresetTracking();
+    }
+    
+    async function loadFromHA() {
+      const hass = getHass(); if (!hass) { debugLog('❌ No hass context available'); return false; }
+      try {
+        const entity = hass.states[M.soc_curves];
+        if (!entity) { debugLog('❌ Entity not found'); return false; }
+        const curves = entity.attributes.curves;
+        if (curves && typeof curves === 'object') {
+          const gaps = [];
+          months.forEach(month => {
+            const c = curves[month];
+            if (!c) { gaps.push(month); return; }
+            ['sell','sell_high','buy','buy_high'].forEach(t => { if (!Array.isArray(c[t]) || c[t].length !== 24) gaps.push(month + '.' + t); });
+            data[month] = { sell: c.sell, sell_high: c.sell_high, buy: c.buy, buy_high: c.buy_high };
+          });
+          if (gaps.length) { CURVE_GAPS = gaps; }
+          const pt = entity.attributes.preset_tracking || {};
+          Object.keys(pt).forEach(key => { if (pt[key].preset) { lastLoadedPreset[key] = pt[key].preset; modifiedPeriods[key] = pt[key].modified || false; } });
+          debugLog('✅ Loaded curves from HA');
+          return true;
+        }
+        return false;
+      } catch (error) { debugLog(`❌ Load error: ${error.message}`); return false; }
+    }
+    
+    async function savePresetTracking() {
+      const hass = getHass(); if (!hass) return;
+      const presetTracking = {};
+      Object.keys(lastLoadedPreset).forEach(key => { presetTracking[key] = { preset: lastLoadedPreset[key], modified: modifiedPeriods[key] || false }; });
+      try { await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { preset_tracking: presetTracking } }); } catch (e) {}
+    }
+    
+    async function saveToHA(silent = false) {
+      const hass = getHass(); if (!hass) { showStatus('Not in HA context', 'error'); return; }
+      if (!silent) showStatus('Saving...', 'info');
+      try {
+        const curvesData = {};
+        months.forEach(month => { curvesData[month] = { sell: data[month].sell, sell_high: data[month].sell_high, buy: data[month].buy, buy_high: data[month].buy_high }; });
+        await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { curves: curvesData } });
+        if (!silent) { showStatus('Saved!', 'success'); debugLog('✅ Saved to HA'); }
+      } catch (error) { showStatus('Save failed', 'error'); debugLog(`❌ ${error.message}`); }
+    }
+    
+    async function loadPresetInfo() {
+      const hass = getHass(); if (!hass) return;
+      try {
+        const entity = hass.states[M.soc_curves]; if (!entity) return;
+        const presets = entity.attributes.presets || {};
+        const presetNames = entity.attributes.preset_names || {'1':'Preset 1','2':'Preset 2','3':'Preset 3','4':'Preset 4','5':'Preset 5','6':'Preset 6','7':'Preset 7','8':'Preset 8','9':'Preset 9','10':'Preset 10'};
+        for (let i = 1; i <= 10; i++) {
+          const name = presetNames[i] || `Preset ${i}`;
+          const hasData = presets[i] && Object.keys(presets[i]).length > 0;
+          document.getElementById(`save-preset-${i}-name`).textContent = name;
+          document.getElementById(`save-preset-${i}-status`).textContent = hasData ? '✓ Saved' : 'Empty';
+          document.getElementById(`load-preset-${i}-name`).textContent = name;
+          document.getElementById(`load-preset-${i}-status`).textContent = hasData ? '✓ Saved' : 'Empty';
+          const lo = document.getElementById(`load-preset-${i}`);
+          if (lo) { lo.style.opacity = hasData ? '1' : '0.5'; lo.style.cursor = hasData ? 'pointer' : 'not-allowed'; }
+          document.getElementById(`preset-${i}-name-input`).value = name;
+          document.getElementById(`preset-${i}-info`).textContent = hasData ? '✓ Has Data' : 'Empty';
+        }
+      } catch (error) { console.error('Failed to load preset info:', error); }
+    }
+    
+    function togglePresetMenu(type) {
+      const menuId = type === 'save' ? 'save-preset-menu' : 'load-preset-menu';
+      const otherMenuId = type === 'save' ? 'load-preset-menu' : 'save-preset-menu';
+      document.getElementById(otherMenuId).classList.remove('show');
+      const menu = document.getElementById(menuId);
+      menu.classList.toggle('show');
+      if (menu.classList.contains('show')) {
+        setTimeout(() => { document.addEventListener('click', function closeMenu(e) { if (!e.target.closest('.preset-menu')) { menu.classList.remove('show'); document.removeEventListener('click', closeMenu); } }); }, 0);
+      }
+    }
+    
+    async function savePreset(presetNumber) {
+      const hass = getHass(); if (!hass) { showStatus('Not in HA context', 'error'); return; }
+      document.getElementById('save-preset-menu').classList.remove('show');
+      const presetName = document.getElementById(`save-preset-${presetNumber}-name`).textContent;
+      const periodName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+      if (!confirm(`Save current curves for "${periodName}" to "${presetName}"?`)) return;
+      try {
+        const entity = hass.states[M.soc_curves]; if (!entity) return;
+        const currentPresets = entity.attributes.presets || {};
+        const src = editMode === 'season' ? data[seasonMonths[currentPeriod][0]] : data[currentPeriod];
+        currentPresets[presetNumber] = { sell: [...src.sell], sell_high: [...src.sell_high], buy: [...src.buy], buy_high: [...src.buy_high] };
+        await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { presets: currentPresets } });
+        showStatus(`Saved to ${presetName}!`, 'success');
+        setTimeout(() => loadPresetInfo(), 500);
+      } catch (error) { showStatus('Save failed', 'error'); }
+    }
+    
+    async function loadPreset(presetNumber) {
+      const hass = getHass(); if (!hass) return;
+      document.getElementById('load-preset-menu').classList.remove('show');
+      try {
+        const entity = hass.states[M.soc_curves]; if (!entity) return;
+        const preset = (entity.attributes.presets || {})[presetNumber];
+        if (!preset) { showStatus('Preset is empty', 'error'); return; }
+        const presetName = document.getElementById(`load-preset-${presetNumber}-name`).textContent;
+        const periodName = editMode === 'season' ? seasonNames[currentPeriod] : monthNames[months.indexOf(currentPeriod)];
+        if (!confirm(`Load "${presetName}" to "${periodName}"?`)) return;
+        const months_ = editMode === 'season' ? seasonMonths[currentPeriod] : [currentPeriod];
+        months_.forEach(month => { data[month].sell = [...preset.sell]; data[month].sell_high = [...preset.sell_high]; data[month].buy = [...preset.buy]; data[month].buy_high = [...preset.buy_high]; });
+        renderControls(); { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } } chart.update();
+        const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
+        lastLoadedPreset[presetKey] = presetName; delete modifiedPeriods[presetKey];
+        showStatus(`Loaded ${presetName}!`, 'success'); updateDisplay(); await savePresetTracking();
+      } catch (error) { showStatus('Load failed', 'error'); }
+    }
+    
+    function openManagePresets() { loadPresetInfo(); document.getElementById('manage-presets-modal').classList.add('show'); }
+    function closeManagePresets() { document.getElementById('manage-presets-modal').classList.remove('show'); }
+    
+    async function savePresetNames() {
+      const hass = getHass(); if (!hass) { showStatus('Not in HA context', 'error'); return; }
+      try {
+        const entity = hass.states[M.soc_curves]; if (!entity) return;
+        const presetNames = {};
+        for (let i = 1; i <= 10; i++) presetNames[String(i)] = document.getElementById(`preset-${i}-name-input`).value || `Preset ${i}`;
+        await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { preset_names: presetNames } });
+        showStatus('Preset names saved!', 'success');
+        setTimeout(async () => { await loadPresetInfo(); closeManagePresets(); }, 500);
+      } catch (error) { showStatus('Save failed', 'error'); }
+    }
+    
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message; status.className = 'status ' + type;
+      setTimeout(() => { if (type !== 'info' || !message.includes('Auto-save')) { status.textContent = ''; status.className = ''; } }, 3000);
+    }
+    
+    window.addEventListener('load', async () => {
+      const problem = await battmanStartupChecks();
+      if (problem) { showFatal(problem); return; }
+      applyHATheme();
+      syncSeriesColors();
+      // Keep button text contrast (and theme vars) fresh if the theme changes
+      // live without an iframe reload.
+      setInterval(() => { applyHATheme(); }, 2000);
+      detectHemisphere();
+      clearDebugLog();
+      debugLog('🔄 Initializing...');
+      
+      const loaded = await loadFromHA();
+      if (!loaded) showNote(M.soc_curves + ' has no curves yet — load factory defaults or a preset, then Save');
+      else if (CURVE_GAPS.length) showNote('Curves missing in ' + M.soc_curves + ': ' + CURVE_GAPS.slice(0, 6).join(', ') + (CURVE_GAPS.length > 6 ? ' …' : '') + ' — fix and Save');
+      else showStatus('Loaded from HA!', 'success');
+      if (OPTIONAL_MISSING.length) showNote(OPTIONAL_MISSING.join(' · '));
+      
+      currentCurveType = await determineDefaultCurveType();
+      document.documentElement.style.setProperty('--active-curve', colorMap[currentCurveType] || gc('--battman-blue'));
+      debugLog(`🎯 Default curve type: ${currentCurveType}`);
+      
+      initChart();
+
+      // Set active curve type tab
+      document.querySelectorAll('.tabs > .tab:not([id^="tab-"])').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs > .tab').forEach(btn => {
+        const txt = btn.textContent.trim().toLowerCase();
+        if ((currentCurveType === 'sell' && txt === 'sell') ||
+            (currentCurveType === 'sell_high' && txt === 'sell high consumption') ||
+            (currentCurveType === 'buy' && txt === 'buy') ||
+            (currentCurveType === 'buy_high' && txt === 'buy high consumption')) btn.classList.add('active');
+      });
+      
+      document.getElementById('tab-' + currentPeriod).classList.add('active');
+      renderControls();
+      { const _ds = getThresholdDataset(); if (_ds) { _ds.data = getCurrentCurve(); } }
+      { const _ds = getThresholdDataset(); if (_ds) _ds.borderColor = colorMap[currentCurveType]; }
+      { const _ds = getThresholdDataset(); if (_ds) _ds.backgroundColor = colorMap[currentCurveType] + '20'; }
+      chart.update();
+      updateDisplay();
+      loadPresetInfo();
+
+      toggleTodaySOC();
+      toggleActualSOC();
+
+      // Show current hour in details panel by default
+      updateHourDetailsPanel(new Date().getHours(), chart.data.datasets);
+      fetchSolarForecast();
+
+      // Press feedback + native haptic (fires HA's 'haptic' event on the parent
+      // window; the Companion app vibrates — same mechanism the Power view uses).
+      function fireHaptic() {
+        try { window.parent.dispatchEvent(new CustomEvent('haptic', { detail: 'selection' })); } catch (_) {}
+      }
+      function clearPressed() {
+        document.querySelectorAll('.btn.pressed, .mode-btn.pressed').forEach(el => el.classList.remove('pressed'));
+      }
+      document.addEventListener('pointerdown', (e) => {
+        const b = e.target.closest ? e.target.closest('.btn, .mode-btn') : null;
+        if (!b || b.disabled) return;
+        b.classList.add('pressed');
+        fireHaptic();
+      }, true);
+      ['pointerup', 'pointercancel', 'pointerleave', 'dragend'].forEach(ev =>
+        document.addEventListener(ev, clearPressed, true));
+    });
+
+    async function fetchSolarForecast() {
+      const badge = document.getElementById('solar-forecast-badge');
+      if (!badge) return;
+      const hass = getHass();
+      if (!hass) return;
+      try {
+        const state = hass.states[M.solcast_today];
+        if (!state) return;
+        let totalKwh = null;
+        if (state.attributes?.detailedForecast) {
+          const today = new Date().toDateString();
+          totalKwh = state.attributes.detailedForecast
+            .filter(p => new Date(p.period_start).toDateString() === today)
+            .reduce((sum, p) => sum + (p.pv_estimate10 || 0) * 0.5, 0);
+        } else if (state.attributes?.energy_production_today !== undefined) {
+          totalKwh = state.attributes.energy_production_today;
+        } else {
+          totalKwh = parseFloat(state.state);
+        }
+        if (totalKwh === null || isNaN(totalKwh)) return;
+        totalKwh = Math.round(totalKwh * 10) / 10;
+        // Thresholds based on Adelaide avg ~23 kWh
+        let label, icon, color;
+        if (totalKwh >= 30)      { label = 'High'; icon = '☀️'; color = '#f59e0b'; }
+        else if (totalKwh <= 12) { label = 'Low';  icon = '☁️'; color = '#6b7280'; }
+        else                     { label = 'OK';   icon = '⛅'; color = gc('--battman-blue'); }
+        badge.textContent = `Today ${icon} ${totalKwh} kWh · ${label}`;
+        badge.style.color = color;
+        badge.style.borderColor = color + '60';
+        badge.style.display = 'inline-block';
+        debugLog(`☀️ Solar forecast: ${totalKwh} kWh → ${label}`);
+      } catch(e) {
+        debugLog(`⚠️ Solar forecast error: ${e.message}`);
+      }
+    }
+
+  </script>
+
+</body>
+</html>

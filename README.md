@@ -45,7 +45,8 @@ strategy:
 
 so Battman builds its views (from `custom_components/battman/views/*.yaml`), and
 new or changed views arrive with Battman updates. Views so far: **Finances**,
-**Log** and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
+**Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log** and **Theme**
+(the theme studio). **Correct Totals** is a hidden view (no
 tab), opened from the button at the bottom of the Finances Billing card, for
 fixing the buy/sell totals of a period. It asks before changing anything.
 
