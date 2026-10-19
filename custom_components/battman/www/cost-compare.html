@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<!-- Battman Cost Compare (reset hour = largest-abs change; handles buy's positive reset spike when odometer runs negative) -->
+<!-- Served by the Battman integration at /battman/cost-compare.html. Entities come from Battman's entity map; colours from a Battman theme. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Cycle vs Last Cycle</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:      var(--primary-background-color, #111318);
+    --card:    var(--card-background-color, #1c1e24);
+    --text:    var(--primary-text-color, #e5e7eb);
+    --muted:   var(--secondary-text-color, #9aa4b2);
+    --border:  var(--divider-color, #2a2d35);
+    --accent:  var(--primary-color, #4b9fea);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif);
+  }
+  .panel {
+    height: 100%; display: flex; flex-direction: column;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .head {
+    display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline;
+    justify-content: space-between; padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .title { font-size: 13px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+  .delta { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sub { flex-basis: 100%; font-size: 11px; color: var(--muted); }
+  .chartWrap { flex: 1; position: relative; padding: 10px 10px 6px; min-height: 0; }
+  .msg { padding: 24px; text-align: center; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="head">
+    <span class="title">This vs Last Cycle · cumulative $</span>
+    <span class="delta" id="delta"></span>
+    <span class="sub" id="sub"></span>
+  </div>
+  <div class="chartWrap"><canvas id="c"></canvas><div class="msg" id="msg" style="display:none"></div></div>
+</div>
+
+<script>
+  // Entity IDs come from Battman's entity map (GET /api/battman/entities).
+  const NEEDS = ['buy_total', 'sell_total', 'network_fee_total', 'parameters'];
+  let ENT_BUY, ENT_SELL, ENT_FEE, ENT_PARAM;
+
+  // Battman theme colours this page needs. No built-in fallbacks.
+  const THEME_VARS = ['--battman-green', '--battman-amber', '--battman-red'];
+
+  let COL = { accent:'#4b9fea', grid:'#2a2d35', muted:'#9aa4b2', text:'#e5e7eb' };
+  let FATAL = null;   // set when the page can't run; shown instead of the chart
+  let chart = null;
+
+  function haRoot(){ try { return parent.document.querySelector('home-assistant'); } catch(e){ return null; } }
+  function getHass(){ const r = haRoot(); return r && r.hass; }
+  function getToken(){ const h = getHass(); return h && h.auth && h.auth.data && h.auth.data.access_token; }
+
+  function syncTheme(){
+    let el; try { el = window.frameElement || parent.document.documentElement; } catch(e){ return; }
+    const ps = parent.getComputedStyle(el);
+    const map = { '--bg':'--primary-background-color','--card':'--card-background-color','--text':'--primary-text-color',
+                  '--muted':'--secondary-text-color','--border':'--divider-color','--accent':'--primary-color',
+                  '--green':'--battman-green','--amber':'--battman-amber','--red':'--battman-red',
+                  '--primary-font-family':'--primary-font-family' };
+    for (const [loc, tok] of Object.entries(map)) { const v = ps.getPropertyValue(tok).trim(); if (v) document.documentElement.style.setProperty(loc, v); }
+    const g = getComputedStyle(document.documentElement);
+    COL = {
+      accent: g.getPropertyValue('--accent').trim() || COL.accent,
+      amber:  g.getPropertyValue('--amber').trim(),
+      green:  g.getPropertyValue('--green').trim(),
+      red:    g.getPropertyValue('--red').trim(),
+      grid:   g.getPropertyValue('--border').trim()  || COL.grid,
+      muted:  g.getPropertyValue('--muted').trim()   || COL.muted,
+      text:   g.getPropertyValue('--text').trim()    || COL.text,
+    };
+    // Canvas text can't read CSS var() — set Chart.js's font from the live theme font.
+    if (window.Chart) { const ff = g.getPropertyValue('--primary-font-family').trim(); if (ff) Chart.defaults.font.family = ff; }
+  }
+
+  const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+  const money = v => (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+  function midnight(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+
+  function billDay(){
+    const h = getHass(); const P = h && h.states[ENT_PARAM];
+    const d = P && Number(P.attributes.billDayOfMonth);
+    return (isFinite(d) && d >= 1 && d <= 31) ? d : 19;
+  }
+  function cycleStart(ref, back){
+    const bd = billDay();
+    let y = ref.getFullYear(), m = ref.getMonth();
+    if (ref.getDate() < bd) m -= 1;
+    m -= back;
+    const d = new Date(y, m, 1);
+    const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(bd, dim));
+    return midnight(d);
+  }
+  function dayFee(){ const h = getHass(); return h ? num(h.states[ENT_PARAM] && h.states[ENT_PARAM].attributes.dailyNetworkCharge) : 0; }
+
+  const toDateStr = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+  // daily `change` (delta of the cumulative $ total) from long-term statistics — reset-safe, survives purge
+  async function fetchStats(startDate, endDate, period){
+    const h = getHass(); if (!h || !h.connection) return null;
+    try {
+      return await h.connection.sendMessagePromise({
+        type: 'recorder/statistics_during_period',
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        statistic_ids: [ENT_BUY, ENT_SELL, ENT_FEE],
+        period: period || 'day',
+        types: ['change', 'state'],
+      });
+    } catch(e){ return null; }
+  }
+  function changeByDay(rows){
+    const m = {};
+    (rows||[]).forEach(r => { m[toDateStr(midnight(new Date(r.start)))] = Number(r.change) || 0; });
+    return m;
+  }
+  // per-day network fee from the odometer's daily `change`. `present` marks which days the
+  // sensor actually recorded — days before it existed have no row, so the caller falls back
+  // to the flat current fee. The odometer's first row reports change 0 (no prior point), so
+  // that birth day is treated as no-data too.
+  function feeByDay(rows){
+    const feeM = {}, present = {}; let first = true;
+    (rows||[]).forEach(r => {
+      const k = toDateStr(midnight(new Date(r.start)));
+      const c = Number(r.change) || 0;
+      if (first) { first = false; if (c === 0) return; }
+      feeM[k] = c; present[k] = true;
+    });
+    return { feeM, present };
+  }
+  // Days a cumulative $ total ran *down* (negative daily `change`). These totals only ever
+  // climb during normal trading, so a negative day is reset-safe to detect by sign alone —
+  // and, unlike comparing to the previous day's state, still fires on the first day in view.
+  function negDays(rows){
+    const out = {};
+    (rows||[]).forEach(r => { if ((Number(r.change) || 0) < -0.01) out[toDateStr(midnight(new Date(r.start)))] = true; });
+    return out;
+  }
+  // A "bank it" zeroes buy, sell AND fee together. The FEE total is the authoritative signal:
+  // it only ever accrues and is never credited, so ANY negative fee day is a bank. For days
+  // before the fee sensor existed (no fee rows) fall back to buy AND sell both negative the
+  // same day — requiring both guards against a one-off credit/adjustment that hits just one.
+  function bankDays(res){
+    const out = Object.assign({}, negDays(res[ENT_FEE]));
+    const buy = negDays(res[ENT_BUY]), sell = negDays(res[ENT_SELL]);
+    for (const k in buy) if (sell[k]) out[k] = true;
+    return out;
+  }
+  // rebuild a reset day's true value from hourly change, dropping the single reset hour.
+  // The reset hour is the largest-MAGNITUDE change: a negative drop when the odometer was
+  // positive (sell/fee), or a POSITIVE spike when it was negative (buy runs negative on
+  // negative import prices, so its bank reset jumps *up* to zero). Dropping min() only caught
+  // the negative case and left buy's positive reset spike in — hence buy stayed wrong.
+  async function reconstructDay(dayStart){
+    const s = midnight(dayStart), e = new Date(midnight(dayStart)); e.setDate(e.getDate() + 1);
+    const res = await fetchStats(s, e, 'hour');
+    const rec = ent => {
+      const hrs = ((res && res[ent]) || []).map(r => Number(r.change) || 0);
+      if (!hrs.length) return 0;
+      let reset = 0;
+      for (const h of hrs) if (Math.abs(h) > Math.abs(reset)) reset = h;
+      return Number((hrs.reduce((a, b) => a + b, 0) - reset).toFixed(4));
+    };
+    return { buy: rec(ENT_BUY), sell: rec(ENT_SELL), fee: rec(ENT_FEE) };
+  }
+  // cumulative net ($) per day-of-cycle over [start..end] inclusive; today taken live for accuracy
+  function cumulative(buyM, sellM, feeM, feePresent, flatFee, start, end){
+    const out = []; let run = 0;
+    const h = getHass();
+    const todayKey = toDateStr(midnight(new Date()));
+    const d = new Date(start);
+    while (d <= end){
+      const k = toDateStr(d);
+      let sell = sellM[k] || 0, buy = buyM[k] || 0;
+      // today's fee is deterministic (stats lag ~1h); older days use the odometer where it
+      // recorded, else the flat current fee for days before the sensor existed
+      const fee = (k === todayKey) ? flatFee : (feePresent[k] ? (feeM[k] || 0) : flatFee);
+      if (k === todayKey && h){
+        const bd = Number(h.states[ENT_BUY] && h.states[ENT_BUY].attributes.day);
+        const sd = Number(h.states[ENT_SELL] && h.states[ENT_SELL].attributes.day);
+        if (isFinite(bd)) buy = bd;
+        if (isFinite(sd)) sell = sd;
+      }
+      run += (sell - buy - fee);
+      out.push(Number(run.toFixed(2)));
+      d.setDate(d.getDate() + 1);
+    }
+    return out;
+  }
+
+  async function fetchData(){
+    const today = midnight(new Date());
+    const thisStart = cycleStart(today, 0);
+    const lastStart = cycleStart(today, 1);
+    const lastEnd = new Date(thisStart); lastEnd.setDate(lastEnd.getDate() - 1);
+    let qEnd = new Date(today); qEnd.setDate(qEnd.getDate() + 1);
+    const res = await fetchStats(lastStart, qEnd);
+    if (!res) return null;
+    const buyM = changeByDay(res[ENT_BUY]), sellM = changeByDay(res[ENT_SELL]);
+    const { feeM, present: feePresent } = feeByDay(res[ENT_FEE]);
+    // bank/reset day (fee negative, or pre-fee-era buy+sell both negative): rebuild all three
+    // for that day from hourly stats (drops the single reset hour) so the day shows its real
+    // positive values instead of the −$ reset spike.
+    const resetSet = bankDays(res);
+    for (const k in resetSet) {
+      const p = k.split('-').map(Number);
+      const rec = await reconstructDay(new Date(p[0], p[1]-1, p[2]));
+      buyM[k] = rec.buy; sellM[k] = rec.sell;
+      if (feePresent[k]) feeM[k] = rec.fee;
+    }
+    const flatFee = dayFee();
+    return {
+      thisStart, lastStart, lastEnd, today, fee: flatFee,
+      thisCum: cumulative(buyM, sellM, feeM, feePresent, flatFee, thisStart, today),
+      lastCum: cumulative(buyM, sellM, feeM, feePresent, flatFee, lastStart, lastEnd),
+    };
+  }
+
+  // faint vertical marker at "today's" day-of-cycle so the same point on last cycle is obvious
+  function markerPlugin(idx){
+    return {
+      id: 'todayMark',
+      afterDatasetsDraw(c){
+        if (idx < 0) return;
+        const x = c.scales.x.getPixelForValue(idx);
+        const top = c.chartArea.top, bot = c.chartArea.bottom;
+        const ctx = c.ctx; ctx.save();
+        ctx.strokeStyle = COL.muted; ctx.globalAlpha = 0.5; ctx.setLineDash([4,4]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bot); ctx.stroke();
+        ctx.restore();
+      }
+    };
+  }
+
+  function showMsg(m){ const e=document.getElementById('msg'); e.style.display=''; e.textContent=m; document.getElementById('c').style.display='none'; }
+  function hideMsg(){ document.getElementById('msg').style.display='none'; document.getElementById('c').style.display=''; }
+
+  const fmtD = d => d.toLocaleDateString([], { day:'2-digit', month:'short' });
+
+  async function render(){
+    if (FATAL) { showMsg(FATAL); return; }
+    if (typeof Chart === 'undefined') { showMsg('Chart library unavailable (offline?)'); return; }
+    const data = await fetchData();
+    if (!data) { showMsg('History unavailable'); return; }
+    hideMsg();
+
+    const n = Math.max(data.thisCum.length, data.lastCum.length);
+    const labels = Array.from({ length: n }, (_, i) => i + 1);
+    const pad = arr => arr.concat(Array.from({ length: n - arr.length }, () => null));
+    const thisArr = pad(data.thisCum), lastArr = pad(data.lastCum);
+
+    // ahead/behind at the same day-of-cycle
+    const idx = data.thisCum.length - 1;              // current day-of-cycle (0-based)
+    const dEl = document.getElementById('delta');
+    if (idx >= 0 && idx < data.lastCum.length){
+      const diff = data.thisCum[idx] - data.lastCum[idx];
+      dEl.textContent = (diff >= 0 ? '▲ ahead ' : '▼ behind ') + money(Math.abs(diff)) + ' vs last cycle';
+      dEl.style.color = diff >= 0 ? COL.green : COL.red;
+    } else if (idx >= 0){
+      dEl.textContent = money(data.thisCum[idx]) + ' so far';
+      dEl.style.color = COL.text;
+    } else { dEl.textContent = ''; }
+
+    document.getElementById('sub').textContent =
+      'Day 1 = the ' + billDay() + 'th · This: ' + fmtD(data.thisStart) + '→' + fmtD(data.today) +
+      ' · Last: ' + fmtD(data.lastStart) + '→' + fmtD(data.lastEnd);
+
+    const cfg = {
+      type: 'line',
+      data: { labels, datasets: [
+        { label: 'Last cycle', data: lastArr, borderColor: COL.amber, backgroundColor: COL.amber,
+          borderWidth: 2, borderDash: [5,4], pointRadius: 0, tension: 0.15, spanGaps: false },
+        { label: 'This cycle', data: thisArr, borderColor: COL.accent, backgroundColor: COL.accent,
+          borderWidth: 2.5, pointRadius: 0, tension: 0.15, spanGaps: false },
+      ] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        layout: { padding: { top: 8, bottom: 4 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: COL.muted, boxWidth: 18, boxHeight: 2, usePointStyle: false } },
+          tooltip: {
+            mode: 'index', intersect: false,
+            callbacks: {
+              title: items => 'Day ' + (items.length ? items[0].label : ''),
+              label: c => c.raw == null ? null : ' ' + c.dataset.label + ': ' + money(c.raw),
+              footer: items => {
+                const m = {}; items.forEach(i => { if (i.raw != null) m[i.dataset.label] = Number(i.raw); });
+                if ('This cycle' in m && 'Last cycle' in m){
+                  const diff = m['This cycle'] - m['Last cycle'];
+                  return (diff >= 0 ? 'Ahead ' : 'Behind ') + money(Math.abs(diff));
+                }
+                return '';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Day of cycle', color: COL.muted }, ticks: { color: COL.muted, maxRotation: 0, autoSkip: true }, grid: { display: false } },
+          y: { ticks: { color: COL.muted, callback: v => money(v) }, grid: { color: COL.grid } }
+        }
+      },
+      plugins: [ markerPlugin(idx) ]
+    };
+    if (chart) chart.destroy();
+    const c = new Chart(document.getElementById('c').getContext('2d'), cfg);
+    chart = c;
+    requestAnimationFrame(function(){ try { c.resize(); } catch(e){} });
+    setTimeout(function(){ try { c.resize(); } catch(e){} }, 250);
+    setTimeout(function(){ try { c.resize(); } catch(e){} }, 800);
+  }
+  window.addEventListener('resize', function(){ if (chart) { try { chart.resize(); } catch(e){} } });
+
+  // ---- startup checks: entity map + Battman theme. Problems are shown, never papered over. ----
+  async function loadEntityMap(){
+    const tok = getToken();
+    if (!tok) throw new Error('Not logged in to Home Assistant (no access token from the parent page).');
+    const r = await fetch('/api/battman/entities', { headers: { Authorization: 'Bearer ' + tok } });
+    if (!r.ok) throw new Error('Battman entity map unavailable (HTTP ' + r.status + '). Is the Battman integration installed and set up?');
+    const m = (await r.json()).entities || {};
+    const missing = NEEDS.filter(k => !m[k]);
+    if (missing.length) throw new Error('Battman entity map has no entry for: ' + missing.join(', '));
+    ENT_BUY = m.buy_total; ENT_SELL = m.sell_total; ENT_FEE = m.network_fee_total; ENT_PARAM = m.parameters;
+  }
+  function checkEntities(){
+    const h = getHass(); if (!h) return 'Home Assistant not reachable from this page.';
+    const bad = NEEDS.map((k, i) => [k, [ENT_BUY, ENT_SELL, ENT_FEE, ENT_PARAM][i]])
+                     .filter(([k, id]) => !h.states[id]).map(([k, id]) => k + ' \u2192 ' + id);
+    return bad.length ? 'Battman entity map: entity not found: ' + bad.join(', ') : null;
+  }
+  function checkTheme(){
+    let ps; try { ps = parent.getComputedStyle(window.frameElement || parent.document.documentElement); } catch(e){ return 'Cannot read the dashboard theme.'; }
+    const missing = THEME_VARS.filter(v => !ps.getPropertyValue(v).trim());
+    return missing.length ? 'Theme colour ' + missing.join(', ') + ' not found \u2014 this view needs a Battman theme.' : null;
+  }
+  function recheck(){ FATAL = checkTheme() || checkEntities(); return FATAL; }
+
+  (async function start(){
+    try { await loadEntityMap(); } catch(e){ FATAL = e.message; showMsg(FATAL); return; }
+    syncTheme();
+    recheck();
+    render();
+    setInterval(() => { recheck(); syncTheme(); render(); }, 60000);
+  })();
+</script>
+</body>
+</html>

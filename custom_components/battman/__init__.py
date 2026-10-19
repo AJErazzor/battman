@@ -14,8 +14,8 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from . import dashboard
-from .api import BattmanEntityMapView
+from . import dashboard, dependencies
+from .api import BattmanDashboardView, BattmanEntityMapView
 from .const import DOMAIN, STATIC_URL
 from .services import async_create_dashboard_and_report, async_register_services
 
@@ -84,6 +84,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         [StaticPathConfig(STATIC_URL, str(WWW_DIR), cache_headers=False)]
     )
     hass.http.register_view(BattmanEntityMapView(str(integration.version)))
+    hass.http.register_view(BattmanDashboardView())
     # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
     async_register_services(hass)
@@ -99,6 +100,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await _reload_themes(hass)
     except OSError as err:
         _LOGGER.error("Could not install Battman themes into %s: %s", dst, err)
+
+    await dependencies.async_check(hass)
 
     if not entry.data.get(DASHBOARD_DONE):
         await async_create_dashboard_and_report(hass, notify=False)

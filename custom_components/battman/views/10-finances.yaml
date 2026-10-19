@@ -1,0 +1,292 @@
+# Battman managed dashboard view: Finances
+# Edit like any dashboard YAML. {{name}} placeholders are filled from Battman's
+# entity map (custom_components/battman/const.py) when the dashboard loads.
+# Files in this folder become views, in filename order.
+type: sections
+max_columns: 4
+title: Finances
+sections:
+- type: grid
+  cards:
+  - type: iframe
+    url: /battman/cost-chart.html
+    grid_options:
+      columns: full
+      rows: 9
+    card_mod:
+      style: |
+        ha-card { height: 100%; background: transparent; border: none; box-shadow: none; padding: 0; overflow: hidden; }
+        .wrapper { height: 100% !important; padding: 0 !important; }
+        iframe { height: 100% !important; width: 100% !important; border: 0 !important; }
+  - type: iframe
+    url: /battman/cost-compare.html
+    grid_options:
+      columns: full
+      rows: 8
+    card_mod:
+      style: |
+        ha-card { height: 100%; background: transparent; border: none; box-shadow: none; padding: 0; overflow: hidden; }
+        .wrapper { height: 100% !important; padding: 0 !important; }
+        iframe { height: 100% !important; width: 100% !important; border: 0 !important; }
+  - type: custom:button-card
+    entity: '{{parameters}}'
+    show_icon: false
+    show_state: false
+    show_name: false
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    double_tap_action:
+      action: none
+    styles:
+      card:
+      - padding: '0'
+      - overflow: hidden
+      - border-radius: 12px
+      - border: 1px solid var(--battman-border-neutral)
+      - background: var(--battman-surface-card)
+      grid:
+      - grid-template-areas: |
+          "header"
+          "row1"
+          "row2"
+          "row3"
+          "row4"
+          "row5"
+          "row6"
+          "row7"
+          "row8"
+      - grid-template-columns: 1fr
+      - row-gap: '0'
+      custom_fields:
+        header:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row0:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row1:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row2:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row3:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row4:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row5:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row6:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row7:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+        row8:
+        - pointer-events: all
+        - width: 100%
+        - margin: 0
+        - padding: 0
+    custom_fields:
+      header: '[[[ return `<div style="padding:12px 16px;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-text-bright);background:var(--battman-surface-card);border-bottom:1px solid var(--battman-border-neutral);">Billing</div>`; ]]]'
+      row1: |-
+        [[[
+          const v = entity.attributes.dailyNetworkCharge ?? 0;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Network Fee</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:13px;color:var(--battman-text-muted);">$</span><input type="number" value="${v}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="width:80px;text-align:right;font-size:14px;font-weight:600;padding:5px 8px;background:var(--battman-surface-card);border:1px solid var(--battman-border-neutral);border-radius:6px;color:var(--battman-text-bright);font-family:inherit;" onchange="document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;{{parameters_update_event}}&quot;,event_data:{action:&quot;SetAttribute&quot;,dailyNetworkCharge:this.value}})"></div></div>`;
+        ]]]
+      row2: '[[[ const v=''$''+Number(states[''{{buy_total}}''].state ?? 0).toFixed(2); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Buy</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+      row3: '[[[ const v=''$''+Number(states[''{{sell_total}}''].state ?? 0).toFixed(2); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Sell</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+      row4: '[[[ const v=Number(states[''{{sell_total}}''].attributes.days ?? 0); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Days</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+      row5: |-
+        [[[
+          const buy=Number(states['{{buy_total}}'].state ?? 0);
+          const sell=Number(states['{{sell_total}}'].state ?? 0);
+          const days=Number(states['{{buy_total}}'].attributes.days ?? 0);
+          const fee=Number(entity.attributes.dailyNetworkCharge ?? 0);
+          const nv=sell-buy-days*fee;
+          const col=nv>=0?'var(--battman-green)':'var(--battman-red)';
+          const txt=(nv<0?'-$':'$')+Math.abs(nv).toFixed(2);
+          return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">New Income</span><span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:${col};">${txt}</span></div>`;
+        ]]]
+      row6: '[[[ const v=''$''+Number(entity.attributes.energyIncome ?? 0).toFixed(2); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Banked Income</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+      row7: |-
+        [[[
+          const buy=Number(states['{{buy_total}}'].state ?? 0);
+          const sell=Number(states['{{sell_total}}'].state ?? 0);
+          const days=Number(states['{{buy_total}}'].attributes.days ?? 0);
+          const fee=Number(entity.attributes.dailyNetworkCharge ?? 0);
+          const banked=Number(entity.attributes.energyIncome ?? 0);
+          const total=(banked+(sell-buy-days*fee)).toFixed(2);
+          return `<div style="padding:12px 16px 6px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;{{parameters_update_event}}&quot;,event_data:{action:&quot;SetAttribute&quot;,energyIncome:&quot;${total}&quot;}});" style="width:100%;height:40px;border:1px solid var(--battman-green);border-radius:8px;background:var(--battman-green-soft-bg);color:var(--battman-green);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Bank New Income</button></div>`;
+        ]]]
+      row8: '[[[ return `<div style="padding:6px 16px 14px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;{{totals_update_event}}&quot;,event_data:{attribute:&quot;ResetTotals&quot;}});" style="width:100%;height:38px;border:1px solid var(--battman-red);border-radius:8px;background:transparent;color:var(--battman-red);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Reset New Income</button></div>`; ]]]'
+    grid_options:
+      columns: full
+  - type: vertical-stack
+    cards:
+    - type: custom:button-card
+      entity: '{{sell_total}}'
+      show_icon: false
+      show_name: false
+      show_state: false
+      tap_action:
+        action: none
+      custom_fields:
+        hdr: |-
+          [[[
+            const sell = Number(states['{{sell_total}}'].attributes.day ?? 0);
+            const buy  = Number(states['{{buy_total}}'].attributes.day ?? 0);
+            const net  = sell - buy;
+            const label = net>10?'Profiting':net>0?'Positive':net<-10?'Heavy Usage':net<0?'Importing Power':'Neutral';
+            return `<div style="padding:12px 16px;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-align:center;color:var(--battman-text-bright);background:var(--battman-surface-card);border-bottom:1px solid var(--battman-border-neutral);">Solar System &bull; ${label}</div>`;
+          ]]]
+      styles:
+        card:
+        - padding: '0'
+        - border-radius: 12px 12px 0 0
+        - background: var(--battman-surface-card)
+        - border: 1px solid var(--battman-border-neutral)
+        - border-bottom: none
+        - box-shadow: none
+        grid:
+        - grid-template-areas: '"hdr"'
+        custom_fields:
+          hdr:
+          - width: 100%
+          - padding: '0'
+          - margin: '0'
+    - type: custom:button-card
+      entity: '{{parameters}}'
+      triggers_update:
+      - '{{parameters}}'
+      - '{{buy_total}}'
+      - '{{sell_total}}'
+      show_icon: false
+      show_name: false
+      show_state: false
+      tap_action:
+        action: none
+      custom_fields:
+        body: |-
+          [[[
+            const P = states['{{parameters}}'].attributes || {};
+            const num = v => Number(v ?? 0);
+            const install = new Date(P.systemInstallDate);
+            const systemCost = num(P.systemCost);
+            const systemIncome = num(P.systemIncome);
+            const preSystemBill = num(P.preSystemBillQ1)+num(P.preSystemBillQ2)+num(P.preSystemBillQ3)+num(P.preSystemBillQ4);
+            const daysInstalled = Math.max(1, Math.floor((Date.now()-install.getTime())/86400000));
+            const billInflation = parseInt(P.billInflation ?? 0);
+            const annualIncrease = billInflation/100;
+            const years = daysInstalled/365;
+            const adjustedPreSystemBillDaily = (preSystemBill/365)*Math.pow(1+annualIncrease, years);
+            const baseDaily = preSystemBill/365;
+            const avgGrowthFactor = (annualIncrease*years)!==0 ? (Math.pow(1+annualIncrease, years)-1)/(annualIncrease*years) : 1;
+            const billSave = baseDaily*365*years*avgGrowthFactor;
+            const sellTotal = num(states['{{sell_total}}'].state);
+            const buyTotal = num(states['{{buy_total}}'].state);
+            const days = parseInt(states['{{buy_total}}'].attributes.days ?? 0);
+            const dailyNetworkCharge = num(P.dailyNetworkCharge);
+            const bankedIncome = num(P.energyIncome);
+            const currentIncome = sellTotal - buyTotal - (dailyNetworkCharge*days);
+            const totalIncome = currentIncome + bankedIncome;
+            const dailyIncome = totalIncome/daysInstalled;
+            const payOffToGo = systemCost - systemIncome - billSave - totalIncome;
+            const onGoingIncome = adjustedPreSystemBillDaily + dailyIncome;
+            const daysToGo = onGoingIncome ? Math.floor(payOffToGo/onGoingIncome) : 0;
+
+            const money = v => (isFinite(v)? '$'+Math.round(v) : '—');
+            const yrs = v => (isFinite(v)? v.toFixed(1)+' yrs' : '—');
+            const HEAD = (label,color) => `<div style="font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:${color};padding:14px 16px 8px;border-bottom:1px solid var(--battman-border-neutral);">${label}</div>`;
+            const ROW = (label,val,last) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;${last?'':'border-bottom:1px solid var(--battman-border-neutral);'}"><span style="font-size:13px;color:var(--battman-text-muted);">${label}</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${val}</span></div>`;
+
+            return HEAD('Financials','var(--battman-green)')
+             + ROW('📦 System Cost', money(systemCost))
+             + ROW(`⚡ Bill Savings (inflation ${billInflation}%)`, money(billSave))
+             + ROW('💰 Rebates/Income', money(systemIncome))
+             + ROW('☀️ Banked Energy Income', money(bankedIncome))
+             + ROW('☀️ Current Energy Income', money(currentIncome))
+             + ROW('🧾 Remaining', money(payOffToGo))
+             + HEAD('ROI Timeline','var(--battman-blue)')
+             + ROW('📅 Installed', yrs(daysInstalled/365))
+             + ROW('⏳ Remaining', yrs(daysToGo/365))
+             + ROW('🏁 Total ROI', yrs((daysInstalled+daysToGo)/365), true);
+          ]]]
+      styles:
+        card:
+        - padding: '0'
+        - margin-top: -8px
+        - border-radius: 0 0 12px 12px
+        - background: var(--battman-surface-popup)
+        - border: 1px solid var(--battman-border-neutral)
+        - border-top: none
+        - box-shadow: none
+        grid:
+        - grid-template-areas: '"body"'
+        custom_fields:
+          body:
+          - width: 100%
+          - padding: '0'
+          - margin: '0'
+    grid_options:
+      columns: full
+  column_span: 4
+icon: mdi:chart-box-outline
+show_icon_and_title: true
+header:
+  card:
+    type: custom:html-card
+    content: <div style="display:flex;align-items:center;justify-content:center;gap:12px;"><img src="/battman/images/battman-coins.webp" alt="Battman" style="height:48px;width:auto;display:block;"><img src="/battman/images/finances-line.webp" alt="Finances" style="height:26px;width:auto;display:block;"></div>
+    card_mod:
+      style: |
+        ha-card {
+          background: none !important;
+          box-shadow: none !important;
+          border: none !important;
+          padding: 0 !important;
+        }
+badges:
+- type: entity
+  show_name: true
+  show_state: true
+  show_icon: true
+  entity: '{{battery_soc}}'
+  name: SOC
+- type: entity
+  show_name: true
+  show_state: true
+  show_icon: true
+  entity: '{{buy_price}}'
+  name: Buy
+  show_entity_picture: false
+- type: entity
+  show_name: true
+  show_state: true
+  show_icon: true
+  entity: '{{feed_in_price}}'
+  name: FIT
+theme: Battman Coffee
+path: finances

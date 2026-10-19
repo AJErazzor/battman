@@ -27,6 +27,10 @@
     "dashboard_unavailable": {
       "title": "Battman could not create its dashboard",
       "description": "Home Assistant's dashboard internals have changed, so Battman could not create its dashboard ({error}). Create it by hand: Settings → Dashboards → Add dashboard → New dashboard from scratch, then ⋮ → Raw configuration editor and replace everything with:\n\n```yaml\nstrategy:\n  type: custom:battman\n```"
+    },
+    "missing_dependencies": {
+      "title": "Battman needs other dashboard cards",
+      "description": "Battman's dashboard uses cards that aren't installed. Install them with HACS (Frontend), then restart Home Assistant and refresh your browser:\n\n{missing}\n\nThe full list is in DEPENDENCIES.md in the Battman repository."
     }
   }
 }
