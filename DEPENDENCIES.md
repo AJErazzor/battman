@@ -28,6 +28,7 @@ Other integrations Battman's pages read (through the entity map):
 |---|---|---|
 | Sigenergy (Sigenergy-Local-Modbus) | Battery SOC, power, grid, solar (Log, Finances, Curvy) | Page shows which entity is missing |
 | Amber | Current prices (all price views); price forecasts (Pricy overlay) | Prices: error. Forecasts: Pricy shows a note and works without the overlay |
+| HA Companion app | Live Activity blueprints (the phone it shows on) | Only needed if you use the Live Activity |
 | Solcast | Solar forecast (Curvy overlay and badge) | Curvy shows a note and works without it |
 
 The Sigenergy integration ships some sensors **disabled**: enable **Sigen PV Power**

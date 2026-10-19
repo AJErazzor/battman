@@ -20,6 +20,11 @@
       "theme_mode_colours": {
         "name": "Theme mode colours"
       }
+    },
+    "switch": {
+      "live_activity": {
+        "name": "Live Activity"
+      }
     }
   },
   "services": {

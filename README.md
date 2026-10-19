@@ -92,6 +92,12 @@ iPhone Live Activity. It updates by itself when the dashboard theme changes. Unt
 dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
 `problem` attribute says why.
 
+## Live Activity
+
+A phone lock-screen Live Activity for your battery, made from Battman blueprints
+(installed and updated by Battman) plus `switch.battman_live_activity`. See
+[docs/live-activity.md](docs/live-activity.md) for set-up and swapping over from Smiggles.
+
 ## Entity map (Configure)
 
 Battman names (`buy_total`, `battery_soc`, `pv_string`, …) point at entities in

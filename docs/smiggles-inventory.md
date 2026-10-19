@@ -104,9 +104,9 @@ These live only in your HA (UI-created or in `configuration.yaml`):
 9. Remaining dashboards as Battman views
    - ✅ Settings (v0.8.0). WLED colour code dropped. `input_text.theme_mode_colours` replaced by
      Battman's `sensor.battman_theme_mode_colours`.
-   - Next automation set: the iPhone Live Activity (5 automations + push script) → Battman
-     blueprints + `switch.battman_live_activity` (v0.9.0). The car trigger becomes a generic
-     "follow an entity" blueprint.
+   - ✅ First automation set: the iPhone Live Activity (6 automations + push script) → Battman
+     blueprints + `switch.battman_live_activity` (v0.9.0). The car trigger became the generic
+     "follow an entity" blueprint. See docs/live-activity.md.
 10. Engine: packages, scripts, automations → blueprints / Battman entities, one area at a time, each with an entity cutover (Smiggles stays in charge of the battery until then)
 
 ## 8. Release conventions — Smiggles vs Battman

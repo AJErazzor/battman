@@ -13,14 +13,14 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from . import dashboard, dependencies, themes, update_check
+from . import blueprint_install, dashboard, dependencies, themes, update_check
 from .api import BattmanDashboardView, BattmanEntityMapView, BattmanThemeSaveView
 from .const import DOMAIN, STATIC_URL
 from .services import async_create_dashboard_and_report, async_register_services
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["button", "sensor"]
+PLATFORMS: list[str] = ["button", "sensor", "switch"]
 
 # Set in the config entry once the install-time dashboard has been made, so it
 # only ever happens once. After that, use the button or battman.create_dashboard.
@@ -60,6 +60,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except OSError as err:
         _LOGGER.error("Could not install Battman themes into %s: %s", dst, err)
 
+    await blueprint_install.async_install(hass)
+
     await dependencies.async_check(hass)
 
     if not entry.data.get(DASHBOARD_DONE):
@@ -76,7 +78,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Battman removed: take its shipped themes and managed dashboards away too.
+    """Battman removed: take its shipped themes, blueprints and managed dashboards away too.
 
     Dashboards you've taken control of, and your own themes (themes/battman/custom/),
     are left alone.
@@ -89,3 +91,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.warning("Could not remove the managed Battman dashboard: %s", err)
     if await hass.async_add_executor_job(themes.remove_shipped, themes.dst_dir(hass)):
         await themes.async_reload(hass)
+    await blueprint_install.async_remove(hass)

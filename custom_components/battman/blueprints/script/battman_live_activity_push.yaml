@@ -1,0 +1,203 @@
+blueprint:
+  name: Battman Live Activity – push
+  author: Battman
+  description: >-
+    Sends (or clears) the Battman battery Live Activity on a phone with the Home
+    Assistant Companion app: feed-in price as the title, buy price and today's net $
+    as the message, battery SOC as the progress bar, the battery mode as the icon and
+    the mode's theme colour as the bar colour.
+
+
+    Nothing is made up: a value that isn't available shows as "—", an unknown battery
+    mode shows a red "?" icon, and with no Battman dashboard theme picked the bar is grey.
+
+
+    Make one script from this, then point the Battman Live Activity on/off and updates
+    automations at it. Installed and updated by the Battman integration.
+  domain: script
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    phone:
+      name: Phone
+      description: The phone (Companion app) to show the Live Activity on.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+    entities:
+      name: Battery and prices
+      input:
+        battery_soc:
+          name: Battery state of charge
+          default: sensor.sigen_plant_battery_state_of_charge
+          selector:
+            entity:
+              domain: sensor
+        feed_in_price:
+          name: Feed-in price ($/kWh)
+          default: sensor.amber_5min_current_feed_in_price
+          selector:
+            entity:
+              domain: sensor
+        buy_price:
+          name: Buy price ($/kWh)
+          default: sensor.amber_5min_current_general_price
+          selector:
+            entity:
+              domain: sensor
+        battery_mode:
+          name: Battery mode
+          default: input_select.solarsystemcontrolmode
+          selector:
+            entity:
+              domain:
+                - input_select
+                - select
+                - sensor
+    net:
+      name: Today's net $
+      description: "Net = sell total − buy total − daily network charge, from today's (`day`) totals."
+      input:
+        sell_total:
+          name: Sell total (with a `day` attribute)
+          default: sensor.solarsystemcontrolselltotal
+          selector:
+            entity:
+              domain: sensor
+        buy_total:
+          name: Buy total (with a `day` attribute)
+          default: sensor.solarsystemcontrolbuytotal
+          selector:
+            entity:
+              domain: sensor
+        parameters:
+          name: Parameters (with a `dailyNetworkCharge` attribute)
+          default: sensor.solarsystemcontrolparameters
+          selector:
+            entity:
+              domain: sensor
+    look:
+      name: Look
+      input:
+        mode_colours:
+          name: Theme mode colours
+          default: sensor.battman_theme_mode_colours
+          selector:
+            entity:
+              domain: sensor
+        mode_icons:
+          name: Icon for each battery mode
+          default:
+            Self Consume: mdi:home-battery
+            Charge: mdi:battery-arrow-up
+            Discharge: mdi:transmission-tower-export
+            Float: mdi:solar-power
+            Drain: mdi:battery-arrow-down
+            Charge Solar Off: mdi:vacuum
+            Float Solar Off: mdi:party-popper
+            Solar Soak: mdi:solar-power-variant
+          selector:
+            object: {}
+        mode_hues:
+          name: Theme colour for each battery mode
+          description: green, yellow, blue, orange, red or purple
+          default:
+            Self Consume: blue
+            Charge: yellow
+            Discharge: green
+            Float: orange
+            Drain: red
+            Charge Solar Off: purple
+            Float Solar Off: purple
+            Solar Soak: orange
+          selector:
+            object: {}
+        tag:
+          name: Notification tag
+          default: battery_live
+          selector:
+            text: {}
+        url:
+          name: Open when tapped
+          default: /battman
+          selector:
+            text: {}
+
+fields:
+  alert:
+    name: Alert
+    description: Make a sound with this update (e.g. a price spike)
+    default: false
+    selector:
+      boolean: {}
+  clear:
+    name: Clear
+    description: Remove the Live Activity instead of updating it
+    default: false
+    selector:
+      boolean: {}
+
+mode: queued
+max: 10
+
+sequence:
+  - variables:
+      soc_e: !input battery_soc
+      fit_e: !input feed_in_price
+      buy_e: !input buy_price
+      mode_e: !input battery_mode
+      sell_total_e: !input sell_total
+      buy_total_e: !input buy_total
+      params_e: !input parameters
+      colours_e: !input mode_colours
+      mode_icons: !input mode_icons
+      mode_hues: !input mode_hues
+      tag: !input tag
+      url: !input url
+  - if:
+      - condition: template
+        value_template: "{{ clear | default(false) }}"
+    then:
+      - domain: mobile_app
+        type: notify
+        device_id: !input phone
+        message: clear_notification
+        data:
+          tag: "{{ tag }}"
+    else:
+      - variables:
+          soc_ok: "{{ states(soc_e) | is_number }}"
+          fit: >-
+            {{ ((states(fit_e) | float * 100) | round(1)) if states(fit_e) | is_number else '—' }}
+          buy: >-
+            {{ ((states(buy_e) | float * 100) | round(1)) if states(buy_e) | is_number else '—' }}
+          net: >-
+            {% set s = state_attr(sell_total_e, 'day') %}
+            {% set b = state_attr(buy_total_e, 'day') %}
+            {% set f = state_attr(params_e, 'dailyNetworkCharge') %}
+            {% if s | is_number and b | is_number and f | is_number %}
+            {% set n = s | float - b | float - f | float %}{{ ('-' if n < 0 else '') ~ '$' ~ ('%.2f' | format(n | abs)) }}
+            {%- else %}$—{% endif %}
+          bmode: "{{ states(mode_e) }}"
+          known_mode: "{{ bmode in mode_icons }}"
+          colour: >-
+            {% set raw = states(colours_e) %}
+            {% set pal = raw | from_json if raw[:1] == '{' else {} %}
+            {% set hue = mode_hues.get(bmode) %}
+            {{ pal[hue] if hue and hue in pal else '#8E8E93' }}
+          payload: >-
+            {% set d = {
+              'tag': tag, 'live_update': true, 'silent': not (alert | default(false)),
+              'notification_icon': mode_icons[bmode] if known_mode else 'mdi:help-circle',
+              'notification_icon_color': '#FFFFFF' if known_mode else '#FF453A',
+              'progress_bar_color': colour, 'url': url } %}
+            {% if soc_ok %}{% set d = dict(d, progress=(states(soc_e) | float | round(0) | int), progress_max=100) %}{% endif %}
+            {{ d }}
+      - domain: mobile_app
+        type: notify
+        device_id: !input phone
+        title: "{{ '⚡ ' if alert | default(false) else '' }}FIT {{ fit }}{{ 'c' if fit != '—' else '' }}"
+        message: >-
+          {{ '' if soc_ok else 'SOC — · ' }}{{ buy }}{{ 'c' if buy != '—' else '' }}·{{ net }}
+        data: "{{ payload }}"
