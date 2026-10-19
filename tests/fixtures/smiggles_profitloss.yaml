@@ -1,0 +1,93 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: horizontal-stack
+        version: 0.9.7
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                show_icon: false
+                show_name: false
+                show_state: false
+                show_label: false
+                triggers_update:
+                  - sensor.solarsystemcontrolselltotal
+                  - sensor.solarsystemcontrolbuytotal
+                  - sensor.solarsystemcontrolparameters
+                custom_fields:
+                  card: |
+                    [[[
+                      // Daily Energy Totals — Override style A  v2.2 (matched SELL/BUY)
+                      const E_SELL    = 'sensor.solarsystemcontrolselltotal';
+                      const E_BUY     = 'sensor.solarsystemcontrolbuytotal';
+                      const E_NETCOST = 'sensor.solarsystemcontrolparameters';
+
+                      const sellDay = parseFloat(states[E_SELL]?.attributes?.day) || 0;
+                      const buyDay  = parseFloat(states[E_BUY]?.attributes?.day)  || 0;
+                      const netCost = parseFloat(states[E_NETCOST]?.attributes?.dailyNetworkCharge)        || 0;
+                      const gross   = sellDay - buyDay;
+                      const net     = gross - netCost;
+
+                      const EM = 'var(--smiggles-green)', RO = 'var(--smiggles-darkred)';
+                      const fmt  = v => (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+                      const sign = v => v >= 0 ? EM : RO;
+                      const netCol = sign(net);
+
+                      const vcol = (label, val, col) =>
+                        '<div style="display:flex;flex-direction:column;justify-content:center;flex:none">'
+                      +   '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:' + col + '">' + label + '</span>'
+                      +   '<span style="font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:' + col + '">' + val + '</span>'
+                      + '</div>';
+
+                      const left =
+                        '<div style="display:flex;gap:15px">'
+                      +   vcol('SELL', fmt(sellDay), EM)
+                      +   vcol('BUY',  fmt(buyDay),  RO)
+                      + '</div>';
+
+                      const right =
+                        '<div style="margin-left:auto;text-align:right;line-height:1.15;white-space:nowrap">'
+                      +   '<div style="font-size:10px;font-weight:700;letter-spacing:0.06em;opacity:0.7;color:' + sign(gross) + '">GROSS ' + fmt(gross) + '</div>'
+                      +   '<div style="font-size:22px;font-weight:900;line-height:1.05;color:' + netCol + '">' + fmt(net)
+                      +     '<span style="font-size:10px;font-weight:800;letter-spacing:0.08em;opacity:0.6;margin-left:4px">NET</span></div>'
+                      + '</div>';
+
+                      return '<div style="display:flex;align-items:center;height:44px;padding:0 14px">'
+                      +   left
+                      +   right
+                      + '</div>';
+                    ]]]
+                styles:
+                  card:
+                    - padding: '0'
+                    - margin: '0'
+                    - box-shadow: none
+                    - overflow: hidden
+                    - border-radius: 8px
+                    - height: 44px
+                    - min-height: 44px
+                    - max-height: 44px
+                    - background: var(--smiggles-surface-card)
+                    - border: |
+                        [[[
+                          var s = parseFloat(states['sensor.solarsystemcontrolselltotal']?.attributes?.day) || 0;
+                          var b = parseFloat(states['sensor.solarsystemcontrolbuytotal']?.attributes?.day)  || 0;
+                          var n = (s - b) - (parseFloat(states['input_number.solarsystemcontroldailynetworkcharge']?.state) || 0);
+                          return '1px solid ' + (n >= 0 ? 'var(--smiggles-green-border)' : 'var(--smiggles-darkred-border)');
+                        ]]]
+                  grid:
+                    - grid-template-areas: '"card"'
+                    - grid-template-rows: 44px
+                  custom_fields:
+                    card:
+                      - grid-area: card
+                      - width: 100%
+                      - height: 44px
+                tap_action:
+                  action: none
+            grid_options:
+              rows: auto
+              columns: full
+        grid_options:
+          rows: auto
+          columns: full

@@ -124,9 +124,15 @@ These live only in your HA (UI-created or in `configuration.yaml`):
 Each Power view card becomes a Battman card (`custom:battman-<id>`, a plain YAML file in
 `cards/`, see docs/cards.md), one at a time, each checked side by side against Smiggles.
 The home / power-flow card stays A.J.'s own (not a Battman card).
+The Battman Power view (views/05-power.yaml) keeps the Smiggles sections and order:
+section 1 battery mode stack · state card · profitloss · overrides (power-flow is first in
+Smiggles), section 2 price strip · limits, section 3 gauges · charts · forecasts · mixes.
 
 1. ✅ Limits (v0.11.0)
-2. Price strip · 3. Cost strip · 4. Amber forecast · 5. PV chart (apexcharts) · 6. Solar forecast
+2. ✅ Cost strip → Profit / Loss, `battman-profitloss` (v0.12.0). Unavailable values show —
+   (Smiggles showed $0.00); the border's network charge now comes from the parameters sensor's
+   `dailyNetworkCharge`, like the figures (Smiggles read `input_number.solarsystemcontroldailynetworkcharge`).
+3. Price strip · 4. Amber forecast · 5. PV chart (apexcharts) · 6. Solar forecast
 7. SA generation / demand mix (OpenNEM) · 8. Gauges · 9. State card · 10. Battery mode stack
 11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
 

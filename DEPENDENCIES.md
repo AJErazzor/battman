@@ -5,8 +5,8 @@ Battman checks for the dashboard cards at startup and raises a **Repair** naming
 
 | Dependency | Type | Needed by | Get it |
 |---|---|---|---|
-| button-card | Dashboard card | Finances view (Billing, Financials/ROI cards) | https://github.com/custom-cards/button-card |
-| card-mod | Dashboard card | All Battman views (full-bleed page cards, header) | https://github.com/thomasloven/lovelace-card-mod |
+| button-card | Dashboard card | Finances view (Billing, Financials/ROI cards); Battman cards Limits and Profit / Loss | https://github.com/custom-cards/button-card |
+| card-mod | Dashboard card | All Battman views (full-bleed page cards, header); Limits card | https://github.com/thomasloven/lovelace-card-mod |
 | html-card | Dashboard card | Finances view header | https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-card |
 
 Coming with later moves (not checked yet):

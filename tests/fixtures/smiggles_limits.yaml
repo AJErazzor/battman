@@ -1,0 +1,116 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: vertical-stack
+        version: 0.9.5
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                entity: number.sigen_plant_grid_export_limitation
+                show_icon: false
+                show_name: false
+                show_state: false
+                tap_action:
+                  action: more-info
+                custom_fields:
+                  c: |
+                    [[[
+                      var v = Math.round(parseFloat(entity.state)), u = entity.attributes.unit_of_measurement || '';
+                      return '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%">'
+                        + '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--smiggles-text-muted);opacity:0.7;margin-bottom:3px;white-space:nowrap">Grid Export Limit</span>'
+                        + '<span style="font-size:18px;font-weight:900;line-height:1;color:var(--smiggles-blue);font-variant-numeric:tabular-nums;white-space:nowrap">' + v
+                        +   (u ? '<span style="font-size:11px;font-weight:700;opacity:0.5;margin-left:3px">' + u + '</span>' : '')
+                        + '</span></div>';
+                    ]]]
+                styles:
+                  card:
+                    - padding: 0 12px
+                    - height: 44px
+                    - min-height: 44px
+                    - max-height: 44px
+                    - border-radius: 8px
+                    - box-shadow: none
+                    - background: var(--smiggles-surface-card)
+                    - border: 1px solid var(--smiggles-border-neutral-soft)
+                  grid:
+                    - grid-template-areas: '"c"'
+                  custom_fields:
+                    c:
+                      - justify-self: center
+                      - width: 100%
+              - type: custom:button-card
+                entity: number.sigen_plant_pv_max_power_limit
+                show_icon: false
+                show_name: false
+                show_state: false
+                tap_action:
+                  action: more-info
+                custom_fields:
+                  c: |
+                    [[[
+                      var v = Math.round(parseFloat(entity.state)), u = entity.attributes.unit_of_measurement || '';
+                      return '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%">'
+                        + '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--smiggles-text-muted);opacity:0.7;margin-bottom:3px;white-space:nowrap">PV Max Limit</span>'
+                        + '<span style="font-size:18px;font-weight:900;line-height:1;color:var(--smiggles-blue);font-variant-numeric:tabular-nums;white-space:nowrap">' + v
+                        +   (u ? '<span style="font-size:11px;font-weight:700;opacity:0.5;margin-left:3px">' + u + '</span>' : '')
+                        + '</span></div>';
+                    ]]]
+                styles:
+                  card:
+                    - padding: 0 12px
+                    - height: 44px
+                    - min-height: 44px
+                    - max-height: 44px
+                    - border-radius: 8px
+                    - box-shadow: none
+                    - background: var(--smiggles-surface-card)
+                    - border: 1px solid var(--smiggles-border-neutral-soft)
+                  grid:
+                    - grid-template-areas: '"c"'
+                  custom_fields:
+                    c:
+                      - justify-self: center
+                      - width: 100%
+              - type: custom:button-card
+                entity: number.sigen_plant_ess_max_charging_limit
+                show_icon: false
+                show_name: false
+                show_state: false
+                tap_action:
+                  action: more-info
+                custom_fields:
+                  c: |
+                    [[[
+                      var v = Math.round(parseFloat(entity.state)), u = entity.attributes.unit_of_measurement || '';
+                      return '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%">'
+                        + '<span style="font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--smiggles-text-muted);opacity:0.7;margin-bottom:3px;white-space:nowrap">Max Charge Limit</span>'
+                        + '<span style="font-size:18px;font-weight:900;line-height:1;color:var(--smiggles-blue);font-variant-numeric:tabular-nums;white-space:nowrap">' + v
+                        +   (u ? '<span style="font-size:11px;font-weight:700;opacity:0.5;margin-left:3px">' + u + '</span>' : '')
+                        + '</span></div>';
+                    ]]]
+                styles:
+                  card:
+                    - padding: 0 12px
+                    - height: 44px
+                    - min-height: 44px
+                    - max-height: 44px
+                    - border-radius: 8px
+                    - box-shadow: none
+                    - background: var(--smiggles-surface-card)
+                    - border: 1px solid var(--smiggles-border-neutral-soft)
+                  grid:
+                    - grid-template-areas: '"c"'
+                  custom_fields:
+                    c:
+                      - justify-self: center
+                      - width: 100%
+            card_mod:
+              style:
+                .: >-
+                  :host { --stack-card-gap: 4px; --horizontal-stack-card-gap:
+                  4px; }
+                $: '.content { gap: 4px !important; }'
+        card_mod:
+          style:
+            .: ':host { --stack-card-gap: 4px; }'
+            $: '.content { gap: 4px !important; }'

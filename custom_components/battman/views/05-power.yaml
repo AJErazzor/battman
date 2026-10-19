@@ -1,6 +1,12 @@
 # Battman managed dashboard view: Power. Built from Battman cards (custom:battman-<id>),
 # added one at a time as they move over from Smiggles.
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
+#
+# Layout follows the Smiggles Power view. Each card goes in its original section and
+# position as it moves over:
+#   Section 1: (power-flow: stays yours) · battery mode stack · state card · profitloss · overrides
+#   Section 2: price strip · limits · …
+#   Section 3: gauges · PV chart · solar forecast · generation mix · demand mix (added when the first one moves)
 type: sections
 title: Power
 path: power
@@ -9,6 +15,9 @@ show_icon_and_title: true
 max_columns: 4
 theme: Battman Nord
 sections:
+  - type: grid
+    cards:
+      - type: custom:battman-profitloss
   - type: grid
     cards:
       - type: custom:battman-limits
