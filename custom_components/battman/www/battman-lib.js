@@ -1,7 +1,8 @@
 // Battman shared card library: window.BattmanLib
 // Served by the Battman integration at /battman/battman-lib.js (caching off, so
-// no ?v= needed). For now only the theme studio uses it (dock previews); the
-// override cards switch to it when they move into Battman.
+// no ?v= needed). Used by the Overrides card (rows, popups) and the theme studio's
+// dock previews. Battman's copy of Smiggles' ssc-lib.js v8 (checked line for line),
+// with renames and the fixes marked "Battman:" below.
 
 window.BattmanLib=(function(){
 var L = {};
@@ -161,7 +162,7 @@ var cfg = variables.battman.overrides.filter(function(o){return o.id===ov_id;})[
   var c     = cfg.color;
   var bg     = on ? cfg.bg : 'linear-gradient(' + cfg.shade + ',' + cfg.shade + '), var(--battman-surface-card)';
   var border = on ? cfg.dim : cfg.shade_border;
-  var cur  = parseFloat(states[S.soc_entity] && states[S.soc_entity].state) || 0;
+  var cur  = parseFloat(states[S.soc_entity] && states[S.soc_entity].state);   // Battman: NaN when unavailable (shown as —), never 0%
   var isSpecial = cfg.special_at > 0 && soc === cfg.special_at;
   var locked = a[cfg.attr_reset] === false || a[cfg.attr_reset] === 'false';
   var plug = cfg.id === 'drain' && on && (a.drainBatteryPlughole === true || a.drainBatteryPlughole === 'true');
@@ -178,7 +179,8 @@ var cfg = variables.battman.overrides.filter(function(o){return o.id===ov_id;})[
   }
 
   var rem  = cfg.direction === 'up' ? (soc - cur) : (cur - soc);
-  var kwh  = Math.abs(rem) * S.kwh_per_pct;
+  var capS = states[S.capacity_entity];   // Battman: kWh per % from the rated capacity sensor (was a fixed kwh_per_pct)
+  var kwh  = Math.abs(rem) * ((capS ? parseFloat(capS.state) : NaN) / 100);
   var live = on && soc > 0 && !isSpecial && rem > 0.5;
   var cost = (live && price > 0) ? (kwh * price / 100) : 0;
 
@@ -215,7 +217,10 @@ var cfg = variables.battman.overrides.filter(function(o){return o.id===ov_id;})[
   if (on && soc > 0 && !isSpecial) {
     if (live) {
       l2 = cur.toFixed(0) + '% \u2192 ' + soc.toFixed(0) + '%';
-      l3 = kwh.toFixed(1) + ' kWh';
+      l3 = (isNaN(kwh) ? '\u2014' : kwh.toFixed(1)) + ' kWh';
+    } else if (isNaN(cur)) {   // Battman: SOC unavailable, so neither "target met" nor a made-up gap
+      l2 = '\u2014% \u2192 ' + soc.toFixed(0) + '%';
+      l3 = '\u2014 kWh';
     } else {
       l2 = 'target met';
     }
@@ -446,7 +451,7 @@ window.BattmanLib.openPopup = function(ov_id, type){
   try{
     var ha = document.querySelector('home-assistant'); var hass = ha.hass;
     var states = hass.states; var cfg = window.BattmanLib.CFG; var entity = states[cfg.params_entity];
-    var variables = {bmc: cfg};
+    var variables = {battman: cfg};
     var content = window.BattmanLib.buildPopup(variables, states, entity, ov_id);
     hass.callService('browser_mod','popup',{content: content, title: ' ', style: '--mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;'});
   }catch(e){ try{console.error('BattmanLib.openPopup',e);}catch(_){} }

@@ -20,6 +20,7 @@ sections:
       - type: custom:battman-batterymode
       - type: custom:battman-state
       - type: custom:battman-profitloss
+      - type: custom:battman-overrides
   - type: grid
     column_span: 2
     cards:

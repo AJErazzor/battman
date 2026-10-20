@@ -153,13 +153,20 @@ Smiggles), section 2 price strip · limits, section 3 gauges · charts · foreca
    switches, so Smiggles stays in charge). The info popup ("Solar System Control", an `<img onload>`
    script with unresolved theme colours) is now the Engine log, styled like the State popup;
    a missing log sensor is named (was "No data").
-11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
+11. ✅ Overrides → `battman-overrides` (v0.16.0) on `battman-lib.js` (= ssc-lib v8, checked line for line;
+   one rename slip in its unused `openPopup` fixed). Output matches the original on the same states (tests run
+   both cards with their own libraries); in a browser the render was pixel-identical and Set / Clear sent the
+   same timer call and SetAttribute event. Fixed: row kWh from the rated capacity sensor (was a fixed 0.403),
+   missing SOC shows — (was 0%), missing buy/sell totals show — and block setting a Net Target (were $0).
+   The settings block (8 copies in the YAML) is written once. Timer h/m choice: `battman_timer_unit`.
 
 Battery capacity: Battman uses `sensor.sigen_plant_rated_energy_capacity` everywhere (as Smiggles'
 SOCkwh and override cards do). The State popup used the inverter's rated_battery_capacity until v0.14.0.
 
 ## 9. Notes for the engine stage
 
+- **`script.ssc_apply_scene`** (Overrides: applies a multi-override scene) is a Smiggles script, reached
+  through the map (`apply_scene_script`). Needs a Battman action when the engine moves.
 - **Engine log sections are found by emoji.** The engine's debug log starts each section with an
   emoji (🔄 💰 🔋 📊 ☀️ ⚡ 📈 📉 ℹ️ 🕐); the Engine log popup uses them to find sections and pick colours,
   and doesn't show them. A.J. wants the emoji gone: when the engine moves, give the log a plain

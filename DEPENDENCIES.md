@@ -10,9 +10,8 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 | html-card | Dashboard card | Finances view header | https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-card |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
 | power-pie-card | Dashboard card | NEM mix card | HACS → Frontend → power-pie-card |
-| browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup) | https://github.com/thomasloven/hass-browser_mod |
+| browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup) | https://github.com/thomasloven/hass-browser_mod |
 
-browser_mod is also what the override cards will use when they move.
 
 Battman pages also load from the internet:
 
@@ -42,6 +41,7 @@ Battman's own pieces that other parts rely on:
   attributes, because power-pie-card can only read states. They replace hand-made template sensors
   (`sensor.opennem_sa_*`, `sensor.sa_*`): once the NEM mix card checks out, those can go.
 - **Battman theme** (`--battman-*` colours): every Battman page shows an error without one.
-- **`battman-lib.js`**: the theme studio's live previews (the override cards still use Smiggles' `ssc-lib.js` until they move).
+- **`battman-lib.js`** (`window.BattmanLib`): the Overrides card's rows and popups, and the theme studio's dock previews.
+  Battman's copy of Smiggles' `ssc-lib.js` v8 (checked line for line), so `/local/smiggles/ssc-lib.js` isn't needed by Battman.
 - **Smiggles curve stores, events and control script** (`soc_curves`, `price_curves`, their `…_update_event`s, `control_script`): Curvy and Pricy read and save curves through Smiggles, which stays in charge of the battery.
 - **Debug log file + load script** (`debug_log_file`, `load_debug_log_script` in the map): the Log page's log panel. Both still come from Smiggles.
