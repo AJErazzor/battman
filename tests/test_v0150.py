@@ -109,4 +109,4 @@ async def test_power_view_section1(hass: HomeAssistant, hass_client) -> None:
     client, _card_ = await _card(hass, hass_client, "batterymode")
     power = (await (await client.get("/api/battman/dashboard")).json())["views"][0]
     assert [c["type"] for c in power["sections"][0]["cards"]] == [
-        "custom:battman-batterymode", "custom:battman-state", "custom:battman-profitloss"]
+        "custom:battman-batterymode", "custom:battman-state", "custom:battman-profitloss", "custom:battman-overrides"]

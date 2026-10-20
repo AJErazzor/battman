@@ -23,6 +23,8 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "enable": "input_boolean.solarsystemcontrolenable",
     "no_export": "input_boolean.solarsystemcontrolnoexport",
     "debug_log": "sensor.solar_system_control_debug_log",
+    # Overrides card: the Smiggles script that applies a multi-override preset (scene)
+    "apply_scene_script": "script.ssc_apply_scene",
     # Other integrations: these stay on the map
     "battery_soc": "sensor.sigen_plant_battery_state_of_charge",
     "buy_price": "sensor.amber_5min_current_general_price",
@@ -74,6 +76,7 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
     "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
     "rated_energy_capacity": "sensor.sigen_plant_rated_energy_capacity",
+    "available_max_power": "sensor.sigen_plant_available_max_active_power",
     "inverter_soc": "sensor.sigen_inverter_battery_state_of_charge",
     "solcast_remaining_today": "sensor.solcast_pv_forecast_forecast_remaining_today",
     # OpenNEM region sensor: Battman's NEM sensors (sensor.battman_nem_*) read its attributes

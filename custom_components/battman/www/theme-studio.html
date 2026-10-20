@@ -957,8 +957,8 @@ function renderDockRows(){
   var box=document.getElementById("pvDock");box.className="dock";box.innerHTML="";
   var L=window.BattmanLib;
   if(L&&L.renderRow){
-    var variables={battman:{overrides:BM_OVERRIDES,soc_entity:"sensor._soc",kwh_per_pct:0.403}};
-    var states={"sensor._soc":{state:String(MOCK_CUR_SOC)}};
+    var variables={battman:{overrides:BM_OVERRIDES,soc_entity:"sensor._soc",capacity_entity:"sensor._cap"}};
+    var states={"sensor._soc":{state:String(MOCK_CUR_SOC)},"sensor._cap":{state:"40.3"}};
     var entity={attributes:MOCK_ATTR};
     BM_OVERRIDES.forEach(function(o){
       var wrap=document.createElement("div");
