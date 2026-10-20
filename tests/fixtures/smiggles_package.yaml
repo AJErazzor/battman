@@ -1,0 +1,611 @@
+# The original Smiggles package (v1.0.14), kept unchanged so tests can render its template
+# sensors (SOCkwh, SolarRemainingToday10, …) next to Battman's. Test data only.
+################################
+# version: 1.0.14
+################################
+
+# Input Booleans
+input_boolean:
+  solarsystemcontrolenable:
+    name: "SolarSystemControlEnable"
+    icon: mdi:power
+
+  solarsystemcontrolnoexport:
+     name: "SolarSystemControlNoExport"
+     icon: mdi:cancel  
+
+  solarsystemcontrolbuysocprorate:
+     name: "SolarSystemControlBuySOCProrate"
+     icon: mdi:chart-bell-curve-cumulative 
+      
+  solarsystemcontrolsellsocprorate:
+     name: "SolarSystemControlSellSOCProrate"
+     icon: mdi:chart-bell-curve-cumulative 
+
+#log viewer log load button   
+  solarsystemcontroldebuglog_load:
+    name: Load Solar Log
+    icon: mdi:download     
+    
+# Input DateTime
+input_datetime:
+  solarsystemcontrollastrun:
+    name: "SolarSystemControlLastRun"
+    has_date: true
+    has_time: true
+    icon: mdi:clock-digital  
+    
+  solarsystemcontrolwatchdogreset:
+    name: "SolarSystemControlWatchDogReset"
+    has_date: false
+    has_time: true
+    icon: mdi:clock-digital  
+ 
+#log viewer start time    
+  solarsystemcontroldebuglogstart:
+    name: "Log Search Start Time"
+    has_date: true
+    has_time: true
+    icon: mdi:clock-start
+
+#log viewer end time    
+  solarsystemcontroldebuglogend:
+    name: "Log Search End Time"
+    has_date: true
+    has_time: true   
+    icon: mdi:clock-end
+    
+# Input Numbers
+input_number:
+  solarsystemcontrolbuyprice:
+    name: "SolarSystemControlBuyPrice"
+    min: -100.0
+    max: 1000.0
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin
+  
+  solarsystemcontrolsellprice:
+    name: "SolarSystemControlSellPrice"
+    min: 0.0
+    max: 2000.0
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin-outline
+  
+  solarsystemcontrolsoc:
+    name: "SolarSystemControlSOC"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-unknown
+
+  solarsystemcontrolsellsoc:
+    name: "SolarSystemControlSellSOC"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-unknown
+
+  solarsystemcontrolbuysoc:
+    name: "SolarSystemControlBuySOC"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-unknown
+
+  solarsystemcontrolsoaksoclow:
+    name: "SolarSystemControlSoakSOCLow"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-low   
+        
+  solarsystemcontrolsoaksochigh:
+    name: "SolarSystemControlSoakSOCHigh"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-high
+      
+  solarsystemcontrolsoaksocchargeprice:
+    name: "SolarSystemControlSoakSOCChargePrice"
+    min: -100.0
+    max: 0
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin
+      
+  solarsystemcontroldefaultsellprice:
+    name: "SolarSystemControlDefaultSellPrice"
+    min: 0
+    max: 2000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin-outline
+      
+  solarsystemcontrollowsellprice:
+    name: "SolarSystemControlLowSellPrice"
+    min: 0
+    max: 2000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin-outline
+      
+  solarsystemcontroldefaultbuyprice:
+    name: "SolarSystemControlDefaultBuyPrice"
+    min: 0
+    max: 1000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin
+      
+  solarsystemcontrolhighbuyprice:
+    name: "SolarSystemControlHighBuyPrice"
+    min: 0
+    max: 1000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:hand-coin
+      
+  solarsystemcontrolremainingpvgapallowed:
+    name: "SolarSystemControlRemainingPVGapAllowd"
+    min: -100
+    max: 100
+    step: 0.5
+    mode: box
+    unit_of_measurement: "kWh"
+    icon: mdi:sun-clock
+      
+  solarsystemcontrolhighconsumption:
+    name: "SolarSystemControlHighConsumption"
+    min: 0
+    max: 100
+    step: 0.5
+    mode: box
+    unit_of_measurement: "kWh"
+    icon: mdi:home-battery-outline
+
+  solarsystemcontrolbuyhighconsumption:
+    name: "SolarSystemControlBuyHighConsumption"
+    min: 0
+    max: 100
+    step: 0.5
+    mode: box
+    unit_of_measurement: "kWh"
+    icon: mdi:home-battery-outline
+        
+  solarsystemcontrolsellhighconsumption:
+    name: "SolarSystemControlSellHighConsumption"
+    min: 0
+    max: 100
+    step: 0.5
+    mode: box
+    unit_of_measurement: "kWh"
+    icon: mdi:home-battery-outline
+
+  solarsystemcontrolspikeprice1:
+    name: "SolarSystemControlSpikePrice1"
+    min: 0
+    max: 2000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:bitcoin
+      
+  solarsystemcontrolspikelowsoc1:
+    name: "SolarSystemControlSpikeLowSOC1"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-10
+      
+  solarsystemcontrolspikeprice2:
+    name: "SolarSystemControlSpikePrice2"
+    min: 0
+    max: 2000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "c/kWh"
+    icon: mdi:bitcoin
+      
+  solarsystemcontrolspikelowsoc2:
+    name: "SolarSystemControlSpikeLowSOC2"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-30
+
+  solarsystemcontrolscriptnotrunminutes:
+    name: "SolarSystemControlScriptNotRunMinutes"
+    min: 0
+    max: 1000
+    step: 1.0
+    mode: box
+    initial: 10
+    unit_of_measurement: "m"
+    icon: mdi:script-outline
+      
+  solarsystemcontrolscriptdisabledminutes:
+    name: "SolarSystemControlScriptDisabledMinutes"
+    min: 0
+    max: 1000
+    step: 1.0
+    mode: box
+    initial: 60
+    unit_of_measurement: "m"
+    icon: mdi:script-text-play-outline
+
+  solarsystemcontroldailynetworkcharge:
+    name: "Daily Network Charge"
+    min: 0
+    max: 10
+    step: 0.01
+    mode: box
+    unit_of_measurement: "$"
+    icon: mdi:transmission-tower
+
+  solarsystemcontrolbillday:
+    name: "SolarSystemControlBillDay"
+    min: 1
+    max: 31
+    step: 1
+    mode: box
+    unit_of_measurement: "day"
+    icon: mdi:calendar-star
+
+  solarsystemcontrolsellsocproratedoffset:
+    name: "SolarSystemControlSellSOCProratedOffset"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-70   
+        
+  solarsystemcontrolsellsoclowoffset:
+    name: "SolarSystemControlSellSOCLowOffset"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery
+        
+  solarsystemcontrolbuysocproratedoffset:
+    name: "SolarSystemControlBuySOCProratedOffset"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-40   
+    
+  solarsystemcontrolbuysochighoffset:
+    name: "SolarSystemControlBuySOCHighOffset"
+    min: 0.0
+    max: 100.0
+    step: 0.5
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:battery-20
+
+# Input Select
+input_select:
+  solarsystemcontrolmode:
+    name: "SolarSystemControlMode"
+    icon: mdi:battery-charging-wireless-10
+    options:
+      - "Self Consume"
+      - "Discharge"
+      - "Charge"
+      - "Charge Solar Off"
+      - "Float"
+      - "Float Solar Off"
+      - "Solar Soak"
+      - "Drain"
+
+# Input Text
+input_text:
+  solarsystemcontrolstorage:
+    name: "SolarSystemControlStorage"
+    max: 255
+    min: 0
+    mode: text
+    icon: mdi:math-log
+
+# Template Sensors
+template:
+  - sensor:
+      - name: "SolarSystemControlLoad30mAdv"
+        state: "{{ states('sensor.solarsystemcontrolload30m') | float(0) | round(2) }}"
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+      
+      - name: "SolarSystemControlLoad30mAvg"
+        state: "{{ states('sensor.solarsystemcontrolload30m') | float(0) | round(2) }}"
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+      
+      - name: "SOCkwh"
+        state: >
+          {% set soc = states('sensor.sigen_inverter_battery_state_of_charge') | float(0) %}
+          {% set capacity = states('sensor.sigen_plant_rated_energy_capacity') | float(0) %}
+          {{ (soc / 100) * capacity | round(2) }}
+        unit_of_measurement: "kWh"
+        device_class: energy
+      
+      - name: "GridPower"
+        state: >
+          {% set s1 = states('sensor.sigen_plant_grid_import_power') | float(0) %}
+          {% set s2 = states('sensor.sigen_plant_grid_export_power') | float(0) %}
+          {% if s1 > 0.05 and s1 >= s2 %}
+            {{ s1 | round(2) }}
+          {% elif s2 > 0.05 and s2 > s1 %}
+            {{ -1 * s2 | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "kWh"
+        device_class: energy
+  
+      - name: "SolarSystemControlEstimatedPriceTrue"
+        state: "{{ is_state('binary_sensor.solarsystemcontrolestimatedprice', 'on') | lower }}"
+      
+      - name: "SolarRemainingToday10"
+        state: "{{ state_attr('sensor.solcast_pv_forecast_forecast_remaining_today', 'estimate10') | float(0) | round() }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+      
+      - name: "SolarSystemStatus"
+        state: >
+          {% set gridStatus = states('sensor.sigen_plant_grid_connection_status') %}
+          {% set gridImport = states('sensor.sigen_plant_grid_import_power') | float(0) %}
+          {% set gridExport = states('sensor.sigen_plant_grid_export_power') | float(0) %}
+          {% set symo = states('sensor.sigen_plant_third_party_pv_power') | float(0) %}
+          {% set sig = states('sensor.sigen_plant_sigen_pv_power') | float(0) %}
+          {% set symoEnabled = states('switch.fronius_soft_limit_enable') %}
+          {% set consumption = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set buy = states('sensor.amber_5min_current_general_price') | float(0) %}
+          {% set fit = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+          {% set fitRate = "" %}
+          {% if fit <= 0 %}
+            {% set fitRate = "(fit:Bad)" %}
+          {% elif fit >= 0.20 %}
+            {% set fitRate = "(fit:20+)" %}
+          {% elif fit >= 0.15 %}
+            {% set fitRate = "(fit:15+)" %}
+          {% elif fit >= 0.10 %}
+            {% set fitRate = "(fit:10+)" %}
+          {% endif %}
+          {% if gridStatus == 'Off Grid (Auto)' %}
+            Off Grid (Auto)
+          {% elif gridStatus != 'On Grid' %}
+            {{ gridStatus }}
+          {% elif gridImport > 2 and buy <= 0 %}
+            Grid Importing (Good)
+          {% elif gridImport > 2 %}
+            Grid Importing (Bad)
+          {% elif gridExport > 2 and fit <= 0 %}
+            Grid Exporting (Bad)
+          {% elif gridExport > 2 %}
+            Grid Exporting (Good)
+          {% elif consumption > 4 %}
+            High Consumption
+          {% else %}
+            Normal {{ fitRate }}
+          {% endif %}
+      
+  - binary_sensor:
+      - name: "SolarSystemControlEstimatedPrice"
+        state: >
+          {% set now_ts = as_timestamp(utcnow()) %}
+          {% set start_ts = as_timestamp(state_attr('sensor.amber_5min_current_feed_in_price', 'start_time')) | default(0) %}
+          {% set end_ts = as_timestamp(state_attr('sensor.amber_5min_current_feed_in_price', 'end_time')) | default(0) %}
+          {% if start_ts <= now_ts <= end_ts %}
+            {{ state_attr('sensor.amber_5min_current_feed_in_price', 'estimate') }}
+          {% else %}
+            {{ true }}
+          {% endif %}
+          
+  - trigger:
+    - platform: event
+      event_type: solar_system_control_soc_curves_update
+    sensor:
+    - name: "Solar System Control SOC Curves"
+      unique_id: solarsystemsontrolsoccurves
+      state: "{{ now().isoformat() }}"
+      attributes:
+        curves: >-
+          {{
+            trigger.event.data.curves if trigger is defined
+            and trigger.event and 'curves' in trigger.event.data
+            else state_attr('sensor.solar_system_control_soc_curves', 'curves')
+            | default({}, true)
+          }}
+        defaults: >-
+          {{
+            trigger.event.data.defaults if trigger is defined
+            and trigger.event and 'defaults' in trigger.event.data
+            else state_attr('sensor.solar_system_control_soc_curves', 'defaults')
+            | default({}, true)
+          }}
+        presets: >-
+          {{
+            trigger.event.data.presets if trigger is defined
+            and trigger.event and 'presets' in trigger.event.data
+            else state_attr('sensor.solar_system_control_soc_curves', 'presets')
+            | default({}, true)
+          }}
+        preset_names: >-
+          {{
+            trigger.event.data.preset_names if trigger is defined
+            and trigger.event and 'preset_names' in trigger.event.data
+            else state_attr('sensor.solar_system_control_soc_curves', 'preset_names')
+            | default({'1': 'Preset 1', '2': 'Preset 2', '3': 'Preset 3', '4': 'Preset 4', '5': 'Preset 5'}, true)
+          }}
+        preset_tracking: >-
+          {{
+            trigger.event.data.preset_tracking if trigger is defined
+            and trigger.event and 'preset_tracking' in trigger.event.data
+            else state_attr('sensor.solar_system_control_soc_curves', 'preset_tracking')
+            | default({}, true)
+          }}    
+
+  - trigger:
+     - platform: event
+       event_type: solar_system_control_price_curves_update
+    sensor:
+    - name: "Solar System Control Price Curves"
+      unique_id: solarsystemcontrolpricecurves
+      state: "{{ now().isoformat() }}"
+      attributes:
+        curves: >-
+          {{
+            trigger.event.data.curves if trigger is defined
+            and trigger.event and 'curves' in trigger.event.data
+            else state_attr('sensor.solar_system_control_price_curves', 'curves')
+            | default({}, true)
+          }}
+        presets: >-
+          {{
+            trigger.event.data.presets if trigger is defined
+            and trigger.event and 'presets' in trigger.event.data
+            else state_attr('sensor.solar_system_control_price_curves', 'presets')
+            | default({}, true)
+          }}
+        preset_names: >-
+          {{
+            trigger.event.data.preset_names if trigger is defined
+            and trigger.event and 'preset_names' in trigger.event.data
+            else state_attr('sensor.solar_system_control_price_curves', 'preset_names')
+            | default({'1': 'Preset 1', '2': 'Preset 2', '3': 'Preset 3', '4': 'Preset 4', '5': 'Preset 5'}, true)
+          }}
+        preset_tracking: >-
+          {{
+            trigger.event.data.preset_tracking if trigger is defined
+            and trigger.event and 'preset_tracking' in trigger.event.data
+            else state_attr('sensor.solar_system_control_price_curves', 'preset_tracking')
+            | default({}, true)
+          }}
+  
+
+  - trigger:
+      - platform: event
+        event_type: SolarSystemControlDebugLog
+    sensor:
+      - name: "Solar System Control Debug Log"
+        unique_id: SolarSystemControlDebugLog
+        state: "{{ now().isoformat() }}"
+        device_class: timestamp
+        attributes:
+          message: "{{ trigger.event.data.message }}"
+          last_ts: "{{ now().isoformat() }}"
+          
+          
+          
+          
+# Solar System Override Timer Helper
+timer:
+  solarsystemoverridetimer:
+    name: "Solar System Override Timer"
+    duration: "12:00:00"
+    restore: true
+    icon: mdi:timer
+    
+
+#logging
+shell_command:
+  solar_debug_append: >
+    bash -c 'echo "{{ now().isoformat() }}|{{ message | replace("\n"," ") | replace("\r"," ") | replace("$","\\$") }}" >> /config/smiggles/solar_debug.log'
+    
+  solar_debug_load_filtered: >
+    bash -c '
+      start="{{ states("input_datetime.solarsystemcontroldebuglogstart") }}";
+      end="{{ states("input_datetime.solarsystemcontroldebuglogend") }}";
+      awk -F"|" -v start="$start" -v end="$end" "{
+        ts = \$1;
+        gsub(/T/, \" \", ts);
+        sub(/\\..*/, \"\", ts);
+        if (ts >= start && ts <= end) print \$0
+      }" /config/smiggles/solar_debug.log > /config/www/smiggles/solar_debug_filtered.txt
+    '
+    
+  solar_debug_prune: >
+    bash -c 'tail -n 4032 /config/smiggles/solar_debug.log > /config/smiggles/solar_debug.tmp && mv /config/smiggles/solar_debug.tmp /config/smiggles/solar_debug.log'
+    
+
+# Command Line Sensor for filtered debug log
+# Disabled 2026-10-06: legacy `platform: command_line` format no longer supported (Repairs);
+# sensor was unused and log file empty. Re-add under top-level `command_line:` if needed.
+#sensor:
+#  - platform: command_line
+#    name: SolarSystemControlDebugLogFiltered
+#    command: "cat /config/smiggles/solar_debug_filtered.log"
+#    scan_interval: 0  # no polling; only updates when file changes
+    
+    
+# Statistics Sensor
+# Note: This requires the Statistics integration to be set up
+# Go to Settings > Devices & Services > Add Integration > Statistics
+# Configure with:
+#   Entity: sensor.sigen_plant_consumed_power
+#   Name: SolarSystemControlLoad30m
+#   Characteristic: Mean
+#   Max Age: 00:30:00    
+
+
+# Statistics Sencor
+# Note: This requires the Statistics integration to be set up (Test if yaml works)
+# Go to Settings > Devices & Services > Add Integration > History Stats
+# Configure with:
+#   name: SolarSystemControlSell4h
+#   entity_id: input_select.SolarSystemControlMode
+#   state: "Discharge"
+#   type: Time
+#   start: "{{ now() - timedelta(hours=4) }}"
+#   end: "{{ now() }}"
+#(Yamal may work test something like)
+#sensor:
+# - platform: history_stats
+#   name: SolarSystemControlSell4h
+#   entity_id: input_select.SolarSystemControlMode
+#   state: "Discharge"
+#   type: Time
+#   start: "{{ now() - timedelta(hours=4) }}"
+#   end: "{{ now() }}"
+
+
+
+
+
+
+
+
+
+
+  

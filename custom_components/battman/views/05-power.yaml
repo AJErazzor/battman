@@ -6,7 +6,7 @@
 # position as it moves over:
 #   Section 1: (power-flow: stays yours) · battery mode stack · state · profitloss · overrides
 #   Section 2 (2 columns wide): amber5minpricegrid · limits · amber24hourforecasttable
-#   Section 3: gauges · PV chart · solar forecast · generation mix · demand mix (added when the first one moves)
+#   Section 3: gauges · (PV chart, solar forecast: stay yours) · nemmix (generation and demand mix)
 type: sections
 title: Power
 path: power
@@ -25,3 +25,7 @@ sections:
       - type: custom:battman-amber5minpricegrid
       - type: custom:battman-limits
       - type: custom:battman-amber24hourforecasttable
+  - type: grid
+    cards:
+      - type: custom:battman-gauges
+      - type: custom:battman-nemmix

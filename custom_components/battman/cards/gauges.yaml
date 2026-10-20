@@ -1,0 +1,108 @@
+# name: Gauges
+# description: SOC, battery in/out, grid and home half gauges, with kWh, solar, price and load lines.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-gauges`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/gauges.yaml and edit that copy.
+#
+# The SOC line works out kWh (inverter SOC x rated capacity) and Solcast's remaining
+# 10% estimate itself, from the original sensors. Any value that's unavailable shows
+# — (never 0 or $0.00).
+type: vertical-stack
+cards:
+  - type: horizontal-stack
+    cards:
+      - type: custom:modern-circular-gauge
+        entity: '[[map:inverter_soc]]'
+        name: SOC
+        min: 0
+        max: 100
+        needle: true
+        segments:
+          - from: 0
+            color: var(--battman-darkred)
+          - from: 15
+            color: var(--battman-orange)
+          - from: 55
+            color: var(--battman-green)
+        grid_options:
+          columns: 6
+          rows: auto
+        secondary: >-
+          {% set soc = states('[[map:inverter_soc]]') | float(none) %}{% set cap =
+          states('[[map:rated_energy_capacity]]') | float(none) %}{% set rem =
+          state_attr('[[map:solcast_remaining_today]]', 'estimate10') | float(none)
+          %}{{ '—' if soc is none or cap is none else ((soc / 100) * cap) | round(1) }}
+          kWh (+{{ '—' if rem is none else rem | round | round(1) }}kWh)
+        gauge_type: half
+      - type: custom:modern-circular-gauge
+        entity: '[[map:battery_power]]'
+        name: In⠀⠀⠀Battery⠀⠀⠀Out
+        min: -10
+        max: 15
+        needle: true
+        segments:
+          - from: -10
+            color: var(--battman-darkred)
+          - from: -4
+            color: var(--battman-orange)
+          - from: 0
+            color: var(--battman-green)
+        grid_options:
+          columns: 6
+          rows: auto
+        secondary: >-
+          {% set pv = states('[[map:pv_power]]') | float(none) %}Current Solar {{ '—'
+          if pv is none else pv | round(1) }}kW
+        gauge_type: half
+  - type: horizontal-stack
+    cards:
+      - type: custom:modern-circular-gauge
+        entity: '[[map:grid_power]]'
+        name: Grid
+        min: -15
+        max: 15
+        needle: true
+        segments:
+          - from: -15
+            color: var(--battman-darkred)
+          - from: -2
+            color: var(--battman-orange)
+          - from: -1
+            color: var(--battman-green)
+          - from: 1
+            color: var(--battman-orange)
+          - from: 2
+            color: var(--battman-darkred)
+        grid_options:
+          columns: 6
+          rows: auto
+        secondary: >-
+          {% set fit = states('[[map:feed_in_price]]') | float(none) %}{% set buy =
+          states('[[map:buy_price]]') | float(none) %}{{ '—' if fit is none else
+          '$%.2f' | format(fit) }} {% if is_state('[[map:estimated_price]]', 'on')
+          %}Est{%else%}⠀⠀⠀Act⠀⠀⠀{% endif %} {{ '—' if buy is none else '$%.2f' |
+          format(buy) }}
+        gauge_type: half
+      - type: custom:modern-circular-gauge
+        entity: '[[map:home_power]]'
+        name: Home
+        min: 0
+        max: 15
+        needle: true
+        segments:
+          - from: 0
+            color: var(--battman-green)
+          - from: 3
+            color: var(--battman-orange)
+          - from: 6
+            color: var(--battman-darkred)
+        grid_options:
+          columns: 6
+          rows: auto
+        secondary: >-
+          {% set avg = states('[[map:load_30m_avg]]') | float(none) %}Avg 30m {{ '—'
+          if avg is none else avg | round(2) }} kW{% if state_attr('[[map:run]]',
+          'needPower') | bool(false) %} ⚡{% endif %}
+        gauge_type: half

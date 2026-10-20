@@ -29,6 +29,8 @@ to `strategy: {type: custom:battman}`.
 | `battman-amber5minpricegrid` | SELL / BUY now with sparkline and 5-min countdown, then the next 8 periods | button-card |
 | `battman-amber24hourforecasttable` | Every Amber forecast interval: Sell, SS, Buy, SS, colour banded (built from Amber's forecast sensors) | button-card |
 | `battman-state` | What the engine is doing; tap for the next hours' projection | button-card, browser_mod |
+| `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
+| `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
 
 `<battman-countdown></battman-countdown>` (the 5-min Amber countdown) is loaded by Battman on
 every HA page, so you can also use it in your own cards. It takes its colour and font from

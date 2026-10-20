@@ -65,7 +65,7 @@ async def test_missing_dependencies_repair(hass: HomeAssistant) -> None:
     issues = ir.async_get(hass)
     issue = issues.async_get_issue(DOMAIN, "missing_dependencies")
     assert issue is not None                                   # nothing installed in the test HA
-    for name in ("button-card", "card-mod", "html-card", "browser_mod"):
+    for name in ("button-card", "card-mod", "html-card", "modern-circular-gauge", "power-pie-card", "browser_mod"):
         assert name in issue.translation_placeholders["missing"]
 
     # install them as dashboard resources, check again -> Repair goes away
@@ -73,7 +73,9 @@ async def test_missing_dependencies_repair(hass: HomeAssistant) -> None:
     await res.async_get_info()
     for url in ("/hacsfiles/button-card/button-card.js",
                 "/hacsfiles/lovelace-card-mod/card-mod.js",
-                "/hacsfiles/lovelace-html-card/html-card.js"):
+                "/hacsfiles/lovelace-html-card/html-card.js",
+                "/hacsfiles/modern-circular-gauge/modern-circular-gauge.js",
+                "/hacsfiles/power-pie-card/power-pie-card.js"):
         await res.async_create_item({"res_type": "module", "url": url})
     MockConfigEntry(domain="browser_mod", data={}).add_to_hass(hass)   # browser_mod: an integration
     from custom_components.battman import dependencies

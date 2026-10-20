@@ -92,6 +92,13 @@ iPhone Live Activity. It updates by itself when the dashboard theme changes. Unt
 dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
 `problem` attribute says why.
 
+## NEM sensors
+
+`sensor.battman_nem_*` (MW): the region's generation by source (wind, rooftop and utility
+solar, imports, battery, gas CCGT / OCGT / steam / recip, distillate) and where it goes
+(exports, battery charging, total supply, consumers), made from the OpenNEM sensor picked
+as `opennem` under Configure. A source OpenNEM doesn't report is unknown, never 0.
+
 ## Battman cards
 
 Cards you can add to any dashboard (Add card → search "Battman"), and that update

@@ -247,10 +247,10 @@ tap_action:
       content: |-
         [[[
         // Battman: a sensor this card needs is missing -> say which, never draw made-up values.
-        const _gone = ['[[map:run]]', '[[map:parameters]]', '[[map:soc_curves]]', '[[map:price_curves]]', '[[map:battery_capacity]]', '[[map:battery_power]]', '[[map:battery_soc]]', '[[map:buy_forecast]]', '[[map:feed_in_forecast]]', '[[map:buy_rules]]', '[[map:override_timer]]'].filter(e => !states[e]);
+        const _gone = ['[[map:run]]', '[[map:parameters]]', '[[map:soc_curves]]', '[[map:price_curves]]', '[[map:rated_energy_capacity]]', '[[map:battery_power]]', '[[map:battery_soc]]', '[[map:buy_forecast]]', '[[map:feed_in_forecast]]', '[[map:buy_rules]]', '[[map:override_timer]]'].filter(e => !states[e]);
         if (_gone.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Next hours: missing ' + _gone.join(', ') + '</div>';
         // Battman: the projection needs real numbers (the original assumed 40.3 kWh / 0% / 0 kW).
-        const _na = [['[[map:battery_capacity]]', 'battery capacity'], ['[[map:battery_soc]]', 'battery SOC'], ['[[map:battery_power]]', 'battery power']].filter(x => !isFinite(parseFloat(states[x[0]].state)));
+        const _na = [['[[map:rated_energy_capacity]]', 'battery capacity'], ['[[map:battery_soc]]', 'battery SOC'], ['[[map:battery_power]]', 'battery power']].filter(x => !isFinite(parseFloat(states[x[0]].state)));
         if (_na.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Next hours: ' + _na.map(x => x[1] + ' (' + x[0] + ')').join(', ') + ' unavailable, so there is no projection right now.</div>';
         const _note = ['[[map:solcast_today]]', '[[map:solcast_tomorrow]]'].filter(e => !states[e]).length ? 'No solar forecast (' + ['[[map:solcast_today]]', '[[map:solcast_tomorrow]]'].filter(e => !states[e]).join(', ') + ' missing): this projection assumes no solar.' : '';
         return (_note ? '<div style="padding:4px 2px 6px;font-size:11px;font-weight:700;line-height:1.4;color:var(--battman-darkred)">' + _note + '</div>' : '') + (() => {
@@ -274,7 +274,7 @@ tap_action:
         const spo=pn(par,'sellProrateSOCOffset',30), slo=pn(par,'sellLowSOCOffset',50);
         const suf = String(attr.needy).toLowerCase()==='true' ? '_high' : '';
         const MO  = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-        const capk = parseFloat(states['[[map:battery_capacity]]']?.state);
+        const capk = parseFloat(states['[[map:rated_energy_capacity]]']?.state);
         const pwk  = parseFloat(states['[[map:battery_power]]']?.state)||0;
         const soc0 = parseFloat(states['[[map:battery_soc]]']?.state)||0;
         const buyPricePreferred = a('buyPricePreferred');
