@@ -133,7 +133,23 @@ def get_card(local: Path, card_id: str, emap: dict[str, str]) -> dict[str, Any]:
         "config": filled,
         "missing_map": sorted(missing),
         "needs": sorted(_custom_types(filled, set())),
+        # the card's own width/height in a sections view (e.g. columns: full); HA only reads
+        # grid_options on the card as placed, so the wrapper and the dashboard pass it on
+        "grid_options": filled.get("grid_options"),
     }
+
+
+def grid_options(local: Path) -> dict[str, Any]:
+    """card id -> its grid_options, for every card file that sets one."""
+    out: dict[str, Any] = {}
+    for card_id, (path, _source) in _files(local).items():
+        try:
+            config = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError:
+            continue                      # the card itself reports bad YAML when it's drawn
+        if isinstance(config, dict) and isinstance(config.get("grid_options"), dict):
+            out[card_id] = config["grid_options"]
+    return out
 
 
 def update_issue(hass: HomeAssistant, ids: list[str]) -> None:
