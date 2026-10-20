@@ -48,14 +48,30 @@ def _fill(obj: Any, emap: dict[str, str], missing: set[str]) -> Any:
     return obj
 
 
+def _card_sizes(obj: Any, sizes: dict[str, Any]) -> Any:
+    """A Battman card placed without grid_options gets its card file's (e.g. columns: full).
+    HA reads grid_options only on the card as placed, never inside the card file."""
+    if isinstance(obj, dict):
+        out = {k: _card_sizes(v, sizes) for k, v in obj.items()}
+        t = out.get("type")
+        if isinstance(t, str) and t.startswith("custom:battman-") and "grid_options" not in out:
+            if (size := sizes.get(t[len("custom:battman-"):])) is not None:
+                out["grid_options"] = dict(size)
+        return out
+    if isinstance(obj, list):
+        return [_card_sizes(v, sizes) for v in obj]
+    return obj
+
+
 async def async_build_dashboard(hass: HomeAssistant) -> dict[str, Any]:
     """{"views": [...], "errors": [...]} for the managed dashboard."""
     emap = entity_map(hass)
     errors: list[str] = []
     views = []
+    sizes = await hass.async_add_executor_job(cards.grid_options, cards.local_dir(hass))
     for name, view in await hass.async_add_executor_job(_load_views):
         missing: set[str] = set()
-        filled = _fill(view, emap, missing)
+        filled = _card_sizes(_fill(view, emap, missing), sizes)
         if missing:
             errors.append(f"{name}: Battman entity map has no entry for: {', '.join(sorted(missing))}")
         views.append(filled)

@@ -30,8 +30,15 @@ function errText(e) {
 class BattmanCard extends HTMLElement {
   static cardId = "";
 
-  static getStubConfig() {
-    return {};
+  // Added from the card picker: bring the card file's grid_options (e.g. columns: full),
+  // because HA only reads grid_options on the card as placed.
+  static async getStubConfig(hass) {
+    try {
+      const data = await fetchCard(hass, this.cardId);
+      return data.grid_options ? { grid_options: data.grid_options } : {};
+    } catch (e) {
+      return {};
+    }
   }
 
   static getConfigElement() {
@@ -62,6 +69,7 @@ class BattmanCard extends HTMLElement {
   }
 
   getGridOptions() {
+    if (this._gridOptions) return this._gridOptions;     // the card file's own grid_options
     return this._inner && this._inner.getGridOptions ? this._inner.getGridOptions() : undefined;
   }
 
@@ -96,6 +104,7 @@ class BattmanCard extends HTMLElement {
     } catch (e) {
       return this._problem(`Card “${data.name}” couldn't be drawn: ${errText(e)}`);
     }
+    this._gridOptions = data.grid_options || null;
     el.hass = this._hass;
     this.replaceChildren(el);
     this._inner = el;
