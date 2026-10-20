@@ -16,6 +16,8 @@ Copy and paste it anywhere like any card. Every copy updates when Battman does.
 
 **Make one copy your own:** open the card's editor → **Convert to plain YAML**. You
 get the full card YAML with your entities filled in; that copy stops updating.
+A card with no tap action gets `pointer-events: none` from button-card, which also stops
+scrolling inside it; cards that scroll (the forecast table) set `pointer-events: auto`.
 The editor is only there on a dashboard you can edit. Battman's own dashboard is built
 by Battman, so HA offers **Take control** instead of an editor. Taking control makes it an
 ordinary dashboard you can rearrange: its Battman cards keep updating, but changes to the
@@ -29,6 +31,7 @@ to `strategy: {type: custom:battman}`.
 | `battman-amber5minpricegrid` | SELL / BUY now with sparkline and 5-min countdown, then the next 8 periods | button-card |
 | `battman-amber24hourforecasttable` | Every Amber forecast interval: Sell, SS, Buy, SS, colour banded (built from Amber's forecast sensors) | button-card |
 | `battman-state` | What the engine is doing; tap for the next hours' projection | button-card, browser_mod |
+| `battman-batterymode` | Active / Curtail switches, Engine log popup (info button), battery mode buttons | button-card, card-mod, browser_mod |
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
 

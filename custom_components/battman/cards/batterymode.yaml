@@ -1,0 +1,1067 @@
+# name: Battery mode
+# description: Active and Curtail switches, the engine log, and the battery mode buttons.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-batterymode`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/batterymode.yaml and edit that copy.
+#
+# The buttons change the same entities as before (the mode select and
+# the Active / Curtail switches), so the current engine stays in charge of the battery.
+# The info button opens the Engine log (browser_mod popup), styled like the State card's
+# Next hours popup. Its sections are found by the emoji the engine starts them with.
+type: vertical-stack
+cards:
+- type: horizontal-stack
+  cards:
+  - type: custom:button-card
+    entity: '[[map:enable]]'
+    name: Active
+    show_icon: false
+    show_name: true
+    show_state: true
+    tap_action:
+      action: toggle
+    hold_action:
+      action: more-info
+    styles:
+      card:
+      - padding: 0 10px
+      - margin: '0'
+      - height: 40px
+      - min-height: 40px
+      - max-height: 40px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - --fx-ring: '[[[ return entity.state === ''on'' ? ''var(--fx-enable-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-enable-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-enable-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-enable-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''on'' ? ''var(--fx-enable-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-enable-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-enable-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-green-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''on'' ? ''var(--fx-enable-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 11px
+      - font-weight: '700'
+      - letter-spacing: 0.06em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+      state:
+      - font-size: 10px
+      - color: var(--battman-text-dim)
+      - font-weight: '600'
+    state:
+    - value: 'on'
+      styles:
+        card:
+        - background: var(--battman-green-soft-bg)
+        - border: 1px solid var(--battman-green-border-strong)
+        name:
+        - color: var(--battman-green)
+        state:
+        - color: var(--battman-green)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:no_export]]'
+    name: Curtail
+    show_icon: false
+    show_name: true
+    show_state: true
+    tap_action:
+      action: toggle
+    hold_action:
+      action: more-info
+    styles:
+      card:
+      - padding: 0 10px
+      - margin: '0'
+      - height: 40px
+      - min-height: 40px
+      - max-height: 40px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - --fx-ring: '[[[ return entity.state === ''on'' ? ''var(--fx-curtail-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-curtail-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-curtail-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-curtail-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''on'' ? ''var(--fx-curtail-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-curtail-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-curtail-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-amber-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''on'' ? ''var(--fx-curtail-border, 1px solid var(--battman-amber-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 11px
+      - font-weight: '700'
+      - letter-spacing: 0.06em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+      state:
+      - font-size: 10px
+      - color: var(--battman-text-dim)
+      - font-weight: '600'
+    state:
+    - value: 'on'
+      styles:
+        card:
+        - background: var(--battman-amber-soft-bg)
+        - border: 1px solid var(--battman-amber-border-strong)
+        name:
+        - color: var(--battman-amber)
+        state:
+        - color: var(--battman-amber)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    icon: mdi:information-outline
+    show_name: false
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.popup
+        data:
+          title: ' '
+          style: --mdc-dialog-min-width:min(94vw,480px);--mdc-dialog-max-width:min(94vw,480px);
+          content: |-
+            [[[
+            // Engine log popup: the engine's last-run log, styled like the State card's "Next hours" popup.
+            // Each emoji line starts a section (its emoji picks the colour; the emoji itself isn't shown);
+            // the lines under it are its details. True / False and $ amounts are coloured.
+            const C = { green: 'var(--battman-green)', yellow: 'var(--battman-yellow)', amber: 'var(--battman-amber)',
+                        orange: 'var(--battman-orange)', blue: 'var(--battman-blue)', purple: 'var(--battman-purple)',
+                        darkred: 'var(--battman-darkred)', muted: 'var(--battman-text-muted)', dim: 'var(--battman-text-dim)',
+                        text: 'var(--primary-text-color)' };
+            const SECTION = { '🕐': C.muted, '🔄': C.purple, '💰': C.yellow, '🔒': C.orange, '🔋': C.green, '📊': C.blue,
+                              '☀️': C.amber, '☀': C.amber, '⚡': C.muted, '📈': C.green, '📉': C.amber, 'ℹ️': C.muted, 'ℹ': C.muted };
+            const LOG = '[[map:debug_log]]';
+            const wrap = inner => `<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'>${inner}</div>`;
+            const note = (t, c) => `<div style='padding:8px 10px;font-size:15px;font-weight:700;color:${c};'>${t}</div>`;
+            const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const clr = s => esc(s)
+              .replace(/\bTrue\b/g, `<b style='color:${C.green};'>True</b>`)
+              .replace(/\bFalse\b/g, `<b style='color:${C.dim};'>False</b>`)
+              .replace(/(\$\s*-?[\d.]+)/g, m => `<b style='color:${parseFloat(m.replace(/[^0-9.-]/g, '')) < 0 ? C.darkred : C.green};'>${m}</b>`);
+            // a section line starts with an emoji (surrogate pair, or a BMP symbol)
+            const emojiOf = s => { const c = s.charCodeAt(0);
+              if (!((c >= 0xD800 && c <= 0xDBFF) || (c >= 0x2100 && c <= 0x27FF))) return null;
+              const m = s.match(/^(\S+?)\s/); return m ? m[1] : s.slice(0, 2); };
+
+            let body;
+            const st = states[LOG];
+            if (!st) body = note(`Engine log: missing ${LOG}`, C.darkred);
+            else {
+              const raw = String(st.attributes?.message ?? '');
+              if (!raw.trim()) body = note(`${LOG} has no log message yet.`, C.muted);
+              else {
+                const secs = [];
+                let cur = null;
+                raw.split('\n').forEach(line => {
+                  const tr = line.trim();
+                  if (!tr) return;
+                  const em = emojiOf(tr);
+                  if (em) {
+                    cur = { col: SECTION[em] || C.text, head: tr.slice(em.length).trim(), lines: [] };
+                    secs.push(cur);
+                  } else {
+                    if (!cur) { cur = { col: C.text, head: '', lines: [] }; secs.push(cur); }
+                    cur.lines.push({ ind: Math.min((line.match(/^(\s+)/) || ['', ''])[1].length, 8), t: tr });
+                  }
+                });
+                // the first section, when it's the run time (🕐), becomes the top pill, like the State popup's
+                let top = '';
+                if (secs.length && secs[0].col === C.muted && /^\d{4}-\d\d-\d\d/.test(secs[0].head) && !secs[0].lines.length) {
+                  top = `<div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;background:color-mix(in srgb, ${C.blue} 16%, transparent);border:1px solid color-mix(in srgb, ${C.blue} 45%, transparent);'>`
+                    + `<span style='color:${C.blue};'>Engine log</span><span style='font-weight:600;text-transform:none;letter-spacing:0;'>Last run ${esc(secs.shift().head)}</span></div>`;
+                }
+                body = top + secs.map(s => {
+                  const [label, ...rest] = s.head.split(':');
+                  const value = rest.join(':').trim();
+                  return `<div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, ${s.col} 14%, transparent);border:1px solid color-mix(in srgb, ${s.col} 40%, transparent);'>`
+                    + `<div style='width:4px;border-radius:2px;background:${s.col};flex-shrink:0;'></div>`
+                    + `<div style='flex:1;min-width:0;'>`
+                    + (s.head ? `<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'>`
+                        + `<span style='font-size:17px;font-weight:800;color:${s.col};'>${esc(label.trim())}</span>`
+                        + (value ? `<span style='font-size:16px;font-weight:700;color:var(--primary-text-color);'>${clr(value)}</span>` : '')
+                        + `</div>` : '')
+                    + s.lines.map(l => `<div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:${Math.max(0, l.ind - 2) * 4}px;'>${clr(l.t)}</div>`).join('')
+                    + `</div></div>`;
+                }).join('');
+              }
+            }
+            const out = wrap(body);
+            // the popup sits outside the themed view, so resolve var(--x) to real values from this card's style
+            let cs = null;
+            try { cs = getComputedStyle((this && this.nodeType === 1) ? this : document.documentElement); } catch (e) {}
+            if (!cs) return out;
+            let res = out;
+            for (let i = 0; i < 6 && /var\(--/.test(res); i++) {
+              res = res.replace(/var\((--[\w-]+)(?:\s*,([^()]*))?\)/g, (m, name, fb) => {
+                const v = cs.getPropertyValue(name).trim();
+                return v || (fb !== undefined ? fb.trim() : m);
+              });
+            }
+            return res;
+            ]]]
+    styles:
+      card:
+      - box-shadow: none
+      - padding: '0'
+      - margin: '0'
+      - height: 40px
+      - min-height: 40px
+      - max-height: 40px
+      - background: var(--battman-surface-card) !important
+      - border-radius: 8px !important
+      - border: 1px solid var(--battman-border-neutral) !important
+      icon:
+      - width: 16px
+      - height: 16px
+      - color: var(--battman-text-dim) !important
+  card_mod:
+    style:
+      .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+      $: '.content { gap: 4px !important; }'
+- type: vertical-stack
+  cards:
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: '[[map:mode]]'
+      name: Buy
+      show_icon: false
+      show_name: true
+      show_state: false
+      tap_action:
+        action: call-service
+        service: input_select.select_option
+        service_data:
+          entity_id: '[[map:mode]]'
+          option: Charge
+      styles:
+        card:
+        - padding: 0 6px
+        - height: 40px
+        - min-height: 40px
+        - max-height: 40px
+        - border-radius: 8px
+        - box-shadow: none
+        - background: var(--battman-surface-card)
+        - border: 1px solid var(--battman-border-neutral)
+        - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
+        - align-items: center
+        - justify-content: center
+        - --fx-ring: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-chase-display, none)'' : ''none''; ]]]'
+        - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
+        - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
+        - --fx-ring-width: var(--fx-buy-ring-width, 2px)
+        - --fx-glow-name: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-glow-name, none)'' : ''none''; ]]]'
+        - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
+        - --fx-glow-color: var(--fx-buy-glow-color, transparent)
+        - --fx-fill-soft: var(--battman-yellow-soft-bg)
+        - --fx-border: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+        name:
+        - font-size: 11px
+        - font-weight: '700'
+        - letter-spacing: 0.06em
+        - text-transform: uppercase
+        - color: var(--battman-text-muted)
+      state:
+      - value: Charge
+        styles:
+          card:
+          - background: var(--battman-yellow-soft-bg)
+          - border: 1px solid var(--battman-yellow-border-strong)
+          name:
+          - color: var(--battman-yellow)
+      extra_styles: |-
+        @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+        @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+        @keyframes fx-glow-rainbow {
+          0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+          33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+          66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+          100%{box-shadow:0 0 16px 4px var(--battman-red);}
+        }
+        ha-card {
+          position: relative !important; overflow: hidden !important;
+          border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+          animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+        }
+        ha-card::before {
+          content:''; position:absolute; z-index:0; top:50%; left:50%;
+          width:360px; height:360px; transform: translate(-50%,-50%);
+          background: var(--fx-chase-gradient, none);
+          animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+          display: var(--fx-ring, none);
+        }
+        ha-card::after {
+          content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+          background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+        }
+        ha-card > * { position: relative !important; z-index: 2 !important; }
+        @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+    - type: custom:button-card
+      entity: '[[map:mode]]'
+      name: Sell
+      show_icon: false
+      show_name: true
+      show_state: false
+      tap_action:
+        action: call-service
+        service: input_select.select_option
+        service_data:
+          entity_id: '[[map:mode]]'
+          option: Discharge
+      styles:
+        card:
+        - padding: 0 6px
+        - height: 40px
+        - min-height: 40px
+        - max-height: 40px
+        - border-radius: 8px
+        - box-shadow: none
+        - background: var(--battman-surface-card)
+        - border: 1px solid var(--battman-border-neutral)
+        - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
+        - align-items: center
+        - justify-content: center
+        - --fx-ring: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-chase-display, none)'' : ''none''; ]]]'
+        - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
+        - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
+        - --fx-ring-width: var(--fx-sell-ring-width, 2px)
+        - --fx-glow-name: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-glow-name, none)'' : ''none''; ]]]'
+        - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
+        - --fx-glow-color: var(--fx-sell-glow-color, transparent)
+        - --fx-fill-soft: var(--battman-green-soft-bg)
+        - --fx-border: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+        name:
+        - font-size: 11px
+        - font-weight: '700'
+        - letter-spacing: 0.06em
+        - text-transform: uppercase
+        - color: var(--battman-text-muted)
+      state:
+      - value: Discharge
+        styles:
+          card:
+          - background: var(--battman-green-soft-bg)
+          - border: 1px solid var(--battman-green-border-strong)
+          name:
+          - color: var(--battman-green)
+      extra_styles: |-
+        @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+        @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+        @keyframes fx-glow-rainbow {
+          0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+          33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+          66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+          100%{box-shadow:0 0 16px 4px var(--battman-red);}
+        }
+        ha-card {
+          position: relative !important; overflow: hidden !important;
+          border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+          animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+        }
+        ha-card::before {
+          content:''; position:absolute; z-index:0; top:50%; left:50%;
+          width:360px; height:360px; transform: translate(-50%,-50%);
+          background: var(--fx-chase-gradient, none);
+          animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+          display: var(--fx-ring, none);
+        }
+        ha-card::after {
+          content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+          background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+        }
+        ha-card > * { position: relative !important; z-index: 2 !important; }
+        @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+    - type: custom:button-card
+      entity: '[[map:mode]]'
+      name: Self Consume
+      show_icon: false
+      show_name: true
+      show_state: false
+      tap_action:
+        action: call-service
+        service: input_select.select_option
+        service_data:
+          entity_id: '[[map:mode]]'
+          option: Self Consume
+      styles:
+        card:
+        - padding: 0 6px
+        - height: 40px
+        - min-height: 40px
+        - max-height: 40px
+        - border-radius: 8px
+        - box-shadow: none
+        - background: var(--battman-surface-card)
+        - border: 1px solid var(--battman-border-neutral)
+        - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
+        - align-items: center
+        - justify-content: center
+        - --fx-ring: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-chase-display, none)'' : ''none''; ]]]'
+        - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
+        - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
+        - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
+        - --fx-glow-name: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-glow-name, none)'' : ''none''; ]]]'
+        - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
+        - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
+        - --fx-fill-soft: var(--battman-blue-soft-bg)
+        - --fx-border: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+        name:
+        - font-size: 11px
+        - font-weight: '700'
+        - letter-spacing: 0.06em
+        - text-transform: uppercase
+        - color: var(--battman-text-muted)
+      state:
+      - value: Self Consume
+        styles:
+          card:
+          - background: var(--battman-blue-soft-bg)
+          - border: 1px solid var(--battman-blue-border-strong)
+          name:
+          - color: var(--battman-blue)
+      extra_styles: |-
+        @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+        @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+        @keyframes fx-glow-rainbow {
+          0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+          33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+          66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+          100%{box-shadow:0 0 16px 4px var(--battman-red);}
+        }
+        ha-card {
+          position: relative !important; overflow: hidden !important;
+          border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+          animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+        }
+        ha-card::before {
+          content:''; position:absolute; z-index:0; top:50%; left:50%;
+          width:360px; height:360px; transform: translate(-50%,-50%);
+          background: var(--fx-chase-gradient, none);
+          animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+          display: var(--fx-ring, none);
+        }
+        ha-card::after {
+          content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+          background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+        }
+        ha-card > * { position: relative !important; z-index: 2 !important; }
+        @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+    card_mod:
+      style:
+        .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+        $: '.content { gap: 4px !important; }'
+  - type: vertical-stack
+    cards:
+    - type: horizontal-stack
+      cards:
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: Self Consume
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Self Consume
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-blue-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+        state:
+        - value: Self Consume
+          styles:
+            card:
+            - background: var(--battman-blue-soft-bg)
+            - border: 1px solid var(--battman-blue-border-strong)
+            name:
+            - color: var(--battman-blue)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: Buy
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Charge
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-buy-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-buy-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-yellow-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+        state:
+        - value: Charge
+          styles:
+            card:
+            - background: var(--battman-yellow-soft-bg)
+            - border: 1px solid var(--battman-yellow-border-strong)
+            name:
+            - color: var(--battman-yellow)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: Sell
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Discharge
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-sell-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-sell-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-green-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+        state:
+        - value: Discharge
+          styles:
+            card:
+            - background: var(--battman-green-soft-bg)
+            - border: 1px solid var(--battman-green-border-strong)
+            name:
+            - color: var(--battman-green)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      card_mod:
+        style:
+          .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+          $: '.content { gap: 4px !important; }'
+    - type: horizontal-stack
+      cards:
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: Sell Solar
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Float
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-sellsolar-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-sellsolar-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-sellsolar-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-sellsolar-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-sellsolar-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-orange-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-border, 1px solid var(--battman-orange-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+        state:
+        - value: Float
+          styles:
+            card:
+            - background: var(--battman-orange-soft-bg)
+            - border: 1px solid var(--battman-orange-border-strong)
+            name:
+            - color: var(--battman-orange)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: Drain
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Drain
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-drain-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-drain-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-drain-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-drain-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-drain-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-red-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-border, 1px solid var(--battman-red-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+        state:
+        - value: Drain
+          styles:
+            card:
+            - background: var(--battman-red-soft-bg)
+            - border: 1px solid var(--battman-red-border-strong)
+            name:
+            - color: var(--battman-red)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: House Party
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Float Solar Off
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-houseparty-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-houseparty-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-houseparty-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-houseparty-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-houseparty-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-yellow-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+          - white-space: normal
+          - line-height: '1.2'
+        state:
+        - value: Float Solar Off
+          styles:
+            card:
+            - background: var(--battman-yellow-soft-bg)
+            - border: 1px solid var(--battman-yellow-border-strong)
+            name:
+            - color: var(--battman-yellow)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      - type: custom:button-card
+        entity: '[[map:mode]]'
+        name: HOOOOVER
+        show_icon: false
+        show_name: true
+        show_state: false
+        tap_action:
+          action: call-service
+          service: input_select.select_option
+          service_data:
+            entity_id: '[[map:mode]]'
+            option: Charge Solar Off
+        styles:
+          card:
+          - padding: 0 4px
+          - height: 48px
+          - min-height: 48px
+          - max-height: 48px
+          - border-radius: 8px
+          - box-shadow: none
+          - background: var(--battman-surface-card)
+          - border: 1px solid var(--battman-border-neutral)
+          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+          - align-items: center
+          - justify-content: center
+          - --fx-ring: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-chase-display, none)'' : ''none''; ]]]'
+          - --fx-chase-gradient: var(--fx-hooover-chase-gradient, none)
+          - --fx-chase-duration: var(--fx-hooover-chase-duration, 0s)
+          - --fx-ring-width: var(--fx-hooover-ring-width, 2px)
+          - --fx-glow-name: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-glow-name, none)'' : ''none''; ]]]'
+          - --fx-glow-duration: var(--fx-hooover-glow-duration, 0s)
+          - --fx-glow-color: var(--fx-hooover-glow-color, transparent)
+          - --fx-fill-soft: var(--battman-green-soft-bg)
+          - --fx-border: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+          name:
+          - font-size: 10px
+          - font-weight: '700'
+          - letter-spacing: 0.04em
+          - text-transform: uppercase
+          - color: var(--battman-text-muted)
+          - white-space: normal
+          - line-height: '1.2'
+        state:
+        - value: Charge Solar Off
+          styles:
+            card:
+            - background: var(--battman-green-soft-bg)
+            - border: 1px solid var(--battman-green-border-strong)
+            name:
+            - color: var(--battman-green)
+        extra_styles: |-
+          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+          @keyframes fx-glow-rainbow {
+            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+            100%{box-shadow:0 0 16px 4px var(--battman-red);}
+          }
+          ha-card {
+            position: relative !important; overflow: hidden !important;
+            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+          }
+          ha-card::before {
+            content:''; position:absolute; z-index:0; top:50%; left:50%;
+            width:360px; height:360px; transform: translate(-50%,-50%);
+            background: var(--fx-chase-gradient, none);
+            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+            display: var(--fx-ring, none);
+          }
+          ha-card::after {
+            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+          }
+          ha-card > * { position: relative !important; z-index: 2 !important; }
+          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+      card_mod:
+        style:
+          .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+          $: '.content { gap: 4px !important; }'
+    card_mod:
+      style:
+        .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+        $: '.content { gap: 4px !important; }'
+  card_mod:
+    style:
+      .: ':host { --stack-card-gap: 4px; }'
+      $: '.content { gap: 4px !important; }'
+card_mod:
+  style:
+    .: ':host { --stack-card-gap: 4px; }'
+    $: '.content { gap: 4px !important; }'
