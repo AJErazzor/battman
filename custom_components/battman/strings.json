@@ -22,6 +22,48 @@
     "sensor": {
       "theme_mode_colours": {
         "name": "Theme mode colours"
+      },
+      "nem_wind": {
+        "name": "NEM wind"
+      },
+      "nem_rooftop_solar": {
+        "name": "NEM rooftop solar"
+      },
+      "nem_utility_solar": {
+        "name": "NEM utility solar"
+      },
+      "nem_imports": {
+        "name": "NEM imports"
+      },
+      "nem_battery": {
+        "name": "NEM battery"
+      },
+      "nem_gas_ccgt": {
+        "name": "NEM gas CCGT"
+      },
+      "nem_gas_ocgt": {
+        "name": "NEM gas OCGT"
+      },
+      "nem_distillate": {
+        "name": "NEM distillate"
+      },
+      "nem_gas_steam": {
+        "name": "NEM gas steam"
+      },
+      "nem_gas_recip": {
+        "name": "NEM gas recip"
+      },
+      "nem_exports": {
+        "name": "NEM exports"
+      },
+      "nem_battery_charging": {
+        "name": "NEM battery charging"
+      },
+      "nem_total_supply": {
+        "name": "NEM total supply"
+      },
+      "nem_consumers": {
+        "name": "NEM consumers"
       }
     },
     "switch": {

@@ -24,7 +24,7 @@ from homeassistant.core import CoreState, Event, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import dashboard
+from . import dashboard, nem
 from .const import DOMAIN
 
 MODE_HUES = ("green", "yellow", "blue", "orange", "red", "purple")
@@ -38,7 +38,7 @@ _VAR = re.compile(r"^var\(\s*--([a-z0-9-]+)\s*(?:,.*)?\)$")
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities([BattmanThemeModeColoursSensor(entry)])
+    async_add_entities([BattmanThemeModeColoursSensor(entry), *nem.entities(hass, entry)])
 
 
 def to_hex(theme: dict[str, Any], key: str, depth: int = 0) -> str:

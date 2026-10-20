@@ -1,0 +1,123 @@
+# A.J.'s original OpenNEM template sensors (what Battman's NEM sensors replace), kept
+# unchanged so tests can check Battman's values against them. Test data only.
+# ─── OpenNEM SA Generation Categories ──────────────────────────────────────
+# power-pie-card (custom:power-pie-card) only reads entity *states*, not
+# attributes. sensor.opennem_sa exposes each generation category as an
+# attribute, so these small template sensors re-expose the same 8 categories
+# used by the "SA Generation Mix" donut (custom:apexcharts-card, Battery Time
+# dashboard) as their own entities, for use as power-pie-card `devices`.
+# Reloadable via the "Template Entities" reload service, no restart needed.
+# ─────────────────────────────────────────────────────────────────────────
+
+template:
+  - sensor:
+      - name: "OpenNEM SA Wind"
+        unique_id: opennem_sa_wind
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'wind') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Rooftop Solar"
+        unique_id: opennem_sa_solar_rooftop
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'solar_rooftop') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Utility Solar"
+        unique_id: opennem_sa_solar_utility
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'solar_utility') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Imports"
+        unique_id: opennem_sa_imports
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'imports') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Battery"
+        unique_id: opennem_sa_battery_discharging
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'battery_discharging') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Gas CCGT"
+        unique_id: opennem_sa_gas_ccgt
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'gas_ccgt') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Gas OCGT"
+        unique_id: opennem_sa_gas_ocgt
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'gas_ocgt') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Distillate"
+        unique_id: opennem_sa_distillate
+        unit_of_measurement: "MW"
+        state: "{{ state_attr('sensor.opennem_sa', 'distillate') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      # Added 2026-10-17: the two remaining generation categories so the
+      # "SA Generation Mix" donut shows ALL sources and balances the demand card.
+      - name: "OpenNEM SA Gas Steam"
+        unique_id: opennem_sa_gas_steam
+        unit_of_measurement: "MW"
+        device_class: power
+        state_class: measurement
+        state: "{{ state_attr('sensor.opennem_sa', 'gas_steam') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "OpenNEM SA Gas Recip"
+        unique_id: opennem_sa_gas_recip
+        unit_of_measurement: "MW"
+        device_class: power
+        state_class: measurement
+        state: "{{ state_attr('sensor.opennem_sa', 'gas_recip') | float(0) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+
+      # ─── SA Demand Mix (where the power goes) ──────────────────────────────
+      # Mirrors the generation donut. OpenNEM reports exports and battery
+      # charging as NEGATIVE attributes, so we take abs(). Consumers is derived
+      # so demand always equals total supply (both donuts balance).
+      - name: "SA Exports"
+        unique_id: sa_exports
+        unit_of_measurement: "MW"
+        device_class: power
+        state_class: measurement
+        state: "{{ (state_attr('sensor.opennem_sa', 'exports') | float(0)) | abs | round(2) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "SA Battery Charging"
+        unique_id: sa_battery_charging
+        unit_of_measurement: "MW"
+        device_class: power
+        state_class: measurement
+        state: "{{ (state_attr('sensor.opennem_sa', 'battery_charging') | float(0)) | abs | round(2) }}"
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+      - name: "SA Total Supply"
+        unique_id: sa_total_supply
+        unit_of_measurement: "MW"
+        device_class: power
+        state_class: measurement
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+        state: >
+          {% set ns = namespace(t=0) %}
+          {% set srcs = [
+            'sensor.opennem_sa_wind',
+            'sensor.opennem_sa_rooftop_solar',
+            'sensor.opennem_sa_utility_solar',
+            'sensor.opennem_sa_imports',
+            'sensor.opennem_sa_battery',
+            'sensor.opennem_sa_gas_ccgt',
+            'sensor.opennem_sa_gas_ocgt',
+            'sensor.opennem_sa_distillate',
+            'sensor.opennem_sa_gas_steam',
+            'sensor.opennem_sa_gas_recip'
+          ] %}
+          {% for e in srcs %}
+            {% set ns.t = ns.t + ([0, states(e) | float(0)] | max) %}
+          {% endfor %}
+          {{ ns.t | round(2) }}
+      - name: "SA Consumers"
+        unique_id: sa_consumers
+        unit_of_measurement: "MW"
+        device_class: power
+        state_class: measurement
+        availability: "{{ has_value('sensor.opennem_sa') }}"
+        state: >
+          {% set supply = states('sensor.sa_total_supply') | float(0) %}
+          {% set exp = states('sensor.sa_exports') | float(0) %}
+          {% set chg = states('sensor.sa_battery_charging') | float(0) %}
+          {{ [0, (supply - exp - chg)] | max | round(2) }}

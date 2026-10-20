@@ -1,0 +1,150 @@
+# name: NEM mix
+# description: Where the region's power comes from (generation mix) and where it goes (demand mix).
+#
+# A Battman card: on a dashboard it's `type: custom:battman-nemmix`, and it updates
+# with Battman releases. To try changes on your own HA, copy this file to
+# config/battman/cards/nemmix.yaml and edit that copy.
+#
+# Reads Battman's own NEM sensors (sensor.battman_nem_*), which Battman makes from the
+# OpenNEM sensor in the entity map ([[map:opennem]]). If any of them has no value, a
+# line above the pies names them (the pies themselves are drawn by power-pie-card).
+type: vertical-stack
+cards:
+  - type: conditional
+    conditions:
+      - condition: or
+        conditions:
+          - condition: state
+            entity: sensor.battman_nem_wind
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_rooftop_solar
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_utility_solar
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_imports
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_battery
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_gas_ccgt
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_gas_ocgt
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_distillate
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_gas_steam
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_gas_recip
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_exports
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_battery_charging
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_total_supply
+            state:
+              - unknown
+              - unavailable
+          - condition: state
+            entity: sensor.battman_nem_consumers
+            state:
+              - unknown
+              - unavailable
+    card:
+      type: markdown
+      content: >-
+        {% set gone = ['sensor.battman_nem_wind', 'sensor.battman_nem_rooftop_solar', 'sensor.battman_nem_utility_solar', 'sensor.battman_nem_imports', 'sensor.battman_nem_battery', 'sensor.battman_nem_gas_ccgt', 'sensor.battman_nem_gas_ocgt', 'sensor.battman_nem_distillate', 'sensor.battman_nem_gas_steam', 'sensor.battman_nem_gas_recip', 'sensor.battman_nem_exports', 'sensor.battman_nem_battery_charging', 'sensor.battman_nem_total_supply', 'sensor.battman_nem_consumers'] | select('is_state', ['unknown', 'unavailable']) | list
+        %}<span style="color:var(--battman-darkred);font-weight:700">NEM mix: no value from
+        {{ gone | join(', ') }}{% set p = state_attr(gone[0], 'problem') if gone else none
+        %}{% if p %} ({{ p }}){% endif %}</span>
+  - type: custom:power-pie-card
+    title: SA Generation Mix
+    display_unit: MW
+    decimals: 1
+    legend: auto
+    entities:
+      - name: Wind
+        color: var(--battman-green)
+        entity: sensor.battman_nem_wind
+      - name: Rooftop Solar
+        color: var(--battman-orange)
+        entity: sensor.battman_nem_rooftop_solar
+      - name: Utility Solar
+        color: var(--battman-amber)
+        entity: sensor.battman_nem_utility_solar
+      - name: Imports
+        color: var(--battman-blue)
+        entity: sensor.battman_nem_imports
+      - name: Battery
+        color: var(--battman-purple)
+        entity: sensor.battman_nem_battery
+      - name: Gas (CCGT)
+        color: var(--battman-darkred)
+        entity: sensor.battman_nem_gas_ccgt
+      - name: Gas (OCGT)
+        color: var(--battman-red)
+        entity: sensor.battman_nem_gas_ocgt
+      - name: Distillate
+        color: var(--battman-text-muted)
+        entity: sensor.battman_nem_distillate
+      - name: Gas (Steam)
+        color: var(--battman-darkred)
+        entity: sensor.battman_nem_gas_steam
+      - name: Gas (Recip)
+        color: var(--battman-red)
+        entity: sensor.battman_nem_gas_recip
+    min_pct_label: 4
+    sort: max
+    hide_legend_value: true
+  - type: custom:power-pie-card
+    title: SA Demand Mix
+    display_unit: MW
+    decimals: 1
+    legend: auto
+    entities:
+      - name: Consumers
+        color: 'var(--battman-teal, #94e2d5)'
+        entity: sensor.battman_nem_consumers
+      - name: Exports
+        color: var(--battman-blue)
+        entity: sensor.battman_nem_exports
+      - name: Battery Charging
+        color: var(--battman-purple)
+        entity: sensor.battman_nem_battery_charging
+    min_pct_label: 4
+    sort: max
+    hide_legend_value: true

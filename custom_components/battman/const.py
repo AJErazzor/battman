@@ -69,7 +69,11 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
     "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
     "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
-    "battery_capacity": "sensor.sigen_inverter_rated_battery_capacity",
+    "rated_energy_capacity": "sensor.sigen_plant_rated_energy_capacity",
+    "inverter_soc": "sensor.sigen_inverter_battery_state_of_charge",
+    "solcast_remaining_today": "sensor.solcast_pv_forecast_forecast_remaining_today",
+    # OpenNEM region sensor: Battman's NEM sensors (sensor.battman_nem_*) read its attributes
+    "opennem": "sensor.opennem_sa",
     "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
     "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
 }

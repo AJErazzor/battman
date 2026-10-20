@@ -27,6 +27,7 @@ needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node to 
 BUY_NOW, SELL_NOW = "sensor.amber_5min_current_general_price", "sensor.amber_5min_current_feed_in_price"
 BUY_F, SELL_F = "sensor.amber_billing_interval_forecasts_general_price", "sensor.amber_billing_interval_forecasts_feed_in_price"
 EST = "binary_sensor.solarsystemcontrolestimatedprice"
+HA_TZ = "Australia/Adelaide"      # the time zone the fake HA reports to cards
 
 
 async def _setup(hass):
@@ -63,7 +64,7 @@ def run_js(jobs):
         body = src.strip()
         assert body.startswith("[[[") and body.endswith("]]]")
         progs.append("(function(states, entity, hass, user, variables){" + body[3:-3] + "})"
-                     f"({json.dumps(states)}, {json.dumps(states.get(ent))}, {{states: {json.dumps(states)}}}, {{}}, {{}})")
+                     f"({json.dumps(states)}, {json.dumps(states.get(ent))}, {{states: {json.dumps(states)}, config: {{time_zone: {json.dumps(HA_TZ)}}}}}, {{}}, {{}})")
     script = ("const out = [];\n" + "".join(
         f"try {{ out.push(String({p})); }} catch (e) {{ out.push('THROW: ' + e.message); }}\n" for p in progs)
         + "process.stdout.write(JSON.stringify(out));")
@@ -201,6 +202,15 @@ def _jinja_table(hass):
     return Template(pkg["template"][0]["sensor"][0]["attributes"]["friendly_table"], hass)
 
 
+def times(html):
+    return re.findall(r'<td class="at6t-td at6t-time"[^>]*>([^<—]+)</td>', html)
+
+
+def local_label(iso):
+    from zoneinfo import ZoneInfo
+    return datetime.fromisoformat(iso).astimezone(ZoneInfo(HA_TZ)).strftime("%a %H:%M")
+
+
 @needs_node
 async def test_forecast_table_matches_smiggles(hass: HomeAssistant) -> None:
     js = (await _card(hass, "amber24hourforecasttable"))["config"]["cards"][0]["custom_fields"]["card"]
@@ -212,7 +222,11 @@ async def test_forecast_table_matches_smiggles(hass: HomeAssistant) -> None:
         jin = tpl.async_render(parse_result=False)
         mine = run_js([(js, st, None)])[0]
         assert "at6t-tr" in mine and mine.count("<tr class=\"at6t-tr\">") == len(sell_p)
-        assert squash(norm(jin)) == squash(mine)
+        # v0.14.0: the time column is the interval start in HA's time zone (Smiggles showed
+        # NEM time), so compare everything else exactly and the times separately.
+        cell1 = re.compile(r'(<td class="at6t-td at6t-time"[^>]*>)[^<]*(</td>)')
+        assert squash(cell1.sub(r"\1T\2", norm(jin))) == squash(cell1.sub(r"\1T\2", mine))
+        assert times(mine) == [local_label(f["start_time"]) for f in st[SELL_F]["attributes"]["Forecasts"]]
 
     # no forecasts: the same error naming both sensors
     for e in (SELL_F, BUY_F):
@@ -269,7 +283,8 @@ def state_states(scen):
         SELL_F: {"state": "0", "attributes": {"Forecasts": fin}}, BUY_F: {"state": "0", "attributes": {"Forecasts": gen}},
         "sensor.sigen_plant_battery_state_of_charge": {"state": "57", "attributes": {}},
         "sensor.sigen_plant_battery_power": {"state": "-2.4", "attributes": {}},
-        "sensor.sigen_inverter_rated_battery_capacity": {"state": "40.3", "attributes": {}},
+        "sensor.sigen_inverter_rated_battery_capacity": {"state": "40.3", "attributes": {}},   # what Smiggles read
+        "sensor.sigen_plant_rated_energy_capacity": {"state": "40.3", "attributes": {}},      # what Battman reads (v0.14.0)
         "sensor.solcast_pv_forecast_forecast_today": {"state": "20", "attributes": {"detailedForecast": [
             {"period_start": (now + timedelta(minutes=30 * i)).isoformat(), "pv_estimate": max(0, 6 - abs(i - 6))} for i in range(48)]}},
         "sensor.solcast_pv_forecast_forecast_tomorrow": {"state": "20", "attributes": {"detailedForecast": []}},
@@ -315,12 +330,12 @@ async def test_state_missing(hass: HomeAssistant) -> None:
     gone = state_states(0)
     del gone["sensor.solarsystemcontrolrun"]
     no_cap = state_states(0)
-    no_cap["sensor.sigen_inverter_rated_battery_capacity"]["state"] = "unavailable"
+    no_cap["sensor.sigen_plant_rated_energy_capacity"]["state"] = "unavailable"
     no_sun = state_states(0)
     del no_sun["sensor.solcast_pv_forecast_forecast_tomorrow"]
     out = run_js([(main, gone, None), (pop, gone, None), (pop, no_cap, None), (pop, no_sun, None)])
     assert "State: missing sensor.solarsystemcontrolrun" in out[0]
     assert "Next hours: missing sensor.solarsystemcontrolrun" in out[1]
-    assert "battery capacity (sensor.sigen_inverter_rated_battery_capacity) unavailable" in out[2]
+    assert "battery capacity (sensor.sigen_plant_rated_energy_capacity) unavailable" in out[2]
     assert "40.3" not in out[2]
     assert out[3].startswith('<div style="padding:4px') and "assumes no solar" in out[3]

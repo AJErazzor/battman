@@ -143,12 +143,24 @@ Smiggles), section 2 price strip · limits, section 3 gauges · charts · foreca
 5. ✅ State card (Chill) → `battman-state` (v0.13.0), with its browser_mod "Next hours" popup.
    Battery capacity no longer falls back to 40.3 kWh (and SOC / power no longer to 0): the popup
    says what's unavailable. Missing Solcast: a note, projection assumes no solar.
-6. PV chart (apexcharts) · 7. Solar forecast
-8. SA generation / demand mix (OpenNEM) · 9. Gauges · 10. Battery mode stack
-11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
+6. PV chart (apexcharts) · 7. Solar forecast: left out for now (A.J.'s call, 2026-10-20).
+8. ✅ Gauges → `battman-gauges` (v0.14.0). The SOC line computes kWh (inverter SOC × plant rated
+   capacity) and Solcast's remaining 10% itself, so Smiggles' `sensor.sockwh` and
+   `sensor.solarremainingtoday10` aren't used. Unavailable values show — (Smiggles: 0 / $0.00).
+9. ✅ SA generation / demand mix → `battman-nemmix` (v0.14.0), on Battman's own NEM sensors (made from
+   `sensor.opennem_sa`), replacing A.J.'s 14 OpenNEM template sensors. Missing category: unknown, not 0.
+10. Battery mode stack (`batterymode`) · 11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
+
+Battery capacity: Battman uses `sensor.sigen_plant_rated_energy_capacity` everywhere (as Smiggles'
+SOCkwh and override cards do). The State popup used the inverter's rated_battery_capacity until v0.14.0.
 
 ## 9. Notes for the engine stage
 
+- **Smiggles sensors the Power view cards still read** (each needs a Battman replacement before
+  Smiggles is switched off): `sensor.gridpower` (Gauges needle: import − export; Smiggles labels it
+  kWh/energy but it's kW), `sensor.solarsystemcontrolload30mavg` (Gauges; built on the Statistics
+  sensor `load30m`), `binary_sensor.solarsystemcontrolestimatedprice` (price grid, Gauges: a time
+  check on the Amber price), `sensor.solarsystemcontrolrun` (State, Gauges' ⚡ needPower).
 - **State popup assumptions.** The "Next hours" projection uses fixed RATE_KW = 15 (battery
   rate when buying/selling) and LOAD_KW = 1.4 (house load), kept as they were. When the engine
   moves these should be settings (or measured), like everything else.

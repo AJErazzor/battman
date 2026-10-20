@@ -1,0 +1,61 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: custom:power-pie-card
+        version: 0.9.5
+        title: SA Generation Mix
+        display_unit: MW
+        decimals: 1
+        legend: auto
+        entities:
+          - name: Wind
+            color: var(--smiggles-green)
+            entity: sensor.opennem_sa_wind
+          - name: Rooftop Solar
+            color: var(--smiggles-orange)
+            entity: sensor.opennem_sa_rooftop_solar
+          - name: Utility Solar
+            color: var(--smiggles-amber)
+            entity: sensor.opennem_sa_utility_solar
+          - name: Imports
+            color: var(--smiggles-blue)
+            entity: sensor.opennem_sa_imports
+          - name: Battery
+            color: var(--smiggles-purple)
+            entity: sensor.opennem_sa_battery
+          - name: Gas (CCGT)
+            color: var(--smiggles-darkred)
+            entity: sensor.opennem_sa_gas_ccgt
+          - name: Gas (OCGT)
+            color: var(--smiggles-red)
+            entity: sensor.opennem_sa_gas_ocgt
+          - name: Distillate
+            color: var(--smiggles-text-muted)
+            entity: sensor.opennem_sa_distillate
+          - name: Gas (Steam)
+            color: var(--smiggles-darkred)
+            entity: sensor.opennem_sa_gas_steam
+          - name: Gas (Recip)
+            color: var(--smiggles-red)
+            entity: sensor.opennem_sa_gas_recip
+        min_pct_label: 4
+        sort: max
+        hide_legend_value: true
+      - type: custom:power-pie-card
+        version: 0.9.5
+        title: SA Demand Mix
+        display_unit: MW
+        decimals: 1
+        legend: auto
+        entities:
+          - name: Consumers
+            color: 'var(--smiggles-teal, #94e2d5)'
+            entity: sensor.sa_consumers
+          - name: Exports
+            color: var(--smiggles-blue)
+            entity: sensor.sa_exports
+          - name: Battery Charging
+            color: var(--smiggles-purple)
+            entity: sensor.sa_battery_charging
+        min_pct_label: 4
+        sort: max
+        hide_legend_value: true

@@ -10,7 +10,8 @@
 # table as the original template sensor v6.7, which it no longer needs).
 # Sign convention: Sell is printed negated (positive = earning feed-in, negative = paying
 # to export); Buy as-is. Colour bands key on Amber's raw per_kwh.
-# Times are each interval's NEM time (nem_date), as the original showed them.
+# Times are each interval's start, in your Home Assistant time zone (Settings → System →
+# General), the same clock as the price grid. (The original showed NEM time, UTC+10.)
 # A missing price shows — (never 0.00c); missing sensors or no forecasts show an error
 # naming the sensors.
 type: horizontal-stack
@@ -54,11 +55,15 @@ cards:
           const sellCell = v => cell(v, sellBand, x => (x * -1) * 100);
           const buyCell  = v => cell(v, buyBand, x => x * 100);
 
-          // NEM time, read straight from nem_date ("2026-10-20T14:30:00+10:00" -> "Tue 14:30")
-          const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          const when = nd => {
-            const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(nd || ''));
-            return m ? DAYS[new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay()] + ' ' + m[4] + ':' + m[5] : '—';
+          // Interval start in HA's time zone (not the phone's): "Tue 14:30"
+          const TZ = hass?.config?.time_zone;
+          if (!TZ) return '<div style="color:var(--battman-darkred);padding:12px;font-size:14px">Home Assistant has no time zone set (Settings → System → General).</div>';
+          const FMT = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+          const when = st => {
+            const d = new Date(st || '');
+            if (!st || isNaN(d)) return '—';
+            const p = Object.fromEntries(FMT.formatToParts(d).map(x => [x.type, x.value]));
+            return p.weekday + ' ' + p.hour + ':' + p.minute;
           };
 
           const css = '<style>'
@@ -77,7 +82,7 @@ cards:
             const b = buy.find(x => x.nem_date === s.nem_date);
             const now = idx === 0 ? ' style="border-left:2px solid var(--battman-blue);padding-left:6px"' : '';
             return '<tr class="at6t-tr">'
-              + '<td class="at6t-td at6t-time"' + now + '>' + when(s.nem_date) + '</td>'
+              + '<td class="at6t-td at6t-time"' + now + '>' + when(s.start_time) + '</td>'
               + sellCell(num(s.per_kwh)) + sellCell(pred(s))
               + buyCell(b ? num(b.per_kwh) : null) + buyCell(b ? pred(b) : null)
               + '</tr>';

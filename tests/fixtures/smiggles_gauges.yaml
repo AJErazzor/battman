@@ -1,0 +1,101 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: vertical-stack
+        version: 0.9.5
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:modern-circular-gauge
+                entity: sensor.sigen_inverter_battery_state_of_charge
+                name: SOC
+                min: 0
+                max: 100
+                needle: true
+                segments:
+                  - from: 0
+                    color: var(--smiggles-darkred)
+                  - from: 15
+                    color: var(--smiggles-orange)
+                  - from: 55
+                    color: var(--smiggles-green)
+                grid_options:
+                  columns: 6
+                  rows: auto
+                secondary: >-
+                  {{ states('sensor.sockwh') |float |round(1) }} kWh (+{{
+                  (states('sensor.solarremainingtoday10') | float) | round(1)
+                  }}kWh)
+                gauge_type: half
+              - type: custom:modern-circular-gauge
+                entity: sensor.sigen_plant_battery_power
+                name: In⠀⠀⠀Battery⠀⠀⠀Out
+                min: -10
+                max: 15
+                needle: true
+                segments:
+                  - from: -10
+                    color: var(--smiggles-darkred)
+                  - from: -4
+                    color: var(--smiggles-orange)
+                  - from: 0
+                    color: var(--smiggles-green)
+                grid_options:
+                  columns: 6
+                  rows: auto
+                secondary: >-
+                  Current Solar {{ states('sensor.sigen_plant_pv_power') | float
+                  | round(1) }}kW
+                gauge_type: half
+          - type: horizontal-stack
+            cards:
+              - type: custom:modern-circular-gauge
+                entity: sensor.gridpower
+                name: Grid
+                min: -15
+                max: 15
+                needle: true
+                segments:
+                  - from: -15
+                    color: var(--smiggles-darkred)
+                  - from: -2
+                    color: var(--smiggles-orange)
+                  - from: -1
+                    color: var(--smiggles-green)
+                  - from: 1
+                    color: var(--smiggles-orange)
+                  - from: 2
+                    color: var(--smiggles-darkred)
+                grid_options:
+                  columns: 6
+                  rows: auto
+                secondary: >-
+                  {{'$%.2f' |
+                  format(states('sensor.amber_5min_current_feed_in_price') |
+                  float(0)) }} {% if
+                  is_state('binary_sensor.solarsystemcontrolestimatedprice',
+                  'on') %}Est{%else%}⠀⠀⠀Act⠀⠀⠀{% endif %} {{'$%.2f' |
+                  format(states('sensor.amber_5min_current_general_price') |
+                  float(0)) }}
+                gauge_type: half
+              - type: custom:modern-circular-gauge
+                entity: sensor.sigen_plant_consumed_power
+                name: Home
+                min: 0
+                max: 15
+                needle: true
+                segments:
+                  - from: 0
+                    color: var(--smiggles-green)
+                  - from: 3
+                    color: var(--smiggles-orange)
+                  - from: 6
+                    color: var(--smiggles-darkred)
+                grid_options:
+                  columns: 6
+                  rows: auto
+                secondary: >-
+                  Avg 30m {{ (states('sensor.solarsystemcontrolload30mavg') |
+                  float) | round(2) }} kW{% if
+                  state_attr('sensor.solarsystemcontrolrun', 'needPower') | bool
+                  %} ⚡{% endif %}
+                gauge_type: half
