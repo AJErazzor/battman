@@ -1,0 +1,1445 @@
+# The original Smiggles Power view card, kept unchanged so tests can check the Battman
+# card against it. Never shipped; test data only.
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                version: 0.9.14
+                entity: input_boolean.solarsystemcontrolenable
+                name: Active
+                show_icon: false
+                show_name: true
+                show_state: true
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                styles:
+                  card:
+                    - padding: 0 10px
+                    - margin: '0'
+                    - height: 40px
+                    - min-height: 40px
+                    - max-height: 40px
+                    - border-radius: 8px
+                    - box-shadow: none
+                    - background: var(--smiggles-surface-card)
+                    - border: 1px solid var(--smiggles-border-neutral)
+                    - --fx-ring: >-
+                        [[[ return entity.state === 'on' ?
+                        'var(--fx-enable-chase-display, none)' : 'none'; ]]]
+                    - --fx-chase-gradient: var(--fx-enable-chase-gradient, none)
+                    - --fx-chase-duration: var(--fx-enable-chase-duration, 0s)
+                    - --fx-ring-width: var(--fx-enable-ring-width, 2px)
+                    - --fx-glow-name: >-
+                        [[[ return entity.state === 'on' ?
+                        'var(--fx-enable-glow-name, none)' : 'none'; ]]]
+                    - --fx-glow-duration: var(--fx-enable-glow-duration, 0s)
+                    - --fx-glow-color: var(--fx-enable-glow-color, transparent)
+                    - --fx-fill-soft: var(--smiggles-green-soft-bg)
+                    - --fx-border: >-
+                        [[[ return entity.state === 'on' ?
+                        'var(--fx-enable-border, 1px solid
+                        var(--smiggles-green-border-strong))' : '1px solid
+                        var(--smiggles-border-neutral)'; ]]]
+                  name:
+                    - font-size: 11px
+                    - font-weight: '700'
+                    - letter-spacing: 0.06em
+                    - text-transform: uppercase
+                    - color: var(--smiggles-text-muted)
+                  state:
+                    - font-size: 10px
+                    - color: var(--smiggles-text-dim)
+                    - font-weight: '600'
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - background: var(--smiggles-green-soft-bg)
+                        - border: 1px solid var(--smiggles-green-border-strong)
+                      name:
+                        - color: var(--smiggles-green)
+                      state:
+                        - color: var(--smiggles-green)
+                extra_styles: >-
+                  @keyframes fx-spin { to { transform: translate(-50%,-50%)
+                  rotate(360deg); } }
+
+                  @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0
+                  var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0
+                  18px 4px var(--fx-glow-color, transparent); } }
+
+                  @keyframes fx-glow-rainbow {
+                    0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                    33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                    66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                    100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                  }
+
+                  ha-card {
+                    position: relative !important; overflow: hidden !important;
+                    border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                    animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                  }
+
+                  ha-card::before {
+                    content:''; position:absolute; z-index:0; top:50%; left:50%;
+                    width:360px; height:360px; transform: translate(-50%,-50%);
+                    background: var(--fx-chase-gradient, none);
+                    animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                    display: var(--fx-ring, none);
+                  }
+
+                  ha-card::after {
+                    content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                    background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                  }
+
+                  ha-card > * { position: relative !important; z-index: 2
+                  !important; }
+
+                  @media (prefers-reduced-motion: reduce) { ha-card,
+                  ha-card::before { animation: none !important; } }
+              - type: custom:button-card
+                entity: input_boolean.solarsystemcontrolnoexport
+                name: Curtail
+                show_icon: false
+                show_name: true
+                show_state: true
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                styles:
+                  card:
+                    - padding: 0 10px
+                    - margin: '0'
+                    - height: 40px
+                    - min-height: 40px
+                    - max-height: 40px
+                    - border-radius: 8px
+                    - box-shadow: none
+                    - background: var(--smiggles-surface-card)
+                    - border: 1px solid var(--smiggles-border-neutral)
+                    - --fx-ring: >-
+                        [[[ return entity.state === 'on' ?
+                        'var(--fx-curtail-chase-display, none)' : 'none'; ]]]
+                    - --fx-chase-gradient: var(--fx-curtail-chase-gradient, none)
+                    - --fx-chase-duration: var(--fx-curtail-chase-duration, 0s)
+                    - --fx-ring-width: var(--fx-curtail-ring-width, 2px)
+                    - --fx-glow-name: >-
+                        [[[ return entity.state === 'on' ?
+                        'var(--fx-curtail-glow-name, none)' : 'none'; ]]]
+                    - --fx-glow-duration: var(--fx-curtail-glow-duration, 0s)
+                    - --fx-glow-color: var(--fx-curtail-glow-color, transparent)
+                    - --fx-fill-soft: var(--smiggles-amber-soft-bg)
+                    - --fx-border: >-
+                        [[[ return entity.state === 'on' ?
+                        'var(--fx-curtail-border, 1px solid
+                        var(--smiggles-amber-border-strong))' : '1px solid
+                        var(--smiggles-border-neutral)'; ]]]
+                  name:
+                    - font-size: 11px
+                    - font-weight: '700'
+                    - letter-spacing: 0.06em
+                    - text-transform: uppercase
+                    - color: var(--smiggles-text-muted)
+                  state:
+                    - font-size: 10px
+                    - color: var(--smiggles-text-dim)
+                    - font-weight: '600'
+                state:
+                  - value: 'on'
+                    styles:
+                      card:
+                        - background: var(--smiggles-amber-soft-bg)
+                        - border: 1px solid var(--smiggles-amber-border-strong)
+                      name:
+                        - color: var(--smiggles-amber)
+                      state:
+                        - color: var(--smiggles-amber)
+                extra_styles: >-
+                  @keyframes fx-spin { to { transform: translate(-50%,-50%)
+                  rotate(360deg); } }
+
+                  @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0
+                  var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0
+                  18px 4px var(--fx-glow-color, transparent); } }
+
+                  @keyframes fx-glow-rainbow {
+                    0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                    33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                    66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                    100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                  }
+
+                  ha-card {
+                    position: relative !important; overflow: hidden !important;
+                    border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                    animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                  }
+
+                  ha-card::before {
+                    content:''; position:absolute; z-index:0; top:50%; left:50%;
+                    width:360px; height:360px; transform: translate(-50%,-50%);
+                    background: var(--fx-chase-gradient, none);
+                    animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                    display: var(--fx-ring, none);
+                  }
+
+                  ha-card::after {
+                    content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                    background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                  }
+
+                  ha-card > * { position: relative !important; z-index: 2
+                  !important; }
+
+                  @media (prefers-reduced-motion: reduce) { ha-card,
+                  ha-card::before { animation: none !important; } }
+              - type: custom:button-card
+                icon: mdi:information-outline
+                show_name: false
+                tap_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      title: Solar System Control
+                      content: >-
+                        <img
+                        src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                        onload='(function(box){/* font->theme v0.9.9 2026-09-29
+                        */
+
+
+                        /*
+                        ═══════════════════════════════════════════════════════════════
+                           CONFIG  —  edit these to restyle the popup
+                           ═══════════════════════════════════════════════════════════════
+
+                           COLOURS: maps emoji prefix to header colour.
+                           Unknown emojis auto-detect and use FALLBACK colour.
+                           Add new entries here as new sections appear in the log.
+                           ═══════════════════════════════════════════════════════════════ */
+
+                        var COLOURS = {
+                          "🕐" : "var(--smiggles-text-muted)",
+                          "🔄" : "var(--smiggles-purple-border-light)",
+                          "💰" : "var(--smiggles-yellow-border-light)",
+                          "🔒" : "var(--smiggles-orange)",
+                          "🔋" : "var(--smiggles-green)",
+                          "📊" : "var(--smiggles-blue-border-light)",
+                          "☀️": "var(--smiggles-amber)",
+                          "⚡" : "var(--smiggles-text-muted)",
+                          "📈" : "var(--smiggles-green)",
+                          "📉" : "var(--smiggles-amber)",
+                          "ℹ️": "var(--smiggles-text-muted)"
+                        };
+
+
+                        var FALLBACK = "var(--smiggles-text-bright)";  /* colour
+                        for emoji sections not listed above */
+
+                        var C_TRUE   = "var(--smiggles-green)";  /* True  */
+
+                        var C_FALSE  = "var(--smiggles-text-dim)";  /* False */
+
+                        var C_POS    = "var(--smiggles-green)";  /* positive
+                        dollar amounts */
+
+                        var C_NEG    = "var(--smiggles-darkred)";  /* negative
+                        dollar amounts */
+
+
+                        /*
+                        ═══════════════════════════════════════════════════════════════
+                        */
+
+
+                        var h = document.querySelector("home-assistant").hass;
+
+                        var raw = h &&
+                        h.states["sensor.solar_system_control_debug_log"]
+                          && h.states["sensor.solar_system_control_debug_log"].attributes.message || "No data";
+
+                        /* Check if a line starts with an emoji (BMP symbols or
+                        surrogate-pair range) */
+
+                        function isEmojiHeader(s) {
+                          var c = s.charCodeAt(0);
+                          return (c >= 0xD800 && c <= 0xDBFF) || (c >= 0x2100 && c <= 0x27FF);
+                        }
+
+
+                        /* Try key lengths 3, 2, 1 to handle plain,
+                        variation-selector, and surrogate-pair emoji */
+
+                        function getColour(t) {
+                          for (var len = 3; len >= 1; len--) {
+                            var k = t.slice(0, len);
+                            if (COLOURS[k]) return COLOURS[k];
+                          }
+                          return FALLBACK;
+                        }
+
+
+                        function esc(s) {
+                          return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+                        }
+
+
+                        function clr(s) {
+                          s = esc(s);
+                          s = s.replace(/\bTrue\b/g,  "<b style=\"color:"+C_TRUE +"\">True</b>");
+                          s = s.replace(/\bFalse\b/g, "<b style=\"color:"+C_FALSE+"\">False</b>");
+                          s = s.replace(/(\$\s*-?[\d.]+)/g, function(m) {
+                            var n = parseFloat(m.replace(/[^0-9.-]/g, ""));
+                            return "<b style=\"color:"+(n < 0 ? C_NEG : C_POS)+"\">" + m + "</b>";
+                          });
+                          return s;
+                        }
+
+
+                        var sc  = "var(--smiggles-text-muted)";
+
+                        var html = "";
+
+
+                        raw.split("\n").forEach(function(line) {
+                          var tr = line.trim();
+                          if (!tr) { html += "<div style=\"height:5px\"></div>"; return; }
+                          if (isEmojiHeader(tr)) {
+                            sc = getColour(tr);
+                            html += "<div style=\"margin-top:10px;padding-bottom:5px;color:"+sc
+                                  + ";font-size:12px;font-weight:700;letter-spacing:0.04em"
+                                  + ";border-bottom:1px solid "+sc+"33"
+                                  + ";font-family:var(--smiggles-font,sans-serif)\">"
+                                  + clr(tr) + "</div>";
+                          } else {
+                            var ind = (line.match(/^(\s+)/) || ["",""])[1].length;
+                            html += "<div style=\"padding:1px 0 1px "+(Math.min(ind,8)*4)+"px"
+                                  + ";color:"+sc+"99;font-size:11px;line-height:1.6"
+                                  + ";font-family:var(--smiggles-font,sans-serif)\">"
+                                  + clr(tr) + "</div>";
+                          }
+                        });
+
+
+                        box.innerHTML = html;
+
+                        })(this.nextElementSibling)' style='display:none'><div
+                        style='background:var(--smiggles-surface-popup);padding:14px
+                        16px;border-radius:0;font-family:var(--smiggles-font,sans-serif);width:calc(100%
+                        + 16px);margin:-24px -24px -20px;'></div>
+                      style: --mdc-dialog-min-width:100vw;--mdc-dialog-max-width:100vw;
+                styles:
+                  card:
+                    - box-shadow: none
+                    - padding: '0'
+                    - margin: '0'
+                    - height: 40px
+                    - min-height: 40px
+                    - max-height: 40px
+                    - background: var(--smiggles-surface-card) !important
+                    - border-radius: 8px !important
+                    - border: 1px solid var(--smiggles-border-neutral) !important
+                  icon:
+                    - width: 16px
+                    - height: 16px
+                    - color: var(--smiggles-text-dim) !important
+            card_mod:
+              style:
+                .: >-
+                  :host { --stack-card-gap: 4px; --horizontal-stack-card-gap:
+                  4px; }
+                $: '.content { gap: 4px !important; }'
+          - type: vertical-stack
+            cards:
+              - type: horizontal-stack
+                cards:
+                  - type: custom:button-card
+                    entity: input_select.solarsystemcontrolmode
+                    name: Buy
+                    show_icon: false
+                    show_name: true
+                    show_state: false
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.solarsystemcontrolmode
+                        option: Charge
+                    styles:
+                      card:
+                        - padding: 0 6px
+                        - height: 40px
+                        - min-height: 40px
+                        - max-height: 40px
+                        - border-radius: 8px
+                        - box-shadow: none
+                        - background: var(--smiggles-surface-card)
+                        - border: 1px solid var(--smiggles-border-neutral)
+                        - display: >-
+                            [[[ const
+                            m=states['input_select.solarsystemcontrolmode']?.state;
+                            const simple=['Charge','Discharge','Self
+                            Consume'].includes(m); return
+                            (states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                            && simple) ? 'flex' : 'none'; ]]]
+                        - align-items: center
+                        - justify-content: center
+                        - --fx-ring: >-
+                            [[[ return entity.state === 'Charge' ?
+                            'var(--fx-buy-chase-display, none)' : 'none'; ]]]
+                        - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
+                        - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
+                        - --fx-ring-width: var(--fx-buy-ring-width, 2px)
+                        - --fx-glow-name: >-
+                            [[[ return entity.state === 'Charge' ?
+                            'var(--fx-buy-glow-name, none)' : 'none'; ]]]
+                        - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
+                        - --fx-glow-color: var(--fx-buy-glow-color, transparent)
+                        - --fx-fill-soft: var(--smiggles-yellow-soft-bg)
+                        - --fx-border: >-
+                            [[[ return entity.state === 'Charge' ?
+                            'var(--fx-buy-border, 1px solid
+                            var(--smiggles-yellow-border-strong))' : '1px solid
+                            var(--smiggles-border-neutral)'; ]]]
+                      name:
+                        - font-size: 11px
+                        - font-weight: '700'
+                        - letter-spacing: 0.06em
+                        - text-transform: uppercase
+                        - color: var(--smiggles-text-muted)
+                    state:
+                      - value: Charge
+                        styles:
+                          card:
+                            - background: var(--smiggles-yellow-soft-bg)
+                            - border: 1px solid var(--smiggles-yellow-border-strong)
+                          name:
+                            - color: var(--smiggles-yellow)
+                    extra_styles: >-
+                      @keyframes fx-spin { to { transform: translate(-50%,-50%)
+                      rotate(360deg); } }
+
+                      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0
+                      var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0
+                      18px 4px var(--fx-glow-color, transparent); } }
+
+                      @keyframes fx-glow-rainbow {
+                        0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                        33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                        66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                        100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                      }
+
+                      ha-card {
+                        position: relative !important; overflow: hidden !important;
+                        border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                      }
+
+                      ha-card::before {
+                        content:''; position:absolute; z-index:0; top:50%; left:50%;
+                        width:360px; height:360px; transform: translate(-50%,-50%);
+                        background: var(--fx-chase-gradient, none);
+                        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                        display: var(--fx-ring, none);
+                      }
+
+                      ha-card::after {
+                        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                        background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                      }
+
+                      ha-card > * { position: relative !important; z-index: 2
+                      !important; }
+
+                      @media (prefers-reduced-motion: reduce) { ha-card,
+                      ha-card::before { animation: none !important; } }
+                  - type: custom:button-card
+                    entity: input_select.solarsystemcontrolmode
+                    name: Sell
+                    show_icon: false
+                    show_name: true
+                    show_state: false
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.solarsystemcontrolmode
+                        option: Discharge
+                    styles:
+                      card:
+                        - padding: 0 6px
+                        - height: 40px
+                        - min-height: 40px
+                        - max-height: 40px
+                        - border-radius: 8px
+                        - box-shadow: none
+                        - background: var(--smiggles-surface-card)
+                        - border: 1px solid var(--smiggles-border-neutral)
+                        - display: >-
+                            [[[ const
+                            m=states['input_select.solarsystemcontrolmode']?.state;
+                            const simple=['Charge','Discharge','Self
+                            Consume'].includes(m); return
+                            (states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                            && simple) ? 'flex' : 'none'; ]]]
+                        - align-items: center
+                        - justify-content: center
+                        - --fx-ring: >-
+                            [[[ return entity.state === 'Discharge' ?
+                            'var(--fx-sell-chase-display, none)' : 'none'; ]]]
+                        - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
+                        - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
+                        - --fx-ring-width: var(--fx-sell-ring-width, 2px)
+                        - --fx-glow-name: >-
+                            [[[ return entity.state === 'Discharge' ?
+                            'var(--fx-sell-glow-name, none)' : 'none'; ]]]
+                        - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
+                        - --fx-glow-color: var(--fx-sell-glow-color, transparent)
+                        - --fx-fill-soft: var(--smiggles-green-soft-bg)
+                        - --fx-border: >-
+                            [[[ return entity.state === 'Discharge' ?
+                            'var(--fx-sell-border, 1px solid
+                            var(--smiggles-green-border-strong))' : '1px solid
+                            var(--smiggles-border-neutral)'; ]]]
+                      name:
+                        - font-size: 11px
+                        - font-weight: '700'
+                        - letter-spacing: 0.06em
+                        - text-transform: uppercase
+                        - color: var(--smiggles-text-muted)
+                    state:
+                      - value: Discharge
+                        styles:
+                          card:
+                            - background: var(--smiggles-green-soft-bg)
+                            - border: 1px solid var(--smiggles-green-border-strong)
+                          name:
+                            - color: var(--smiggles-green)
+                    extra_styles: >-
+                      @keyframes fx-spin { to { transform: translate(-50%,-50%)
+                      rotate(360deg); } }
+
+                      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0
+                      var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0
+                      18px 4px var(--fx-glow-color, transparent); } }
+
+                      @keyframes fx-glow-rainbow {
+                        0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                        33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                        66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                        100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                      }
+
+                      ha-card {
+                        position: relative !important; overflow: hidden !important;
+                        border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                      }
+
+                      ha-card::before {
+                        content:''; position:absolute; z-index:0; top:50%; left:50%;
+                        width:360px; height:360px; transform: translate(-50%,-50%);
+                        background: var(--fx-chase-gradient, none);
+                        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                        display: var(--fx-ring, none);
+                      }
+
+                      ha-card::after {
+                        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                        background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                      }
+
+                      ha-card > * { position: relative !important; z-index: 2
+                      !important; }
+
+                      @media (prefers-reduced-motion: reduce) { ha-card,
+                      ha-card::before { animation: none !important; } }
+                  - type: custom:button-card
+                    entity: input_select.solarsystemcontrolmode
+                    name: Self Consume
+                    show_icon: false
+                    show_name: true
+                    show_state: false
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.solarsystemcontrolmode
+                        option: Self Consume
+                    styles:
+                      card:
+                        - padding: 0 6px
+                        - height: 40px
+                        - min-height: 40px
+                        - max-height: 40px
+                        - border-radius: 8px
+                        - box-shadow: none
+                        - background: var(--smiggles-surface-card)
+                        - border: 1px solid var(--smiggles-border-neutral)
+                        - display: >-
+                            [[[ const
+                            m=states['input_select.solarsystemcontrolmode']?.state;
+                            const simple=['Charge','Discharge','Self
+                            Consume'].includes(m); return
+                            (states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                            && simple) ? 'flex' : 'none'; ]]]
+                        - align-items: center
+                        - justify-content: center
+                        - --fx-ring: >-
+                            [[[ return entity.state === 'Self Consume' ?
+                            'var(--fx-selfconsume-chase-display, none)' :
+                            'none'; ]]]
+                        - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
+                        - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
+                        - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
+                        - --fx-glow-name: >-
+                            [[[ return entity.state === 'Self Consume' ?
+                            'var(--fx-selfconsume-glow-name, none)' : 'none';
+                            ]]]
+                        - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
+                        - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
+                        - --fx-fill-soft: var(--smiggles-blue-soft-bg)
+                        - --fx-border: >-
+                            [[[ return entity.state === 'Self Consume' ?
+                            'var(--fx-selfconsume-border, 1px solid
+                            var(--smiggles-blue-border-strong))' : '1px solid
+                            var(--smiggles-border-neutral)'; ]]]
+                      name:
+                        - font-size: 11px
+                        - font-weight: '700'
+                        - letter-spacing: 0.06em
+                        - text-transform: uppercase
+                        - color: var(--smiggles-text-muted)
+                    state:
+                      - value: Self Consume
+                        styles:
+                          card:
+                            - background: var(--smiggles-blue-soft-bg)
+                            - border: 1px solid var(--smiggles-blue-border-strong)
+                          name:
+                            - color: var(--smiggles-blue)
+                    extra_styles: >-
+                      @keyframes fx-spin { to { transform: translate(-50%,-50%)
+                      rotate(360deg); } }
+
+                      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0
+                      var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0
+                      18px 4px var(--fx-glow-color, transparent); } }
+
+                      @keyframes fx-glow-rainbow {
+                        0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                        33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                        66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                        100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                      }
+
+                      ha-card {
+                        position: relative !important; overflow: hidden !important;
+                        border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                      }
+
+                      ha-card::before {
+                        content:''; position:absolute; z-index:0; top:50%; left:50%;
+                        width:360px; height:360px; transform: translate(-50%,-50%);
+                        background: var(--fx-chase-gradient, none);
+                        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                        display: var(--fx-ring, none);
+                      }
+
+                      ha-card::after {
+                        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                        background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                      }
+
+                      ha-card > * { position: relative !important; z-index: 2
+                      !important; }
+
+                      @media (prefers-reduced-motion: reduce) { ha-card,
+                      ha-card::before { animation: none !important; } }
+                card_mod:
+                  style:
+                    .: >-
+                      :host { --stack-card-gap: 4px;
+                      --horizontal-stack-card-gap: 4px; }
+                    $: '.content { gap: 4px !important; }'
+              - type: vertical-stack
+                cards:
+                  - type: horizontal-stack
+                    cards:
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: Self Consume
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Self Consume
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Self Consume' ?
+                                'var(--fx-selfconsume-chase-display, none)' :
+                                'none'; ]]]
+                            - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Self Consume' ?
+                                'var(--fx-selfconsume-glow-name, none)' :
+                                'none'; ]]]
+                            - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-blue-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Self Consume' ?
+                                'var(--fx-selfconsume-border, 1px solid
+                                var(--smiggles-blue-border-strong))' : '1px
+                                solid var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                        state:
+                          - value: Self Consume
+                            styles:
+                              card:
+                                - background: var(--smiggles-blue-soft-bg)
+                                - border: 1px solid var(--smiggles-blue-border-strong)
+                              name:
+                                - color: var(--smiggles-blue)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: Buy
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Charge
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Charge' ?
+                                'var(--fx-buy-chase-display, none)' : 'none';
+                                ]]]
+                            - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-buy-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Charge' ?
+                                'var(--fx-buy-glow-name, none)' : 'none'; ]]]
+                            - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-buy-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-yellow-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Charge' ?
+                                'var(--fx-buy-border, 1px solid
+                                var(--smiggles-yellow-border-strong))' : '1px
+                                solid var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                        state:
+                          - value: Charge
+                            styles:
+                              card:
+                                - background: var(--smiggles-yellow-soft-bg)
+                                - border: >-
+                                    1px solid
+                                    var(--smiggles-yellow-border-strong)
+                              name:
+                                - color: var(--smiggles-yellow)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: Sell
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Discharge
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Discharge' ?
+                                'var(--fx-sell-chase-display, none)' : 'none';
+                                ]]]
+                            - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-sell-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Discharge' ?
+                                'var(--fx-sell-glow-name, none)' : 'none'; ]]]
+                            - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-sell-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-green-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Discharge' ?
+                                'var(--fx-sell-border, 1px solid
+                                var(--smiggles-green-border-strong))' : '1px
+                                solid var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                        state:
+                          - value: Discharge
+                            styles:
+                              card:
+                                - background: var(--smiggles-green-soft-bg)
+                                - border: >-
+                                    1px solid
+                                    var(--smiggles-green-border-strong)
+                              name:
+                                - color: var(--smiggles-green)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                    card_mod:
+                      style:
+                        .: >-
+                          :host { --stack-card-gap: 4px;
+                          --horizontal-stack-card-gap: 4px; }
+                        $: '.content { gap: 4px !important; }'
+                  - type: horizontal-stack
+                    cards:
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: Sell Solar
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Float
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Float' ?
+                                'var(--fx-sellsolar-chase-display, none)' :
+                                'none'; ]]]
+                            - --fx-chase-gradient: var(--fx-sellsolar-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-sellsolar-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-sellsolar-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Float' ?
+                                'var(--fx-sellsolar-glow-name, none)' : 'none';
+                                ]]]
+                            - --fx-glow-duration: var(--fx-sellsolar-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-sellsolar-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-orange-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Float' ?
+                                'var(--fx-sellsolar-border, 1px solid
+                                var(--smiggles-orange-border-strong))' : '1px
+                                solid var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                        state:
+                          - value: Float
+                            styles:
+                              card:
+                                - background: var(--smiggles-orange-soft-bg)
+                                - border: >-
+                                    1px solid
+                                    var(--smiggles-orange-border-strong)
+                              name:
+                                - color: var(--smiggles-orange)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: Drain
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Drain
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Drain' ?
+                                'var(--fx-drain-chase-display, none)' : 'none';
+                                ]]]
+                            - --fx-chase-gradient: var(--fx-drain-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-drain-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-drain-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Drain' ?
+                                'var(--fx-drain-glow-name, none)' : 'none'; ]]]
+                            - --fx-glow-duration: var(--fx-drain-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-drain-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-red-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Drain' ?
+                                'var(--fx-drain-border, 1px solid
+                                var(--smiggles-red-border-strong))' : '1px solid
+                                var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                        state:
+                          - value: Drain
+                            styles:
+                              card:
+                                - background: var(--smiggles-red-soft-bg)
+                                - border: 1px solid var(--smiggles-red-border-strong)
+                              name:
+                                - color: var(--smiggles-red)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: House Party
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Float Solar Off
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Float Solar Off' ?
+                                'var(--fx-houseparty-chase-display, none)' :
+                                'none'; ]]]
+                            - --fx-chase-gradient: var(--fx-houseparty-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-houseparty-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-houseparty-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Float Solar Off' ?
+                                'var(--fx-houseparty-glow-name, none)' : 'none';
+                                ]]]
+                            - --fx-glow-duration: var(--fx-houseparty-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-houseparty-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-yellow-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Float Solar Off' ?
+                                'var(--fx-houseparty-border, 1px solid
+                                var(--smiggles-yellow-border-strong))' : '1px
+                                solid var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                            - white-space: normal
+                            - line-height: '1.2'
+                        state:
+                          - value: Float Solar Off
+                            styles:
+                              card:
+                                - background: var(--smiggles-yellow-soft-bg)
+                                - border: >-
+                                    1px solid
+                                    var(--smiggles-yellow-border-strong)
+                              name:
+                                - color: var(--smiggles-yellow)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                      - type: custom:button-card
+                        entity: input_select.solarsystemcontrolmode
+                        name: HOOOOVER
+                        show_icon: false
+                        show_name: true
+                        show_state: false
+                        tap_action:
+                          action: call-service
+                          service: input_select.select_option
+                          service_data:
+                            entity_id: input_select.solarsystemcontrolmode
+                            option: Charge Solar Off
+                        styles:
+                          card:
+                            - padding: 0 4px
+                            - height: 48px
+                            - min-height: 48px
+                            - max-height: 48px
+                            - border-radius: 8px
+                            - box-shadow: none
+                            - background: var(--smiggles-surface-card)
+                            - border: 1px solid var(--smiggles-border-neutral)
+                            - display: >-
+                                [[[ const
+                                m=states['input_select.solarsystemcontrolmode']?.state;
+                                const simple=['Charge','Discharge','Self
+                                Consume'].includes(m); return
+                                (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode
+                                || !simple) ? 'flex' : 'none'; ]]]
+                            - align-items: center
+                            - justify-content: center
+                            - --fx-ring: >-
+                                [[[ return entity.state === 'Charge Solar Off' ?
+                                'var(--fx-hooover-chase-display, none)' :
+                                'none'; ]]]
+                            - --fx-chase-gradient: var(--fx-hooover-chase-gradient, none)
+                            - --fx-chase-duration: var(--fx-hooover-chase-duration, 0s)
+                            - --fx-ring-width: var(--fx-hooover-ring-width, 2px)
+                            - --fx-glow-name: >-
+                                [[[ return entity.state === 'Charge Solar Off' ?
+                                'var(--fx-hooover-glow-name, none)' : 'none';
+                                ]]]
+                            - --fx-glow-duration: var(--fx-hooover-glow-duration, 0s)
+                            - --fx-glow-color: var(--fx-hooover-glow-color, transparent)
+                            - --fx-fill-soft: var(--smiggles-green-soft-bg)
+                            - --fx-border: >-
+                                [[[ return entity.state === 'Charge Solar Off' ?
+                                'var(--fx-hooover-border, 1px solid
+                                var(--smiggles-green-border-strong))' : '1px
+                                solid var(--smiggles-border-neutral)'; ]]]
+                          name:
+                            - font-size: 10px
+                            - font-weight: '700'
+                            - letter-spacing: 0.04em
+                            - text-transform: uppercase
+                            - color: var(--smiggles-text-muted)
+                            - white-space: normal
+                            - line-height: '1.2'
+                        state:
+                          - value: Charge Solar Off
+                            styles:
+                              card:
+                                - background: var(--smiggles-green-soft-bg)
+                                - border: >-
+                                    1px solid
+                                    var(--smiggles-green-border-strong)
+                              name:
+                                - color: var(--smiggles-green)
+                        extra_styles: >-
+                          @keyframes fx-spin { to { transform:
+                          translate(-50%,-50%) rotate(360deg); } }
+
+                          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0
+                          5px 0 var(--fx-glow-color, transparent); } 50% {
+                          box-shadow: 0 0 18px 4px var(--fx-glow-color,
+                          transparent); } }
+
+                          @keyframes fx-glow-rainbow {
+                            0%{box-shadow:0 0 16px 4px var(--smiggles-red);}16%{box-shadow:0 0 16px 4px var(--smiggles-orange);}
+                            33%{box-shadow:0 0 16px 4px var(--smiggles-yellow);}50%{box-shadow:0 0 16px 4px var(--smiggles-green);}
+                            66%{box-shadow:0 0 16px 4px var(--smiggles-blue);}83%{box-shadow:0 0 16px 4px var(--smiggles-purple);}
+                            100%{box-shadow:0 0 16px 4px var(--smiggles-red);}
+                          }
+
+                          ha-card {
+                            position: relative !important; overflow: hidden !important;
+                            border: var(--fx-border, 1px solid var(--smiggles-border-neutral)) !important;
+                            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+                          }
+
+                          ha-card::before {
+                            content:''; position:absolute; z-index:0; top:50%; left:50%;
+                            width:360px; height:360px; transform: translate(-50%,-50%);
+                            background: var(--fx-chase-gradient, none);
+                            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+                            display: var(--fx-ring, none);
+                          }
+
+                          ha-card::after {
+                            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+                            background: linear-gradient(var(--fx-fill-soft, var(--smiggles-surface-card)),var(--fx-fill-soft, var(--smiggles-surface-card))), var(--smiggles-surface-card); display: var(--fx-ring, none);
+                          }
+
+                          ha-card > * { position: relative !important; z-index:
+                          2 !important; }
+
+                          @media (prefers-reduced-motion: reduce) { ha-card,
+                          ha-card::before { animation: none !important; } }
+                    card_mod:
+                      style:
+                        .: >-
+                          :host { --stack-card-gap: 4px;
+                          --horizontal-stack-card-gap: 4px; }
+                        $: '.content { gap: 4px !important; }'
+                card_mod:
+                  style:
+                    .: >-
+                      :host { --stack-card-gap: 4px;
+                      --horizontal-stack-card-gap: 4px; }
+                    $: '.content { gap: 4px !important; }'
+            card_mod:
+              style:
+                .: ':host { --stack-card-gap: 4px; }'
+                $: '.content { gap: 4px !important; }'
+        card_mod:
+          style:
+            .: ':host { --stack-card-gap: 4px; }'
+            $: '.content { gap: 4px !important; }'
+        version: 0.9.14

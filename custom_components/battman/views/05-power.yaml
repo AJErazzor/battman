@@ -17,6 +17,7 @@ theme: Battman Nord
 sections:
   - type: grid
     cards:
+      - type: custom:battman-batterymode
       - type: custom:battman-state
       - type: custom:battman-profitloss
   - type: grid

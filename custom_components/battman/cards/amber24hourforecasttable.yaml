@@ -95,6 +95,9 @@ cards:
         ]]]
     styles:
       card:
+        # button-card sets pointer-events: none on a card with no tap action, which blocks
+        # scrolling (finger, wheel and scrollbar) inside it. Taps still do nothing.
+        - pointer-events: auto
         - padding: '0'
         - margin: '0'
         - overflow: hidden

@@ -149,13 +149,21 @@ Smiggles), section 2 price strip · limits, section 3 gauges · charts · foreca
    `sensor.solarremainingtoday10` aren't used. Unavailable values show — (Smiggles: 0 / $0.00).
 9. ✅ SA generation / demand mix → `battman-nemmix` (v0.14.0), on Battman's own NEM sensors (made from
    `sensor.opennem_sa`), replacing A.J.'s 14 OpenNEM template sensors. Missing category: unknown, not 0.
-10. Battery mode stack (`batterymode`) · 11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
+10. ✅ Battery mode stack → `battman-batterymode` (v0.15.0). Buttons unchanged (same mode select and
+   switches, so Smiggles stays in charge). The info popup ("Solar System Control", an `<img onload>`
+   script with unresolved theme colours) is now the Engine log, styled like the State popup;
+   a missing log sensor is named (was "No data").
+11. Overrides (uses battman-lib.js, Battman's copy of ssc-lib v8)
 
 Battery capacity: Battman uses `sensor.sigen_plant_rated_energy_capacity` everywhere (as Smiggles'
 SOCkwh and override cards do). The State popup used the inverter's rated_battery_capacity until v0.14.0.
 
 ## 9. Notes for the engine stage
 
+- **Engine log sections are found by emoji.** The engine's debug log starts each section with an
+  emoji (🔄 💰 🔋 📊 ☀️ ⚡ 📈 📉 ℹ️ 🕐); the Engine log popup uses them to find sections and pick colours,
+  and doesn't show them. A.J. wants the emoji gone: when the engine moves, give the log a plain
+  structure (e.g. section names) and update the popup with it.
 - **Smiggles sensors the Power view cards still read** (each needs a Battman replacement before
   Smiggles is switched off): `sensor.gridpower` (Gauges needle: import − export; Smiggles labels it
   kWh/energy but it's kW), `sensor.solarsystemcontrolload30mavg` (Gauges; built on the Statistics

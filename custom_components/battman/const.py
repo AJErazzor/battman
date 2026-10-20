@@ -19,6 +19,10 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "run": "sensor.solarsystemcontrolrun",
     "estimated_price": "binary_sensor.solarsystemcontrolestimatedprice",
     "override_timer": "timer.solarsystemoverridetimer",
+    # Battery mode card: the engine's on/off and curtail switches, and its last-run log
+    "enable": "input_boolean.solarsystemcontrolenable",
+    "no_export": "input_boolean.solarsystemcontrolnoexport",
+    "debug_log": "sensor.solar_system_control_debug_log",
     # Other integrations: these stay on the map
     "battery_soc": "sensor.sigen_plant_battery_state_of_charge",
     "buy_price": "sensor.amber_5min_current_general_price",

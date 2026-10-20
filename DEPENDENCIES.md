@@ -10,9 +10,9 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 | html-card | Dashboard card | Finances view header | https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-card |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
 | power-pie-card | Dashboard card | NEM mix card | HACS → Frontend → power-pie-card |
-| browser_mod | Integration (HACS) | State card (tap opens the next-hours popup) | https://github.com/thomasloven/hass-browser_mod |
+| browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup) | https://github.com/thomasloven/hass-browser_mod |
 
-browser_mod is also what the battery mode stack and override cards will use when they move.
+browser_mod is also what the override cards will use when they move.
 
 Battman pages also load from the internet:
 

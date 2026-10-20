@@ -131,7 +131,7 @@ async def test_new_cards_load(hass: HomeAssistant) -> None:
 async def test_power_view_layout(hass: HomeAssistant) -> None:
     client = await _setup(hass)
     power = (await (await client.get("/api/battman/dashboard")).json())["views"][0]
-    assert [c["type"] for c in power["sections"][0]["cards"]] == ["custom:battman-state", "custom:battman-profitloss"]
+    assert [c["type"] for c in power["sections"][0]["cards"]][-2:] == ["custom:battman-state", "custom:battman-profitloss"]
     s2 = power["sections"][1]
     assert s2["column_span"] == 2
     assert [c["type"] for c in s2["cards"]] == ["custom:battman-amber5minpricegrid", "custom:battman-limits",

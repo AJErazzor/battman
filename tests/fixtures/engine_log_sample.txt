@@ -1,0 +1,41 @@
+🕐 2026-10-20 16:10:34
+
+🔄 Mode: Self Consume → Self Consume 
+                
+💰 Prices:  
+  Sell: $ 0.35 (Current: $-0.1209) (Prorate: $0.35/$0.35)
+  Buy: $0.09 (Current: $0.0274) (Prorate: $0.09/$0.15)
+  
+
+  
+🔋 Battery: 100.0% (40.0 kWh)
+
+📊 SOC Limits: (On High Curve!) 
+  Sell Above:  95.83%   (Prorate: 99%/80%) 
+  Buy Below:  90.0%   (Prorate: 90%/90%)  
+
+☀️ Solar:
+  Remaining (10%): 7.0568 kWh
+
+⚡ Actions:
+  Curtail: True
+  Soak: False
+  Sell Discharge: False
+  Buy Charge: False
+  Soak Charge: False
+  Hold Mode: True
+
+📈 Sell Forecasts:
+  Next Sell: $-0.1136
+  
+ 
+  
+📉 Buy Forecasts:
+  Next Buy: $0.0354
+ 
+ℹ️ Version: 1.0.22
+ℹ️ Debug 
+Today Cost: $-1.57
+Protected Sell: 0c/kwh
+Tracking Sell: $1.5288 for 7.55kwh. 
+Tracking Buy: $1.8392 for 21.96kwh}
