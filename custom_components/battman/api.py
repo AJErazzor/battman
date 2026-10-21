@@ -7,19 +7,22 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.http import KEY_HASS
 
-from . import cards, themes
+from . import cards, images, themes
 from .const import (
     CARDS_URL,
     DASHBOARD_URL,
     DOMAIN,
     ENTITY_MAP_DEFAULTS,
     ENTITY_MAP_URL,
+    IMAGE_URL,
+    IMAGES_URL,
     MIGRATED,
     OTHER_MAP_DEFAULTS,
     SMIGGLES_NAMES,
@@ -195,3 +198,33 @@ class BattmanCardView(HomeAssistantView):
             return self.json({"message": str(err)}, status_code=err.status)
         cards.update_issue(hass, await hass.async_add_executor_job(cards.local_ids, local))
         return self.json(card)
+
+
+class BattmanImagesView(HomeAssistantView):
+    """GET /api/battman/images -> {"images": [{name, source, url}], "folder": "battman/images"}."""
+
+    url = IMAGES_URL
+    name = "api:battman:images"
+    requires_auth = True
+
+    async def get(self, request):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        result = await hass.async_add_executor_job(images.list_images, images.local_dir(hass))
+        return self.json({"images": result, "folder": "/".join(images.LOCAL_PARTS)})
+
+
+class BattmanImageView(HomeAssistantView):
+    """GET /api/battman/image/{name} -> the image (yours if you have one by that name)."""
+
+    url = IMAGE_URL + "/{name}"
+    name = "api:battman:image"
+    requires_auth = False   # an <img> can't send a login; same as /local/ and /battman/images/
+
+    async def get(self, request, name: str):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        path = await hass.async_add_executor_job(images.find, images.local_dir(hass), name)
+        if path is None:
+            return web.Response(status=404, text=f"There's no Battman image called {name!r}.")
+        return web.FileResponse(
+            path, headers={"Content-Type": images.content_type(path), "Cache-Control": "no-cache"}
+        )

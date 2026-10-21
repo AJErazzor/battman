@@ -65,6 +65,31 @@ window.loadCardHelpers = async () => ({ createCardElement: (cfg) => { const d = 
     plain.hass = mk("Battman Coffee");
     await new Promise((res) => setTimeout(res, 200));
     r.plain = getComputedStyle(plain.querySelector(".inner")).getPropertyValue("--battman-green").trim();
+    // in HA's card picker, the way HA builds it (the preview inside the picker's shadow root),
+    // added the way HA adds it (config and hass first, then into the page): Battman Coffee
+    if (!customElements.get("hui-card-picker")) customElements.define("hui-card-picker", class extends HTMLElement {});
+    const picker = document.createElement("hui-card-picker");
+    picker.attachShadow({ mode: "open" });
+    document.body.append(picker);
+    const prev = document.createElement("battman-state");
+    prev.setConfig({ type: "custom:battman-state" });
+    prev.hass = mk("Battman Nord");
+    const wrap = document.createElement("div");
+    wrap.append(prev);
+    picker.shadowRoot.append(wrap);
+    await new Promise((res) => setTimeout(res, 200));
+    r.picker = getComputedStyle(prev.querySelector(".inner")).getPropertyValue("--battman-green").trim();
+    // a preview that names its own theme keeps it
+    const prevNamed = document.createElement("battman-state");
+    prevNamed.setConfig({ type: "custom:battman-state", theme: "Battman Nord" });
+    prevNamed.hass = mk("Battman Coffee");
+    picker.shadowRoot.append(prevNamed);
+    await new Promise((res) => setTimeout(res, 200));
+    r.pickerNamed = getComputedStyle(prevNamed.querySelector(".inner")).getPropertyValue("--battman-green").trim();
+    // taken out of the picker onto a page: back to the view's theme
+    document.body.append(prev);
+    await new Promise((res) => setTimeout(res, 200));
+    r.placed = getComputedStyle(prev.querySelector(".inner")).getPropertyValue("--battman-green").trim();
     return r;
   });
   console.log(JSON.stringify(out));

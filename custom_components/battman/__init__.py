@@ -31,6 +31,8 @@ from .api import (
     BattmanCardView,
     BattmanDashboardView,
     BattmanEntityMapView,
+    BattmanImagesView,
+    BattmanImageView,
     BattmanThemeSaveView,
 )
 from .const import DOMAIN, STATIC_URL
@@ -70,6 +72,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanThemeSaveView())
     hass.http.register_view(BattmanCardsView())
     hass.http.register_view(BattmanCardView())
+    hass.http.register_view(BattmanImagesView())
+    hass.http.register_view(BattmanImageView())
     hass.http.register_view(engine_log.BattmanLogView())
     # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
