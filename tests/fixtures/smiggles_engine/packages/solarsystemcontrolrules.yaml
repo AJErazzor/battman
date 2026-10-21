@@ -1,0 +1,224 @@
+################################
+# version: 1.0.5
+################################
+
+template:
+  
+  - trigger:
+      - platform: event
+        event_type: solarsystemcontrolsellrulesattribute
+     
+  
+
+    sensor:
+      - name: "SolarSystemControlSellRules"
+        unique_id: solarsystemcontrolsellrules
+        
+        ##################################################################
+        # Rules - State Active true false
+        ##################################################################
+        state: >
+          {% set myState = false %}
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'state' %}
+            {% set myState = trigger.event.data.value | bool  %}
+          {% elif this.state not in ['unknown', 'unavailable', none] %}
+            {% set myState = this.state  | bool  %}
+          {% endif %} 
+          {{ myState }}
+          
+        attributes:
+          
+          selected_hour: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'selected_hour' %}
+              {{ trigger.event.data.value | int }}
+            {% else %}
+              {{ this.attributes.selected_hour
+                 if this.attributes.selected_hour is defined
+                 else now().hour }}
+            {% endif %}
+
+        
+          rules: >
+              
+              {# --- build default safely --- #}
+              
+              {% set ns = namespace(default=[]) %}
+              {% for i in range(24) %}
+                {% set ns.default = ns.default + [ {
+                  'hour': i,
+                  'isActive': false,
+                  'allowLastChance': false,
+                  'hours_ahead': 3,
+                  'grouping_minutes': 60,
+                  'roundTo': 2,
+                  'roundtype': 'floor',
+                  'offset': 0
+                } ] %}
+                {% endfor %}
+
+            
+              {% set current = this.attributes.get('rules', ns.default) %}
+            
+              {# --- handle update event --- #}
+              {% if trigger is defined 
+                    and trigger.platform == 'event'
+                    and trigger.event.data.hour is defined
+                    and trigger.event.data.hour >= 0
+                    and trigger.event.data.hour < 24
+                    and trigger.event.data.attribute is defined 
+                    and trigger.event.data.attribute == 'rules'
+                    and trigger.event.data.item is defined 
+                    %}
+            
+                {% set hour = trigger.event.data.hour %}
+                {% set attr = trigger.event.data.attribute %}
+                {% set item = trigger.event.data.item %}
+                {% set value = trigger.event.data.value %}
+                
+                {% set typed_value = value | int if item in ['offset','grouping_minutes','hours_ahead','roundTo']
+                    else value | bool if item in ['isActive','allowLastChance']
+                    else value
+                %}
+
+            
+                {% set ns2 = namespace(updated=[]) %}
+            
+                {% for i in range(24) %}
+                  {% if i == hour %}
+                    
+                    {% set r = current[i] %}
+                    
+                    {% set new_rule = {'hour': i,
+                      'isActive': typed_value if item == 'isActive' else r.isActive,
+                      'grouping_minutes': typed_value if item == 'grouping_minutes' else r.grouping_minutes,
+                      'hours_ahead': typed_value if item == 'hours_ahead' else r.hours_ahead,
+                      'roundTo': typed_value if item == 'roundTo' else r.roundTo,
+                      'roundtype': typed_value if item == 'roundtype' else r.roundtype,
+                      'offset': typed_value if item == 'offset' else r.offset,
+                      'allowLastChance': typed_value if item == 'allowLastChance' else r.allowLastChance
+                    } %}
+                    
+                    {% set ns2.updated = ns2.updated + [new_rule] %}
+                    
+                  {% else %}
+                    {% set ns2.updated = ns2.updated + [current[i]] %}
+                  {% endif %}
+                {% endfor %}
+            
+                {{ ns2.updated }}
+            
+              {% else %}
+                {{ current }}
+              {% endif %}
+              
+              
+  - trigger:
+      - platform: event
+        event_type: solarsystemcontrolbuyrulesattribute
+     
+  
+
+    sensor:
+      - name: "SolarSystemControlBuyRules"
+        unique_id: solarsystemcontrolbuyrules
+        
+        ##################################################################
+        # Rules - State Active true false
+        ##################################################################
+        state: >
+          {% set myState = false %}
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'state' %}
+            {% set myState = trigger.event.data.value | bool  %}
+          {% elif this.state not in ['unknown', 'unavailable', none] %}
+            {% set myState = this.state  | bool  %}
+          {% endif %} 
+          {{ myState }}
+          
+        attributes:
+          
+          selected_hour: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'selected_hour' %}
+              {{ trigger.event.data.value | int }}
+            {% else %}
+              {{ this.attributes.selected_hour
+                 if this.attributes.selected_hour is defined
+                 else now().hour }}
+            {% endif %}
+
+        
+          rules: >
+              
+              {# --- build default safely --- #}
+              
+              {% set ns = namespace(default=[]) %}
+              {% for i in range(24) %}
+                {% set ns.default = ns.default + [ {
+                  'hour': i,
+                  'isActive': false,
+                  'hours_ahead': 3,
+                  'grouping_minutes': 60,
+                  'roundTo': 2,
+                  'roundtype': 'floor',
+                  'offset': 0
+                } ] %}
+                {% endfor %}
+
+            
+              {% set current = this.attributes.get('rules', ns.default) %}
+            
+              {# --- handle update event --- #}
+              {% if trigger is defined 
+                    and trigger.platform == 'event'
+                    and trigger.event.data.hour is defined
+                    and trigger.event.data.hour >= 0
+                    and trigger.event.data.hour < 24
+                    and trigger.event.data.attribute is defined 
+                    and trigger.event.data.attribute == 'rules'
+                    and trigger.event.data.item is defined 
+                    %}
+            
+                {% set hour = trigger.event.data.hour %}
+                {% set attr = trigger.event.data.attribute %}
+                {% set item = trigger.event.data.item %}
+                {% set value = trigger.event.data.value %}
+                
+                {% set typed_value = value | int if item in ['offset','grouping_minutes','hours_ahead','roundTo']
+                    else value | bool if item in ['isActive']
+                    else value
+                %}
+
+            
+                {% set ns2 = namespace(updated=[]) %}
+            
+                {% for i in range(24) %}
+                  {% if i == hour %}
+                    
+                    {% set r = current[i] %}
+                    
+                    {% set new_rule = {'hour': i,
+                      'isActive': typed_value if item == 'isActive' else r.isActive,
+                      'grouping_minutes': typed_value if item == 'grouping_minutes' else r.grouping_minutes,
+                      'hours_ahead': typed_value if item == 'hours_ahead' else r.hours_ahead,
+                      'roundTo': typed_value if item == 'roundTo' else r.roundTo,
+                      'roundtype': typed_value if item == 'roundtype' else r.roundtype,
+                      'offset': typed_value if item == 'offset' else r.offset
+                    } %}
+                    
+                    {% set ns2.updated = ns2.updated + [new_rule] %}
+                    
+                  {% else %}
+                    {% set ns2.updated = ns2.updated + [current[i]] %}
+                  {% endif %}
+                {% endfor %}
+            
+                {{ ns2.updated }}
+            
+              {% else %}
+                {{ current }}
+              {% endif %}
+                     
+                        

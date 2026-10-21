@@ -1,0 +1,925 @@
+################################
+# version: 1.0.16
+################################
+
+template:
+  - trigger:
+     
+      - platform: event
+        event_type: solarsystemcontroltotalattribute
+
+      - platform: state
+        entity_id: binary_sensor.solarsystemcontrolestimatedprice
+        from: "off"
+        to: "on"
+        
+    condition:
+      - condition: template
+        value_template: >
+          {% set importedEnergy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+          {% set importedLast = state_attr('sensor.solarsystemcontrolbuytotal', 'last_energy') | float(0) %}
+          {% set exportedEnergy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+          {% set exportedLast = state_attr('sensor.solarsystemcontrolselltotal', 'last_energy') | float(0) %}
+          {{ importedEnergy > 0 and importedEnergy >= importedLast and exportedEnergy > 0 and exportedEnergy >= exportedLast}}    
+
+    sensor:
+      - name: "SolarSystemControlBuyTotal"
+        unique_id: solarsystemcontrolbuytotal
+        unit_of_measurement: "$"
+        device_class: monetary
+        state_class: total
+
+        ##################################################################
+        # LIFETIME TOTAL
+        ##################################################################
+        state: >
+          {% macro calc_delta() %}
+            {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+            {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+            {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
+            {{ (energy - last) * 1000 * price }}
+          {% endmacro %}
+          
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute is defined and trigger.event.data.attribute == 'ResetTotals' %}
+            {{ 0 }}
+          {% elif trigger is defined and trigger.platform == 'event' %}
+            {{ this.state }}
+          {% else %}
+            {{ (this.state | float(0) + calc_delta() | float(0)) | round(4) }}
+          {% endif %}    
+
+        attributes:
+
+          ##################################################################
+          # Last energy reading
+          ##################################################################
+          last_energy: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('last_energy', 0) }}
+            {% else %}
+              {{ states('sensor.sigen_plant_total_imported_energy') | float(0) }}
+            {% endif %}     
+            
+          ##################################################################
+          # price
+          ##################################################################
+          price: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('price', 0) }}
+            {% else %}
+              {{ states('sensor.amber_5min_current_general_price') | float(0) }}
+            {% endif %} 
+            
+          ##################################################################
+          # usage
+          ##################################################################
+          usage: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {{ (energy - last) * 1000  }}
+            {% endmacro %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('usage', 0) }}
+            {% else %}
+               {{ calc_delta() | round(6) }}
+            {% endif %} 
+            
+          ##################################################################
+          #Delta
+          ##################################################################
+          delta_cost: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('delta_cost', 0) }}
+            {% else %}
+              {{ calc_delta() | round(6) }}
+            {% endif %} 
+            
+          ##################################################################
+          # DAILY TOTAL
+          ##################################################################
+          day: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set today = now().date() | string %}
+            {% set stored = this.attributes.get('day_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('day', 0) }}
+            {% else %}
+                {% if stored != today %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('day', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %} 
+           
+          day_marker: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('day_marker', now().date()) }}
+            {% else %}
+              {{ now().date() }}
+            {% endif %} 
+            
+          yesterday: >
+            {% set today = now().date() | string %}
+            {% set stored = this.attributes.get('day_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('yesterday', 0) }}
+            {% else %}
+                {% if stored != today %}
+                  {{ this.attributes.get('day', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('yesterday', 0) | float(0) }}
+                {% endif %}
+            {% endif %} 
+            
+          days: >
+            {% set today = now().date() | string %}
+            {% set stored = this.attributes.get('day_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute is defined and trigger.event.data.attribute == 'ResetTotals' %}
+              {{ 0 }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('days', 0) }}
+            {% else %}
+                {% if stored != today %}
+                  {{ (this.attributes.get('days', 0) | float(0)) + 1 }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('days', 0) | float(0) }}
+                {% endif %}
+            {% endif %} 
+           
+
+          ##################################################################
+          # CALENDAR MONTH TOTAL
+          ##################################################################
+          month: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set month = now().strftime('%Y-%m') %}
+            {% set stored = this.attributes.get('month_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('month', 0) }}
+            {% else %}
+                {% if stored != month %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}   
+                {% else %}
+                  {{ (this.attributes.get('month', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+           
+          month_marker: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('month_marker') }}
+            {% else %}
+              {{ now().strftime('%Y-%m') }}
+            {% endif %}
+            
+          ##################################################################
+          # BILLING PERIOD TOTAL
+          ##################################################################
+          bill: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('bill', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+            
+          bill_marker: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_marker') }}
+            {% else %}
+                {% if today.day >= bill_day %}
+                  {{ today.strftime('%Y-%m') }}
+                {% else %}
+                  {{ (today.replace(day=1) - timedelta(days=1)).strftime('%Y-%m') }}
+                {% endif %}
+            {% endif %}
+ 
+          bill_last: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_last', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ this.attributes.get('bill', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('bill_last', 0) | float(0) }}
+                {% endif %}
+            {% endif %}
+
+          bill_period_last: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_period_last', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ this.attributes.get('bill_period_day', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('bill_period_last', 0) | float(0) }}
+                {% endif %}
+            {% endif %}
+            
+          bill_period_day: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now().date() %}
+
+            {# Determine current billing start date #}
+            {% if today.day >= bill_day %}
+              {% set start = today.replace(day=bill_day) %}
+            {% else %}
+              {% set last_month = (today.replace(day=1) - timedelta(days=1)) %}
+              {% set safe_day = [bill_day, last_month.day] | min %}
+              {% set start = last_month.replace(day=safe_day) %}
+            {% endif %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_period_day', 0) }}
+            {% else %}
+              {{ (today - start).days + 1 }}
+            {% endif %}
+            
+          ##################################################################
+          # TRACKING 
+          ##################################################################
+          trackingA_CutOffcKwh: >
+             {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'buy_trackingA_CutOffcKwh' %}
+                {{ trigger.event.data.value }}
+             {% else %}
+                {{ this.attributes.get('trackingA_CutOffcKwh', 0) }}
+             {% endif %}
+             
+          trackingA_CutOffKwh: >
+             {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'buy_trackingA_CutOffKwh' %}
+                {{ trigger.event.data.value }}
+             {% else %}
+                {{ this.attributes.get('trackingA_CutOffKwh', 0) }}
+             {% endif %}
+             
+          trackingA_AllowLastChance: >
+             {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'buy_trackingA_AllowLastChance' %}
+                {{ trigger.event.data.value }}
+             {% else %}
+                {{ this.attributes.get('trackingA_AllowLastChance', 0) }}
+             {% endif %}
+             
+          trackingA_Offset: >
+             {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'buy_trackingA_Offset' %}
+                {{ trigger.event.data.value }}
+             {% else %}
+                {{ this.attributes.get('trackingA_Offset', 0) }}
+             {% endif %}
+             
+          trackingA_ResetHour: >
+             {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'buy_trackingA_ResetHour' %}
+                {{ trigger.event.data.value }}
+             {% else %}
+                {{ this.attributes.get('trackingA_ResetHour', 0) }}
+             {% endif %}
+             
+          trackingA_marker: >
+             {% set trackingA_ResetHour = this.attributes.get('trackingA_ResetHour') | int(0) %}
+             {% set target = now().replace(hour=trackingA_ResetHour, minute=0, second=0, microsecond=0) %}
+             
+             {% if trigger is defined and trigger.platform == 'event' %}
+                 {{ this.attributes.get('trackingA_marker') }}
+             {% else %}
+                 {% if target > now() %}
+                   {{ target }}
+                 {% else %}
+                   {{ target + timedelta(days=1) }}
+                 {% endif %}
+             {% endif %}
+ 
+          trackingA_Cost: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+                {{ this.attributes.get('trackingA_Cost', 0) }}
+            {% else %}
+                {% if stored < now() %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('trackingA_Cost', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+            
+          trackingA_kwh: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {{ (energy - last) * 1000 }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+                {{ this.attributes.get('trackingA_kwh', 0) }}
+            {% else %}
+                {% if stored < now() %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('trackingA_kwh', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+            
+      - name: "SolarSystemControlSellTotal"
+        unique_id: solarsystemcontrolselltotal
+        unit_of_measurement: "$"
+        device_class: monetary
+        state_class: total
+        
+        ##################################################################
+        # LIFETIME TOTAL
+        ##################################################################
+        state: >
+          {% macro calc_delta() %}
+            {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+            {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+            {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+            {{ (energy - last) * 1000 * price }}
+          {% endmacro %}
+
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute is defined and trigger.event.data.attribute == 'ResetTotals' %}
+            {{ 0 }}
+          {% elif trigger is defined and trigger.platform == 'event' %}
+            {{ this.state }}
+          {% else %}
+            {{ (this.state | float(0) + calc_delta() | float(0)) | round(4) }}
+          {% endif %} 
+        
+        attributes:
+          
+          ##################################################################
+          # Last energy reading
+          ##################################################################
+          last_energy: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('last_energy', 0) }}
+            {% else %}
+              {{ states('sensor.sigen_plant_total_exported_energy') | float(0) }}
+            {% endif %}   
+            
+          ##################################################################
+          # price
+          ##################################################################
+          price: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('price', 0) }}
+            {% else %}
+              {{ states('sensor.amber_5min_current_feed_in_price') | float(0) }}
+            {% endif %} 
+            
+          ##################################################################
+          # usage
+          ##################################################################
+          usage: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {{ (energy - last) * 1000  }}
+            {% endmacro %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('usage', 0) }}
+            {% else %}
+               {{ calc_delta() | round(6) }}
+            {% endif %} 
+            
+          ##################################################################
+          # delta
+          ##################################################################
+          delta_cost: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('delta_cost', 0) }}
+            {% else %}
+              {{ calc_delta() | round(6) }}
+            {% endif %} 
+
+          ##################################################################
+          # DAILY TOTAL
+          ##################################################################
+          day: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set today = now().date() | string %}
+            {% set stored = this.attributes.get('day_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('day', 0) }}
+            {% else %}
+                {% if stored != today %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('day', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %} 
+
+          day_marker: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('day_marker', now().date()) }}
+            {% else %}
+              {{ now().date() }}
+            {% endif %} 
+            
+          yesterday: >
+            {% set today = now().date() | string %}
+            {% set stored = this.attributes.get('day_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('yesterday', 0) }}
+            {% else %}
+                {% if stored != today %}
+                  {{ this.attributes.get('day', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('yesterday', 0) | float(0) }}
+                {% endif %}
+            {% endif %} 
+            
+          days: >
+            {% set today = now().date() | string %}
+            {% set stored = this.attributes.get('day_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute is defined and trigger.event.data.attribute == 'ResetTotals' %}
+              {{ 0 }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('days', 0) }}
+            {% else %}
+                {% if stored != today %}
+                  {{ (this.attributes.get('days', 0) | float(0)) + 1 }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('days', 0) | float(0) }}
+                {% endif %}
+            {% endif %} 
+            
+
+          ##################################################################
+          # CALENDAR MONTH TOTAL
+          ##################################################################
+          month: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set month = now().strftime('%Y-%m') %}
+            {% set stored = this.attributes.get('month_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('month', 0) }}
+            {% else %}
+                {% if stored != month %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}   
+                {% else %}
+                  {{ (this.attributes.get('month', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+
+          month_marker: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('month_marker') }}
+            {% else %}
+              {{ now().strftime('%Y-%m') }}
+            {% endif %}
+
+          ##################################################################
+          # BILLING PERIOD TOTAL
+          ##################################################################
+          bill: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('bill', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+
+          bill_marker: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_marker') }}
+            {% else %}
+                {% if today.day >= bill_day %}
+                  {{ today.strftime('%Y-%m') }}
+                {% else %}
+                  {{ (today.replace(day=1) - timedelta(days=1)).strftime('%Y-%m') }}
+                {% endif %}
+            {% endif %}
+            
+          bill_last: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_last', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ this.attributes.get('bill', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('bill_last', 0) | float(0) }}
+                {% endif %}
+            {% endif %}
+        
+          bill_period_last: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_period_last', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ this.attributes.get('bill_period_day', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('bill_period_last', 0) | float(0) }}
+                {% endif %}
+            {% endif %}
+            
+          bill_period_day: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now().date() %}
+
+            {# Determine current billing start date #}
+            {% if today.day >= bill_day %}
+              {% set start = today.replace(day=bill_day) %}
+            {% else %}
+              {% set last_month = (today.replace(day=1) - timedelta(days=1)) %}
+              {% set safe_day = [bill_day, last_month.day] | min %}
+              {% set start = last_month.replace(day=safe_day) %}
+            {% endif %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_period_day', 0) }}
+            {% else %}
+              {{ (today - start).days + 1 }}
+            {% endif %}
+            
+          ##################################################################
+          # TRACKING 
+          ##################################################################
+          trackingA_ResetHour: >
+             {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute == 'buy_trackingA_ResetHour' %}
+                {{ trigger.event.data.value }}
+             {% else %}
+                {{ this.attributes.get('trackingA_ResetHour', 0) }}
+             {% endif %}
+          
+          trackingA_marker: >
+             {% set trackingA_ResetHour = this.attributes.get('trackingA_ResetHour') | int(0) %}
+             {% set target = now().replace(hour=trackingA_ResetHour, minute=0, second=0, microsecond=0) %}
+             
+             {% if trigger is defined and trigger.platform == 'event' %}
+                 {{ this.attributes.get('trackingA_marker') }}
+             {% else %}
+                 {% if target > now() %}
+                   {{ target }}
+                 {% else %}
+                   {{ target + timedelta(days=1) }}
+                 {% endif %}
+             {% endif %}
+             
+          trackingA_Cost: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
+              {{ (energy - last) * 1000 * price }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+                {{ this.attributes.get('trackingA_Cost', 0) }}
+            {% else %}
+                {% if stored < now() %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('trackingA_Cost', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+            
+          trackingA_kwh: >
+            {% macro calc_delta() %}
+              {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+              {% set last = this.attributes.get('last_energy', energy) | float(0) %}
+              {{ (energy - last) * 1000  }}
+            {% endmacro %}
+
+            {% set change = calc_delta() | float(0) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+                {{ this.attributes.get('trackingA_kwh', 0) }}
+            {% else %}
+                {% if stored < now() %}
+                  {{ change | round(4) }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('trackingA_kwh', 0) | float(0) + change) | round(4) }}
+                {% endif %}
+            {% endif %}
+            
+            
+
+      - name: "SolarSystemControlNetworkAccessFee"
+        unique_id: solarsystemcontrolnetworkaccessfee
+        unit_of_measurement: "$"
+        device_class: monetary
+        state_class: total
+
+        ##################################################################
+        # LIFETIME TOTAL
+        ##################################################################
+        state: >
+          {% set today = now().date() | string %}
+          {% set stored = this.attributes.get('day_marker') %}
+          {% set dailyNetworkCharge = state_attr('sensor.solarsystemcontrolparameters','dailyNetworkCharge') | float(0) %}
+          {% set init = 0 | float(0) %}
+
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.attribute is defined and trigger.event.data.attribute == 'ResetTotals' %}
+            {{ 0 }}
+          {% elif trigger is defined and trigger.platform == 'event' %}
+            {{ this.state | float(0) }}
+          {% else %}
+            {% if stored != today %}
+                {{ this.state | float(0) + dailyNetworkCharge}}
+            {% elif init != 0 %} 
+                {{ init }}    
+            {% else %}
+                {{ this.state | float(0)  }}
+            {% endif %}
+          {% endif %} 
+
+        attributes:
+
+          day_marker: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('day_marker', now().date()) }}
+            {% else %}
+              {{ now().date() }}
+            {% endif %}  
+
+          ##################################################################
+          # BILLING PERIOD TOTAL
+          ##################################################################
+          bill: >
+            
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set dailyNetworkCharge = state_attr('sensor.solarsystemcontrolparameters','dailyNetworkCharge') | float(0) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set todayDay = now().date() | string %}
+            {% set storedDay = this.attributes.get('day_marker') %}
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ dailyNetworkCharge }}
+                {% elif storedDay != todayDay %}
+                  {{ (this.attributes.get('bill', 0) | float(0)) + dailyNetworkCharge }}
+                {% elif init != 0 %} 
+                  {{ init }}  
+                {% else %}
+                  {{ (this.attributes.get('bill', 0) | float(0))  }}
+                {% endif %}
+            {% endif %}
+            
+          bill_marker: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_marker') }}
+            {% else %}
+                {% if today.day >= bill_day %}
+                  {{ today.strftime('%Y-%m') }}
+                {% else %}
+                  {{ (today.replace(day=1) - timedelta(days=1)).strftime('%Y-%m') }}
+                {% endif %}
+            {% endif %}
+ 
+          bill_last: >
+            {% set bill_day = state_attr('sensor.solarsystemcontrolparameters', 'billDayOfMonth') | int(1) %}
+            {% set today = now() %}
+
+            {% if today.day >= bill_day %}
+              {% set period = today.strftime('%Y-%m') %}
+            {% else %}
+              {% set prev = today.replace(day=1) - timedelta(days=1) %}
+              {% set period = prev.strftime('%Y-%m') %}
+            {% endif %}
+
+            {% set stored = this.attributes.get('bill_marker') %}
+            {% set init = 0 | float(0) %}
+
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('bill_last', 0) }}
+            {% else %}
+                {% if stored != period %}
+                  {{ this.attributes.get('bill', 0) | float(0) }}
+                {% elif init != 0 %} 
+                  {{ init }}    
+                {% else %}
+                  {{ this.attributes.get('bill_last', 0) | float(0) }}
+                {% endif %}
+            {% endif %}
+ 

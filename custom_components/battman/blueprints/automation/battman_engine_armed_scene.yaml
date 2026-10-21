@@ -1,0 +1,81 @@
+# Battman engine: ported like for like from Smiggles (packages/ssc_scenes.yaml v1.2.0).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – armed scene (00:01)
+  description: Applies the moon-armed Battman scene at 00:01:30, disarms, then logs the outcome when its net target clears. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+mode: single
+triggers:
+- trigger: time
+  at: 00:01:30
+variables:
+  started: '{{ as_timestamp(now()) }}'
+  armed: '{{ state_attr(''sensor.battman_parameters'', ''armedScene'') | default('''', true) | string }}'
+  has_net: |-
+    {{ (state_attr('sensor.battman_parameters', 'overridePresets') or [])
+       | selectattr('name', 'eq', armed) | map(attribute='values') | selectattr('net', 'defined') | list | count > 0 }}
+  exists: |-
+    {{ (state_attr('sensor.battman_parameters', 'overridePresets') or [])
+       | selectattr('name', 'eq', armed) | list | count > 0 }}
+conditions:
+- condition: state
+  entity_id: binary_sensor.battman_in_charge
+  state: 'on'
+- condition: template
+  value_template: '{{ armed | trim not in ['''', ''None'', ''none'', ''unknown''] }}'
+actions:
+- if:
+  - condition: template
+    value_template: '{{ exists }}'
+  then:
+  - action: script.battman_apply_scene
+    continue_on_error: true
+    data:
+      name: '{{ armed }}'
+  - action: logbook.log
+    data:
+      name: Battery Time
+      message: Applied armed scene '{{ armed }}' at 00:01
+      entity_id: sensor.battman_parameters
+  else:
+  - action: persistent_notification.create
+    data:
+      title: 'Battery Time: armed scene not found'
+      message: '''{{ armed }}'' was armed for 00:01 but no scene has that name any more (renamed or deleted). Nothing was applied.'
+      notification_id: battman_armed_scene_missing
+- event: battman_parameters_update
+  event_data:
+    action: SetAttribute
+    armedScene: ''
+- if:
+  - condition: template
+    value_template: '{{ exists and has_net }}'
+  then:
+  - wait_template: |-
+      {{ (state_attr('sensor.battman_parameters', 'netTargetSellPrice') | float(0)) == 0
+         and (state_attr('sensor.battman_parameters', 'netTargetBuyPrice') | float(0)) == 0 }}
+    timeout: '23:50:00'
+    continue_on_timeout: true
+  - variables:
+      p: sensor.battman_parameters
+      net: |-
+        {{ (state_attr('sensor.battman_sell_total', 'day') | float(0))
+           - (state_attr('sensor.battman_buy_total', 'day') | float(0))
+           - (state_attr(p, 'dailyNetworkCharge') | float(0)) }}
+      met_at: |-
+        {% set ns = namespace(t=none) %} {% for k in ['netTargetSellMet', 'netTargetBuyMet'] %}
+          {% set v = state_attr(p, k) | string %}
+          {% if '|' in v %}
+            {% set ts = as_timestamp(v.split('|')[0] | trim, 0) %}
+            {% if ts > started | float(0) %}{% set ns.t = ts %}{% endif %}
+          {% endif %}
+        {% endfor %} {{ ns.t }}
+  - action: logbook.log
+    data:
+      name: Battery Time
+      entity_id: sensor.battman_parameters
+      message: '{% set n = net | float(0) %} {% set money = (''−'' if n < -0.005 else '''') ~ ''$'' ~ (''%.2f'' | format(n | abs)) %} ''{{ armed }}'' {{ ''still running at'' if not wait.completed else ''ended'' }} {{ now().strftime(''%H:%M'') }} · net today {{ money }} · {% if met_at not in [none, '''', ''None''] %}target met {{ (met_at | float) | timestamp_custom(''%H:%M'') }}{% else %}target not met{% endif %}'

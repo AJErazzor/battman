@@ -1,0 +1,47 @@
+alias: SolarSystemControlSigCurtail
+description: Automatically manage negative energy prices by curtailing exporting (version 1.0.0)
+triggers:
+  - trigger: state
+    entity_id:
+      - input_boolean.solarsystemcontrolnoexport
+conditions: []
+actions:
+  - alias: Curtail if Solar System Control No Export is On
+    if:
+      - condition: state
+        entity_id: input_boolean.solarsystemcontrolnoexport
+        state:
+          - "on"
+    then:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: 0
+        target:
+          entity_id: number.sigen_plant_grid_export_limitation
+        alias: Set export limit to 0
+        enabled: true
+      - action: persistent_notification.create
+        metadata: {}
+        data:
+          message: Curtail export active - feed in price is negative
+          title: Curtail export active - feed in price is negative
+        enabled: false
+    else:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: "{{ max_export_kw }}"
+        target:
+          entity_id: number.sigen_plant_grid_export_limitation
+        alias: Set export limit to max export limit
+        enabled: true
+      - action: persistent_notification.create
+        metadata: {}
+        data:
+          message: Curtailment ended feed in price positive
+          title: Curtailment ended feed in price positive
+        enabled: false
+mode: single
+variables:
+  max_export_kw: 18.2

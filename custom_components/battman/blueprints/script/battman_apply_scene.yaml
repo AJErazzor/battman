@@ -1,0 +1,86 @@
+# Battman engine: ported like for like from Smiggles (packages/ssc_scenes.yaml v1.2.0).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman apply scene
+  description: Apply a saved Battman scene by name (sets every override + net target, starts its timer).
+  domain: script
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+icon: mdi:palette-swatch-variant
+mode: queued
+fields:
+  name:
+    name: Scene name
+    description: Name of a saved scene (a preset with 2 or more entries)
+    required: true
+    example: Morning BE
+    selector:
+      text: null
+variables:
+  presets: '{{ state_attr(''sensor.battman_parameters'', ''overridePresets'') or [] }}'
+  found: '{{ presets | selectattr(''name'', ''eq'', name | string) | list }}'
+  v: '{{ found[0][''values''] if found else {} }}'
+  ov:
+    sell: sellOverride
+    sellsolar: sellSolar
+    buy: buyOverride
+    any: buyAnytime
+    drain: drainBattery
+  d: |-
+    {% set ns = namespace(d={'action': 'SetAttribute'}) %} {% for id, pre in ov.items() %}
+      {% set o = v.get(id, {}) %}
+      {% set ns.d = dict(ns.d, **{
+           pre ~ 'SOC': o.get('soc', 0) | float(0),
+           pre ~ 'Price': o.get('price', 0) | float(0),
+           pre ~ 'AllowReset': not (o.get('allowReset') is false) }) %}
+    {% endfor %} {% set n = v.get('net', {}) %} {% set side = 'buy' if n.get('side') == 'buy' else 'sell' %} {% set price = n.get('price', 0) | float(0) %} {% set ns.d = dict(ns.d,
+         netTargetSellPrice=(price if n and side == 'sell' else 0),
+         netTargetBuyPrice=(price if n and side == 'buy' else 0)) %}
+    {{ ns.d }}
+  timer_secs: |-
+    {% set p = found[0] if found else {} %} {% if p.get('timer_at') %}
+      {# timestamps, not datetime subtraction: same-tz aware datetimes subtract as wall-clock and go 1h wrong across DST #}
+      {% set t = today_at(p.timer_at) %}
+      {% if as_timestamp(t) - as_timestamp(now()) < 60 %}{% set t = t + timedelta(days=1) %}{% endif %}
+      {{ (as_timestamp(t) - as_timestamp(now())) | round(0) | int }}
+    {% else %}
+      {{ p.get('timer', 0) | float(0) | round(0) | int }}
+    {% endif %}
+sequence:
+- if:
+  - condition: template
+    value_template: '{{ found | length == 0 or v | length < 2 }}'
+  then:
+  - stop: No scene called '{{ name }}' (a scene needs 2 or more entries)
+    error: true
+- event: battman_parameters_update
+  event_data:
+    action: SetAttribute
+    sellOverrideSOC: '{{ d.sellOverrideSOC }}'
+    sellOverridePrice: '{{ d.sellOverridePrice }}'
+    sellOverrideAllowReset: '{{ d.sellOverrideAllowReset }}'
+    sellSolarSOC: '{{ d.sellSolarSOC }}'
+    sellSolarPrice: '{{ d.sellSolarPrice }}'
+    sellSolarAllowReset: '{{ d.sellSolarAllowReset }}'
+    buyOverrideSOC: '{{ d.buyOverrideSOC }}'
+    buyOverridePrice: '{{ d.buyOverridePrice }}'
+    buyOverrideAllowReset: '{{ d.buyOverrideAllowReset }}'
+    buyAnytimeSOC: '{{ d.buyAnytimeSOC }}'
+    buyAnytimePrice: '{{ d.buyAnytimePrice }}'
+    buyAnytimeAllowReset: '{{ d.buyAnytimeAllowReset }}'
+    drainBatterySOC: '{{ d.drainBatterySOC }}'
+    drainBatteryPrice: '{{ d.drainBatteryPrice }}'
+    drainBatteryAllowReset: '{{ d.drainBatteryAllowReset }}'
+    netTargetSellPrice: '{{ d.netTargetSellPrice }}'
+    netTargetBuyPrice: '{{ d.netTargetBuyPrice }}'
+- if:
+  - condition: template
+    value_template: '{{ timer_secs > 0 }}'
+  then:
+  - action: timer.start
+    target:
+      entity_id: timer.battman_override_timer
+    data:
+      duration: '{{ ''%d:%02d:%02d'' | format(timer_secs // 3600, (timer_secs % 3600) // 60, timer_secs % 60) }}'

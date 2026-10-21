@@ -1,3 +1,4 @@
+import pytest
 """v0.8.0: Settings view, theme mode colours sensor, brand icon."""
 
 import json
@@ -7,6 +8,8 @@ from homeassistant.components.lovelace.const import LOVELACE_DATA
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 SENSOR = "sensor.battman_theme_mode_colours"

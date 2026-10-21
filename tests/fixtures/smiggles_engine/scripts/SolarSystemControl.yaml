@@ -1,0 +1,968 @@
+sequence:
+  - delay: '00:00:02'
+  - variables:
+      version: 1.0.22
+  - variables:
+      logtolog: true
+      logtonotification: false
+    alias: Logging
+  - variables:
+      sensors:
+        power:
+          general_price: sensor.amber_5min_current_general_price
+          general_forecast: sensor.amber_billing_interval_forecasts_general_price
+          feed_in_price: sensor.amber_5min_current_feed_in_price
+          feed_in_forecast: sensor.amber_billing_interval_forecasts_feed_in_price
+    alias: Configure sensor entities
+  - variables:
+      sellSOCProrate: true
+      buySOCProrate: true
+      powerProvider: '{{state_attr(''sensor.solarsystemcontrolpowerproviderbuy'',''provider'')}}'
+      remainingPVGapAllowedkwh: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','needyTriggerPVGap')
+        | float(5)}}
+      highConsumptionkw: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','needyTriggerConsumption')
+        | float(2.5)}}
+      spikePrice1: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','sellSpikePrice1') |
+        float(100)) / 100}}
+      spikeLowSOC1: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','sellSpikeSOC1') |
+        float(99)}}
+      spikePrice2: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','sellSpikePrice2') |
+        float(100)) /100}}
+      spikeLowSOC2: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','sellSpikeSOC2') |
+        float(99)}}
+      buyAnytimePrice: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','buyAnytimePrice') |
+        float(0)) /100}}
+      buyAnytimeSOCBelow: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','buyAnytimeSOC') |
+        float(0)}}
+      overrideSellPrice: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','sellOverridePrice')
+        | float(0)) /100}}
+      overrideSellSOC: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','sellOverrideSOC') |
+        float(0)}}
+      solarSellPrice: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','sellSolarPrice') |
+        float(0)) /100}}
+      solarSellSOC: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','sellSolarSOC') |
+        float(0)}}
+      overrideBuyPrice: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','buyOverridePrice')
+        | float(0)) /100}}
+      overrideBuySOC: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','buyOverrideSOC') |
+        float(0)}}
+      drainBatteryPrice: >-
+        {{(state_attr('sensor.solarsystemcontrolparameters','drainBatteryPrice')
+        | float(0)) /100}}
+      drainBatterySOC: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','drainBatterySOC') |
+        float(0)}}
+      drainBatteryPlughole: >-
+        {{ state_attr('sensor.solarsystemcontrolparameters','drainBatteryPlughole') | 
+        default(false) | bool }}
+    alias: Limits
+  - variables:
+      tariffSwap10: |
+        {{ now() >= today_at('10:00') and now() < today_at('10:01') }}  
+      tariffSwap16: |
+        {{ now() >= today_at('16:00') and now() < today_at('16:01') }}
+      tariffSwap17: |
+        {{ now() >= today_at('17:00') and now() < today_at('17:01') }}
+      tariffSwap21: |
+        {{ now() >= today_at('21:00') and now() < today_at('21:01') }}
+      tariffImportPeak: |
+        {{ now() >= today_at('17:00') and now() < today_at('20:59') }}
+      tariffImportSolarSponge: |
+        {{ now() >= today_at('10:00') and now() < today_at('15:59') }}
+      tariffImportShoulder: |
+        {{not tariffImportPeak and not tariffImportSolarSponge}}
+    alias: Tariff Times
+  - variables:
+      gridStatus: '{{ states(''sensor.sigen_plant_grid_connection_status'') }}'
+      currentSOC: '{{ states(''sensor.sigen_plant_battery_state_of_charge'') | float(0) }}'
+      currentMode: '{{ states(''input_select.solarsystemcontrolmode'') }}'
+      inverterRatedPower: >-
+        {{states('sensor.sigen_inverter_rated_active_power') | float(0) |
+        round(0)}}
+      batterykwh: >-
+        {{states('sensor.sigen_plant_rated_energy_capacity') | float(0) |
+        round(0)}}
+      currentSOCkwh: '{{ (currentSOC / 100) * batterykwh | round(2) }}'
+    alias: Battery State
+  - variables:
+      pvRemaining10kwh: >-
+        {{state_attr('sensor.solcast_pv_forecast_forecast_remaining_today','estimate10')
+        | float(0) }}
+      pvRemainingkwh: >-
+        {{
+        state_attr('sensor.solcast_pv_forecast_forecast_remaining_today','estimate')
+        | float(0) }}
+      pvNext1hr: >-
+        {{
+        state_attr('sensor.solcast_pv_forecast_forecast_next_hour','estimate') |
+        float(0) }}
+      pvNext1hr10: >-
+        {{
+        state_attr('sensor.solcast_pv_forecast_forecast_next_hour','estimate10')
+        | float(0) }}
+      pvRemainingNotGood: >-
+        {{ (batterykwh-currentSOCkwh - pvRemaining10kwh) >
+        remainingPVGapAllowedkwh }}
+    alias: PV Forcast
+  - variables:
+      needSun: |
+        {{ (pvRemainingNotGood and tariffImportSolarSponge) | bool(false)  }}
+      needPower: >
+        {% set homekwh30Adv = states('sensor.solarsystemcontrolload30mavg') |
+        float(0) %}   {{ (homekwh30Adv > highConsumptionkw) | bool(false)   }}  
+      highConsumption: >
+        {% set homekwh30Adv = states('sensor.solarsystemcontrolload30mavg') |
+        float(0) %}   {{ ((homekwh30Adv > highConsumptionkw) or
+        (pvRemainingNotGood and tariffImportSolarSponge)) | bool(false)  }}
+      highConsumptionText: |
+        {% if highConsumption %}
+           {{ '_high' }}
+        {% else%}
+            {{ '' }}
+        {% endif %}
+      minuteOfDay: '{{ now().minute | int(0) }}'
+      hourOfDay: '{{ now().hour | int(0) }}'
+      nextHourofDay: '{{(now() + timedelta(hours=1)).hour | int(0) }}'
+      monthOfYear: '{{ now().strftime(''%b'') | lower }}'
+      nextHourofDayMonth: '{{(now() + timedelta(hours=1)).strftime(''%b'') | lower }}'
+      socCurves: >-
+        {{ state_attr('sensor.solar_system_control_soc_curves','curves') |
+        default([]) }}
+      minSOCForSellA: >
+        {# min SOC for selling at now, ie can sell if current SOC >= this and
+        price is right #}  {{ socCurves.get(monthOfYear,
+        {}).get('sell'~highConsumptionText, [99]*24)[hourOfDay] | int  }}
+      minSOCForSellB: >
+        {# min SOC for selling at now, ie can sell if current SOC >= this and
+        price is right #} {% if not sellSOCProrate %}
+          {{ minSOCForSellA }}
+        {%else%}
+          {{ socCurves.get(nextHourofDayMonth, {}).get('sell'~highConsumptionText, [99]*24)[nextHourofDay] | int  }}
+        {%endif%}
+      minSOCForSell: >
+        {# min SOC for selling at now, ie can sell if current SOC >= this and
+        price is right #}  {{(minSOCForSellA+((minSOCForSellB -
+        minSOCForSellA)*minuteOfDay/60)) | round(2, 'floor')}}
+      minSOCForBuyA: >
+        {# min SOC for selling at now, ie can sell if current SOC >= this and
+        price is right #}  {{ socCurves.get(monthOfYear,
+        {}).get('buy'~highConsumptionText, [5]*24)[hourOfDay] | int  }}
+      minSOCForBuyB: >
+        {# min SOC for selling at now, ie can sell if current SOC >= this and
+        price is right #}  {% if  not buySOCProrate %}
+          {{ minSOCForBuyA }}
+        {%else%}
+          {{ socCurves.get(nextHourofDayMonth, {}).get('buy'~highConsumptionText, [5]*24)[nextHourofDay] | int  }}
+        {%endif%} 
+      minSOCForBuy: >
+        {# min SOC for selling at now, ie can sell if current SOC >= this and
+        price is right #} {{(minSOCForBuyA+((minSOCForBuyB -
+        minSOCForBuyA)*minuteOfDay/60)) | round(2, 'floor')}}
+    alias: SOC
+  - variables:
+      priceCurves: >-
+        {{ state_attr('sensor.solar_system_control_price_curves','curves') |
+        default([]) }}
+      defaultSellPrice: >-
+        {{ priceCurves.get(monthOfYear, {}).get('sell'~highConsumptionText,
+        {}).get('high',  [99]*24)[hourOfDay] | float(15) / 100 }}
+      lowSellPrice: >-
+        {{ priceCurves.get(monthOfYear, {}).get('sell'~highConsumptionText,
+        {}).get('low',  [99]*24)[hourOfDay] | float(10) / 100 }}
+      defaultBuyPrice: >-
+        {{ priceCurves.get(monthOfYear, {}).get('buy'~highConsumptionText,
+        {}).get('low',  [99]*24)[hourOfDay] | float(6) / 100 }}
+      highBuyPrice: >-
+        {{ priceCurves.get(monthOfYear, {}).get('buy'~highConsumptionText,
+        {}).get('high',  [99]*24)[hourOfDay] | float(9) / 100 }}  
+      currentBuyPrice: '{{ states(sensors.power.general_price) | float(0) }}'
+      currentSellPrice: '{{ states(sensors.power.feed_in_price)  | float(0) }}'
+      forecastBuyPrice: >-
+        {{ state_attr(sensors.power.general_forecast,'Forecasts') | default([])
+        }}
+      forecastSellPrice: >-
+        {{ state_attr(sensors.power.feed_in_forecast,'Forecasts') |
+        default([])}}
+      isEstimate: |
+        {{ is_state('binary_sensor.solarsystemcontrolestimatedprice', 'on') }}
+      minSOCForSellProratedOffset: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','sellProrateSOCOffset')
+        | float(0)}}
+      minSOCForSellLowOffset: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','sellLowSOCOffset') |
+        float(0)}}
+      minSOCForBuyProratedOffset: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','buyProrateSOCOffset')
+        | float(0)}}
+      minSOCForBuyHighOffset: >-
+        {{state_attr('sensor.solarsystemcontrolparameters','buyHighSOCOffset') |
+        float(0)}}
+      minSOCForSellLow: '{{  min((minSOCForSell + minSOCForSellLowOffset),101)  | float(0) }}'
+      minSOCForSellProrated: '{{ min((minSOCForSell + minSOCForSellProratedOffset),101) | float(0) }}'
+      minSOCForBuyProrated: '{{ max((minSOCForBuy - minSOCForBuyProratedOffset),0) | float(0) }}'
+      minSOCForBuyHigh: '{{ max((minSOCForBuy - minSOCForBuyHighOffset),0) | float(0) }}'
+      todayCost: >
+        {% set todaysellCost =
+        state_attr('sensor.solarsystemcontrolselltotal','day') | float(0)  %}  
+        {% set todaybuyCost =
+        state_attr('sensor.solarsystemcontrolbuytotal','day') | float(0)  %}  
+        {% set todayfee = 
+        state_attr('sensor.solarsystemcontrolparameters','dailyNetworkCharge') |
+        float(0)  %}   {{todaysellCost-todaybuyCost-todayfee}}
+      todaysImportCostCentsPerKwh: >
+        {% set todaysellCost =
+        state_attr('sensor.solarsystemcontrolselltotal','trackingA_Cost') |
+        float(0)  %}   {% set todaybuyCost =
+        state_attr('sensor.solarsystemcontrolbuytotal','trackingA_Cost') |
+        float(0)  %}   {% set todaybuykwh =
+        state_attr('sensor.solarsystemcontrolbuytotal','trackingA_kwh') |
+        float(0)  %} {% set todaybuycuttoffcKwh =
+        state_attr('sensor.solarsystemcontrolbuytotal','trackingA_CutOffcKwh') |
+        float(0)  %}    {% set todaybuycuttoffKwh =
+        state_attr('sensor.solarsystemcontrolbuytotal','trackingA_CutOffKwh') |
+        float(0)  %}    {% set todaybuyOffset =
+        state_attr('sensor.solarsystemcontrolbuytotal','trackingA_Offset') |
+        float(0)  %}     {% if todaybuyCost <= 0 or todaybuykwh <=
+        todaybuycuttoffKwh or todaybuycuttoffcKwh <= 0 or todaybuyCost <=
+        todaysellCost %} 0   {% elif (todaybuyCost/todaybuykwh)*100 <=
+        todaybuycuttoffcKwh %} 0   {% else 
+        %}{{((todaybuyCost/todaybuykwh)+(todaybuyOffset/100)) | round(2)}}  {%
+        endif %}
+    alias: Prices
+  - variables:
+      avg_buy_Next: >
+        {# Next buy forecast #} {% set forecasts = forecastBuyPrice %} {% set ns
+        =namespace(window=[]) %} {% for f in forecasts[0:1] %}
+          {% set ns.window = ns.window + [f] %}
+        {% endfor %} {% if ns.window | length > 0 %}
+          {{ ((ns.window | map(attribute='per_kwh') | map('float') | sum) / (ns.window | length)) | round(4) }}
+        {% else %}
+          0
+        {% endif %}
+      avg_fit_Next: >
+        {# Next feed in forecast #} {% set forecasts = forecastSellPrice %} {%
+        set ns =namespace(window=[]) %} {% for f in forecasts[0:1] %}
+          {% set ns.window = ns.window + [f] %}
+        {% endfor %}
+
+        {% if ns.window | length > 0 %}
+         
+            {{ (((ns.window | map(attribute='per_kwh') | map('float') | sum) * -1) / (ns.window | length)) | round(4) }}
+          
+        {% else %}
+          0
+        {% endif %}     
+    alias: Price Forcasts
+  - variables:
+      buyRule: >
+        {% set rule = none %}  {% set useRules =
+        states('sensor.solarsystemcontrolbuyrules') | lower == 'true' %}
+
+        {% if useRules  %}
+           {% set rules = state_attr("sensor.solarsystemcontrolbuyrules", "rules") or [] %}
+           {% set rule = rules[now().hour] if rules | length > now().hour else none %}
+        {% endif %}  {{rule}}
+      buyRuleAvgs: |
+
+        {% if buyRule  %}
+           
+           {% set rule = buyRule %}
+           {% if not rule or not rule.isActive  %}
+             {{[]}}
+                              
+           {% elif rule.hours_ahead | int(0) > 0  %}
+
+            {% set interval = rule.grouping_minutes %}  {# minutes per bucket #}
+            {% set hours_ahead = rule.hours_ahead %} {# cutoff X hours time #}
+         
+            {# --- Adjust to 5 minute blocks ---#}
+            {% set interval = interval // 5 %} 
+            {% if interval == 0 %} {% set interval = 1 %}{% endif %}
+
+            {# --- Build cutoff ---#}
+            {% set cutoff = now() + timedelta(hours=hours_ahead) %}
+            {% set cutoff = cutoff.replace(minute=0, second=0, microsecond=0) %}
+          
+            {# --- Build 5-minute normalised series until cutoff --- #}
+            
+            {% set forecasts = forecastBuyPrice %}
+            {% set forecastsTo5m = namespace(forecasts=[],Interval=[]) %}
+            {% for f in forecasts %}
+              {# --- Stop if we've passed cutoff time --- #}
+              {% if as_timestamp(f.start_time) >= as_timestamp(cutoff) %}
+                {% break %}
+              {% endif %}
+            
+              {# --- Expand into 5-minute intervals --- #}
+              {% set repeat = (f.duration | int) // 5 %}
+              {% for _ in range(repeat) %}
+                {% set forecastsTo5m.forecasts = forecastsTo5m.forecasts + [f] %}
+              {% endfor %}
+            {% endfor %}
+
+            {# --- Group by interval and adverage --- #}
+            {% for i in range(0, forecastsTo5m.forecasts | length, interval) %}
+              {% set chunk = forecastsTo5m.forecasts[i:i+interval] %}
+              {% if chunk | length > 0 %}
+                {% set avg = (chunk | map(attribute='per_kwh') | map('float') | map('multiply', 1) | sum) / (chunk | length) %}
+                {% set forecastsTo5m.Interval = forecastsTo5m.Interval + [avg] %}
+              {% endif %}
+            {% endfor %}
+                     
+            {{forecastsTo5m.Interval}}
+         
+           {% else %}
+              {{[]}}
+           {% endif %}
+        {% else %}
+            {{[]}}
+        {% endif %}
+      buyRuleAvgsDetail: |
+        {% set detailns = namespace(detail=[]) %}
+                
+        {% if buyRuleAvgs | length != 0 %}
+          {% set startTime = as_timestamp(forecastBuyPrice[0].start_time)%}
+          {% set cutoff = as_timestamp((now() + timedelta(hours=buyRule.hours_ahead)).replace(minute=0, second=0, microsecond=0)) %}
+          
+          {% for i in range(0, buyRuleAvgs  | length) %}
+             {% set avg = buyRuleAvgs[i]| round(4) %} 
+             {% set start = (startTime + 60*buyRule.grouping_minutes*i) | timestamp_custom('%H:%M', true) %} 
+             {% set end = (startTime + 60*buyRule.grouping_minutes*(i+1)) | timestamp_custom('%H:%M', true) %} 
+             {% if i == ((buyRuleAvgs | length) - 1) %}
+               {% set end = (cutoff) | timestamp_custom('%H:%M', true)%} 
+             {%endif%}  
+             {% set detailns.detail = detailns.detail + [{'start': start,'end': end,'avg': avg}] %}
+          {% endfor %}
+        {% endif %}
+
+        {{detailns.detail}}
+      buyRuleResult: |
+
+        {% if buyRule  %}
+           {% set rule = buyRule %}
+
+           {# --- Not Active --- #}
+           {% if not rule or not rule.isActive  %}
+             {{0}}          
+           
+           {# --- Look ahead has bee defined --- #}
+           {% elif rule.hours_ahead | int(0) > 0  %}          
+          
+            {# --- Get Max --- #}
+            {% set result = buyRuleAvgs | min if buyRuleAvgs | length > 0 else 0%}
+            
+            {# --- Apply adjustments --- #}
+            {% if rule.offset != 0 %}{% set result = result +  rule.offset/100 %}{% endif %}
+            {% if  rule.roundTo > 0  %}{% set result = result | round( rule.roundTo,  rule.roundtype) %}{% endif %}
+            {% if result < 0  %}{% set result = 0 %}{% endif %}
+            {{result}}
+         
+           {% else %}
+              {{0}}
+           {% endif %}
+        {% else %}
+            {{0}}
+        {% endif %}
+                  
+      buyPriceCalc: >
+        {# Set buy price around defaultBuyPrice and highBuyPrice by looking at
+        some SOC data. Using a gap of 10%. If > 10% high price, between 10%-1%
+        prorate down to defult price #}
+
+         {% set buyPriceNow = defaultBuyPrice %}
+         {% if minSOCForBuyHigh < minSOCForBuy and currentSOC  <= minSOCForBuyHigh  %}
+           {% set buyPriceNow = highBuyPrice %}
+         {% elif minSOCForBuyHigh < minSOCForBuy and  minSOCForBuyProrated > minSOCForBuyHigh and currentSOC <= minSOCForBuyProrated %}
+           {% set buyPriceNow = defaultBuyPrice - ((highBuyPrice -defaultBuyPrice  ) * ((currentSOC  - minSOCForBuyProrated   )/(minSOCForBuyProrated- minSOCForBuyHigh) )) %}
+         {% else %}
+           {% set buyPriceNow = defaultBuyPrice %}
+         {% endif %}
+               
+         {{buyPriceNow}}
+                  
+      buyPrice: >
+        {# Set buy price around defaultBuyPrice and highBuyPrice by looking at
+        some SOC data. Using a gap of 10%. If > 10% high price, between 10%-1%
+        prorate down to defult price #}
+
+         {% set buyPriceNow = buyPriceCalc %}
+                  
+         {% if buyRuleResult != 0 and buyRuleResult < highBuyPrice %}
+           {% if buyRuleResult < buyPriceNow  %}
+             {% set buyPriceNow = buyRuleResult %}
+           {% elif buyRuleResult > buyPriceNow and ((currentSOC > minSOCForBuyHigh and currentSOC < minSOCForBuyProrated) or ( overrideBuySOC > 0 and currentSOC < overrideBuySOC)) %}
+             {% set buyPriceNow = buyRuleResult %}
+           {% endif %}
+         {% endif %}
+         
+         {{buyPriceNow}}
+
+         
+    alias: Tweek Buy Price
+  - variables:
+      sellRule: >
+        {% set rule = none %}  {% set useRules =
+        states('sensor.solarsystemcontrolsellrules') | lower == 'true' %}
+
+        {% if useRules  %}
+           {% set rules = state_attr("sensor.solarsystemcontrolsellrules", "rules") or [] %}
+           {% set rule = rules[now().hour] if rules | length > now().hour else none %}
+        {% endif %}  {{rule}}
+      sellRuleAvgs: |
+
+        {% if sellRule  %}
+           
+           {% set rule = sellRule %}
+           {% if not rule or not rule.isActive  %}
+             {{[]}}
+                              
+           {% elif rule.hours_ahead | int(0) > 0  %}
+
+            {% set interval = rule.grouping_minutes %}  {# minutes per bucket #}
+            {% set hours_ahead = rule.hours_ahead %} {# cutoff X hours time #}
+         
+            {# --- Adjust to 5 minute blocks ---#}
+            {% set interval = interval // 5 %} 
+            {% if interval == 0 %} {% set interval = 1 %}{% endif %}
+
+            {# --- Build cutoff ---#}
+            {% set cutoff = now() + timedelta(hours=hours_ahead) %}
+            {% set cutoff = cutoff.replace(minute=0, second=0, microsecond=0) %}
+          
+            {# --- Build 5-minute normalised series until cutoff --- #}
+            
+            {% set forecasts = forecastSellPrice %}
+            {% set forecastsTo5m = namespace(forecasts=[],Interval=[]) %}
+            {% for f in forecasts %}
+              {# --- Stop if we've passed cutoff time --- #}
+              {% if as_timestamp(f.start_time) >= as_timestamp(cutoff) %}
+                {% break %}
+              {% endif %}
+            
+              {# --- Expand into 5-minute intervals --- #}
+              {% set repeat = (f.duration | int) // 5 %}
+              {% for _ in range(repeat) %}
+                {% set forecastsTo5m.forecasts = forecastsTo5m.forecasts + [f] %}
+              {% endfor %}
+            {% endfor %}
+
+            {# --- Group by interval and adverage --- #}
+            {% for i in range(0, forecastsTo5m.forecasts | length, interval) %}
+              {% set chunk = forecastsTo5m.forecasts[i:i+interval] %}
+              {% if chunk | length > 0 %}
+                {% set avg = (chunk | map(attribute='per_kwh') | map('float') | map('multiply', -1) | sum) / (chunk | length) %}
+                {% set forecastsTo5m.Interval = forecastsTo5m.Interval + [avg] %}
+              {% endif %}
+            {% endfor %}
+                     
+            {{forecastsTo5m.Interval}}
+         
+           {% else %}
+              {{[]}}
+           {% endif %}
+        {% else %}
+            {{[]}}
+        {% endif %}
+      sellRuleAvgsDetail: |
+        {% set detailns = namespace(detail=[]) %}
+                
+        {% if sellRuleAvgs | length != 0 %}
+          {% set startTime = as_timestamp(forecastSellPrice[0].start_time)%}
+          {% set cutoff = as_timestamp((now() + timedelta(hours=sellRule.hours_ahead)).replace(minute=0, second=0, microsecond=0)) %}
+          
+          {% for i in range(0, sellRuleAvgs  | length) %}
+             {% set avg = sellRuleAvgs[i]| round(4) %} 
+             {% set start = (startTime + 60*sellRule.grouping_minutes*i) | timestamp_custom('%H:%M', true) %} 
+             {% set end = (startTime + 60*sellRule.grouping_minutes*(i+1)) | timestamp_custom('%H:%M', true) %} 
+             {% if i == ((sellRuleAvgs | length) - 1) %}
+               {% set end = (cutoff) | timestamp_custom('%H:%M', true)%} 
+             {%endif%}  
+             {% set detailns.detail = detailns.detail + [{'start': start,'end': end,'avg': avg}] %}
+          {% endfor %}
+        {% endif %}
+
+        {{detailns.detail}}
+                  
+      sellRuleResult: |
+
+        {% if sellRule  %}
+           {% set rule = sellRule %}
+
+           {# --- Not Active --- #}
+           {% if not rule or not rule.isActive  %}
+             {{0}}          
+           
+           {# --- Look ahead has bee defined --- #}
+           {% elif rule.hours_ahead | int(0) > 0  %}          
+          
+            {# --- Get Max --- #}
+            {% set result = sellRuleAvgs | max if sellRuleAvgs | length > 0 else 0%}
+            
+            {# --- Apply adjustments --- #}
+            {% if rule.offset != 0 %}{% set result = result +  rule.offset/100 %}{% endif %}
+            {% if  rule.roundTo > 0  %}{% set result = result | round( rule.roundTo,  rule.roundtype) %}{% endif %}
+            {% if result < 0  %}{% set result = 0 %}{% endif %}
+            {{result}}
+
+           {# --- No Look ahead but has last chance --- #}
+           {% elif rule.allowLastChance and todayCost < 0  %}
+             {{lowSellPrice}}          
+         
+           {% else %}
+              {{0}}
+           {% endif %}
+        {% else %}
+            {{0}}
+        {% endif %}
+                  
+      todaysImportCostCentsPerKwhLastChance: >
+        {% set allowLastChance =
+        state_attr('sensor.solarsystemcontrolbuytotal','trackingA_AllowLastChance')
+        | int(0)  %}  {% if allowLastChance == 1 and sellRule.allowLastChance
+        and todayCost < 0 %}
+           0 
+        {% else  %}
+          {{todaysImportCostCentsPerKwh}}
+        {% endif %}  
+      sellPriceCalc: >
+        {# Set sell price around defaultSellPrice and lowSellPrice by looking at
+        some avg data #}  
+
+        {% set sellPriceNow = defaultSellPrice %} {% if todayCost < 0 and
+        minSOCForSellLow > minSOCForSell and currentSOC  >= minSOCForSellLow %}
+            {% set sellPriceNow = max(todaysImportCostCentsPerKwh, lowSellPrice) %}
+        {% elif todayCost < 0 and minSOCForSellProrated > minSOCForSell and 
+        minSOCForSellLow > minSOCForSellProrated and currentSOC >=
+        minSOCForSellProrated %}
+            {% set sellPriceNow = max(todaysImportCostCentsPerKwh, (defaultSellPrice - ((defaultSellPrice- lowSellPrice) * ((currentSOC  - minSOCForSellProrated   )/(minSOCForSellLow- minSOCForSellProrated) )))) %}
+        {% else %}
+            {% set sellPriceNow = max(todaysImportCostCentsPerKwh, defaultSellPrice)%}
+        {% endif %}
+                 
+        {{sellPriceNow}}
+           
+      sellPrice: >
+        {# Set sell price around defaultSellPrice and lowSellPrice by looking at
+        some avg data #}  
+
+        {% set sellPriceNow = sellPriceCalc %}           {% if sellRuleResult !=
+        0 and sellRuleResult > lowSellPrice %}
+          {% if sellRuleResult >= sellPriceNow and sellRule.allowLastChance and todayCost < 0  %}
+            {# Sell at rounded down avg #}
+            {%set sellPriceNow = max (todaysImportCostCentsPerKwhLastChance, sellRuleResult)%}
+          {% elif sellRuleResult >= sellPriceNow  %}
+            {# Sell at rounded down avg #}
+            {%set sellPriceNow = max (todaysImportCostCentsPerKwh,  sellRuleResult)%}
+          {% elif sellRule.allowLastChance and todayCost < 0  %}
+            {# Price is bad, drop to low? #}
+            {%set sellPriceNow = max (todaysImportCostCentsPerKwhLastChance, lowSellPrice, sellRuleResult)%}
+          {% endif %}
+        {% endif %}   {%set sellPriceNow = max(todaysImportCostCentsPerKwh,
+        sellPriceNow)%} 
+
+        {{sellPriceNow}}
+                  
+    alias: Tweek Sell Price
+  - variables:
+      soakCharge: >
+        {# When true will charge the battery on -ve buy, otherwise hold of for a
+        better price and just run house #}   {% if overrideBuyPrice < 0  %}
+          {% if currentBuyPrice <= overrideBuyPrice %}
+            {{true}}
+         {% else %}
+            {{false}}
+          {% endif %}
+        {% elif currentBuyPrice <= 0 %}
+          {{true}}
+        {% else %}
+          {{false}}
+        {% endif %}
+    alias: Charge Rules (Negative)
+  - variables:
+      buyReason: >
+        {# Check if we should buy #}  
+                  
+        {% set buyReasonResult = [false, 0, 'No Buy']  %}        
+
+        {% if overrideBuyPrice < 0 %}
+          {% if currentBuyPrice <= overrideBuyPrice  %}
+           {% set buyReasonResult = [true, 9, 'Override Price -ve']  %} 
+          {% endif %}
+               
+        {% elif overrideBuyPrice > 0 and overrideBuySOC > 0  %}
+          {% if currentBuyPrice <= overrideBuyPrice and currentSOC <= overrideBuySOC %}
+           {% set buyReasonResult = [true, 1, 'Override Price and SOC']  %} 
+          {% endif %}
+
+        {% elif overrideBuyPrice > 0 and overrideBuySOC == 0 %}
+          {%if currentBuyPrice <= overrideBuyPrice and currentSOC < minSOCForBuy %}
+             {% set buyReasonResult = [true, 2, 'Override Price']  %} 
+          {% endif %}
+                    
+        {% elif overrideBuySOC > 0 and overrideBuyPrice == 0 %}
+          {%if currentBuyPrice <= buyPrice and currentSOC <= overrideBuySOC %}
+            {% set buyReasonResult = [true, 3, 'Override SOC']  %} 
+          {% endif %}
+                    
+        {% elif tariffImportPeak %}
+          {% set buyReasonResult = [false, 0, 'No Buy in Peak Tariff']  %} 
+          
+        {% elif currentBuyPrice <= buyPrice and currentSOC < minSOCForBuy %}
+          
+          {% if buyRuleResult != 0 and buyRuleResult == buyPrice %}
+            {% set buyReasonResult = [true, 4, 'Rule Active']  %}
+          {% elif buyPriceCalc != 0 and buyPriceCalc == buyPrice and buyPrice == highBuyPrice %}
+            {% set buyReasonResult = [true, 5, 'High']  %}
+          {% elif buyPriceCalc != 0 and buyPriceCalc == buyPrice and buyPrice == defaultBuyPrice %}
+            {% set buyReasonResult = [true, 6, 'Preferred']  %}
+          {% else %}
+            {% set buyReasonResult = [true, 7, 'Prorate']  %}
+          {% endif %} 
+          
+        {% elif buyAnytimePrice > 0 and currentBuyPrice <= buyAnytimePrice and
+        currentSOC < buyAnytimeSOCBelow %}
+          {% set buyReasonResult = [true, 8, 'Anytime']  %} 
+        {% endif %}
+                  
+        {{buyReasonResult}}       
+                  
+      buyCharge: |
+        {# When element 0 is true will charge the battery on +ve buy #} 
+                  
+        {% if buyReason[0] %}
+          {{true}}
+        {% else %}
+          {{false}}
+        {% endif %}   
+                  
+    alias: Charge Rules (Posative)
+  - variables:
+      sellReason: >
+        {# Check if we should sell #}   
+
+        {% set sellReasonResult = [false, 0, 'No Sell']  %}
+                  
+        {% if overrideSellPrice > 0 and overrideSellSOC > 0 and currentSellPrice
+        >= overrideSellPrice and currentSOC > overrideSellSOC %}
+          {% set sellReasonResult = [true, 1, 'Override Price and SOC']  %}
+          
+        {% elif overrideSellPrice > 0 and overrideSellSOC == 0 and
+        currentSellPrice >= overrideSellPrice and currentSOC > minSOCForSell %}
+          {% set sellReasonResult = [true, 2, 'Override Price']  %}
+
+        {% elif overrideSellSOC > 0 and overrideSellPrice == 0 and
+        currentSellPrice >= sellPrice and currentSOC > overrideSellSOC %}
+          {% set sellReasonResult = [true, 3, 'Override SOC']  %}
+          
+        {% elif overrideSellPrice == 0 and overrideSellSOC == 0 and
+        currentSellPrice >= sellPrice and currentSOC > minSOCForSell %}
+          {% if sellRuleResult != 0 and sellRuleResult == sellPrice %}
+            {% set sellReasonResult = [true, 4, 'Rule Active']  %}
+          {% elif sellPriceCalc != 0 and sellPriceCalc == sellPrice and sellPrice == lowSellPrice %}
+            {% set sellReasonResult = [true, 5, 'Low']  %}
+          {% elif sellPriceCalc != 0 and sellPriceCalc == sellPrice and sellPrice == defaultSellPrice %}
+            {% set sellReasonResult = [true, 6, 'Preferred']  %}
+          {% elif sellPriceCalc != 0 and sellPriceCalc == sellPrice and sellPrice == todaysImportCostCentsPerKwh %}
+            {% set sellReasonResult = [true, 7, 'Protected']  %}
+          {% else %}
+            {% set sellReasonResult = [true, 8, 'Prorate']  %}
+          {% endif %} 
+          
+        {% elif currentSellPrice > spikePrice1 and currentSOC > spikeLowSOC1 %}
+          {% set sellReasonResult = [true, 9, 'Spike 1']  %}
+          
+        {% elif currentSellPrice > spikePrice2 and currentSOC > spikeLowSOC2 %}
+          {% set sellReasonResult = [true, 10, 'Spike 2']  %}
+
+        {% elif solarSellPrice > 0 and solarSellSOC> 0 and currentSellPrice >
+        solarSellPrice and currentSOC > solarSellSOC %}
+          {% set sellReasonResult = [true, 11, 'Solar']  %}
+
+        {% elif solarSellPrice == 0 and solarSellSOC > 0 and currentSOC >
+        solarSellSOC %}
+          {% set sellReasonResult = [true, 13, 'Solar -ve']  %}  
+
+        {% elif drainBatteryPrice > 0 and drainBatterySOC > 0 and
+        currentBuyPrice < drainBatteryPrice and currentSOC > drainBatterySOC %}
+          {% set sellReasonResult = [true, 12, 'Drain']  %}
+
+        {% elif drainBatteryPrice > 0 and drainBatterySOC == 0 and
+        currentBuyPrice < drainBatteryPrice and currentSOC > minSOCForBuy %}
+          {% set sellReasonResult = [true, 12, 'Drain']  %}  
+
+        {% endif %}
+
+        {{sellReasonResult}}  
+                  
+      sellDischarge: |
+        {# When element 0 is true will discharge the battery on +ve sell #} 
+                  
+        {% if sellReason[0] %}
+          {{true}}
+        {% else %}
+          {{false}}
+        {% endif %}   
+    alias: Discharge Rules
+  - variables:
+      holdMode: >
+        {# When true will continue the current mode thru the esimated time,
+        otherwise drop to self consume #}
+
+        {% if tariffSwap10 or tariffSwap16 or tariffSwap17 or tariffSwap21 %}
+          {{false}}
+        {% elif currentMode == 'Float Solar Off' and avg_buy_Next >= 0.01 %}
+          {{false}}
+        {% elif currentMode == 'Charge Solar Off' and avg_buy_Next >= 0.01 %}
+          {{false}}
+        {% elif currentMode == 'Solar Soak' and avg_buy_Next >= 0.05  %}
+          {{false}}
+        {% elif currentMode == 'Charge' and ((overrideBuySOC > 0 and currentSOC
+        < overrideBuySOC) or (overrideBuySOC == 0 and avg_buy_Next >
+        highBuyPrice)) %}
+          {{false}}
+        {% elif currentMode == 'Discharge' and avg_fit_Next <= 0.05 %}
+          {{false}}
+        {% elif currentMode == 'Drain' %}
+          {{true}}
+        {% else %}
+          {{true}}
+        {% endif %}
+    alias: Hold the current mode
+  - variables:
+      curtail: '{{ currentSellPrice < 0 }}'
+      soak: '{{ currentBuyPrice < 0 }}'
+      solar_mode: |
+        {# Now just choose a mode #}
+        {% if gridStatus != 'On Grid' %}
+          Self Consume
+        {% else %}
+          {% if isEstimate == true %}
+             {% if holdMode == true %}
+                {{ currentMode }}
+             {% else %}
+                Self Consume
+             {% endif %}
+          {% elif soak == true %}
+            {% if soakCharge %}
+                Charge Solar Off
+            {% elif drainBatteryPlughole and sellDischarge and sellReason[2] == 'Drain' %}
+                Drain
+            {% else %}
+                Float Solar Off
+            {% endif %}
+          {% elif buyCharge %}
+               Charge
+          {% elif curtail != true and sellDischarge and sellReason[2] == 'Solar' %}
+               Float
+          {% elif sellDischarge and sellReason[2] == 'Solar -ve' %}
+               Float  
+          {% elif sellDischarge and sellReason[2] == 'Drain' %}
+               Drain
+          {% elif curtail != true and sellDischarge  %}
+               Discharge
+          
+          {% else %}
+               Self Consume
+          {% endif %}
+
+        {% endif %}
+      sellReason: >
+        {% if solar_mode == 'Discharge'%}
+          {{sellReason}}
+        {% elif solar_mode == 'Drain'%}
+          {{[true, sellReason[1], 'No, Draining']}}
+        {% elif solar_mode == 'Float' and sellReason[2] in ['Solar', 'Solar
+        -ve']%}
+           {{[true, sellReason[1], 'Solar Only']}}
+        {% else %}
+           {{[false, sellReason[1], sellReason[2]]}}
+        {% endif %} 
+      buyReason: |
+        {% if solar_mode == 'Charge'%}
+          {{buyReason}}
+        {% elif solar_mode == 'Charge Solar Off'  %}
+          {{[true, 9, 'Hooover']}}
+        {% elif solar_mode == 'Float Solar Off' %}
+          {{[true, 10, 'House Party']}}
+        {% else %}
+          {{[false, buyReason[1], buyReason[2]]}}
+        {% endif %} 
+                  
+    alias: Set mode
+  - variables:
+      prettyMessage: >
+        🕐 {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+
+
+        🔄 Mode: {{currentMode}} → {{solar_mode}} {% if buyReason[0]
+        %}({{buyReason[2]}}){% elif sellReason[0]%}({{sellReason[2]}}){%endif%}
+                        
+        💰 Prices: {% if isEstimate %} (Est){% endif %} {% if spikePrice1 <=
+        currentSellPrice %}💰{% endif %}{% if spikePrice2 <= currentSellPrice
+        %}💰{% endif %}
+          Sell: ${% if overrideSellPrice > 0 %} {{ overrideSellPrice }} (Overriding ${{sellPrice | round(4)}}) {% else %} {{ sellPrice | round(4) }}{% endif %} (Current: ${{currentSellPrice}}) (Prorate: ${{defaultSellPrice}}/${{lowSellPrice}})
+          Buy: ${% if overrideBuyPrice > 0 %} {{ overrideBuyPrice }} (Overriding ${{buyPrice | round(4)}}) {% else %}{{buyPrice | round(4)}} {% endif %}(Current: ${{currentBuyPrice}}) (Prorate: ${{defaultBuyPrice}}/${{highBuyPrice}})
+          {% if todaysImportCostCentsPerKwh > 0 %}🔒 Min Sell: ${{todaysImportCostCentsPerKwh}} until buy is recovered{% endif %}
+
+          
+        🔋 Battery: {{currentSOC}}% ({{currentSOCkwh | round(1)}} kWh)
+
+
+        📊 SOC Limits:{% if highConsumption %} (On High Curve!){% endif %} 
+          Sell Above: {% if overrideSellSOC > 0  %} {{ overrideSellSOC}}% (Overriding {{minSOCForSell}}%) {% else %} {{minSOCForSell}}% {% endif %} {% if sellSOCProrate %} (Prorate: {{ minSOCForSellA}}%/{{ minSOCForSellB}}%) {% endif %}
+          Buy Below: {% if overrideBuySOC > 0  %} {{ overrideBuySOC}}% (Overriding {{minSOCForBuy}}%) {% else %} {{minSOCForBuy}}% {% endif %} {% if buySOCProrate %} (Prorate: {{ minSOCForBuyA}}%/{{ minSOCForBuyB}}%)  {% endif %}
+
+        ☀️ Solar:{% if pvRemainingNotGood and tariffImportSolarSponge %} (Bad!
+        ⛅){% endif %}
+          Remaining (10%): {{pvRemaining10kwh}} kWh
+
+        ⚡ Actions:
+          Curtail: {{curtail}}
+          Soak: {{soak}}
+          Sell Discharge: {{sellDischarge}}
+          Buy Charge: {{buyCharge}}
+          Soak Charge: {{soakCharge}}
+          Hold Mode: {{holdMode}}
+
+        📈 Sell Forecasts:
+          Next Sell: ${{avg_fit_Next}}{% if sellRule and sellRule.isActive %}
+          
+          Sell rule is Active and looking ahead {{sellRule.hours_ahead}} hrs
+          Best Avg Sell is: ${{sellRuleResult}} for the Window
+          Rule : Offset {{sellRule.offset}}c/kwh, Rounding {{sellRule.roundtype}} {{sellRule.roundTo}}
+          Grouping {{sellRule.grouping_minutes}} minutes, Low sell {{sellRule.allowLastChance}}
+
+          {% for i in range(0, sellRuleAvgsDetail  | length) %}
+          {{sellRuleAvgsDetail[i].start}} To {{sellRuleAvgsDetail[i].end}} Avg {{sellRuleAvgsDetail[i].avg }} c/kwh{% endfor %}
+            
+          {% endif %}
+          
+         
+          
+        📉 Buy Forecasts:
+          Next Buy: ${{avg_buy_Next}}{% if buyRule and buyRule.isActive %}
+
+          Buy rule is Active and looking ahead {{buyRule.hours_ahead}} hrs
+          Best Avg Buy is: ${{buyRuleResult}} for the Window
+          Rule : Offset {{buyRule.offset}}c/kwh, Rounding {{buyRule.roundtype}} {{buyRule.roundTo}}
+          Grouping {{buyRule.grouping_minutes}} minutes
+
+          {% for i in range(0, buyRuleAvgsDetail  | length) %}
+          {{buyRuleAvgsDetail[i].start}} To {{buyRuleAvgsDetail[i].end}} Avg {{buyRuleAvgsDetail[i].avg }} c/kwh{% endfor %}
+                         
+          {% endif %}
+         
+        ℹ️ Version: {{version}}
+
+        ℹ️ Debug 
+
+        Today Cost: ${{todayCost | round(2)}}
+
+        Protected Sell: {{todaysImportCostCentsPerKwh}}c/kwh
+
+        Tracking Sell:
+        ${{state_attr('sensor.solarsystemcontrolselltotal','trackingA_Cost') |
+        float(0) }} for
+        {{state_attr('sensor.solarsystemcontrolselltotal','trackingA_kwh') |
+        float(0) }}kwh. 
+
+        Tracking Buy:
+        ${{state_attr('sensor.solarsystemcontrolbuytotal','trackingA_Cost') |
+        float(0) }} for
+        {{state_attr('sensor.solarsystemcontrolbuytotal','trackingA_kwh') |
+        float(0) }}kwh} 
+    alias: Debug Message
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ logtolog }}'
+        sequence:
+          - event: SolarSystemControlDebugLog
+            event_data:
+              message: '{{ prettyMessage }}'
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ logtonotification }}'
+        sequence:
+          - action: persistent_notification.create
+            data:
+              notification_id: solar_system_control
+              title: ☀️ Solar System Control
+              message: |
+                {{ prettyMessage }}
+  - target:
+      entity_id: input_select.solarsystemcontrolmode
+    data:
+      option: '{{ solar_mode }}'
+    action: input_select.select_option
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ curtail }}'
+        sequence:
+          - target:
+              entity_id: input_boolean.SolarSystemControlNoExport
+            action: input_boolean.turn_on
+      - conditions:
+          - condition: template
+            value_template: '{{ not curtail }}'
+        sequence:
+          - target:
+              entity_id: input_boolean.SolarSystemControlNoExport
+            action: input_boolean.turn_off
+  - event: solarsystemcontrolrunupdate
+    event_data:
+      action: ScriptRun
+      lastRunAt: '{{now().isoformat()}}'
+      sellPrice: '{{sellPrice}}'
+      sellPricePreferred: '{{defaultSellPrice}}'
+      sellPriceLow: '{{lowSellPrice}}'
+      sellPriceRule: '{{sellRuleResult}}'
+      sellPriceCalc: '{{sellPriceCalc}}'
+      sellPriceForecast: '{{sellRuleAvgsDetail}}'
+      sellAbove: '{{minSOCForSell}}'
+      sellAboveA: '{{minSOCForSellA}}'
+      sellAboveB: '{{minSOCForSellB}}'
+      sellReason: '{{sellReason}}'
+      buyPrice: '{{buyPrice}}'
+      buyPricePreferred: '{{defaultBuyPrice}}'
+      buyPriceHigh: '{{highBuyPrice}}'
+      buyPriceRule: '{{buyRuleResult}}'
+      buyPriceCalc: '{{buyPriceCalc}}'
+      buyPriceForecast: '{{buyRuleAvgsDetail}}'
+      buyBelow: '{{minSOCForBuy}}'
+      buyBelowA: '{{minSOCForBuyA}}'
+      buyBelowB: '{{minSOCForBuyB}}'
+      sellPriceOverride: '{{overrideSellPrice}}'
+      sellAboveOverride: '{{overrideSellSOC}}'
+      sellPriceSolar: '{{solarSellPrice}}'
+      sellAboveSolar: '{{solarSellSOC}}'
+      sellPriceProtect: '{{todaysImportCostCentsPerKwh}}'
+      buyPriceOverride: '{{overrideBuyPrice}}'
+      buyBelowOverride: '{{overrideBuySOC}}'
+      buyPriceAnytime: '{{buyAnytimePrice}}'
+      buyBelowAnytime: '{{buyAnytimeSOCBelow}}'
+      drainBatteryPrice: '{{drainBatteryPrice}}'
+      drainBatterySOC: '{{drainBatterySOC}}'
+      drainBatteryPlughole: '{{drainBatteryPlughole}}'
+      buyReason: '{{buyReason}}'
+      needy: '{{highConsumption}}'
+      needSun: '{{needSun}}'
+      needPower: '{{needPower}}'
+alias: SolarSystemControl
+description: ''

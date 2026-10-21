@@ -47,9 +47,9 @@ async def test_switch_and_install(hass: HomeAssistant) -> None:
     assert hass.states.get(SW).state == "on"
     adir = Path(hass.config.path("blueprints/automation/battman"))
     sdir = Path(hass.config.path("blueprints/script/battman"))
-    assert sorted(p.name for p in adir.glob("*.yaml")) == [
-        "battman_live_activity_follow.yaml", "battman_live_activity_on_off.yaml", "battman_live_activity_updates.yaml"]
-    assert [p.name for p in sdir.glob("*.yaml")] == ["battman_live_activity_push.yaml"]
+    assert {"battman_live_activity_follow.yaml", "battman_live_activity_on_off.yaml",
+            "battman_live_activity_updates.yaml"} <= {p.name for p in adir.glob("*.yaml")}
+    assert "battman_live_activity_push.yaml" in {p.name for p in sdir.glob("*.yaml")}
     (adir / "old_one.yaml").write_text("x: 1\n")
     from custom_components.battman import blueprint_install
     await blueprint_install.async_install(hass)

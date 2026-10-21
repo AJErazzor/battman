@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+pytestmark = pytest.mark.usefixtures("smiggles_installed")
+
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
 SELL, BUY, PAR = ("sensor.solarsystemcontrolselltotal", "sensor.solarsystemcontrolbuytotal",

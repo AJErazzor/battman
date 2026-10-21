@@ -19,6 +19,8 @@ from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+pytestmark = pytest.mark.usefixtures("smiggles_installed")
+
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
 CARDS = Path(__file__).parents[1] / "custom_components/battman/cards"

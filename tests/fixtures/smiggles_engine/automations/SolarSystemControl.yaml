@@ -1,0 +1,17 @@
+alias: SolarSystemControl
+description: Main Script Activator (version 1.0.6)
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.solarsystemcontrolestimatedprice
+  - trigger: state
+    entity_id:
+      - sensor.solarsystemcontrolparameters
+conditions:
+  - condition: state
+    entity_id: input_boolean.solarsystemcontrolenable
+    state:
+      - "on"
+actions:
+  - action: script.solarsystemcontrol
+mode: single

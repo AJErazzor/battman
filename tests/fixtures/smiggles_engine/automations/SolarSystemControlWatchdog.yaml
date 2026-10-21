@@ -1,0 +1,287 @@
+alias: SolarSystemControlWatchdog
+description: >-
+  Monitors SolarSystemControl and takes corrective action based on enable state
+  (version 1.0.27)
+triggers:
+  - trigger: time_pattern
+    minutes: /1
+  - trigger: event
+    event_type: timer.started
+    event_data:
+      entity_id: timer.solarsystemoverridetimer
+    id: Timer Started
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.solarsystemoverridetimer
+    id: Timer Finished
+  - trigger: event
+    event_type: timer.cancelled
+    event_data:
+      entity_id: timer.solarsystemoverridetimer
+    id: Timer Cancelled
+conditions:
+  - condition: state
+    entity_id: input_boolean.solarsystemcontrolenable
+    state:
+      - 'on'
+actions:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: input_boolean.solarsystemcontrolenable
+            state: 'on'
+          - condition: template
+            value_template: >
+              {% set limit=state_attr('sensor.solarsystemcontrolparameters',
+              'watchdogScriptNotRunLimit') | float(10)  %}  {% set last =
+              state_attr('sensor.solarsystemcontrolrun', 'lastRunAt') |
+              as_datetime %}   {% if (as_timestamp(now())-as_timestamp(last)) >
+              (60 * limit) %}
+                true
+              {% else %}
+                false
+              {% endif %}
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.solarsystemcontrolmode
+            data:
+              option: Self Consume
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.solarsystemcontrolnoexport
+          - action: logbook.log
+            data:
+              name: SolarSystemControl
+              entity_id: input_select.solarsystemcontrolmode
+              message: >
+                [WATCHDOG] Script not run for > configured minutes — forcing
+                Self Consume
+          - action: persistent_notification.create
+            data:
+              title: Solar System Control Watchdog
+              message: Script not run for configured minutes
+              notification_id: solarsystemcontrol_watchdog1
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: input_boolean.solarsystemcontrolenable
+            state: 'off'
+          - condition: template
+            value_template: >
+              {% set limit=state_attr('sensor.solarsystemcontrolparameters',
+              'watchdogScriptNotRunLimit') | float(60)  %}  {% set last =
+              state_attr('sensor.solarsystemcontrolrun', 'lastRunAt') |
+              as_datetime %}   {% if (as_timestamp(now())-as_timestamp(last)) >
+              (60 * limit) %}
+                true
+              {% else %}
+                false
+              {% endif %}
+        sequence:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.solarsystemcontrolenable
+          - action: logbook.log
+            data:
+              name: SolarSystemControl
+              entity_id: input_select.solarsystemcontrolmode
+              message: >
+                [WATCHDOG] Script turned off > configured minutes — turning back
+                on
+          - action: persistent_notification.create
+            data:
+              title: Solar System Control Watchdog
+              message: Script turned off for configured minutes
+              notification_id: solarsystemcontrol_watchdog2
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: |
+              {{ resetSomething  }}
+        sequence:
+          - event: solarsystemcontrolparametersupdate
+            event_data:
+              action: SetAttribute
+              netTargetBuyPrice: >
+                {{ 0 if netTargetBuyReset or netTargetReset else
+                netTargetBuyPrice }}
+              netTargetBuyMet: >
+                {{netTargetBuyMetNew if netTargetBuyReset and not midnightTime
+                else netTargetBuyMet}}
+              netTargetSellPrice: >
+                {{ 0 if netTargetSellReset or netTargetReset else
+                netTargetSellPrice }}
+              netTargetSellMet: >
+                {{netTargetSellMetNew if netTargetSellReset and not midnightTime
+                else netTargetSellMet}}
+              sellOverridePrice: |
+                {{ 0 if sellOverrideReset else sellOverridePrice }}
+              sellOverrideSOC: |
+                {{ 0 if sellOverrideReset else sellOverrideSOC }}
+              sellSolarPrice: |
+                {{ 0 if sellSolarReset else sellSolarPrice }}
+              sellSolarSOC: |
+                {{ 0 if sellSolarReset else sellSolarSOC }}
+              buyOverridePrice: |
+                {{ 0 if buyOverrideReset else buyOverridePrice }}
+              buyOverrideSOC: |
+                {{ 0 if buyOverrideReset else buyOverrideSOC }}
+              buyAnytimePrice: |
+                {{ 0 if buyAnytimeReset else buyAnytimePrice }}
+              buyAnytimeSOC: |
+                {{ 0 if buyAnytimeReset else buyAnytimeSOC }}
+              drainBatteryPrice: |
+                {{ 0 if drainBatteryReset else drainBatteryPrice }}
+              drainBatterySOC: |
+                {{ 0 if drainBatteryReset else drainBatterySOC }}
+              drainBatteryPlughole: |
+                {{ 0 if drainBatteryReset else drainBatteryPlughole }}
+            alias: Clear Overrides based on Something
+          - action: logbook.log
+            data:
+              name: SolarSystemControl
+              message: Clear Overrides based on Something
+variables:
+  buySensor: sensor.solarsystemcontrolbuytotal
+  sellSensor: sensor.solarsystemcontrolselltotal
+  parametersSensor: sensor.solarsystemcontrolparameters
+  lastRunSensor: sensor.solarsystemcontrolrun
+  batterySOCSensor: sensor.sigen_plant_battery_state_of_charge
+  fitSensor: sensor.amber_5min_current_feed_in_price
+  enable: input_boolean.solarsystemcontrolenable
+  noexport: input_boolean.solarsystemcontrolnoexport
+  mode: input_select.solarsystemcontrolmode
+  overrideTimer: timer.solarsystemoverridetimer
+  timerFinishedOrCancelled: |
+    {{ trigger.id in ['Timer Finished', 'Timer Cancelled'] }}
+  timerActive: |
+    {{  states(overrideTimer) == 'active'  }}
+  batterySOC: |
+    {{ states(batterySOCSensor) | float(0) }}
+  watchdogScriptNotRunLimit: |
+    {{state_attr(parametersSensor,'watchdogScriptNotRunLimit') | float(10)}}
+  watchdogScriptDisabledLimit: |
+    {{state_attr(parametersSensor,'watchdogScriptDisabledLimit') | float(60)}}
+  watchdogResetOverridesAt: |
+    {{state_attr(parametersSensor,'watchdogResetOverridesAt') | as_datetime}}
+  lastRunAt: |
+    {{state_attr(lastRunSensor, 'lastRunAt') | as_datetime}}
+  sellOverridePrice: |
+    {{state_attr(parametersSensor,'sellOverridePrice') | float(0)}}
+  sellOverrideSOC: |
+    {{state_attr(parametersSensor,'sellOverrideSOC') | float(0)}}
+  sellOverrideAllowReset: |
+    {{state_attr(parametersSensor,'sellOverrideAllowReset') | bool}}
+  sellSolarPrice: |
+    {{state_attr(parametersSensor,'sellSolarPrice') | float(0)}}
+  sellSolarSOC: |
+    {{state_attr(parametersSensor,'sellSolarSOC') | float(0)}}
+  sellSolarAllowReset: |
+    {{state_attr(parametersSensor,'sellSolarAllowReset') | bool}}
+  buyOverridePrice: |
+    {{state_attr(parametersSensor,'buyOverridePrice') | float(0)}}
+  buyOverrideSOC: |
+    {{state_attr(parametersSensor,'buyOverrideSOC') | float(0)}}
+  buyOverrideAllowReset: |
+    {{state_attr(parametersSensor,'buyOverrideAllowReset') | bool}}
+  buyAnytimePrice: |
+    {{state_attr(parametersSensor,'buyAnytimePrice') | float(0)}}
+  buyAnytimeSOC: |
+    {{state_attr(parametersSensor,'buyAnytimeSOC') | float(0)}}
+  buyAnytimeAllowReset: |
+    {{state_attr(parametersSensor,'buyAnytimeAllowReset') | bool}}
+  drainBatteryPrice: |
+    {{state_attr(parametersSensor,'drainBatteryPrice') | float(0)}}
+  drainBatterySOC: |
+    {{state_attr(parametersSensor,'drainBatterySOC') | float(0)}}
+  drainBatteryAllowReset: |
+    {{state_attr(parametersSensor,'drainBatteryAllowReset') | bool}} 
+  drainBatteryPlughole: |
+    {{state_attr(parametersSensor,'drainBatteryPlughole') | bool}} 
+  currentBuy: |
+    {{state_attr(buySensor,'day') | float(0)}}
+  currentSell: |
+    {{state_attr(sellSensor,'day') | float(0)}}
+  currentFee: |
+    {{state_attr(parametersSensor,'dailyNetworkCharge') | float(0)}}
+  currentNet: |
+    {{currentSell - currentBuy - currentFee }}  
+  netTargetBuyPrice: |
+    {{state_attr(parametersSensor,'netTargetBuyPrice') | float(0)}}
+  netTargetSellPrice: |
+    {{state_attr(parametersSensor,'netTargetSellPrice') | float(0)}}
+  netTargetBuyMet: |
+    {{state_attr(parametersSensor,'netTargetBuyMet')}}
+  netTargetSellMet: |
+    {{state_attr(parametersSensor,'netTargetSellMet') }}
+  netTargetBuyMetNew: |
+    {{ now().isoformat() }}|{{ netTargetBuyPrice }}
+  netTargetSellMetNew: |
+    {{ now().isoformat() }}|{{ netTargetSellPrice }}
+  scriptNotRun: >
+    {{(as_timestamp(now())-as_timestamp(lastRunAt)) > (60 *
+    watchdogScriptNotRunLimit)}}
+  scriptDisabled: >
+    {{(as_timestamp(now())-as_timestamp(lastRunAt)) > (60 *
+    watchdogScriptDisabledLimit)}}
+  dailyResetTime: >
+    {{watchdogResetOverridesAt is not none and (now().strftime('%H:%M') ==
+    (watchdogResetOverridesAt | as_datetime).strftime('%H:%M')) }}
+  midnightTime: |
+    {{ now().strftime('%H:%M') == '00:00' }}  
+  netTargetReset: >
+    {{(timerFinishedOrCancelled or midnightTime or (dailyResetTime and not
+    timerActive)) and (netTargetSellPrice != 0 or netTargetBuyPrice != 0)}}
+  netTargetBuyReset: |
+    {{netTargetBuyPrice != 0 and currentNet < netTargetBuyPrice }}
+  netTargetSellReset: |
+    {{netTargetSellPrice != 0 and currentNet > netTargetSellPrice }}
+  noSell: |
+    {{ sellOverridePrice == 0 and sellOverrideSOC == 100 }}
+  sellOverrideOn: |
+    {{ sellOverridePrice > 0 or sellOverrideSOC > 0 }}
+  sellOverrideSocMet: >
+    {{ sellOverrideOn and sellOverrideSOC > 0 and batterySOC <= sellOverrideSOC
+    }}  
+  sellOverrideReset: >
+    {{ not noSell and sellOverrideAllowReset and (timerFinishedOrCancelled or
+    netTargetSellReset or (not timerActive and (sellOverrideSocMet or
+    dailyResetTime ))) }}
+  sellSolarOn: |
+    {{ sellSolarPrice > 0 or sellSolarSOC > 0 }}
+  sellSolarSocMet: |
+    {{ sellSolarOn and sellSolarSOC > 0 and batterySOC <= sellSolarSOC }}  
+  sellSolarReset: >
+    {{ sellSolarAllowReset and (timerFinishedOrCancelled or netTargetSellReset
+    or (not timerActive and (sellSolarSocMet or dailyResetTime ))) }}
+  drainBatteryOn: |
+    {{ drainBatteryPrice > 0 or drainBatterySOC > 0 }}
+  drainBatterySocMet: >
+    {{ drainBatteryOn and drainBatterySOC > 0 and batterySOC <= drainBatterySOC
+    }}  
+  drainBatteryReset: >
+    {{ drainBatteryAllowReset and (timerFinishedOrCancelled or
+    netTargetSellReset or (not timerActive and (drainBatterySocMet or
+    dailyResetTime ))) }}
+  buyOverrideOn: |
+    {{ buyOverridePrice > 0 or buyOverrideSOC > 0 }}
+  buyOverrideSocMet: >
+    {{ buyOverrideOn and buyOverrideSOC > 0 and batterySOC >= buyOverrideSOC
+    }}  
+  buyOverrideReset: >
+    {{ buyOverrideAllowReset and (timerFinishedOrCancelled or netTargetBuyReset
+    or (not timerActive and (buyOverrideSocMet or dailyResetTime ))) }}
+  buyAnytimeOn: |
+    {{ buyAnytimePrice > 0 or buyAnytimeSOC > 0 }}
+  buyAnytimeSocMet: |
+    {{ buyAnytimeOn and buyAnytimeSOC > 0 and batterySOC >= buyAnytimeSOC }}  
+  buyAnytimeReset: >
+    {{ buyAnytimeAllowReset and (timerFinishedOrCancelled or netTargetBuyReset
+    or (not timerActive and (buyAnytimeSocMet or dailyResetTime ))) }}
+  resetSomething: >
+    {{netTargetReset or netTargetSellReset or netTargetBuyReset or
+    sellOverrideReset or sellSolarReset or drainBatteryReset or buyOverrideReset
+    or buyAnytimeReset}}
+mode: single

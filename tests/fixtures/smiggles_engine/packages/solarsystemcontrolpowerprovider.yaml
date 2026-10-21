@@ -1,0 +1,317 @@
+################################
+# version: 1.0.5
+################################
+
+template:
+  
+  - trigger:
+      - platform: event
+        event_type: solarsystemcontrolpowerproviderupdate
+
+      - platform: state
+        entity_id: binary_sensor.solarsystemcontrolestimatedprice
+
+
+    sensor:
+      - name: "SolarSystemControlPowerProviderBuy"
+        unique_id: solarsystemcontrolpowerproviderbuy
+        
+        ##################################################################
+        # State Active true false
+        ##################################################################
+        state: >
+          {% if this.attributes.provider == 'Amber' %}
+             {{ states('sensor.amber_5min_current_general_price') | float }}
+          {% elif this.attributes.provider == 'Retail' %}
+            {% set hour = now().hour %}
+            {% set tariff = this.attributes.get('tariff') %}
+            {% if tariff[hour].limit > 0 %}
+                {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+                {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
+                {% set thisPeriod = (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) | float(0) %}
+                {% if tariff[hour].limit >= thisPeriod   %}
+                    {{ tariff[hour].priceBonus | float }}
+                {% else %}
+                    {{ tariff[hour].priceNormal | float }}
+                {% endif %}        
+            {% else %}
+              {{ tariff[hour].priceNormal | float }}
+            {% endif %}
+          {% else %}
+            {{ 1.00  | float  }}
+          {% endif %} 
+          
+        attributes:
+        
+          provider: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetValue'
+               and trigger.event.data.provider is defined %}
+            {{ trigger.event.data.provider  }}
+            {% elif this.attributes.provider is defined %}
+              {{ this.attributes.provider }}
+            {% else %}
+              {{ Amber }}
+            {% endif %}
+            
+          selectedHour: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'selectedHour' %}
+              {{ trigger.event.data.value | int }}
+            {% else %}
+              {{ this.attributes.selectedHour
+                 if this.attributes.selectedHour is defined
+                 else now().hour }}
+            {% endif %}
+
+        
+          tariff: >
+              
+              {# --- build default safely --- #}
+              
+              {% set ns = namespace(default=[]) %}
+              {% for i in range(24) %}
+                {% set ns.default = ns.default + [ {
+                  'hour': i,
+                  'priceNormal': 0.0,
+                  'priceBonus': 0.0,
+                  'limit': 0.0
+                } ] %}
+                {% endfor %}
+
+            
+              {% set current = this.attributes.get('tariff', ns.default) %}
+            
+              {# --- handle update event --- #}
+              {% if trigger is defined 
+                    and trigger.platform == 'event'
+                    and trigger.event.data.hour is defined
+                    and trigger.event.data.hour >= 0
+                    and trigger.event.data.hour < 24
+                    and trigger.event.data.attribute is defined 
+                    and trigger.event.data.attribute == 'tariffBuy'
+                    and trigger.event.data.item is defined 
+                    %}
+            
+                {% set hour = trigger.event.data.hour %}
+                {% set attr = trigger.event.data.attribute %}
+                {% set item = trigger.event.data.item %}
+                {% set value = trigger.event.data.value %}
+                
+                {% set typed_value = value | float if item in ['priceNormal','priceBonus','limit']
+                    else value
+                %}
+
+            
+                {% set ns2 = namespace(updated=[]) %}
+            
+                {% for i in range(24) %}
+                  {% if i == hour %}
+                    
+                    {% set r = current[i] %}
+                    
+                    {% set newTariff = {'hour': i,
+                      'priceNormal': typed_value if item == 'priceNormal' else r.priceNormal,
+                      'priceBonus': typed_value if item == 'priceBonus' else r.priceBonus,
+                      'limit': typed_value if item == 'limit' else r.limit
+                    } %}
+                    
+                    {% set ns2.updated = ns2.updated + [newTariff] %}
+                    
+                  {% else %}
+                    {% set ns2.updated = ns2.updated + [current[i]] %}
+                  {% endif %}
+                {% endfor %}
+            
+                {{ ns2.updated }}
+            
+              {% else %}
+                {{ current }}
+              {% endif %}
+              
+         
+
+            
+          ##################################################################
+          # Last energy reading
+          ##################################################################
+          lastEnergy: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('lastEnergy', 0) | float(0) }}
+            {% else %}
+              {{ states('sensor.sigen_plant_total_imported_energy') | float(0) }}
+            {% endif %}   
+            
+          ##################################################################
+          # This energy period
+          ##################################################################
+          thisEnergyPeriod: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('thisEnergyPeriod', 0) | float(0) }}
+            {% else %}
+                {% set hour = now().hour %}
+                {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
+                {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
+                {% set tariff = this.attributes.get('tariff') %}
+                {% if tariff[hour].limit > 0   %}
+                    {{ (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) }}
+                {% else %}
+                  {{ 0.0 | float }}
+                {% endif %}
+            {% endif %}   
+            
+         
+            
+         
+    
+      - name: "SolarSystemControlPowerProviderSell"
+        unique_id: solarsystemcontrolpowerprovidersell
+        
+        ##################################################################
+        # State Active true false
+        ##################################################################
+        state: >
+          {% if this.attributes.provider == 'Amber' %}
+             {{ states('sensor.amber_5min_current_feed_in_price') | float }}
+          {% elif this.attributes.provider == 'Retail' %}
+            {% set hour = now().hour %}
+            {% set tariff = this.attributes.get('tariff') %}
+            {% if tariff[hour].limit > 0 %}
+                {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+                {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
+                {% set thisPeriod = (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) | float(0) %}
+                {% if tariff[hour].limit >= thisPeriod   %}
+                    {{ tariff[hour].priceBonus | float }}
+                {% else %}
+                    {{ tariff[hour].priceNormal | float }}
+                {% endif %}        
+            {% else %}
+              {{ tariff[hour].priceNormal | float }}
+            {% endif %}
+          {% else %}
+            {{ 0.00  | float  }}
+          {% endif %} 
+          
+        attributes:
+        
+          provider: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetValue'
+               and trigger.event.data.provider is defined %}
+            {{ trigger.event.data.provider  }}
+            {% elif this.attributes.provider is defined %}
+              {{ this.attributes.provider }}
+            {% else %}
+              {{ Amber }}
+            {% endif %}
+        
+          selectedHour: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'selectedHour' %}
+              {{ trigger.event.data.value | int }}
+            {% else %}
+              {{ this.attributes.selectedHour
+                 if this.attributes.selectedHour is defined
+                 else now().hour }}
+            {% endif %}
+
+        
+          tariff: >
+              
+              {# --- build default safely --- #}
+              
+              {% set ns = namespace(default=[]) %}
+              {% for i in range(24) %}
+                {% set ns.default = ns.default + [ {
+                  'hour': i,
+                  'priceNormal': 0.0,
+                  'priceBonus': 0.0,
+                  'limit': 0.0
+                } ] %}
+                {% endfor %}
+
+            
+              {% set current = this.attributes.get('tariff', ns.default) %}
+            
+              {# --- handle update event --- #}
+              {% if trigger is defined 
+                    and trigger.platform == 'event'
+                    and trigger.event.data.hour is defined
+                    and trigger.event.data.hour >= 0
+                    and trigger.event.data.hour < 24
+                    and trigger.event.data.attribute is defined 
+                    and trigger.event.data.attribute == 'tariffSell'
+                    and trigger.event.data.item is defined 
+                    %}
+            
+                {% set hour = trigger.event.data.hour %}
+                {% set attr = trigger.event.data.attribute %}
+                {% set item = trigger.event.data.item %}
+                {% set value = trigger.event.data.value %}
+                
+                {% set typed_value = value | float if item in ['priceNormal','priceBonus','limit']
+                    else value
+                %}
+
+            
+                {% set ns2 = namespace(updated=[]) %}
+            
+                {% for i in range(24) %}
+                  {% if i == hour %}
+                    
+                    {% set r = current[i] %}
+                    
+                    {% set newTariff = {'hour': i,
+                      'priceNormal': typed_value if item == 'priceNormal' else r.priceNormal,
+                      'priceBonus': typed_value if item == 'priceBonus' else r.priceBonus,
+                      'limit': typed_value if item == 'limit' else r.limit
+                    } %}
+                    
+                    {% set ns2.updated = ns2.updated + [newTariff] %}
+                    
+                  {% else %}
+                    {% set ns2.updated = ns2.updated + [current[i]] %}
+                  {% endif %}
+                {% endfor %}
+            
+                {{ ns2.updated }}
+            
+              {% else %}
+                {{ current }}
+              {% endif %}
+        
+          ##################################################################
+          # Last energy reading
+          ##################################################################
+          lastEnergy: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('lastEnergy', 0) | float(0) }}
+            {% else %}
+              {{ states('sensor.sigen_plant_total_exported_energy') | float(0) }}
+            {% endif %}   
+            
+            
+          ##################################################################
+          # This energy period
+          ##################################################################
+          thisEnergyPeriod: >
+            {% if trigger is defined and trigger.platform == 'event' %}
+              {{ this.attributes.get('thisEnergyPeriod', 0) | float(0) }}
+            {% else %}
+                {% set hour = now().hour %}
+                {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
+                {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
+                {% set tariff = this.attributes.get('tariff') %}
+                {% if tariff[hour].limit > 0   %}
+                    {{ (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) }}
+                {% else %}
+                  {{ 0.0 | float }}
+                {% endif %}
+            {% endif %}   
+            
+            
+       

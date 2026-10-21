@@ -1,0 +1,463 @@
+# Battman engine: ported like for like from Smiggles (packages/solarsystemcontrolrun.yaml v1.0.15).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+template:
+  
+  - trigger:
+      - platform: event
+        event_type: battman_run_update
+
+    condition:
+      - condition: state
+        entity_id: binary_sensor.battman_in_charge
+        state: "on"
+    sensor:
+      - name: "Battman run"
+        unique_id: battman_run
+        
+        ##################################################################
+        # State Active true false
+        ##################################################################
+        state: >
+          {% set myState = false %}
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.action == 'SetState' %}
+            {% set myState = trigger.event.data.value | bool  %}
+          {% elif this.state not in ['unknown', 'unavailable', none] %}
+            {% set myState = this.state  | bool  %}
+          {% endif %} 
+          {{ myState }}
+          
+        attributes:
+        
+          lastRunAt: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.lastRunAt is defined %}
+            {{ (trigger.event.data.lastRunAt | as_datetime).isoformat() }}
+            {% elif this.attributes.lastRunAt is defined %}
+              {{ this.attributes.lastRunAt }}
+            {% else %}
+              {{ now().isoformat() }}
+            {% endif %}
+          
+          sellPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPrice is defined %}
+              {{ trigger.event.data.sellPrice | float }}
+            {% else %}
+              {{ this.attributes.sellPrice
+                 if this.attributes.sellPrice is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          sellPricePreferred: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPricePreferred is defined %}
+              {{ trigger.event.data.sellPricePreferred | float }}
+            {% else %}
+              {{ this.attributes.sellPricePreferred
+                 if this.attributes.sellPricePreferred is defined
+                 else 0.00 }}
+            {% endif %}  
+            
+          sellPriceLow: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceLow is defined %}
+              {{ trigger.event.data.sellPriceLow | float }}
+            {% else %}
+              {{ this.attributes.sellPriceLow
+                 if this.attributes.sellPriceLow is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          sellPriceRule: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceRule is defined %}
+              {{ trigger.event.data.sellPriceRule | float }}
+            {% else %}
+              {{ this.attributes.sellPriceRule
+                 if this.attributes.sellPriceRule is defined
+                 else 0.00 }}
+            {% endif %}    
+            
+          sellPriceCalc: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceCalc is defined %}
+              {{ trigger.event.data.sellPriceCalc | float }}
+            {% else %}
+              {{ this.attributes.sellPriceCalc
+                 if this.attributes.sellPriceCalc is defined
+                 else 0.00 }}
+            {% endif %}  
+            
+          sellPriceForecast: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceForecast is defined %}
+              {{ trigger.event.data.sellPriceForecast  }}
+            {% else %}
+              {{ this.attributes.sellPriceForecast
+                 if this.attributes.sellPriceForecast is defined
+                 else [] }}
+            {% endif %}    
+            
+          sellAbove: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.sellAbove is defined %}
+              {{ trigger.event.data.sellAbove | int }}
+            {% else %}
+              {{ this.attributes.sellAbove
+                 if this.attributes.sellAbove is defined
+                 else 100 }}
+            {% endif %}
+            
+          sellAboveA: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.sellAboveA is defined %}
+              {{ trigger.event.data.sellAboveA | int }}
+            {% else %}
+              {{ this.attributes.sellAboveA
+                 if this.attributes.sellAboveA is defined
+                 else 100 }}
+            {% endif %}    
+            
+          sellAboveB: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.sellAboveB is defined %}
+              {{ trigger.event.data.sellAboveB | int }}
+            {% else %}
+              {{ this.attributes.sellAboveB
+                 if this.attributes.sellAboveB is defined
+                 else 100 }}
+            {% endif %}
+            
+          buyPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyPrice is defined %}
+              {{ trigger.event.data.buyPrice | float }}
+            {% else %}
+              {{ this.attributes.buyPrice
+                 if this.attributes.buyPrice is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          buyPricePreferred: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyPricePreferred is defined %}
+              {{ trigger.event.data.buyPricePreferred | float }}
+            {% else %}
+              {{ this.attributes.buyPricePreferred
+                 if this.attributes.buyPricePreferred is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          buyPriceHigh: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyPriceHigh is defined %}
+              {{ trigger.event.data.buyPriceHigh | float }}
+            {% else %}
+              {{ this.attributes.buyPriceHigh
+                 if this.attributes.buyPriceHigh is defined
+                 else 0.00 }}
+            {% endif %}
+          
+          buyPriceRule: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.buyPriceRule is defined %}
+              {{ trigger.event.data.buyPriceRule | float }}
+            {% else %}
+              {{ this.attributes.buyPriceRule
+                 if this.attributes.buyPriceRule is defined
+                 else 0.00 }}
+            {% endif %}    
+            
+          buyPriceCalc: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.buyPriceCalc is defined %}
+              {{ trigger.event.data.buyPriceCalc | float }}
+            {% else %}
+              {{ this.attributes.buyPriceCalc
+                 if this.attributes.buyPriceCalc is defined
+                 else 0.00 }}
+            {% endif %}    
+            
+          buyPriceForecast: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.buyPriceForecast is defined %}
+              {{ trigger.event.data.buyPriceForecast  }}
+            {% else %}
+              {{ this.attributes.buyPriceForecast
+                 if this.attributes.buyPriceForecast is defined
+                 else [] }}
+            {% endif %}    
+            
+          buyBelow: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyBelow is defined %}
+              {{ trigger.event.data.buyBelow | int }}
+            {% else %}
+              {{ this.attributes.buyBelow
+                 if this.attributes.buyBelow is defined
+                 else 0 }}
+            {% endif %}
+            
+          buyBelowA: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyBelowA is defined %}
+              {{ trigger.event.data.buyBelowA | int }}
+            {% else %}
+              {{ this.attributes.buyBelowA
+                 if this.attributes.buyBelowA is defined
+                 else 0 }}
+            {% endif %}
+            
+          buyBelowB: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyBelowB is defined %}
+              {{ trigger.event.data.buyBelowB | int }}
+            {% else %}
+              {{ this.attributes.buyBelowB
+                 if this.attributes.buyBelowB is defined
+                 else 0 }}
+            {% endif %}
+            
+          sellPriceOverride: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceOverride is defined %}
+              {{ trigger.event.data.sellPriceOverride | float }}
+            {% else %}
+              {{ this.attributes.sellPriceOverride
+                 if this.attributes.sellPriceOverride is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          sellAboveOverride: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.sellAboveOverride is defined %}
+              {{ trigger.event.data.sellAboveOverride | int }}
+            {% else %}
+              {{ this.attributes.sellAboveOverride
+                 if this.attributes.sellAboveOverride is defined
+                 else 100 }}
+            {% endif %}
+            
+          sellPriceSolar: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceSolar is defined %}
+              {{ trigger.event.data.sellPriceSolar | float }}
+            {% else %}
+              {{ this.attributes.sellPriceSolar
+                 if this.attributes.sellPriceSolar is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          sellAboveSolar: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.sellAboveSolar is defined %}
+              {{ trigger.event.data.sellAboveSolar | int }}
+            {% else %}
+              {{ this.attributes.sellAboveSolar
+                 if this.attributes.sellAboveSolar is defined
+                 else 100 }}
+            {% endif %}
+            
+          sellPriceProtect: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun'
+               and trigger.event.data.sellPriceProtect is defined %}
+              {{ trigger.event.data.sellPriceProtect | float }}
+            {% else %}
+              {{ this.attributes.sellPriceProtect
+                 if this.attributes.sellPriceProtect is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          sellReason: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.sellReason is defined %}
+              {{ trigger.event.data.sellReason  }}
+            {% else %}
+              {{ this.attributes.sellReason
+                 if this.attributes.sellReason is defined
+                 else 0 }}
+            {% endif %}  
+            
+          buyPriceOverride: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyPriceOverride is defined %}
+              {{ trigger.event.data.buyPriceOverride | float }}
+            {% else %}
+              {{ this.attributes.buyPriceOverride
+                 if this.attributes.buyPriceOverride is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          buyBelowOverride: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyBelowOverride is defined %}
+              {{ trigger.event.data.buyBelowOverride | int }}
+            {% else %}
+              {{ this.attributes.buyBelowOverride
+                 if this.attributes.buyBelowOverride is defined
+                 else 0 }}
+            {% endif %}    
+            
+          buyPriceAnytime: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyPriceAnytime is defined %}
+              {{ trigger.event.data.buyPriceAnytime | float }}
+            {% else %}
+              {{ this.attributes.buyPriceAnytime
+                 if this.attributes.buyPriceAnytime is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          buyBelowAnytime: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyBelowAnytime is defined %}
+              {{ trigger.event.data.buyBelowAnytime | int }}
+            {% else %}
+              {{ this.attributes.buyBelowAnytime
+                 if this.attributes.buyBelowAnytime is defined
+                 else 0 }}
+            {% endif %}    
+            
+          buyReason: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.buyReason is defined %}
+              {{ trigger.event.data.buyReason  }}
+            {% else %}
+              {{ this.attributes.buyReason
+                 if this.attributes.buyReason is defined
+                 else 0 }}
+            {% endif %}    
+        
+          drainBatteryPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.drainBatteryPrice is defined %}
+              {{ trigger.event.data.drainBatteryPrice | float }}
+            {% else %}
+              {{ this.attributes.drainBatteryPrice
+                 if this.attributes.drainBatteryPrice is defined
+                 else 0.00 }}
+            {% endif %}
+            
+          drainBatterySOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.drainBatterySOC is defined %}
+              {{ trigger.event.data.drainBatterySOC | int }}
+            {% else %}
+              {{ this.attributes.drainBatterySOC
+                 if this.attributes.drainBatterySOC is defined
+                 else 0 }}
+            {% endif %}    
+            
+          drainBatteryPlughole: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.drainBatteryPlughole is defined %}
+              {{ trigger.event.data.drainBatteryPlughole | bool }}
+            {% else %}
+              {{ this.attributes.drainBatteryPlughole
+                 if this.attributes.drainBatteryPlughole is defined
+                 else false }}
+            {% endif %}
+          
+          needy: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.needy is defined %}
+              {{ trigger.event.data.needy | bool }}
+            {% else %}
+              {{ this.attributes.needy
+                 if this.attributes.needy is defined
+                 else false }}
+            {% endif %}
+            
+          needSun: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.needSun is defined %}
+              {{ trigger.event.data.needSun | bool }}
+            {% else %}
+              {{ this.attributes.needSun
+                 if this.attributes.needSun is defined
+                 else false }}
+            {% endif %}   
+            
+          needPower: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'ScriptRun' 
+               and trigger.event.data.needPower is defined %}
+              {{ trigger.event.data.needPower | bool }}
+            {% else %}
+              {{ this.attributes.needPower
+                 if this.attributes.needPower is defined
+                 else false }}
+            {% endif %}

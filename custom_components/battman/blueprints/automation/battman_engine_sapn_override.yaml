@@ -1,0 +1,39 @@
+# Battman engine: ported like for like from Smiggles (automations/SolarSystemControlSAPNOverride.yaml).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – SAPN override
+  description: Puts the export limit back to 0 if it's raised while curtailing. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+triggers:
+- trigger: numeric_state
+  entity_id:
+  - [[map:grid_export_limit]]
+  above: 0
+conditions:
+- condition: state
+  entity_id: binary_sensor.battman_in_charge
+  state: 'on'
+- condition: state
+  entity_id: input_boolean.battman_no_export
+  state:
+  - 'on'
+actions:
+- action: number.set_value
+  metadata: {}
+  data:
+    value: 0
+  target:
+    entity_id: [[map:grid_export_limit]]
+  alias: Set export limit to 0
+  enabled: true
+- action: persistent_notification.create
+  metadata: {}
+  data:
+    message: Curtail export active - SAPN Override
+    title: Curtail export active - SAPN Override
+  enabled: false
+mode: single

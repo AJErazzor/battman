@@ -8,12 +8,24 @@ from pathlib import Path
 from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from . import blueprint_install, cards, dashboard, dependencies, themes, update_check
+from . import (
+    blueprint_install,
+    cards,
+    dashboard,
+    dependencies,
+    engine,
+    engine_log,
+    migrate,
+    package_files,
+    themes,
+    update_check,
+)
 from .api import (
     BattmanCardsView,
     BattmanCardView,
@@ -30,13 +42,15 @@ from .services import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["button", "number", "select", "sensor", "switch", "text"]
+PLATFORMS: list[str] = ["binary_sensor", "button", "number", "select", "sensor", "switch", "text"]
 
 # Set in the config entry once the install-time dashboard has been made, so it
 # only ever happens once. After that, use the button or battman.create_dashboard.
 DASHBOARD_DONE = "dashboard_created_on_install"
 # Same idea for the Live Activity automations/script (button: Create Live Activity automations).
 LIVE_ACTIVITY_DONE = "live_activity_created_on_install"
+# And the engine automations/scripts (they do nothing until you migrate). Migrate makes any missing.
+ENGINE_DONE = "engine_created_on_install"
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -56,6 +70,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanThemeSaveView())
     hass.http.register_view(BattmanCardsView())
     hass.http.register_view(BattmanCardView())
+    hass.http.register_view(engine_log.BattmanLogView())
     # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
     # <battman-countdown>: the 5-minute Amber countdown some Battman cards show.
@@ -93,11 +108,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Battman's template sensors: packages/battman/*.yaml, written and reloaded once HA is up
+    package_files.async_start(hass, entry)
+    # the engine log file (engine.log): every battman_engine_log event is a line
+    entry.async_on_unload(engine_log.async_start(hass))
+    # while Battman is in charge, Smiggles' automations stay off
+    entry.async_on_unload(migrate.async_guard(hass, entry))
+
+    async def _map_changed(_hass: HomeAssistant, _entry: ConfigEntry) -> None:
+        # the engine blueprints carry map entries: rewrite them when the map changes
+        await blueprint_install.async_install(hass)
+
+    entry.async_on_unload(entry.add_update_listener(_map_changed))
+
     if not entry.data.get(LIVE_ACTIVITY_DONE):
         result = await async_create_live_activity_and_report(hass, notify=False)
         _LOGGER.info("Battman Live Activity: %s", result["message"])
         if not result["message"].startswith("Could not"):
             hass.config_entries.async_update_entry(entry, data={**entry.data, LIVE_ACTIVITY_DONE: True})
+
+    # the engine automations/scripts (written after Live Activity's: same files, one at a time)
+    if not entry.data.get(ENGINE_DONE):
+        try:
+            await engine.async_write_missing(hass)
+        except engine.EngineError as err:
+            _LOGGER.error("Battman engine: %s", err)
+        else:
+            async def _check(*_args) -> None:
+                try:
+                    await engine.async_reload_and_check(hass)
+                except engine.EngineError as err:
+                    _LOGGER.error("Battman engine: %s", err)
+                    return
+                hass.config_entries.async_update_entry(entry, data={**entry.data, ENGINE_DONE: True})
+
+            if hass.state is CoreState.running:
+                hass.async_create_task(_check())
+            else:
+                entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _check))
     return True
 
 

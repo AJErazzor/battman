@@ -1,0 +1,28 @@
+# Battman engine: ported like for like from Smiggles (automations/SolarSystemControl.yaml).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – main loop
+  description: Runs the Battman engine script when the price estimate or parameters change, while Battman enable is on. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+triggers:
+- trigger: state
+  entity_id:
+  - binary_sensor.battman_estimated_price
+- trigger: state
+  entity_id:
+  - sensor.battman_parameters
+conditions:
+- condition: state
+  entity_id: binary_sensor.battman_in_charge
+  state: 'on'
+- condition: state
+  entity_id: input_boolean.battman_enable
+  state:
+  - 'on'
+actions:
+- action: script.battman_engine
+mode: single

@@ -5,14 +5,18 @@
 
 Battman replaces these files on every update (files it no longer ships are
 removed), then reloads automations and scripts so ones made from them pick up
-the new version. Your own automations and scripts made from them are yours;
+the new version. [[map:name]] markers in them (the engine's Sigen / Amber / Solcast
+entities) are filled from the entity map, and they're rewritten when the map changes.
+Your own automations and scripts made from them are yours;
 Battman never edits those. If you want to change a blueprint itself, copy it to
 another folder first, or take control of the automation.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import re
 from pathlib import Path
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
@@ -22,14 +26,19 @@ _LOGGER = logging.getLogger(__name__)
 
 SRC = Path(__file__).parent / "blueprints"
 DOMAINS = ("automation", "script")
+MAP_MARK = re.compile(r"\[\[map:([a-z0-9_]+)\]\]")
 
 
 def dst_dir(hass: HomeAssistant, domain: str) -> Path:
     return Path(hass.config.path("blueprints", domain, "battman"))
 
 
-def install(hass_config_dirs: dict[str, Path]) -> list[str]:
-    """Copy shipped blueprints into each domain's battman folder. Returns the domains that changed."""
+def install(hass_config_dirs: dict[str, Path], emap: dict[str, str] | None = None) -> list[str]:
+    """Write shipped blueprints (map filled) into each domain's battman folder. Returns the domains that changed.
+
+    Raises KeyError naming an unknown map entry.
+    """
+    emap = emap or {}
     changed: list[str] = []
     for domain, dst in hass_config_dirs.items():
         shipped = {f.name: f for f in (SRC / domain).glob("*.yaml")}
@@ -37,7 +46,7 @@ def install(hass_config_dirs: dict[str, Path]) -> list[str]:
         did = False
         for name, src in shipped.items():
             target = dst / name
-            data = src.read_bytes()
+            data = MAP_MARK.sub(lambda m: emap[m.group(1)], src.read_text(encoding="utf-8")).encode("utf-8")
             if not target.exists() or target.read_bytes() != data:
                 target.write_bytes(data)
                 did = True
@@ -67,10 +76,19 @@ def remove_shipped(hass_config_dirs: dict[str, Path]) -> bool:
 
 
 async def async_install(hass: HomeAssistant) -> None:
+    """Install (one at a time, so an older map never overwrites a newer one)."""
+    lock = hass.data.setdefault("battman_blueprints_lock", asyncio.Lock())
+    async with lock:
+        await _install(hass)
+
+
+async def _install(hass: HomeAssistant) -> None:
+    from .api import entity_map  # noqa: PLC0415
+
     dirs = {d: dst_dir(hass, d) for d in DOMAINS}
     try:
-        changed = await hass.async_add_executor_job(install, dirs)
-    except OSError as err:
+        changed = await hass.async_add_executor_job(install, dirs, entity_map(hass))
+    except (OSError, KeyError) as err:
         _LOGGER.error("Could not install Battman blueprints: %s", err)
         return
     if not changed:

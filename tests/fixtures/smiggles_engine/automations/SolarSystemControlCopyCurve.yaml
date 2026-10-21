@@ -1,0 +1,68 @@
+alias: Smiggles - Copy This Month's Curves to Next Month
+description: >
+  Runs at 8pm on the last day of each month. Copies the current month's SOC and
+  price curve values into next month's slot so you never have to remember to set
+  them manually. Uses the same update events as the curve editors. Version 1.0.0
+triggers:
+  - at: "20:00:00"
+    trigger: time
+conditions:
+  - condition: template
+    value_template: |
+      {{ (now() + timedelta(days=1)).day == 1 }}
+    enabled: true
+actions:
+  - alias: Determine current and next month keys
+    variables:
+      current_month: >-
+        {{
+        ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][now().month
+        - 1] }}
+      next_month: >-
+        {{
+        ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][now().month
+        % 12] }}
+  - alias: Build new SOC curves
+    variables:
+      soc_all_curves: "{{ state_attr('sensor.solar_system_control_soc_curves', 'curves') }}"
+      current_soc: "{{ soc_all_curves[current_month] }}"
+      new_soc_curves: >
+        {% set ns = namespace(result={}) %} {% for m in
+        ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
+        %}
+          {% if m == next_month %}
+            {% set ns.result = dict(ns.result, **{m: current_soc}) %}
+          {% else %}
+            {% set ns.result = dict(ns.result, **{m: soc_all_curves[m]}) %}
+          {% endif %}
+        {% endfor %} {{ ns.result }}
+  - event: solar_system_control_soc_curves_update
+    event_data:
+      curves: "{{ new_soc_curves }}"
+  - delay:
+      seconds: 2
+  - alias: Build new price curves
+    variables:
+      price_all_curves: "{{ state_attr('sensor.solar_system_control_price_curves', 'curves') }}"
+      current_price: "{{ price_all_curves[current_month] }}"
+      new_price_curves: >
+        {% set ns = namespace(result={}) %} {% for m in
+        ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
+        %}
+          {% if m == next_month %}
+            {% set ns.result = dict(ns.result, **{m: current_price}) %}
+          {% else %}
+            {% set ns.result = dict(ns.result, **{m: price_all_curves[m]}) %}
+          {% endif %}
+        {% endfor %} {{ ns.result }}
+  - event: solar_system_control_price_curves_update
+    event_data:
+      curves: "{{ new_price_curves }}"
+  - data:
+      title: Smiggles Curves Updated
+      message: >
+        {{ current_month | upper }} curves copied to {{ next_month | upper }}.
+        Fine-tune in the curve editors before {{ next_month | capitalize }}
+        starts.
+    action: notify. Notify
+mode: single

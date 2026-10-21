@@ -1,0 +1,856 @@
+################################
+# version: 1.0.27  (2026-10-18: Add Drain Battery Plughole)
+# version: 1.0.26  (2026-10-03: armedScene string — scene to apply at 00:01, set by dock moon, cleared by ssc_apply_armed_scene)
+# version: 1.0.25  (2026-10-02: alwaysShowOverrideTimer 'show'/'hide' string (single attr); gates dock timer-row display template)
+# version: 1.0.24  (2026-10-02: alwaysShowOverrideTimer bool, default false — Settings toggle + dock timer-row visibility)
+# version: 1.0.23  (2026-10-01: per-override <prefix>Pinned flags, stored-directly, seeded from pinnedOverrides)
+################################
+
+template:
+  
+  - trigger:
+      - platform: event
+        event_type: solarsystemcontrolparametersupdate
+
+    sensor:
+      - name: "SolarSystemControlParameters"
+        unique_id: solarsystemcontrolparameters
+        
+        ##################################################################
+        # State Active true false
+        ##################################################################
+        state: >
+          {% set myState = false %}
+          {% if trigger is defined and trigger.platform == 'event' and trigger.event.data.action == 'SetState' %}
+            {% set myState = trigger.event.data.value | bool  %}
+          {% elif this.state not in ['unknown', 'unavailable', none] %}
+            {% set myState = this.state  | bool  %}
+          {% endif %} 
+          {{ myState }}
+          
+        attributes:
+
+          needyTriggerPVGap: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.needyTriggerPVGap is defined 
+               and trigger.event.data.needyTriggerPVGap | float >= -40
+               and trigger.event.data.needyTriggerPVGap | float <= 40 %}
+              {{ trigger.event.data.needyTriggerPVGap | float }}
+            {% else %}
+              {{ this.attributes.needyTriggerPVGap
+                 if this.attributes.needyTriggerPVGap is defined
+                 else 3 }}
+            {% endif %}
+            
+          needyTriggerConsumption: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.needyTriggerConsumption is defined 
+               and trigger.event.data.needyTriggerConsumption | float >= 0
+               and trigger.event.data.needyTriggerConsumption | float <= 20 %}
+              {{ trigger.event.data.needyTriggerConsumption | float }}
+            {% else %}
+              {{ this.attributes.needyTriggerConsumption
+                 if this.attributes.needyTriggerConsumption is defined
+                 else 3.5 }}
+            {% endif %}
+            
+          dailyNetworkCharge: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.dailyNetworkCharge is defined 
+               and trigger.event.data.dailyNetworkCharge | float >= 0
+               and trigger.event.data.dailyNetworkCharge | float <= 5 %}
+              {{ trigger.event.data.dailyNetworkCharge | float }}
+            {% else %}
+              {{ this.attributes.dailyNetworkCharge
+                 if this.attributes.dailyNetworkCharge is defined
+                 else 1.09 }}
+            {% endif %}
+
+          amberBuyAlertThreshold: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.amberBuyAlertThreshold is defined
+               and trigger.event.data.amberBuyAlertThreshold | float >= 0
+               and trigger.event.data.amberBuyAlertThreshold | float <= 99 %}
+              {{ trigger.event.data.amberBuyAlertThreshold | float }}
+            {% else %}
+              {{ this.attributes.amberBuyAlertThreshold
+                 if this.attributes.amberBuyAlertThreshold is defined
+                 else 8 }}
+            {% endif %}
+
+          alertNotifyTarget: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.alertNotifyTarget is defined %}
+              {{ trigger.event.data.alertNotifyTarget | string | trim }}
+            {% else %}
+              {{ this.attributes.alertNotifyTarget
+                 if this.attributes.alertNotifyTarget is defined
+                 else 'mobile_app_ajs_iphone_16' }}
+            {% endif %}
+
+          amberNegativeBuyAlert: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.amberNegativeBuyAlert is defined %}
+              {{ trigger.event.data.amberNegativeBuyAlert | bool }}
+            {% else %}
+              {{ this.attributes.amberNegativeBuyAlert
+                 if this.attributes.amberNegativeBuyAlert is defined
+                 else false }}
+            {% endif %}
+
+          billDayOfMonth: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.billDayOfMonth is defined 
+               and trigger.event.data.billDayOfMonth | int > 0
+               and trigger.event.data.billDayOfMonth | int <= 31 %}
+              {{ trigger.event.data.billDayOfMonth | int }}
+            {% else %}
+              {{ this.attributes.billDayOfMonth
+                 if this.attributes.billDayOfMonth is defined
+                 else 2 }}
+            {% endif %}    
+            
+          buyProrateSOCOffset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyProrateSOCOffset is defined 
+               and trigger.event.data.buyProrateSOCOffset | int >= 0
+               and trigger.event.data.buyProrateSOCOffset | int <= 100 %}
+              {{ trigger.event.data.buyProrateSOCOffset | int }}
+            {% else %}
+              {{ this.attributes.buyProrateSOCOffset
+                 if this.attributes.buyProrateSOCOffset is defined
+                 else 1 }}
+            {% endif %}    
+            
+          buyHighSOCOffset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyHighSOCOffset is defined 
+               and trigger.event.data.buyHighSOCOffset | int >= 0
+               and trigger.event.data.buyHighSOCOffset | int <= 100 %}
+              {{ trigger.event.data.buyHighSOCOffset | int }}
+            {% else %}
+              {{ this.attributes.buyHighSOCOffset
+                 if this.attributes.buyHighSOCOffset is defined
+                 else 10 }}
+            {% endif %} 
+
+          drainBatterySOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.drainBatterySOC is defined 
+               and trigger.event.data.drainBatterySOC | int >= 0
+               and trigger.event.data.drainBatterySOC | int <= 100 %}
+              {{ trigger.event.data.drainBatterySOC | int }}
+            {% else %}
+              {{ this.attributes.drainBatterySOC
+                 if this.attributes.drainBatterySOC is defined
+                 else 0 }}
+            {% endif %}    
+            
+          drainBatteryPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.drainBatteryPrice is defined 
+               and trigger.event.data.drainBatteryPrice | float >= -100
+               and trigger.event.data.drainBatteryPrice | float <= 100 %}
+              {{ trigger.event.data.drainBatteryPrice | float }}
+            {% else %}
+              {{ this.attributes.drainBatteryPrice
+                 if this.attributes.drainBatteryPrice is defined
+                 else 0.0 }}
+            {% endif %}
+            
+          drainBatteryAllowReset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.drainBatteryAllowReset is defined %}
+              {{ trigger.event.data.drainBatteryAllowReset | bool }}
+            {% else %}
+              {{ this.attributes.drainBatteryAllowReset
+                 if this.attributes.drainBatteryAllowReset is defined
+                 else true }}
+            {% endif %}
+
+          drainBatteryPlughole: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.drainBatteryPlughole is defined %}
+              {{ trigger.event.data.drainBatteryPlughole | bool }}
+            {% else %}
+              {{ this.attributes.drainBatteryPlughole
+                 if this.attributes.drainBatteryPlughole is defined
+                 else false }}
+            {% endif %}    
+
+          drainBatteryPinned: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.drainBatteryPinned is defined %}
+              {{ trigger.event.data.drainBatteryPinned }}
+            {% elif this.attributes.drainBatteryPinned is defined %}
+              {{ this.attributes.drainBatteryPinned }}
+            {% else %}
+              {{ 'show' if 'drain' in (this.attributes.pinnedOverrides | default([])) else 'hide' }}
+            {% endif %}
+ 
+          buyAnytimeSOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyAnytimeSOC is defined 
+               and trigger.event.data.buyAnytimeSOC | int >= 0
+               and trigger.event.data.buyAnytimeSOC | int <= 100 %}
+              {{ trigger.event.data.buyAnytimeSOC | int }}
+            {% else %}
+              {{ this.attributes.buyAnytimeSOC
+                 if this.attributes.buyAnytimeSOC is defined
+                 else 0 }}
+            {% endif %}    
+            
+          buyAnytimePrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyAnytimePrice is defined 
+               and trigger.event.data.buyAnytimePrice | float >= 0
+               and trigger.event.data.buyAnytimePrice | float <= 100 %}
+              {{ trigger.event.data.buyAnytimePrice | float }}
+            {% else %}
+              {{ this.attributes.buyAnytimePrice
+                 if this.attributes.buyAnytimePrice is defined
+                 else 0.0 }}
+            {% endif %}
+            
+          buyAnytimeAllowReset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyAnytimeAllowReset is defined %}
+              {{ trigger.event.data.buyAnytimeAllowReset | bool }}
+            {% else %}
+              {{ this.attributes.buyAnytimeAllowReset
+                 if this.attributes.buyAnytimeAllowReset is defined
+                 else true }}
+            {% endif %}
+
+          buyAnytimePinned: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.buyAnytimePinned is defined %}
+              {{ trigger.event.data.buyAnytimePinned }}
+            {% elif this.attributes.buyAnytimePinned is defined %}
+              {{ this.attributes.buyAnytimePinned }}
+            {% else %}
+              {{ 'show' if 'any' in (this.attributes.pinnedOverrides | default([])) else 'hide' }}
+            {% endif %}
+            
+          buyOverrideSOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyOverrideSOC is defined 
+               and trigger.event.data.buyOverrideSOC | int >= 0
+               and trigger.event.data.buyOverrideSOC | int <= 100 %}
+              {{ trigger.event.data.buyOverrideSOC | int }}
+            {% else %}
+              {{ this.attributes.buyOverrideSOC
+                 if this.attributes.buyOverrideSOC is defined
+                 else 0 }}
+            {% endif %}    
+            
+          buyOverridePrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyOverridePrice is defined 
+               and trigger.event.data.buyOverridePrice | float >= -10000
+               and trigger.event.data.buyOverridePrice | float <= 10000 %}
+              {{ trigger.event.data.buyOverridePrice | float }}
+            {% else %}
+              {{ this.attributes.buyOverridePrice
+                 if this.attributes.buyOverridePrice is defined
+                 else 0.0 }}
+            {% endif %}
+            
+          buyOverrideAllowReset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.buyOverrideAllowReset is defined %}
+              {{ trigger.event.data.buyOverrideAllowReset | bool }}
+            {% else %}
+              {{ this.attributes.buyOverrideAllowReset
+                 if this.attributes.buyOverrideAllowReset is defined
+                 else true }}
+            {% endif %}
+
+          buyOverridePinned: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.buyOverridePinned is defined %}
+              {{ trigger.event.data.buyOverridePinned }}
+            {% elif this.attributes.buyOverridePinned is defined %}
+              {{ this.attributes.buyOverridePinned }}
+            {% else %}
+              {{ 'show' if 'buy' in (this.attributes.pinnedOverrides | default([])) else 'hide' }}
+            {% endif %}
+            
+          sellProrateSOCOffset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellProrateSOCOffset is defined 
+               and trigger.event.data.sellProrateSOCOffset | int >= 0
+               and trigger.event.data.sellProrateSOCOffset | int <= 100 %}
+              {{ trigger.event.data.sellProrateSOCOffset | int }}
+            {% else %}
+              {{ this.attributes.sellProrateSOCOffset
+                 if this.attributes.sellProrateSOCOffset is defined
+                 else 30 }}
+            {% endif %}    
+            
+          sellLowSOCOffset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellLowSOCOffset is defined 
+               and trigger.event.data.sellLowSOCOffset | int >= 0
+               and trigger.event.data.sellLowSOCOffset | int <= 100 %}
+              {{ trigger.event.data.sellLowSOCOffset | int }}
+            {% else %}
+              {{ this.attributes.sellLowSOCOffset
+                 if this.attributes.sellLowSOCOffset is defined
+                 else 50 }}
+            {% endif %}
+            
+          sellOverrideSOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellOverrideSOC is defined 
+               and trigger.event.data.sellOverrideSOC | int >= 0
+               and trigger.event.data.sellOverrideSOC | int <= 100 %}
+              {{ trigger.event.data.sellOverrideSOC | int }}
+            {% else %}
+              {{ this.attributes.sellOverrideSOC
+                 if this.attributes.sellOverrideSOC is defined
+                 else 0 }}
+            {% endif %}    
+            
+          sellOverridePrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellOverridePrice is defined 
+               and trigger.event.data.sellOverridePrice | float >= 0
+               and trigger.event.data.sellOverridePrice | float <= 10000 %}
+              {{ trigger.event.data.sellOverridePrice | float }}
+            {% else %}
+              {{ this.attributes.sellOverridePrice
+                 if this.attributes.sellOverridePrice is defined
+                 else 0.0 }}
+            {% endif %}
+            
+          sellOverrideAllowReset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellOverrideAllowReset is defined %}
+              {{ trigger.event.data.sellOverrideAllowReset | bool }}
+            {% else %}
+              {{ this.attributes.sellOverrideAllowReset
+                 if this.attributes.sellOverrideAllowReset is defined
+                 else true }}
+            {% endif %}
+
+          sellOverridePinned: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.sellOverridePinned is defined %}
+              {{ trigger.event.data.sellOverridePinned }}
+            {% elif this.attributes.sellOverridePinned is defined %}
+              {{ this.attributes.sellOverridePinned }}
+            {% else %}
+              {{ 'show' if 'sell' in (this.attributes.pinnedOverrides | default([])) else 'hide' }}
+            {% endif %}
+            
+          sellSolarSOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSolarSOC is defined 
+               and trigger.event.data.sellSolarSOC | int >= 0
+               and trigger.event.data.sellSolarSOC | int <= 100 %}
+              {{ trigger.event.data.sellSolarSOC | int }}
+            {% else %}
+              {{ this.attributes.sellSolarSOC
+                 if this.attributes.sellSolarSOC is defined
+                 else 0 }}
+            {% endif %}    
+            
+          sellSolarPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSolarPrice is defined 
+               and trigger.event.data.sellSolarPrice | float >= 0
+               and trigger.event.data.sellSolarPrice | float <= 10000 %}
+              {{ trigger.event.data.sellSolarPrice | float }}
+            {% else %}
+              {{ this.attributes.sellSolarPrice
+                 if this.attributes.sellSolarPrice is defined
+                 else 0.0 }}
+            {% endif %}
+            
+          sellSolarAllowReset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSolarAllowReset is defined %}
+              {{ trigger.event.data.sellSolarAllowReset | bool }}
+            {% else %}
+              {{ this.attributes.sellSolarAllowReset
+                 if this.attributes.sellSolarAllowReset is defined
+                 else true }}
+            {% endif %}
+
+          sellSolarPinned: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.sellSolarPinned is defined %}
+              {{ trigger.event.data.sellSolarPinned }}
+            {% elif this.attributes.sellSolarPinned is defined %}
+              {{ this.attributes.sellSolarPinned }}
+            {% else %}
+              {{ 'show' if 'sellsolar' in (this.attributes.pinnedOverrides | default([])) else 'hide' }}
+            {% endif %}
+
+          netTargetBuyPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.netTargetBuyPrice is defined 
+               and trigger.event.data.netTargetBuyPrice | float >= -10000
+               and trigger.event.data.netTargetBuyPrice | float <= 10000 %}
+              {{ trigger.event.data.netTargetBuyPrice | float }}
+            {% else %}
+              {{ this.attributes.netTargetBuyPrice
+                 if this.attributes.netTargetBuyPrice is defined
+                 else 0.0 }}
+            {% endif %}
+            
+          netTargetBuyMet: >
+            {%set default = '' %}
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.netTargetBuyMet is defined %}
+            {{ trigger.event.data.netTargetBuyMet}}
+            {% elif this.attributes.netTargetBuyMet is defined %}
+              {{ this.attributes.netTargetBuyMet }}
+            {% else %}
+              {{ default }}
+            {% endif %}
+            
+          netTargetSellPrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.netTargetSellPrice is defined 
+               and trigger.event.data.netTargetSellPrice | float >= -10000
+               and trigger.event.data.netTargetSellPrice | float <= 10000 %}
+              {{ trigger.event.data.netTargetSellPrice | float }}
+            {% else %}
+              {{ this.attributes.netTargetSellPrice
+                 if this.attributes.netTargetSellPrice is defined
+                 else 0.0 }}
+            {% endif %}    
+            
+          netTargetSellMet: >
+            {%set default = '' %}
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.netTargetSellMet is defined %}
+            {{ trigger.event.data.netTargetSellMet}}
+            {% elif this.attributes.netTargetSellMet is defined %}
+              {{ this.attributes.netTargetSellMet }}
+            {% else %}
+              {{ default }}
+            {% endif %}
+
+          sellSpikePrice1: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSpikePrice1 is defined 
+               and trigger.event.data.sellSpikePrice1 | float >= 0
+               and trigger.event.data.sellSpikePrice1 | float <= 10000 %}
+              {{ trigger.event.data.sellSpikePrice1 | float }}
+            {% else %}
+              {{ this.attributes.sellSpikePrice1
+                 if this.attributes.sellSpikePrice1 is defined
+                 else 500 }}
+            {% endif %}    
+            
+          sellSpikeSOC1: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSpikeSOC1 is defined 
+               and trigger.event.data.sellSpikeSOC1 | int >= 0
+               and trigger.event.data.sellSpikeSOC1 | int <= 100 %}
+              {{ trigger.event.data.sellSpikeSOC1 | int }}
+            {% else %}
+              {{ this.attributes.sellSpikeSOC1
+                 if this.attributes.sellSpikeSOC1 is defined
+                 else 10 }}
+            {% endif %}    
+            
+          sellSpikePrice2: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSpikePrice2 is defined 
+               and trigger.event.data.sellSpikePrice2 | float >= 0
+               and trigger.event.data.sellSpikePrice2 | float <= 10000 %}
+              {{ trigger.event.data.sellSpikePrice2 | float }}
+            {% else %}
+              {{ this.attributes.sellSpikePrice2
+                 if this.attributes.sellSpikePrice2 is defined
+                 else 100 }}
+            {% endif %}    
+
+          sellSpikeSOC2: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSpikeSOC2 is defined 
+               and trigger.event.data.sellSpikeSOC2 | int >= 0
+               and trigger.event.data.sellSpikeSOC2 | int <= 100 %}
+              {{ trigger.event.data.sellSpikeSOC2 | int }}
+            {% else %}
+              {{ this.attributes.sellSpikeSOC2
+                 if this.attributes.sellSpikeSOC2 is defined
+                 else 15 }}
+            {% endif %}   
+            
+          watchdogScriptNotRunLimit: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.watchdogScriptNotRunLimit is defined 
+               and trigger.event.data.watchdogScriptNotRunLimit | int >= 0
+               and trigger.event.data.watchdogScriptNotRunLimit | int <= 60 %}
+              {{ trigger.event.data.watchdogScriptNotRunLimit | int }}
+            {% else %}
+              {{ this.attributes.watchdogScriptNotRunLimit
+                 if this.attributes.watchdogScriptNotRunLimit is defined
+                 else 10 }}
+            {% endif %}  
+            
+          watchdogScriptDisabledLimit: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.watchdogScriptDisabledLimit is defined 
+               and trigger.event.data.watchdogScriptDisabledLimit | int >= 0
+               and trigger.event.data.watchdogScriptDisabledLimit | int <= 360 %}
+              {{ trigger.event.data.watchdogScriptDisabledLimit | int }}
+            {% else %}
+              {{ this.attributes.watchdogScriptDisabledLimit
+                 if this.attributes.watchdogScriptDisabledLimit is defined
+                 else 60 }}
+            {% endif %}  
+            
+          watchdogResetOverridesAt: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.watchdogResetOverridesAt is defined %}
+            {{ (trigger.event.data.watchdogResetOverridesAt | as_datetime).isoformat() }}
+            {% elif this.attributes.watchdogResetOverridesAt is defined %}
+              {{ this.attributes.watchdogResetOverridesAt }}
+            {% else %}
+              {{ today_at("08:00").isoformat() }}
+            {% endif %}
+            
+          simpleBatteryMode: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.simpleBatteryMode is defined %}
+              {{ trigger.event.data.simpleBatteryMode | bool }}
+            {% else %}
+              {{ this.attributes.simpleBatteryMode
+                 if this.attributes.simpleBatteryMode is defined
+                 else false }}
+            {% endif %}
+
+          # 'show' / 'hide' — read directly as a string in the dock timer-row's
+          # display template (same `=== 'show'` pattern the override pins use).
+          alwaysShowOverrideTimer: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.alwaysShowOverrideTimer is defined %}
+              {{ 'show' if (trigger.event.data.alwaysShowOverrideTimer in [true, 'true', 'show', 'on', 1, '1']) else 'hide' }}
+            {% else %}
+              {{ this.attributes.alwaysShowOverrideTimer
+                 if this.attributes.alwaysShowOverrideTimer in ['show', 'hide']
+                 else 'hide' }}
+            {% endif %}
+
+          systemInstallDate: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.systemInstallDate is defined %}
+            {{ (trigger.event.data.systemInstallDate | as_datetime).isoformat() }}
+            {% elif this.attributes.systemInstallDate is defined %}
+              {{ this.attributes.systemInstallDate }}
+            {% else %}
+              {{ today_at("00:00").isoformat() }}
+            {% endif %}
+            
+          systemCost: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.systemCost is defined 
+               and trigger.event.data.systemCost | float >= 0
+               and trigger.event.data.systemCost | float <= 100000 %}
+              {{ trigger.event.data.systemCost | float }}
+            {% else %}
+              {{ this.attributes.systemCost
+                 if this.attributes.systemCost is defined
+                 else 0 }}
+            {% endif %}  
+            
+          preSystemBillQ1: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.preSystemBillQ1 is defined 
+               and trigger.event.data.preSystemBillQ1 | float >= 0
+               and trigger.event.data.preSystemBillQ1 | float <= 5000 %}
+              {{ trigger.event.data.preSystemBillQ1 | float }}
+            {% else %}
+              {{ this.attributes.preSystemBillQ1
+                 if this.attributes.preSystemBillQ1 is defined
+                 else 0 }}
+            {% endif %}  
+            
+          preSystemBillQ2: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.preSystemBillQ2 is defined 
+               and trigger.event.data.preSystemBillQ2 | float >= 0
+               and trigger.event.data.preSystemBillQ2 | float <= 5000 %}
+              {{ trigger.event.data.preSystemBillQ2 | float }}
+            {% else %}
+              {{ this.attributes.preSystemBillQ2
+                 if this.attributes.preSystemBillQ2 is defined
+                 else 0 }}
+            {% endif %}  
+            
+          preSystemBillQ3: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.preSystemBillQ3 is defined 
+               and trigger.event.data.preSystemBillQ3 | float >= 0
+               and trigger.event.data.preSystemBillQ3 | float <= 5000 %}
+              {{ trigger.event.data.preSystemBillQ3 | float }}
+            {% else %}
+              {{ this.attributes.preSystemBillQ3
+                 if this.attributes.preSystemBillQ3 is defined
+                 else 0 }}
+            {% endif %}  
+            
+          preSystemBillQ4: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.preSystemBillQ4 is defined 
+               and trigger.event.data.preSystemBillQ4 | float >= 0
+               and trigger.event.data.preSystemBillQ4 | float <= 5000 %}
+              {{ trigger.event.data.preSystemBillQ4 | float }}
+            {% else %}
+              {{ this.attributes.preSystemBillQ4
+                 if this.attributes.preSystemBillQ4 is defined
+                 else 0 }}
+            {% endif %}  
+            
+          systemIncome: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.systemIncome is defined 
+               and trigger.event.data.systemIncome | float >= 0
+               and trigger.event.data.systemIncome | float <= 50000 %}
+              {{ trigger.event.data.systemIncome | float }}
+            {% else %}
+              {{ this.attributes.systemIncome
+                 if this.attributes.systemIncome is defined
+                 else 0 }}
+            {% endif %} 
+            
+          energyIncome: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.energyIncome is defined 
+               and trigger.event.data.energyIncome | float >= 0
+               and trigger.event.data.energyIncome | float <= 50000 %}
+              {{ trigger.event.data.energyIncome | float }}
+            {% else %}
+              {{ this.attributes.energyIncome
+                 if this.attributes.energyIncome is defined
+                 else 0 }}
+            {% endif %}  
+            
+          systemExpenses: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.systemExpenses is defined 
+               and trigger.event.data.systemExpenses | float >= 0
+               and trigger.event.data.systemExpenses | float <= 50000 %}
+              {{ trigger.event.data.systemExpenses | float }}
+            {% else %}
+              {{ this.attributes.systemExpenses
+                 if this.attributes.systemExpenses is defined
+                 else 0 }}
+            {% endif %}
+            
+          billInflation: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.billInflation is defined 
+               and trigger.event.data.billInflation | int >= 0
+               and trigger.event.data.billInflation | int <= 100 %}
+              {{ trigger.event.data.billInflation | int }}
+            {% else %}
+              {{ this.attributes.billInflation
+                 if this.attributes.billInflation is defined
+                 else 0 }}
+            {% endif %}   
+
+          defaults: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetDefaults' %}
+              {{ trigger.event.data.defaults }}
+            {% else %}
+              {{ this.attributes.defaults if this.attributes.defaults is defined else {
+                'gridChargingPositive': {
+                  'buyProrateSOCOffset': 1,
+                  'buyHighSOCOffset': 10,
+                  'buyAnytimeSOCBelow' : 0,
+                  'buyAnytimePrice' : 0
+                },
+                'gridDischarging': {
+                  'sellProrateSOCOffset': 30,
+                  'sellLowSOCOffset': 50
+                },
+                'spikeSelling': {
+                  'sellSpikePrice1': 500,
+                  'sellSpikeSOC1': 10,
+                  'sellSpikePrice2': 100,
+                  'sellSpikeSOC2': 15
+                },
+                'needyCurve': {
+                  'needyTriggerPVGap': 3,
+                  'needyTriggerConsumption': 3.5
+                },
+                'watchdog': {
+                  'watchdogScriptNotRunLimit': 10,
+                  'watchdogScriptDisabledLimit': 10
+                },
+                'billing': {
+                  'dailyNetworkCharge': 1.09,
+                  'billDayOfMonth': 2
+                }
+              } }}
+            {% endif %}            
+
+          overridePresets: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.overridePresets is defined
+               and trigger.event.data.overridePresets is sequence
+               and trigger.event.data.overridePresets is not string %}
+              {{ trigger.event.data.overridePresets }}
+            {% else %}
+              {{ this.attributes.overridePresets
+                 if this.attributes.overridePresets is defined
+                 else [
+                   {'name': 'No Sell', 'timer': 0,
+                    'values': {'sell': {'soc': 100, 'price': 0}}},
+                   {'name': 'Dump 20', 'timer': 10800,
+                    'values': {'sell': {'soc': 20, 'price': 30}}},
+                   {'name': 'Storm Prep', 'timer': 43200,
+                    'values': {'sell': {'soc': 100, 'price': 0},
+                               'any': {'soc': 100, 'price': 35}}}
+                 ] }}
+            {% endif %}
+
+          # Morning Break-even: name of the scene to apply at 00:01 ('' = none).
+          # Set by the dock's moon button; cleared by automation ssc_apply_armed_scene
+          # (packages/ssc_scenes.yaml) after it runs.
+          armedScene: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.armedScene is defined %}
+              {{ (trigger.event.data.armedScene or '') | string | trim }}
+            {% else %}
+              {{ this.attributes.armedScene | default('', true) }}
+            {% endif %}
+
+          pinnedOverrides: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.pinnedOverrides is defined
+               and trigger.event.data.pinnedOverrides is sequence
+               and trigger.event.data.pinnedOverrides is not string %}
+              {{ trigger.event.data.pinnedOverrides }}
+            {% else %}
+              {{ this.attributes.pinnedOverrides
+                 if this.attributes.pinnedOverrides is defined
+                 else [] }}
+            {% endif %}
+
+ 
