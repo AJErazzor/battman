@@ -56,6 +56,7 @@ to `strategy: {type: custom:battman}`.
 | `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain), control centre (presets, scenes, Net Target), override timer | button-card, card-mod, browser_mod |
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
+| `battman-curvy` | The SOC curve editor (Battman's Curvy page in a frame for now). Size it by dragging in a sections view; it fills a panel view | nothing |
 | `battman-image` | Any of Battman's images, or yours, with fit, position and size options (see [Battman Image](#battman-image)) | nothing |
 
 `<battman-countdown></battman-countdown>` (the 5-min Amber countdown) is loaded by Battman on

@@ -169,6 +169,24 @@ class BattmanCard extends HTMLElement {
     return true;
   }
 
+  // HA tells a card which kind of view it's in ("grid" = sections view, "panel" = panel view).
+  // Pass it on to the card inside: e.g. an iframe card ignores its aspect_ratio and fills
+  // the space in those views, so it resizes with the card.
+  set layout(value) {
+    this._layout = value;
+    if (this._inner) this._inner.layout = value;
+  }
+  get layout() {
+    return this._layout;
+  }
+  set isPanel(value) {
+    this._isPanel = value;
+    if (this._inner) this._inner.isPanel = value;
+  }
+  get isPanel() {
+    return this._isPanel;
+  }
+
   getCardSize() {
     return this._inner && this._inner.getCardSize ? this._inner.getCardSize() : 1;
   }
@@ -210,6 +228,8 @@ class BattmanCard extends HTMLElement {
       return this._problem(`Card “${data.name}” couldn't be drawn: ${errText(e)}`);
     }
     this._gridOptions = data.grid_options || null;
+    if (this._layout !== undefined) el.layout = this._layout;
+    if (this._isPanel !== undefined) el.isPanel = this._isPanel;
     el.hass = this._hass;
     this.replaceChildren(el);
     this._inner = el;
