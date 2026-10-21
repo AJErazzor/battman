@@ -14,6 +14,28 @@ icon: mdi:sofa
 show_icon_and_title: true
 max_columns: 4
 theme: Battman Nord
+# Heading: the strip with tagline on wide screens, the wordmark with tagline on phones
+# (same 768 px line as HA's Mobile visibility).
+header:
+  card:
+    type: vertical-stack
+    cards:
+      - type: custom:battman-image
+        image: battman-strip-tagline.webp
+        background: none
+        frame: false
+        height: 100
+        visibility:
+          - condition: screen
+            media_query: '(min-width: 768px)'
+      - type: custom:battman-image
+        visibility:
+          - condition: screen
+            media_query: '(max-width: 767px)'
+        image: battman-wordmark-tagline.webp
+        background: none
+        frame: false
+        height: 60
 sections:
   - type: grid
     cards:
