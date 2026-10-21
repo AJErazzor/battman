@@ -103,7 +103,7 @@ def test_card_theme_option_in_a_browser(tmp_path) -> None:
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
-    assert out["stub"] == {"theme": "battman", "grid_options": {"columns": "full"}}       # picker: in colour
+    assert out["stub"] == {"grid_options": {"columns": "full"}}                           # placed: the view's theme
     assert out["coffee"] == {"green": "#123456", "red": "#ff0000", "text": "#eeeeee"}    # theme + its dark mode
     assert out["nord"] == {"green": "#abcdef", "red": ""}                                 # follows a theme change
     assert "Theme “Battman Gone” isn't installed" in out["gone"]                          # no fallback
@@ -111,3 +111,6 @@ def test_card_theme_option_in_a_browser(tmp_path) -> None:
     assert out["back"] == "#123456"                                                       # and recovers
     assert out["named"] == "#abcdef"                                                      # theme: <name>
     assert out["plain"] == ""                                                             # no theme: the view's
+    assert out["picker"] == "#123456"                     # card picker preview: Battman Coffee
+    assert out["pickerNamed"] == "#abcdef"                # unless the card names a theme
+    assert out["placed"] == ""                            # placed: the view's theme

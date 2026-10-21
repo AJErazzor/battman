@@ -142,6 +142,11 @@ THEMES_URL = "/api/battman/themes"
 # Battman cards (custom:battman-<id>): list, and one card with the map filled in.
 CARDS_URL = "/api/battman/cards"
 
+# The Battman Image card: the list of images (authenticated), and one image by name (not
+# authenticated, like /local/, because an <img> can't send a login).
+IMAGES_URL = "/api/battman/images"
+IMAGE_URL = "/api/battman/image"
+
 # Authenticated API that hands the managed dashboard its views (views/*.yaml with
 # {{name}} placeholders filled from the entity map).
 DASHBOARD_URL = "/api/battman/dashboard"

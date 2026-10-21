@@ -118,6 +118,10 @@ Cards you can add to any dashboard (Add card → search "Battman"), and that upd
 with Battman releases. Each is a plain YAML file you can copy and try changes on.
 See [docs/cards.md](docs/cards.md).
 
+**Battman Image** (`custom:battman-image`) shows any of Battman's images, or your own from
+`config/battman/images/`, with fit, position and size options, and different settings for phones
+or dark mode. See [Battman Image](docs/cards.md#battman-image).
+
 ## Live Activity
 
 Your battery on your phone's lock screen. Battman creates the automations and script
