@@ -58,16 +58,17 @@ def _orig(name):
     return yaml.safe_load((FIX / f"smiggles_{name}.yaml").read_text())[0]
 
 
-def run_js(jobs):
+def run_js(jobs, prelude: str = ""):
     """Run button-card [[[ ]]] templates the way button-card does. jobs: [(src, states, entity_id)].
-    All in one node process (same clock). Returns each output, or 'THROW: …'."""
+    All in one node process (same clock). Returns each output, or 'THROW: …'.
+    prelude: JS run first (e.g. a script HA loads on every page)."""
     progs = []
     for src, states, ent in jobs:
         body = src.strip()
         assert body.startswith("[[[") and body.endswith("]]]")
         progs.append("(function(states, entity, hass, user, variables){" + body[3:-3] + "})"
                      f"({json.dumps(states)}, {json.dumps(states.get(ent))}, {{states: {json.dumps(states)}, config: {{time_zone: {json.dumps(HA_TZ)}}}}}, {{}}, {{}})")
-    script = ("const out = [];\n" + "".join(
+    script = ("globalThis.window = globalThis;\n" + prelude + "\nconst out = [];\n" + "".join(
         f"try {{ out.push(String({p})); }} catch (e) {{ out.push('THROW: ' + e.message); }}\n" for p in progs)
         + "process.stdout.write(JSON.stringify(out));")
     r = subprocess.run(["node", "-"], input=script, capture_output=True, text=True, check=True)

@@ -7,11 +7,41 @@
 // box of its own (display: contents). Nothing to edit here: change the card's YAML.
 //
 // Problems are shown on the card, never hidden: unknown card, bad YAML, a missing map
-// entry, or a card type that isn't installed (e.g. button-card).
+// entry, a card type that isn't installed (e.g. button-card), or a theme that isn't there.
+//
+// theme: (optional) draw the card in a theme's colours wherever it's placed.
+//   theme: battman        the Battman dashboard's theme (follows it when you change it)
+//   theme: Battman Nord   that theme
+//   (no theme)            the view's theme, as any card
+// Cards added from the card picker get `theme: battman`, so the previews are in colour.
 
 const PARAMS = new URL(import.meta.url).searchParams;
 const START_IDS = (PARAMS.get("cards") || "").split(",").filter(Boolean);
 const DOCS = "https://github.com/AJErazzor/battman/blob/main/docs/cards.md";
+const THEME_SENSOR = "sensor.battman_theme_mode_colours";   // its `theme` attribute: the Battman dashboard's theme
+
+// The theme to use for `theme:` in a card's config. { name } or { problem }.
+function themeFor(hass, wanted) {
+  let name = wanted;
+  if (String(wanted).toLowerCase() === "battman") {
+    const st = hass.states[THEME_SENSOR];
+    if (!st) return { problem: `theme: battman needs ${THEME_SENSOR}, which doesn't exist (is Battman set up?).` };
+    name = st.attributes.theme;
+    if (!name) return { problem: `theme: battman: ${st.attributes.problem || "the Battman dashboard has no theme picked"}.` };
+  }
+  const theme = hass.themes && hass.themes.themes && hass.themes.themes[name];
+  if (!theme) return { problem: `Theme “${name}” isn't installed in Home Assistant.` };
+  return { name, theme };
+}
+
+// A theme's variables as CSS custom properties (its dark / light mode part on top, like HA does).
+function themeVars(hass, theme) {
+  const out = {};
+  for (const [k, v] of Object.entries(theme)) if (k !== "modes" && typeof v !== "object") out[`--${k}`] = String(v);
+  const mode = theme.modes && theme.modes[hass.themes.darkMode ? "dark" : "light"];
+  if (mode) for (const [k, v] of Object.entries(mode)) if (typeof v !== "object") out[`--${k}`] = String(v);
+  return out;
+}
 
 // One fetch per card per page load (refresh the page to pick up an edited card file).
 const loaded = new Map();
@@ -30,14 +60,15 @@ function errText(e) {
 class BattmanCard extends HTMLElement {
   static cardId = "";
 
-  // Added from the card picker: bring the card file's grid_options (e.g. columns: full),
-  // because HA only reads grid_options on the card as placed.
+  // Added from the card picker: the Battman dashboard's theme (so the preview is in colour), and
+  // the card file's grid_options (e.g. columns: full), because HA only reads grid_options on the
+  // card as placed.
   static async getStubConfig(hass) {
     try {
       const data = await fetchCard(hass, this.cardId);
-      return data.grid_options ? { grid_options: data.grid_options } : {};
+      return data.grid_options ? { theme: "battman", grid_options: data.grid_options } : { theme: "battman" };
     } catch (e) {
-      return {};
+      return { theme: "battman" };
     }
   }
 
@@ -55,13 +86,45 @@ class BattmanCard extends HTMLElement {
     this._config = config;
     this._inner = null;
     this._state = "new";
-    if (this._hass) this._build();
+    this._themeObj = null;
+    if (!config.theme) {
+      for (const k of this._themeKeys || []) this.style.removeProperty(k);
+      this._themeKeys = [];
+    }
+    if (this._hass) this.hass = this._hass;
   }
 
   set hass(hass) {
     this._hass = hass;
+    if (this._config && this._config.theme) {
+      const ok = this._applyTheme();
+      if (!ok) return;
+      if (this._state === "theme") { this._state = "new"; }   // the theme's back: draw the card
+    }
     if (this._inner) this._inner.hass = hass;
     else if (this._state === "new" && this._config) this._build();
+  }
+
+  // Put the chosen theme's variables on this element (the card inherits them). False if it can't.
+  _applyTheme() {
+    const t = themeFor(this._hass, this._config.theme);
+    if (t.problem) {
+      if (this._state !== "theme" || this._themeProblem !== t.problem) {
+        this._themeProblem = t.problem;
+        this._problem(t.problem);
+        this._state = "theme";
+      }
+      return false;
+    }
+    if (this._themeObj === t.theme && this._themeDark === this._hass.themes.darkMode) return true;
+    const vars = themeVars(this._hass, t.theme);
+    for (const k of this._themeKeys || []) if (!(k in vars)) this.style.removeProperty(k);
+    for (const [k, v] of Object.entries(vars)) this.style.setProperty(k, v);
+    this._themeKeys = Object.keys(vars);
+    this._themeObj = t.theme;
+    this._themeDark = this._hass.themes.darkMode;
+    this._themeProblem = null;
+    return true;
   }
 
   getCardSize() {

@@ -10,6 +10,8 @@
 <meta http-equiv="Expires" content="0">
 <title>Battman Log</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!-- the engine log renderer, shared with the Engine log popup so they look the same -->
+<script src="/battman/battman-enginelog.js"></script>
 <style>
   :root {
     --ha-bg:     var(--primary-background-color, #111318);
@@ -341,7 +343,7 @@
   const THEME_VARS = ['--battman-blue', '--battman-green', '--battman-red', '--battman-orange',
     '--battman-purple', '--battman-amber', '--battman-teal', '--battman-yellow', '--battman-text-muted',
     '--battman-blue-border', '--battman-blue-soft-bg', '--battman-surface-card', '--battman-surface-popup',
-    '--battman-border-neutral'];
+    '--battman-border-neutral', '--battman-darkred', '--battman-text-dim'];
   let FATAL = null;   // set when the page can't run; shown instead of everything else
 
   // -------------------------------------------------------------- HA access
@@ -386,6 +388,7 @@
       '--ha-bg': '--primary-background-color',
       '--ha-card': '--card-background-color',
       '--ha-text': '--primary-text-color',
+      '--primary-text-color': '--primary-text-color',
       '--ha-muted': '--secondary-text-color',
       '--ha-border': '--divider-color',
       '--ha-accent': '--primary-color',
@@ -416,8 +419,6 @@
   }
 
   // --------------------------------------------------------------- filters
-  const emojiList = ['🕐','🔄','💰','🔋','📊','☀️','⚡','📈','📉','ℹ️'];
-  const emojiRegex = new RegExp('(' + emojiList.map(e => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
 
   const filtersEl = document.getElementById('filters');
   const modesHeading = document.createElement('label');
@@ -462,39 +463,34 @@
 
   // ---------------------------------------------------------- log parsing
   function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function fixDollars(t) { return t.replace(/hBc/g, '$-').replace(/bash\./g, '$0.'); }
   // strip a trailing "(...)" variant so e.g. "Charge (Anytime)" matches the "Charge" checkbox
   function baseMode(m) { return m.replace(/\s*\([^)]*\)\s*$/, '').trim(); }
-  function getMode(line) {
-    const match = line.match(/→\s*([^💰🔋📊☀⚡📈📉ℹ🕐]+)/);
-    return match ? baseMode(match[1].trim()) : '';
+  // each log line is "time|message"; Battman's renderer reads both its own and Smiggles' format
+  const EL = window.battmanEngineLog;
+  const parsed = new Map();
+  function parseLine(line) {
+    let p = parsed.get(line);
+    if (!p) {
+      const f = EL.fromFileLine(line);
+      p = { stamp: f.stamp, message: f.message, log: EL.parse(f.message) };
+      parsed.set(line, p);
+      if (parsed.size > 6000) parsed.clear();
+    }
+    return p;
   }
+  function getMode(line) { return baseMode(parseLine(line).log.to); }
   function isChange(line) {
-    const fromMatch = line.match(/Mode:\s*(.+?)\s*→/);
-    const from = fromMatch ? baseMode(fromMatch[1].trim()) : '';
-    const to = getMode(line);
+    const l = parseLine(line).log;
+    const from = baseMode(l.from), to = baseMode(l.to);
     return from !== '' && to !== '' && from !== to;
   }
+  // an entry looks exactly like the Engine log popup (same renderer), with its mode's colour on the left
   function format(line) {
-    const pipeIdx = line.indexOf('|');
-    if (pipeIdx < 0) return '';
-    let msg = fixDollars(line.substring(pipeIdx + 1).trim());
-    let sections = msg.split(emojiRegex);
-    let lines = [];
-    for (let i = 0; i < sections.length; i++) {
-      const s = sections[i].trim();
-      if (!s) continue;
-      if (emojiList.includes(s)) {
-        let next = (sections[i+1] || '').trim();
-        lines.push(escapeHtml(s + ' ' + next));
-        i++;
-      } else {
-        lines.push(escapeHtml(s));
-      }
-    }
+    if (line.indexOf('|') < 0) return '';
+    const p = parseLine(line);
     const mode = getMode(line);
     const border = modeColor[mode] ? ' style="border-left-color:' + modeColor[mode] + '"' : '';
-    return '<div class="entry"' + border + '>' + lines.map(l => '<div class="section">' + l + '</div>').join('') + '</div>';
+    return '<div class="entry"' + border + '>' + EL.render(p.message, { title: 'Engine run', timePrefix: '' }) + '</div>';
   }
 
   function setLogCount(txt) {

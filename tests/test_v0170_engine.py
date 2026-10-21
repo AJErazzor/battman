@@ -528,7 +528,7 @@ async def test_engine_log_file_written_and_pruned(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     path = engine_log.battman_path(hass)
     lines = path.read_text().splitlines()
-    assert [l.split("|", 1)[1] for l in lines] == ["run 0 line two", "run 1 line two", "run 2 line two"]
+    assert [l.split("|", 1)[1] for l in lines] == ["run 0\\nline two", "run 1\\nline two", "run 2\\nline two"]
     path.write_text("".join(f"2026-01-01T00:00:00|{i}\n" for i in range(5000)))
     engine_log.prune(path)
     kept = path.read_text().splitlines()

@@ -59,6 +59,6 @@ def test_placed_grid_options_win() -> None:
 
 def test_wrapper_passes_grid_options() -> None:
     js = JS.read_text()
-    assert "static async getStubConfig(hass)" in js and "{ grid_options: data.grid_options }" in js
+    assert "static async getStubConfig(hass)" in js and "grid_options: data.grid_options }" in js
     assert "if (this._gridOptions) return this._gridOptions;" in js
     assert "this._gridOptions = data.grid_options || null;" in js

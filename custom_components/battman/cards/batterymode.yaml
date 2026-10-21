@@ -9,7 +9,7 @@
 # The buttons change the same entities as before (the mode select and
 # the Active / Curtail switches), so the current engine stays in charge of the battery.
 # The info button opens the Engine log (browser_mod popup), styled like the State card's
-# Next hours popup. Its sections are found by the emoji the engine starts them with.
+# Next hours popup, drawn by battman-enginelog.js (the Log page uses the same).
 type: vertical-stack
 cards:
 - type: horizontal-stack
@@ -180,69 +180,21 @@ cards:
           style: --mdc-dialog-min-width:min(94vw,480px);--mdc-dialog-max-width:min(94vw,480px);
           content: |-
             [[[
-            // Engine log popup: the engine's last-run log, styled like the State card's "Next hours" popup.
-            // Each emoji line starts a section (its emoji picks the colour; the emoji itself isn't shown);
-            // the lines under it are its details. True / False and $ amounts are coloured.
-            const C = { green: 'var(--battman-green)', yellow: 'var(--battman-yellow)', amber: 'var(--battman-amber)',
-                        orange: 'var(--battman-orange)', blue: 'var(--battman-blue)', purple: 'var(--battman-purple)',
-                        darkred: 'var(--battman-darkred)', muted: 'var(--battman-text-muted)', dim: 'var(--battman-text-dim)',
-                        text: 'var(--primary-text-color)' };
-            const SECTION = { '🕐': C.muted, '🔄': C.purple, '💰': C.yellow, '🔒': C.orange, '🔋': C.green, '📊': C.blue,
-                              '☀️': C.amber, '☀': C.amber, '⚡': C.muted, '📈': C.green, '📉': C.amber, 'ℹ️': C.muted, 'ℹ': C.muted };
+            // Engine log popup: the engine's last-run log, drawn by Battman's engine log renderer
+            // (battman-enginelog.js), the same one the Log page uses: a section per heading,
+            // its details under it; True / False and $ amounts coloured.
             const LOG = '[[map:debug_log]]';
             const wrap = inner => `<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'>${inner}</div>`;
             const note = (t, c) => `<div style='padding:8px 10px;font-size:15px;font-weight:700;color:${c};'>${t}</div>`;
-            const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            const clr = s => esc(s)
-              .replace(/\bTrue\b/g, `<b style='color:${C.green};'>True</b>`)
-              .replace(/\bFalse\b/g, `<b style='color:${C.dim};'>False</b>`)
-              .replace(/(\$\s*-?[\d.]+)/g, m => `<b style='color:${parseFloat(m.replace(/[^0-9.-]/g, '')) < 0 ? C.darkred : C.green};'>${m}</b>`);
-            // a section line starts with an emoji (surrogate pair, or a BMP symbol)
-            const emojiOf = s => { const c = s.charCodeAt(0);
-              if (!((c >= 0xD800 && c <= 0xDBFF) || (c >= 0x2100 && c <= 0x27FF))) return null;
-              const m = s.match(/^(\S+?)\s/); return m ? m[1] : s.slice(0, 2); };
-
             let body;
             const st = states[LOG];
-            if (!st) body = note(`Engine log: missing ${LOG}`, C.darkred);
+            const R = window.battmanEngineLog;
+            if (!R) body = note('Engine log: Battman\'s log renderer (battman-enginelog.js) isn\'t loaded. Refresh the page.', 'var(--battman-darkred)');
+            else if (!st) body = note(`Engine log: missing ${LOG}`, 'var(--battman-darkred)');
             else {
               const raw = String(st.attributes?.message ?? '');
-              if (!raw.trim()) body = note(`${LOG} has no log message yet.`, C.muted);
-              else {
-                const secs = [];
-                let cur = null;
-                raw.split('\n').forEach(line => {
-                  const tr = line.trim();
-                  if (!tr) return;
-                  const em = emojiOf(tr);
-                  if (em) {
-                    cur = { col: SECTION[em] || C.text, head: tr.slice(em.length).trim(), lines: [] };
-                    secs.push(cur);
-                  } else {
-                    if (!cur) { cur = { col: C.text, head: '', lines: [] }; secs.push(cur); }
-                    cur.lines.push({ ind: Math.min((line.match(/^(\s+)/) || ['', ''])[1].length, 8), t: tr });
-                  }
-                });
-                // the first section, when it's the run time (🕐), becomes the top pill, like the State popup's
-                let top = '';
-                if (secs.length && secs[0].col === C.muted && /^\d{4}-\d\d-\d\d/.test(secs[0].head) && !secs[0].lines.length) {
-                  top = `<div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;background:color-mix(in srgb, ${C.blue} 16%, transparent);border:1px solid color-mix(in srgb, ${C.blue} 45%, transparent);'>`
-                    + `<span style='color:${C.blue};'>Engine log</span><span style='font-weight:600;text-transform:none;letter-spacing:0;'>Last run ${esc(secs.shift().head)}</span></div>`;
-                }
-                body = top + secs.map(s => {
-                  const [label, ...rest] = s.head.split(':');
-                  const value = rest.join(':').trim();
-                  return `<div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, ${s.col} 14%, transparent);border:1px solid color-mix(in srgb, ${s.col} 40%, transparent);'>`
-                    + `<div style='width:4px;border-radius:2px;background:${s.col};flex-shrink:0;'></div>`
-                    + `<div style='flex:1;min-width:0;'>`
-                    + (s.head ? `<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'>`
-                        + `<span style='font-size:17px;font-weight:800;color:${s.col};'>${esc(label.trim())}</span>`
-                        + (value ? `<span style='font-size:16px;font-weight:700;color:var(--primary-text-color);'>${clr(value)}</span>` : '')
-                        + `</div>` : '')
-                    + s.lines.map(l => `<div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:${Math.max(0, l.ind - 2) * 4}px;'>${clr(l.t)}</div>`).join('')
-                    + `</div></div>`;
-                }).join('');
-              }
+              body = raw.trim() ? R.render(raw, { title: 'Engine log' })
+                                : note(`${LOG} has no log message yet.`, 'var(--battman-text-muted)');
             }
             const out = wrap(body);
             // the popup sits outside the themed view, so resolve var(--x) to real values from this card's style

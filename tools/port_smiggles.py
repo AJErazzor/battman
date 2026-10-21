@@ -19,6 +19,9 @@ from pathlib import Path
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).parent))
+from smiggles_log_text import plain_log  # noqa: E402
+
 SM = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("Smiggles-main")
 REPO = Path(__file__).resolve().parents[1] / "custom_components" / "battman"
 PKG = REPO / "packages"
@@ -310,6 +313,7 @@ automation("SolarSystemControlCopyCurve.yaml", "Battman engine – copy curves t
 
 # main script
 raw = (SM / "scripts/SolarSystemControl.yaml").read_text(encoding="utf-8").replace("\r\n", "\n")
+raw = plain_log(raw)      # the log text without emoji (tools/smiggles_log_text.py)
 s = load(rename(raw, "scripts/SolarSystemControl.yaml"))
 body = {k: v for k, v in s.items() if k not in ("alias", "description")}
 write(BP / "script" / "battman_engine.yaml",

@@ -67,14 +67,20 @@ Only these:
 
 1. **Names**, as above.
 2. **The in-charge check** at the top of every engine automation and trigger sensor.
-3. **Copy curves to next month** calls `persistent_notification.create`. Smiggles' version calls
-   `notify. Notify`, which HA rejects, so in Smiggles that automation never loads and has never run.
-   In Battman it loads, so **at 8pm on the last day of each month it will copy this month's curves
-   into next month**, as Smiggles intended. Turn `automation.battman_engine_copy_curves_to_next_month`
-   off if you don't want that.
-4. **The log** is written by Battman (no shell commands); same line format, same 4032-line
-   weekly trim (Sundays 03:00). The Log page reads it through `/api/battman/log`.
-5. **Grid power and load average** are unavailable (not 0) when what they're made from is missing.
+3. **Copy curves to next month** calls `persistent_notification.create`. The Smiggles repo's version
+   calls `notify. Notify`, which HA rejects, so with that file the automation doesn't load. (A.J.'s
+   own copy does load, so it has been running.) Battman's copies this month's curves into next
+   month at 8pm on the last day of the month. Turn
+   `automation.battman_engine_copy_curves_to_next_month` off if you don't want that.
+4. **The log** is written by Battman (no shell commands): `time|message` as before, but with the
+   message's line breaks kept as `\n`; same 4032-line weekly trim (Sundays 03:00). The Log page reads it through `/api/battman/log`.
+5. **The log text has headings instead of emoji** (v0.17.1): `Run:`, `Mode:`, `Prices:`, `Battery:`,
+   `SOC Limits:`, `Solar:`, `Actions:`, `Sell Forecasts:`, `Buy Forecasts:`, `Version:`, `Debug:`;
+   the price-spike 💰 markers are `(Spike 1)` / `(Spike 2)`, `(Bad! ⛅)` is `(Bad!)`. The exact list is
+   `tools/smiggles_log_text.py`; the tests apply it to Smiggles' original too and compare the logs.
+   The Engine log popup and the Log page draw the log with one renderer (`www/battman-enginelog.js`),
+   which also reads Smiggles' emoji lines (the ones copied in at migration).
+6. **Grid power and load average** are unavailable (not 0) when what they're made from is missing.
 
 Kept as they are (worth knowing): the curtail automation sets the export limit back to **18.2 kW**
 and Sigen mode resets the PV limit to **20 kW**: both are fixed numbers in Smiggles (your system's).

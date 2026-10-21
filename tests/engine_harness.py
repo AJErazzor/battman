@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+from tools.smiggles_log_text import plain_log
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
@@ -66,7 +68,9 @@ def smiggles_files() -> dict[str, Any]:
         data.pop("shell_command", None)
         data.pop("sensor", None)
         pkgs[f.name] = data
-    script = yaml.safe_load((SM / "scripts/SolarSystemControl.yaml").read_text())
+    # the one text change Battman made to the engine (log headings instead of emoji), applied to
+    # Smiggles' original too, so both engines' logs can be compared exactly
+    script = yaml.safe_load(plain_log((SM / "scripts/SolarSystemControl.yaml").read_text()))
     autos = []
     for name in AUTOMATION_FILES:
         a = yaml.safe_load((SM / "automations" / name).read_text())

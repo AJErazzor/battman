@@ -15,6 +15,7 @@ from .test_v0130 import run_js
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
+ENGINELOG = (Path(__file__).parents[1] / "custom_components/battman/www/battman-enginelog.js").read_text()
 FIX = Path(__file__).parent / "fixtures"
 CARDS = Path(__file__).parents[1] / "custom_components/battman/cards"
 LOG = "sensor.solar_system_control_debug_log"
@@ -83,7 +84,9 @@ async def test_engine_log_popup(hass: HomeAssistant, hass_client) -> None:
     msg = (FIX / "engine_log_sample.txt").read_text()
     out = run_js([(pop["content"], {LOG: {"state": "x", "attributes": {"message": msg}}}, None),
                   (pop["content"], {}, None),
-                  (pop["content"], {LOG: {"state": "x", "attributes": {"message": "  "}}}, None)])
+                  (pop["content"], {LOG: {"state": "x", "attributes": {"message": "  "}}}, None)], prelude=ENGINELOG)
+    # without Battman's log renderer it says so
+    assert "isn't loaded" in run_js([(pop["content"], {LOG: {"state": "x", "attributes": {"message": msg}}}, None)])[0]
     full = out[0]
     assert not full.startswith("THROW")
     assert "Engine log" in full and "Last run 2026-10-20 16:10:34" in full
