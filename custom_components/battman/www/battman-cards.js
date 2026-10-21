@@ -22,6 +22,28 @@ const DOCS = "https://github.com/AJErazzor/battman/blob/main/docs/cards.md";
 const PREVIEW_THEME = "Battman Coffee";   // the card picker's previews (a theme Battman ships)
 const THEME_SENSOR = "sensor.battman_theme_mode_colours";   // its `theme` attribute: the Battman dashboard's theme
 
+// Register a custom element so HA finds it. HA's frontend may swap window.customElements for
+// its own registry (a compatibility layer) while it starts; anything registered just before the
+// swap is lost to HA. So register now, and again in HA's registry if the swap comes after us.
+function battmanDefine(tag, cls) {
+  const reg = window.customElements;
+  if (!reg.get(tag)) reg.define(tag, cls);
+  const t0 = Date.now();
+  (function watch() {
+    const now = window.customElements;
+    if (now !== reg) {
+      if (!now.get(tag)) {
+        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
+      }
+      return;
+    }
+    // HA's registry was already in place when we registered (it leaves this marker): nothing to wait for
+    if (window.CustomElementRegistryPolyfill) return;
+    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
+  })();
+}
+
+
 // The theme to use for `theme:` in a card's config. { name } or { problem }.
 function themeFor(hass, wanted) {
   let name = wanted;
@@ -257,17 +279,20 @@ class BattmanCardEditor extends HTMLElement {
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: data.config }, bubbles: true, composed: true }));
   }
 }
-if (!customElements.get("battman-card-editor")) customElements.define("battman-card-editor", BattmanCardEditor);
+battmanDefine("battman-card-editor", BattmanCardEditor);
 
 window.customCards = window.customCards || [];
 const pickerEntries = new Map();
+const cardClasses = new Map();   // tag -> class, made once (registered again if HA swaps its registry)
 
 function defineCard(id, name, description) {
   const tag = `battman-${id}`;
-  if (!customElements.get(tag)) {
-    customElements.define(tag, class extends BattmanCard {
+  if (!cardClasses.has(tag)) {
+    const cls = class extends BattmanCard {
       static cardId = id;
-    });
+    };
+    cardClasses.set(tag, cls);
+    battmanDefine(tag, cls);
   }
   let entry = pickerEntries.get(id);
   if (!entry) {
@@ -533,7 +558,7 @@ class BattmanImageCard extends HTMLElement {
     return h === "fill" ? { columns: 12, rows: 4, min_rows: 1, min_columns: 2 } : { columns: 12, rows: "auto", min_columns: 2 };
   }
 }
-if (!customElements.get("battman-image")) customElements.define("battman-image", BattmanImageCard);
+battmanDefine("battman-image", BattmanImageCard);
 
 // The editor: HA's own form, with the image list as a dropdown and a preview of the chosen image.
 const IMG_LABELS = {
@@ -702,7 +727,7 @@ class BattmanImageEditor extends HTMLElement {
     img.alt = hit.name;
   }
 }
-if (!customElements.get("battman-image-editor")) customElements.define("battman-image-editor", BattmanImageEditor);
+battmanDefine("battman-image-editor", BattmanImageEditor);
 
 if (!window.customCards.some((c) => c.type === "battman-image")) {
   window.customCards.push({

@@ -50,6 +50,25 @@ class BattmanDashboardStrategy {
   }
 }
 
-if (!customElements.get("ll-strategy-dashboard-battman")) {
-  customElements.define("ll-strategy-dashboard-battman", BattmanDashboardStrategy);
+// Register a custom element so HA finds it. HA's frontend may swap window.customElements for
+// its own registry (a compatibility layer) while it starts; anything registered just before the
+// swap is lost to HA. So register now, and again in HA's registry if the swap comes after us.
+function battmanDefine(tag, cls) {
+  const reg = window.customElements;
+  if (!reg.get(tag)) reg.define(tag, cls);
+  const t0 = Date.now();
+  (function watch() {
+    const now = window.customElements;
+    if (now !== reg) {
+      if (!now.get(tag)) {
+        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
+      }
+      return;
+    }
+    // HA's registry was already in place when we registered (it leaves this marker): nothing to wait for
+    if (window.CustomElementRegistryPolyfill) return;
+    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
+  })();
 }
+
+battmanDefine("ll-strategy-dashboard-battman", BattmanDashboardStrategy);

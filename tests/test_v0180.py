@@ -73,7 +73,7 @@ async def test_list_and_serve(hass: HomeAssistant, hass_client, hass_client_no_a
 
 def test_card_registered_and_documented() -> None:
     js = (WWW / "battman-cards.js").read_text()
-    assert 'customElements.define("battman-image", BattmanImageCard)' in js
+    assert 'battmanDefine("battman-image", BattmanImageCard)' in js
     assert 'type: "battman-image", name: "Battman Image"' in js
     assert '"(max-width: 767px)"' in js                          # the same line as HA's Mobile visibility
     docs = (ROOT / "docs/cards.md").read_text()

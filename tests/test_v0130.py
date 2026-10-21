@@ -146,7 +146,7 @@ async def test_countdown_and_browser_mod(hass: HomeAssistant) -> None:
     client = await _setup(hass)
     r = await client.get("/battman/battman-countdown.js")
     js = await r.text()
-    assert r.status == 200 and "customElements.define('battman-countdown'" in js
+    assert r.status == 200 and "battmanDefine('battman-countdown'" in js
     orig = "(now.getMinutes() % 5) * 60 + now.getSeconds();\n    const totalSecs = 5 * 60 - secsInBlock;"
     assert orig in js                                            # same countdown maths as Smiggles
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "missing_dependencies")
