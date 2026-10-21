@@ -190,7 +190,7 @@ async def test_overrides_output_matches(hass: HomeAssistant, hass_client, kind) 
     states = scenario(kind)
     out_o = run_templates((FIX / "smiggles_ssc_lib.js").read_text(), [(s, v, e) for _p, s, v, e in t_o], states)
     out_m = run_templates((WWW / "battman-lib.js").read_text(), [(s, v, e) for _p, s, v, e in t_m], states)
-    allowed = ("isNaN", ":NaN", "NTBAD", "ntBlocked", "apply_scene")
+    allowed = ("isNaN", ":NaN", "NTBAD", "ntBlocked", "apply_scene", "libWait")   # libWait: v0.18.2, waits for the library
     for (path, *_), a, b in zip(t_o, out_o, out_m, strict=True):
         assert not b.startswith("THROW"), (path, b)
         a = norm(a)

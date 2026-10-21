@@ -79,6 +79,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
     # <battman-countdown>: the 5-minute Amber countdown some Battman cards show.
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-countdown.js?v={integration.version}")
+    # Battman's card library (window.BattmanLib): the Overrides card's rows and popups.
+    # Loaded on every HA page so it's there before the first tap.
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-lib.js?v={integration.version}")
     # The engine log renderer: the Engine log popup and the Log page draw the log with it.
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-enginelog.js?v={integration.version}")
     # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
