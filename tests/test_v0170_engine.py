@@ -93,8 +93,13 @@ def _fire(hass, key: str, data: dict) -> None:
     hass.bus.async_fire(ENGINE_MAP[key], data)
 
 
+# settings Battman added after the port (Smiggles never had them): left out of the like-for-like checks
+BATTMAN_ONLY_ATTRS = {"dashboardTheme"}
+
+
 def _strip(attrs) -> dict:
-    return {k: v for k, v in attrs.items() if k not in ("friendly_name", "icon") and k not in TIME_ATTRS}
+    return {k: v for k, v in attrs.items()
+            if k not in ("friendly_name", "icon") and k not in TIME_ATTRS and k not in BATTMAN_ONLY_ATTRS}
 
 
 async def _same_store(hass, key: str) -> None:
@@ -414,8 +419,9 @@ async def test_migrate_then_hand_back(hass: HomeAssistant, hass_client) -> None:
         a, b = sm_before[k], hass.states.get(ENGINE_MAP[k])
         if not k.endswith("_curves"):            # a curves sensor's state is just when it last changed
             assert b.state == a.state, k
-        assert {x: y for x, y in a.attributes.items() if x not in migrate.OWN_ATTRS} == \
-               {x: y for x, y in b.attributes.items() if x not in migrate.OWN_ATTRS}, k
+        skip = migrate.OWN_ATTRS | BATTMAN_ONLY_ATTRS
+        assert {x: y for x, y in a.attributes.items() if x not in skip} == \
+               {x: y for x, y in b.attributes.items() if x not in skip}, k
     # ...as the sensors' own values, so they survive a restart (what HA saves to restore them)
     comp = hass.data["entity_components"]["sensor"]
     for k in ("parameters", "soc_curves", "price_curves", "buy_rules", "buy_total", "sell_total", "run"):

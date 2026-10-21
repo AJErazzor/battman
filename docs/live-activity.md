@@ -44,7 +44,8 @@ With the phone on **Off** nothing is sent, so a new install is harmless until yo
   configuration.yaml), a Repair says so.
 
 Nothing is made up: a value that isn't available shows as "—", an unknown battery
-mode shows a red "?" icon, and with no dashboard theme picked the bar is grey.
+mode shows a red "?" icon, and with no dashboard theme picked the bar is grey
+(`sensor.battman_theme_mode_colours` says why in its `problem` attribute).
 
 ## Swapping over from the Smiggles automations
 
@@ -55,6 +56,7 @@ mode shows a red "?" icon, and with no dashboard theme picked the bar is grey.
 3. **Disable** (don't delete) the old ones: *Battery Live Activity – car, start, stop,
    update, keep-alive, FIT spike alert* and the script *Battery Live Activity – push*.
 4. Pick a theme on the Battman dashboard (Settings → Dashboard options), or the bar is grey.
+   This works on a dashboard you've taken control of too.
 5. Flip the Live Activity switch on and off, and drive somewhere.
 6. When you're happy: delete the old automations and script. Before deleting the helpers
    `input_boolean.battery_live_activity` and `input_text.theme_mode_colours`, open each one →

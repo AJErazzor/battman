@@ -839,6 +839,20 @@ template:
               {{ this.attributes.armedScene | default('', true) }}
             {% endif %}
 
+          # Dashboard theme: the Battman theme your dashboard uses ('' = none picked).
+          # Set by the Settings view's Dashboard theme dropdown and the theme studio's
+          # Make Active. sensor.battman_theme_mode_colours reads it (the Live Activity's
+          # bar colours, and cards with theme: battman). Not in defaults: Reset leaves it.
+          dashboardTheme: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.dashboardTheme is defined %}
+              {{ (trigger.event.data.dashboardTheme or '') | string | trim }}
+            {% else %}
+              {{ this.attributes.dashboardTheme | default('', true) }}
+            {% endif %}
+
           pinnedOverrides: >
             {% if trigger is defined
                and trigger.platform == 'event'

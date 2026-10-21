@@ -1280,6 +1280,20 @@ function pasteFallback(){
 // Apply the selected theme to EVERY view of the current dashboard — the same
 // plumbing the Settings-page switcher uses (per-view theme:, not frontend.set_theme,
 // which this dashboard's hardcoded view themes would override anyway).
+// Battman keeps the dashboard theme's name in the parameters sensor (dashboardTheme):
+// the mode colours sensor (Live Activity bar, theme: battman cards) reads it there.
+// Done here every time, so it's saved even if the Settings view's helper is an older copy.
+function saveThemeName(hass,name){
+  var tok=hass.auth&&hass.auth.data&&hass.auth.data.access_token;
+  fetch("/api/battman/entities",{headers:{Authorization:"Bearer "+tok}}).then(function(r){
+    if(!r.ok)throw new Error("entity map HTTP "+r.status);
+    return r.json();
+  }).then(function(j){
+    var ev=(j.entities||{}).parameters_update_event;
+    if(!ev)throw new Error("entity map has no parameters_update_event");
+    return hass.connection.sendMessagePromise({type:"fire_event",event_type:ev,event_data:{action:"SetAttribute",dashboardTheme:name}});
+  }).catch(function(e){setStatus("theme name not saved in Battman: "+e.message,"err");});
+}
 function doMakeActive(){
   var hass=getHass();if(!hass){setStatus("not connected","err");return;}
   var name=document.getElementById("themeSel").value;
@@ -1288,6 +1302,7 @@ function doMakeActive(){
   var urlPath="";
   try{urlPath=window.parent.location.pathname.split("/").filter(Boolean)[0];}catch(e){}
   if(!urlPath){setStatus("can't detect dashboard","err");return;}
+  saveThemeName(hass,name);
   // The save alone doesn't re-render the open dashboard, so ask the parent's
   // lovelace panel to re-fetch its config (instant); full reload only as fallback.
   function reloadParent(){
