@@ -160,7 +160,8 @@ async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
     by_path = {v["path"]: v for v in (await (await client.get("/api/battman/dashboard")).json())["views"]}
-    assert by_path["curvy"]["cards"][0]["url"] == "/battman/curvy.html" and by_path["curvy"]["theme"] == "Battman Nord"
+    # Curvy is a Battman card now (custom:battman-curvy shows /battman/curvy.html: see test_curvy_card)
+    assert by_path["curvy"]["cards"][0]["type"] == "custom:battman-curvy" and by_path["curvy"]["theme"] == "Battman Nord"
     assert by_path["pricy"]["cards"][0]["url"] == "/battman/pricy.html" and by_path["pricy"]["title"] == "Pricy"
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
     assert emap["sigen_pv_power"] == "sensor.sigen_plant_sigen_pv_power"      # Sigen-only, separate from pv_power
