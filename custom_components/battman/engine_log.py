@@ -2,8 +2,8 @@
 
 Replaces Smiggles' shell commands (LogWriter / PruneLog / load-filtered-log):
 - every `battman_engine_log` event the engine fires is appended to
-  <config>/battman/engine.log as `<time>|<message>` (same line format as Smiggles'
-  /config/smiggles/solar_debug.log);
+  <config>/battman/engine.log as `<time>|<message>` (as Smiggles' /config/smiggles/solar_debug.log,
+  but with the message's line breaks kept as \\n);
 - Sundays at 03:00 the file is cut to its last 4032 lines (two weeks of 5-minute runs),
   as Smiggles' PruneLog did;
 - the Log page asks GET /api/battman/log?start=&end= for a time range. Until you
@@ -41,8 +41,9 @@ def smiggles_path(hass: HomeAssistant) -> Path:
 
 
 def line_for(when: str, message: str) -> str:
-    """One log line: Smiggles' format (newlines in the message become spaces)."""
-    return f"{when}|{message.replace(chr(10), ' ').replace(chr(13), ' ')}\n"
+    """One log line: `<time>|<message>`, the message's line breaks written as \\n so the run stays
+    on one line and its sections can be read back. (Smiggles turned them into spaces.)"""
+    return f"{when}|{message.replace(chr(13), '').replace(chr(10), chr(92) + 'n')}\n"
 
 
 def append(path: Path, line: str) -> None:

@@ -21,6 +21,20 @@ HA only reads `grid_options` on the card as placed, so Battman passes it on: the
 dashboard adds it, a card added from the card picker comes with it, and the card reports it
 to HA once loaded. A `grid_options` you set on the placed card always wins.
 
+**Theme.** Battman cards draw in a Battman theme's colours. On a view with a Battman theme they
+use it. To give a card its colours anywhere else (another view, or the card picker's previews),
+add `theme:` to the placed card:
+
+```yaml
+type: custom:battman-state
+theme: battman          # the Battman dashboard's theme, and it follows when you change that
+# theme: Battman Nord   # or a theme by name
+```
+
+Cards added from the card picker come with `theme: battman`. Without `theme:` a card uses its
+view's theme, like any card. If the theme isn't there (not installed, or the Battman dashboard has
+no theme picked) the card says so instead of drawing.
+
 A card with no tap action gets `pointer-events: none` from button-card, which also stops
 scrolling inside it; cards that scroll (the forecast table) set `pointer-events: auto`.
 The editor is only there on a dashboard you can edit. Battman's own dashboard is built
