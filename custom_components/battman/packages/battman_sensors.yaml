@@ -1,0 +1,155 @@
+# Managed by Battman: written into <config>/packages/battman/ and rewritten on every
+# Battman update (and when the entity map changes). Don't edit this copy: changes are
+# overwritten. Put your own template sensors in your own package file.
+#
+# The double-bracket map markers are entries in Battman's entity map, filled in when Battman writes the file.
+# Unavailable, never 0, when what a sensor is made from is missing (Smiggles used float(0)).
+template:
+  - sensor:
+      # Grid power, kW: + importing, - exporting, whichever side flows over 50 W.
+      # (Smiggles' sensor.gridpower, renamed: same rule, now labelled kW / power.)
+      - name: Battman grid power
+        unique_id: battman_grid_power
+        unit_of_measurement: kW
+        device_class: power
+        state_class: measurement
+        icon: mdi:transmission-tower
+        availability: >-
+          {{ has_value('[[map:grid_import_power]]') and has_value('[[map:grid_export_power]]') }}
+        state: >-
+          {% set s1 = states('[[map:grid_import_power]]') | float %}
+          {% set s2 = states('[[map:grid_export_power]]') | float %}
+          {% if s1 > 0.05 and s1 >= s2 %}{{ s1 | round(2) }}
+          {% elif s2 > 0.05 and s2 > s1 %}{{ -1 * s2 | round(2) }}
+          {% else %}0{% endif %}
+
+      # 30-minute average home load, kW, from the Statistics sensor in the map (load_30m).
+      # (Smiggles' sensor.solarsystemcontrolload30mavg, renamed: same value.)
+      - name: Battman load 30m avg
+        unique_id: battman_load_30m_avg
+        unit_of_measurement: kW
+        device_class: power
+        state_class: measurement
+        icon: mdi:home-lightning-bolt
+        availability: "{{ has_value('[[map:load_30m]]') }}"
+        state: "{{ states('[[map:load_30m]]') | float | round(2) }}"
+
+  # ── ported from packages/solarsystemcontrolmodule.yaml v1.0.14 ──
+  - binary_sensor:
+      - name: "Battman estimated price"
+        unique_id: battman_estimated_price
+        state: >
+          {% set now_ts = as_timestamp(utcnow()) %}
+          {% set start_ts = as_timestamp(state_attr('[[map:feed_in_price]]', 'start_time')) | default(0) %}
+          {% set end_ts = as_timestamp(state_attr('[[map:feed_in_price]]', 'end_time')) | default(0) %}
+          {% if start_ts <= now_ts <= end_ts %}
+            {{ state_attr('[[map:feed_in_price]]', 'estimate') }}
+          {% else %}
+            {{ true }}
+          {% endif %}
+          
+  - trigger:
+    - platform: event
+      event_type: battman_soc_curves_update
+    condition:
+      - condition: state
+        entity_id: binary_sensor.battman_in_charge
+        state: "on"
+    sensor:
+    - name: "Battman SOC curves"
+      unique_id: battman_soc_curves
+      state: "{{ now().isoformat() }}"
+      attributes:
+        curves: >-
+          {{
+            trigger.event.data.curves if trigger is defined
+            and trigger.event and 'curves' in trigger.event.data
+            else state_attr('sensor.battman_soc_curves', 'curves')
+            | default({}, true)
+          }}
+        defaults: >-
+          {{
+            trigger.event.data.defaults if trigger is defined
+            and trigger.event and 'defaults' in trigger.event.data
+            else state_attr('sensor.battman_soc_curves', 'defaults')
+            | default({}, true)
+          }}
+        presets: >-
+          {{
+            trigger.event.data.presets if trigger is defined
+            and trigger.event and 'presets' in trigger.event.data
+            else state_attr('sensor.battman_soc_curves', 'presets')
+            | default({}, true)
+          }}
+        preset_names: >-
+          {{
+            trigger.event.data.preset_names if trigger is defined
+            and trigger.event and 'preset_names' in trigger.event.data
+            else state_attr('sensor.battman_soc_curves', 'preset_names')
+            | default({'1': 'Preset 1', '2': 'Preset 2', '3': 'Preset 3', '4': 'Preset 4', '5': 'Preset 5'}, true)
+          }}
+        preset_tracking: >-
+          {{
+            trigger.event.data.preset_tracking if trigger is defined
+            and trigger.event and 'preset_tracking' in trigger.event.data
+            else state_attr('sensor.battman_soc_curves', 'preset_tracking')
+            | default({}, true)
+          }}    
+
+  - trigger:
+     - platform: event
+       event_type: battman_price_curves_update
+    condition:
+      - condition: state
+        entity_id: binary_sensor.battman_in_charge
+        state: "on"
+    sensor:
+    - name: "Battman price curves"
+      unique_id: battman_price_curves
+      state: "{{ now().isoformat() }}"
+      attributes:
+        curves: >-
+          {{
+            trigger.event.data.curves if trigger is defined
+            and trigger.event and 'curves' in trigger.event.data
+            else state_attr('sensor.battman_price_curves', 'curves')
+            | default({}, true)
+          }}
+        presets: >-
+          {{
+            trigger.event.data.presets if trigger is defined
+            and trigger.event and 'presets' in trigger.event.data
+            else state_attr('sensor.battman_price_curves', 'presets')
+            | default({}, true)
+          }}
+        preset_names: >-
+          {{
+            trigger.event.data.preset_names if trigger is defined
+            and trigger.event and 'preset_names' in trigger.event.data
+            else state_attr('sensor.battman_price_curves', 'preset_names')
+            | default({'1': 'Preset 1', '2': 'Preset 2', '3': 'Preset 3', '4': 'Preset 4', '5': 'Preset 5'}, true)
+          }}
+        preset_tracking: >-
+          {{
+            trigger.event.data.preset_tracking if trigger is defined
+            and trigger.event and 'preset_tracking' in trigger.event.data
+            else state_attr('sensor.battman_price_curves', 'preset_tracking')
+            | default({}, true)
+          }}
+  
+
+  - trigger:
+      - platform: event
+        event_type: battman_engine_log
+    condition:
+      - condition: state
+        entity_id: binary_sensor.battman_in_charge
+        state: "on"
+    sensor:
+      - name: "Battman engine log"
+        unique_id: battman_engine_log
+        state: "{{ now().isoformat() }}"
+        device_class: timestamp
+        attributes:
+          message: "{{ trigger.event.data.message }}"
+          last_ts: "{{ now().isoformat() }}"

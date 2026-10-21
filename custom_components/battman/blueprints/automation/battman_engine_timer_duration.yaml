@@ -1,0 +1,30 @@
+# Battman engine: ported like for like from Smiggles (automations/SolarSystemOverrideTimerInitialDuration.yaml).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – override timer start
+  description: Starts the override timer at 10 minutes when it's started from idle. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+triggers:
+- trigger: state
+  entity_id:
+  - timer.battman_override_timer
+  from:
+  - idle
+  to:
+  - active
+conditions:
+- condition: state
+  entity_id: binary_sensor.battman_in_charge
+  state: 'on'
+actions:
+- action: timer.change
+  metadata: {}
+  data:
+    duration: '-11:50:00'
+  target:
+    entity_id: timer.battman_override_timer
+mode: single

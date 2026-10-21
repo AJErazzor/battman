@@ -32,10 +32,10 @@ blueprint:
     watch:
       name: Push when these change
       default:
-        - sensor.sigen_plant_battery_state_of_charge
-        - sensor.amber_5min_current_feed_in_price
-        - sensor.amber_5min_current_general_price
-        - input_select.solarsystemcontrolmode
+        - [[map:battery_soc]]
+        - [[map:feed_in_price]]
+        - [[map:buy_price]]
+        - [[map:mode]]
       selector:
         entity:
           multiple: true

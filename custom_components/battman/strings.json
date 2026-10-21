@@ -94,6 +94,11 @@
       "live_activity_spike_alert": {
         "name": "Live Activity spike alert"
       }
+    },
+    "binary_sensor": {
+      "in_charge": {
+        "name": "In charge"
+      }
     }
   },
   "services": {
@@ -104,6 +109,26 @@
     "create_live_activity": {
       "name": "Create Live Activity automations",
       "description": "Creates any missing Battman Live Activity automations and script from Battman's blueprints. Never changes ones that exist."
+    },
+    "migrate_from_smiggles": {
+      "name": "Migrate from Smiggles",
+      "description": "Moves control of the battery from Smiggles to Battman: turns every Smiggles automation off, copies Smiggles' settings, overrides, rules, curves, odometers, helpers and log into Battman's, then puts Battman in charge. Without confirm it's a dry run that shows what it would do.",
+      "fields": {
+        "confirm": {
+          "name": "Confirm",
+          "description": "Off: dry run (shows the plan, changes nothing). On: migrate."
+        }
+      }
+    },
+    "hand_back_to_smiggles": {
+      "name": "Hand back to Smiggles",
+      "description": "Gives control of the battery back to Smiggles: Battman's engine stops, its values are copied back into Smiggles', and the Smiggles automations that were on are turned back on. Without confirm it's a dry run.",
+      "fields": {
+        "confirm": {
+          "name": "Confirm",
+          "description": "Off: dry run (shows the plan, changes nothing). On: hand back."
+        }
+      }
     }
   },
   "issues": {
@@ -133,21 +158,27 @@
     "local_cards": {
       "title": "Battman is using your own card files",
       "description": "These Battman cards come from your files in config/{folder}/ instead of the ones Battman ships: {cards}. That folder is for trying out changes; delete a file there to go back to Battman's version."
+    },
+    "packages_not_loaded": {
+      "title": "Battman's package files aren't loaded",
+      "description": "Battman wrote its template sensors into `{folder}`, but Home Assistant isn't reading that folder, so these don't exist: {missing}.\n\nAdd this to `configuration.yaml` (or check the existing `packages:` line uses `!include_dir_named packages`), then restart Home Assistant:\n\n```yaml\nhomeassistant:\n  packages: !include_dir_named packages\n```"
+    },
+    "engine_not_loaded": {
+      "title": "Battman's engine automations didn't load",
+      "description": "Battman wrote its engine automations and scripts into automations.yaml and scripts.yaml, but Home Assistant didn't load these: {missing}. Check configuration.yaml has `automation: !include automations.yaml` and `script: !include scripts.yaml`, and look in the log for errors."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Battman entity map",
-        "description": "Which entity (or event, file, pattern) each Battman name points at. Battman pages and views use these. Leave an entry as it is to keep Battman's default; changes apply the next time a Battman page or dashboard loads. In the solar string pattern, {marker} stands for the string number (1–12).",
+        "description": "Which entity (or pattern) each Battman name points at, for the other integrations Battman uses (Sigen, Amber, Solcast, OpenNEM). Battman's engine entities aren't here: they follow whichever engine is in charge. Leave an entry as it is to keep Battman's default. In the solar string pattern, {marker} stands for the string number (1–12).",
         "data": {
-          "buy_total": "Buy total ($ odometer)",
-          "sell_total": "Sell total ($ odometer)",
-          "network_fee_total": "Network fee total ($ odometer)",
-          "parameters": "Settings store (parameters sensor)",
           "battery_soc": "Battery state of charge (%)",
           "buy_price": "Buy price (current)",
           "feed_in_price": "Feed-in price (current)",
+          "buy_forecast": "Buy price forecast",
+          "feed_in_forecast": "Feed-in price forecast",
           "grid_export_today": "Grid export today (kWh, resets daily)",
           "grid_import_today": "Grid import today (kWh, resets daily)",
           "pv_power": "Solar power (total)",
@@ -155,36 +186,30 @@
           "battery_power": "Battery power",
           "third_party_pv": "Third-party solar power (optional)",
           "pv_string": "Solar string pattern",
-          "mode": "Battery mode (select)",
-          "debug_log_start": "Log range start (date/time helper)",
-          "debug_log_end": "Log range end (date/time helper)",
-          "load_debug_log_script": "Load-log script",
-          "load_30m": "Load, 30-min",
-          "grid_power": "Grid power",
-          "debug_log_file": "Filtered log file URL",
-          "parameters_update_event": "Settings update event name",
-          "totals_update_event": "Totals update event name",
-          "soc_curves": "SOC curves store (sensor)",
-          "price_curves": "Price curves store (sensor)",
-          "soc_curves_update_event": "SOC curves update event name",
-          "price_curves_update_event": "Price curves update event name",
-          "control_script": "Battery control script",
-          "load_30m_avg": "Load, 30-min average",
-          "high_consumption": "High consumption threshold",
-          "sigen_pv_power": "Sigen solar power (Sigen inverter only)",
-          "solcast_today": "Solcast forecast today",
-          "buy_forecast": "Buy price forecast",
-          "feed_in_forecast": "Feed-in price forecast",
-          "buy_rules": "Buy rules store (sensor)",
-          "sell_rules": "Sell rules store (sensor)",
-          "buy_rules_event": "Buy rules update event name",
-          "sell_rules_event": "Sell rules update event name",
-          "power_provider_buy": "Power provider buy tariffs (sensor)",
-          "power_provider_sell": "Power provider sell tariffs (sensor)",
-          "power_provider_event": "Power provider update event name",
+          "load_30m": "Load, 30-min mean (Statistics helper of home power)",
+          "grid_power": "Grid power (Battman sensor)",
+          "load_30m_avg": "Load, 30-min average (Battman sensor)",
+          "grid_import_power": "Grid import power",
+          "grid_export_power": "Grid export power",
+          "ems_control_mode": "Sigen remote EMS control mode (select)",
           "grid_export_limit": "Grid export limit (number)",
           "pv_max_limit": "PV max power limit (number)",
-          "max_charge_limit": "Max charging limit (number)"
+          "max_charge_limit": "Max charging limit (number)",
+          "rated_charging_power": "Battery rated charging power",
+          "rated_discharging_power": "Battery rated discharging power",
+          "inverter_rated_power": "Inverter rated active power",
+          "grid_connection_status": "Grid connection status (on/off grid)",
+          "total_imported_energy": "Total grid import energy (kWh, lifetime)",
+          "total_exported_energy": "Total grid export energy (kWh, lifetime)",
+          "sigen_pv_power": "Sigen solar power (Sigen inverter only)",
+          "rated_energy_capacity": "Battery rated capacity (kWh)",
+          "available_max_power": "Available max active power",
+          "inverter_soc": "Inverter battery state of charge (%)",
+          "solcast_today": "Solcast forecast today",
+          "solcast_tomorrow": "Solcast forecast tomorrow",
+          "solcast_remaining_today": "Solcast forecast remaining today",
+          "solcast_next_hour": "Solcast forecast next hour",
+          "opennem": "OpenNEM region sensor"
         }
       }
     },

@@ -1,3 +1,4 @@
+import pytest
 """v0.10.0: Live Activity settings entities; Battman creates its automations/script; end to end."""
 
 import asyncio
@@ -10,6 +11,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
+
+pytestmark = pytest.mark.usefixtures("smiggles_installed")   # its totals / mode are Smiggles'
 
 DOMAIN = "battman"
 SW = "switch.battman_live_activity"

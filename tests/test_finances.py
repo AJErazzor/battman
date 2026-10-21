@@ -1,3 +1,4 @@
+import pytest
 """Finances view via the dashboard API, and the dependency check."""
 
 import json
@@ -7,6 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 
@@ -27,8 +30,8 @@ async def test_dashboard_api_fills_the_map(hass: HomeAssistant, hass_client) -> 
     assert r.status == 200
     data = await r.json()
     assert data["errors"] == []
-    assert [v["path"] for v in data["views"]] == ["power", "finances", "correct-totals", "curvy", "pricy", "log", "settings", "theme"]
-    view = data["views"][1]
+    assert [v["path"] for v in data["views"]] == ["power", "history", "finances", "correct-totals", "curvy", "pricy", "log", "settings", "theme"]
+    view = data["views"][2]
     assert view["title"] == "Finances" and view["path"] == "finances"
     assert view["theme"] == "Battman Coffee"
     text = json.dumps(view)

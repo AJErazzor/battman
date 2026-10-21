@@ -1,6 +1,16 @@
 {
   "domain": "battman",
   "name": "Battman",
+  "after_dependencies": [
+    "automation",
+    "input_boolean",
+    "input_number",
+    "input_select",
+    "recorder",
+    "script",
+    "template",
+    "timer"
+  ],
   "codeowners": [
     "@AJErazzor"
   ],

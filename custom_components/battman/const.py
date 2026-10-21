@@ -10,25 +10,86 @@ ENTITY_MAP_URL = "/api/battman/entities"
 
 # The entity map: the Battman name a page asks for -> the entity (or event) in
 # this HA. Battman pages, cards and views use only the names on the left.
-ENTITY_MAP_DEFAULTS: dict[str, str] = {
-    # Smiggles entities: Battman takes these over later, then they leave the map
+ENGINE_MAP: dict[str, str] = {
+    # Battman's engine: its own entities and events (packages/battman/ and the engine
+    # blueprints). Before you migrate, these point at Smiggles' (SMIGGLES_NAMES below)
+    # so the cards work on the engine that's in charge. Not on the Configure screen.
+    "parameters": "sensor.battman_parameters",
+    "run": "sensor.battman_run",
+    "buy_total": "sensor.battman_buy_total",
+    "sell_total": "sensor.battman_sell_total",
+    "network_fee_total": "sensor.battman_network_fee",
+    "estimated_price": "binary_sensor.battman_estimated_price",
+    "override_timer": "timer.battman_override_timer",
+    "enable": "input_boolean.battman_enable",
+    "no_export": "input_boolean.battman_no_export",
+    "mode": "input_select.battman_mode",
+    "high_consumption": "input_number.battman_high_consumption",
+    "debug_log": "sensor.battman_engine_log",
+    "control_script": "script.battman_engine",
+    "apply_scene_script": "script.battman_apply_scene",
+    "soc_curves": "sensor.battman_soc_curves",
+    "price_curves": "sensor.battman_price_curves",
+    "buy_rules": "sensor.battman_buy_rules",
+    "sell_rules": "sensor.battman_sell_rules",
+    "power_provider_buy": "sensor.battman_power_provider_buy",
+    "power_provider_sell": "sensor.battman_power_provider_sell",
+    # events (not entities): cards fire these to change settings, totals, curves, rules
+    "parameters_update_event": "battman_parameters_update",
+    "totals_update_event": "battman_totals_update",
+    "soc_curves_update_event": "battman_soc_curves_update",
+    "price_curves_update_event": "battman_price_curves_update",
+    "buy_rules_event": "battman_buy_rules_update",
+    "sell_rules_event": "battman_sell_rules_update",
+    "power_provider_event": "battman_power_provider_update",
+}
+
+# The same entries in Smiggles. Used while Smiggles is in charge (Battman not migrated
+# and sensor.solarsystemcontrolparameters exists), and by Migrate / Hand back.
+SMIGGLES_NAMES: dict[str, str] = {
+    "parameters": "sensor.solarsystemcontrolparameters",
+    "run": "sensor.solarsystemcontrolrun",
     "buy_total": "sensor.solarsystemcontrolbuytotal",
     "sell_total": "sensor.solarsystemcontrolselltotal",
     "network_fee_total": "sensor.solarsystemcontrolnetworkaccessfee",
-    "parameters": "sensor.solarsystemcontrolparameters",
-    "run": "sensor.solarsystemcontrolrun",
     "estimated_price": "binary_sensor.solarsystemcontrolestimatedprice",
     "override_timer": "timer.solarsystemoverridetimer",
-    # Battery mode card: the engine's on/off and curtail switches, and its last-run log
     "enable": "input_boolean.solarsystemcontrolenable",
     "no_export": "input_boolean.solarsystemcontrolnoexport",
+    "mode": "input_select.solarsystemcontrolmode",
+    "high_consumption": "input_number.solarsystemcontrolhighconsumption",
     "debug_log": "sensor.solar_system_control_debug_log",
-    # Overrides card: the Smiggles script that applies a multi-override preset (scene)
+    "control_script": "script.solarsystemcontrol",
     "apply_scene_script": "script.ssc_apply_scene",
-    # Other integrations: these stay on the map
+    "soc_curves": "sensor.solar_system_control_soc_curves",
+    "price_curves": "sensor.solar_system_control_price_curves",
+    "buy_rules": "sensor.solarsystemcontrolbuyrules",
+    "sell_rules": "sensor.solarsystemcontrolsellrules",
+    "power_provider_buy": "sensor.solarsystemcontrolpowerproviderbuy",
+    "power_provider_sell": "sensor.solarsystemcontrolpowerprovidersell",
+    "parameters_update_event": "solarsystemcontrolparametersupdate",
+    "totals_update_event": "solarsystemcontroltotalattribute",
+    "soc_curves_update_event": "solar_system_control_soc_curves_update",
+    "price_curves_update_event": "solar_system_control_price_curves_update",
+    "buy_rules_event": "solarsystemcontrolbuyrulesattribute",
+    "sell_rules_event": "solarsystemcontrolsellrulesattribute",
+    "power_provider_event": "solarsystemcontrolpowerproviderupdate",
+}
+# Smiggles is installed if this exists (and Battman hasn't taken over).
+SMIGGLES_PROBE = "sensor.solarsystemcontrolparameters"
+# Config entry data: True once Migrate from Smiggles has run (until Hand back).
+MIGRATED = "migrated_from_smiggles"
+# Config entry data: True while Battman's engine controls the battery (binary_sensor.battman_in_charge).
+IN_CHARGE = "engine_in_charge"
+
+# Other integrations' entities: these stay on the map, and you can change them on the
+# Configure screen.
+OTHER_MAP_DEFAULTS: dict[str, str] = {
     "battery_soc": "sensor.sigen_plant_battery_state_of_charge",
     "buy_price": "sensor.amber_5min_current_general_price",
     "feed_in_price": "sensor.amber_5min_current_feed_in_price",
+    "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
+    "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
     "grid_export_today": "sensor.sigen_plant_daily_grid_export_energy",
     "grid_import_today": "sensor.sigen_plant_daily_grid_import_energy",
     "pv_power": "sensor.sigen_plant_pv_power",
@@ -37,66 +98,43 @@ ENTITY_MAP_DEFAULTS: dict[str, str] = {
     "third_party_pv": "sensor.sigen_plant_third_party_pv_power",
     # pattern: {n} = string number 1..12; the Log page shows the ones that exist
     "pv_string": "sensor.sigen_inverter_pv{n}_power",
-    # Smiggles log helpers (Battman takes these over with the log engine)
-    "mode": "input_select.solarsystemcontrolmode",
-    "debug_log_start": "input_datetime.solarsystemcontroldebuglogstart",
-    "debug_log_end": "input_datetime.solarsystemcontroldebuglogend",
-    "load_debug_log_script": "script.solarsystemcontrolloadfilteredsolarlog",
+    # 30-minute mean of home power: a Statistics helper you made for Smiggles
     "load_30m": "sensor.solarsystemcontrolload30m",
-    "grid_power": "sensor.gridpower",
-    # not an entity: the URL of the filtered log file the Log page reads
-    "debug_log_file": "/local/smiggles/solar_debug_filtered.txt",
-    # Smiggles events (not entities): cards fire these to change settings / totals
-    "parameters_update_event": "solarsystemcontrolparametersupdate",
-    "totals_update_event": "solarsystemcontroltotalattribute",
-    # Curvy (SOC curves) and Pricy (price curves): Smiggles curve stores, their
-    # events, and the Smiggles control script the editors can run
-    "soc_curves": "sensor.solar_system_control_soc_curves",
-    "price_curves": "sensor.solar_system_control_price_curves",
-    "soc_curves_update_event": "solar_system_control_soc_curves_update",
-    "price_curves_update_event": "solar_system_control_price_curves_update",
-    "control_script": "script.solarsystemcontrol",
-    "load_30m_avg": "sensor.solarsystemcontrolload30mavg",
-    "high_consumption": "input_number.solarsystemcontrolhighconsumption",
-    # Settings: rules, power provider, and the events their cards fire
-    "buy_rules": "sensor.solarsystemcontrolbuyrules",
-    "sell_rules": "sensor.solarsystemcontrolsellrules",
-    "buy_rules_event": "solarsystemcontrolbuyrulesattribute",
-    "sell_rules_event": "solarsystemcontrolsellrulesattribute",
-    "power_provider_buy": "sensor.solarsystemcontrolpowerproviderbuy",
-    "power_provider_sell": "sensor.solarsystemcontrolpowerprovidersell",
-    "power_provider_event": "solarsystemcontrolpowerproviderupdate",
-    # Power view: Sigen limits (Limits card)
+    # Battman's template sensors (packages/battman/battman_sensors.yaml):
+    # grid power from the Sigen import / export power below; load avg from load_30m
+    "grid_power": "sensor.battman_grid_power",
+    "load_30m_avg": "sensor.battman_load_30m_avg",
+    "grid_import_power": "sensor.sigen_plant_grid_import_power",
+    "grid_export_power": "sensor.sigen_plant_grid_export_power",
+    # Sigen controls and ratings the engine reads and sets (also the Limits card)
+    "ems_control_mode": "select.sigen_plant_remote_ems_control_mode",
     "grid_export_limit": "number.sigen_plant_grid_export_limitation",
     "pv_max_limit": "number.sigen_plant_pv_max_power_limit",
     "max_charge_limit": "number.sigen_plant_ess_max_charging_limit",
-    # Other integrations used by Curvy / Pricy
-    # Sigen inverter solar only (pv_power is Sigen + third-party)
+    "rated_charging_power": "sensor.sigen_plant_ess_rated_charging_power",
+    "rated_discharging_power": "sensor.sigen_plant_ess_rated_discharging_power",
+    "inverter_rated_power": "sensor.sigen_inverter_rated_active_power",
+    "grid_connection_status": "sensor.sigen_plant_grid_connection_status",
+    "total_imported_energy": "sensor.sigen_plant_total_imported_energy",
+    "total_exported_energy": "sensor.sigen_plant_total_exported_energy",
     "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
-    "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
-    "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
     "rated_energy_capacity": "sensor.sigen_plant_rated_energy_capacity",
     "available_max_power": "sensor.sigen_plant_available_max_active_power",
     "inverter_soc": "sensor.sigen_inverter_battery_state_of_charge",
+    # Solcast
+    "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
+    "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
     "solcast_remaining_today": "sensor.solcast_pv_forecast_forecast_remaining_today",
+    "solcast_next_hour": "sensor.solcast_pv_forecast_forecast_next_hour",
     # OpenNEM region sensor: Battman's NEM sensors (sensor.battman_nem_*) read its attributes
     "opennem": "sensor.opennem_sa",
-    "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
-    "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
 }
 
+# Every map entry with its Battman default.
+ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **OTHER_MAP_DEFAULTS}
+
 # Entries that aren't entities (the Configure screen shows a text box for these).
-MAP_TEXT_ENTRIES = {
-    "pv_string",
-    "debug_log_file",
-    "parameters_update_event",
-    "totals_update_event",
-    "soc_curves_update_event",
-    "price_curves_update_event",
-    "buy_rules_event",
-    "sell_rules_event",
-    "power_provider_event",
-}
+MAP_TEXT_ENTRIES = {"pv_string"}
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.
 THEMES_URL = "/api/battman/themes"

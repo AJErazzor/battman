@@ -1,0 +1,64 @@
+# Battman engine: ported like for like from Smiggles (automations/SolarSystemControlCopyCurve.yaml).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – copy curves to next month
+  description: At 8pm on the last day of the month, copies this month's SOC and price curves into next month. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+triggers:
+- at: '20:00:00'
+  trigger: time
+conditions:
+- condition: state
+  entity_id: binary_sensor.battman_in_charge
+  state: 'on'
+- condition: template
+  value_template: |
+    {{ (now() + timedelta(days=1)).day == 1 }}
+  enabled: true
+actions:
+- alias: Determine current and next month keys
+  variables:
+    current_month: '{{ [''jan'',''feb'',''mar'',''apr'',''may'',''jun'',''jul'',''aug'',''sep'',''oct'',''nov'',''dec''][now().month - 1] }}'
+    next_month: '{{ [''jan'',''feb'',''mar'',''apr'',''may'',''jun'',''jul'',''aug'',''sep'',''oct'',''nov'',''dec''][now().month % 12] }}'
+- alias: Build new SOC curves
+  variables:
+    soc_all_curves: '{{ state_attr(''sensor.battman_soc_curves'', ''curves'') }}'
+    current_soc: '{{ soc_all_curves[current_month] }}'
+    new_soc_curves: |
+      {% set ns = namespace(result={}) %} {% for m in ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'] %}
+        {% if m == next_month %}
+          {% set ns.result = dict(ns.result, **{m: current_soc}) %}
+        {% else %}
+          {% set ns.result = dict(ns.result, **{m: soc_all_curves[m]}) %}
+        {% endif %}
+      {% endfor %} {{ ns.result }}
+- event: battman_soc_curves_update
+  event_data:
+    curves: '{{ new_soc_curves }}'
+- delay:
+    seconds: 2
+- alias: Build new price curves
+  variables:
+    price_all_curves: '{{ state_attr(''sensor.battman_price_curves'', ''curves'') }}'
+    current_price: '{{ price_all_curves[current_month] }}'
+    new_price_curves: |
+      {% set ns = namespace(result={}) %} {% for m in ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'] %}
+        {% if m == next_month %}
+          {% set ns.result = dict(ns.result, **{m: current_price}) %}
+        {% else %}
+          {% set ns.result = dict(ns.result, **{m: price_all_curves[m]}) %}
+        {% endif %}
+      {% endfor %} {{ ns.result }}
+- event: battman_price_curves_update
+  event_data:
+    curves: '{{ new_price_curves }}'
+- data:
+    title: Battman curves updated
+    message: |
+      {{ current_month | upper }} curves copied to {{ next_month | upper }}. Fine-tune in the curve editors before {{ next_month | capitalize }} starts.
+  action: persistent_notification.create
+mode: single

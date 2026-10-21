@@ -1,0 +1,58 @@
+# Battman engine: ported like for like from Smiggles (automations/SolarSystemControlSigCurtail.yaml).
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – curtail
+  description: Sets the Sigen grid export limit when Battman no export changes. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+triggers:
+- trigger: state
+  entity_id:
+  - input_boolean.battman_no_export
+conditions:
+- condition: state
+  entity_id: binary_sensor.battman_in_charge
+  state: 'on'
+actions:
+- alias: Curtail if Battman No Export is On
+  if:
+  - condition: state
+    entity_id: input_boolean.battman_no_export
+    state:
+    - 'on'
+  then:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: 0
+    target:
+      entity_id: [[map:grid_export_limit]]
+    alias: Set export limit to 0
+    enabled: true
+  - action: persistent_notification.create
+    metadata: {}
+    data:
+      message: Curtail export active - feed in price is negative
+      title: Curtail export active - feed in price is negative
+    enabled: false
+  else:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: '{{ max_export_kw }}'
+    target:
+      entity_id: [[map:grid_export_limit]]
+    alias: Set export limit to max export limit
+    enabled: true
+  - action: persistent_notification.create
+    metadata: {}
+    data:
+      message: Curtailment ended feed in price positive
+      title: Curtailment ended feed in price positive
+    enabled: false
+variables:
+  max_export_kw: 18.2
+mode: single

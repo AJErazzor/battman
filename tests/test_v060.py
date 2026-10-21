@@ -1,3 +1,4 @@
+import pytest
 """v0.6.0: Log and Theme views, Save to HA, custom themes, Configure screen, restart prompt."""
 
 import json
@@ -8,6 +9,8 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 
@@ -89,22 +92,23 @@ async def test_configure_screen(hass: HomeAssistant, hass_client) -> None:
     flow = await hass.config_entries.options.async_init(entry.entry_id)
     assert flow["type"] is FlowResultType.FORM
     defaults = {k.schema: k.default() for k in flow["data_schema"].schema}
-    assert defaults["buy_total"] == "sensor.solarsystemcontrolbuytotal"
+    assert defaults["buy_price"] == "sensor.amber_5min_current_general_price"
+    assert "buy_total" not in defaults          # engine entries follow the engine in charge, not Configure
 
     bad = await hass.config_entries.options.async_configure(
         flow["flow_id"], {**defaults, "pv_string": "sensor.pv_power"})
     assert bad["errors"] == {"pv_string": "pv_pattern"}
     done = await hass.config_entries.options.async_configure(
-        bad["flow_id"], {**defaults, "buy_total": "sensor.my_buy", "pv_string": "sensor.inv_pv{n}"})
+        bad["flow_id"], {**defaults, "buy_price": "sensor.my_buy", "pv_string": "sensor.inv_pv{n}"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.options == {"buy_total": "sensor.my_buy", "pv_string": "sensor.inv_pv{n}"}  # only changes
+    assert entry.options == {"buy_price": "sensor.my_buy", "pv_string": "sensor.inv_pv{n}"}  # only changes
     await hass.async_block_till_done()
 
     client = await hass_client()
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
-    assert emap["buy_total"] == "sensor.my_buy" and emap["sell_total"] == "sensor.solarsystemcontrolselltotal"
+    assert emap["buy_price"] == "sensor.my_buy" and emap["sell_total"] == "sensor.solarsystemcontrolselltotal"
     dash = json.dumps(await (await client.get("/api/battman/dashboard")).json())
-    assert "sensor.my_buy" in dash and "sensor.solarsystemcontrolbuytotal" not in dash
+    assert "sensor.my_buy" in dash and "sensor.amber_5min_current_general_price" not in dash
 
 
 async def test_restart_prompt(hass: HomeAssistant) -> None:

@@ -92,6 +92,19 @@ iPhone Live Activity. It updates by itself when the dashboard theme changes. Unt
 dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
 `problem` attribute says why.
 
+## The engine, and moving from Smiggles
+
+Battman's engine is Smiggles' engine ported like for like (same decisions, renamed): template
+sensors and helpers in `packages/battman/`, and automations and scripts made from Battman's
+blueprints. It's installed switched off and does nothing until you run
+**Migrate from Smiggles** (`battman.migrate_from_smiggles`), which turns Smiggles off, copies
+everything across and puts Battman in charge. **Hand back to Smiggles** reverses it.
+Details: [docs/engine.md](docs/engine.md). Step by step: [docs/migration.md](docs/migration.md).
+
+Battman writes `packages/battman/` on every update (don't edit those files). HA reads that folder
+when `configuration.yaml` has `homeassistant: packages: !include_dir_named packages`; if it doesn't,
+a Repair says so.
+
 ## NEM sensors
 
 `sensor.battman_nem_*` (MW): the region's generation by source (wind, rooftop and utility

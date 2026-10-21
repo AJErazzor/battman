@@ -1,0 +1,21 @@
+alias: SolarSystem Override Timer Initial Duration
+description: >-
+  Ensures the override timer runs for 10 minutes every time it is activated from
+  an idle state so it can jump up to the default value of the timer in lovelace
+triggers:
+  - trigger: state
+    entity_id:
+      - timer.solarsystemoverridetimer
+    from:
+      - idle
+    to:
+      - active
+conditions: []
+actions:
+  - action: timer.change
+    metadata: {}
+    data:
+      duration: "-11:50:00"
+    target:
+      entity_id: timer.solarsystemoverridetimer
+mode: single

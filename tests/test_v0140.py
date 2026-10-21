@@ -22,6 +22,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .test_v0130 import run_js
 
+pytestmark = pytest.mark.usefixtures("smiggles_installed")
+
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
 CARDS = Path(__file__).parents[1] / "custom_components/battman/cards"
@@ -161,7 +163,8 @@ GAUGE_STATES = {
     "sensor.amber_5min_current_feed_in_price": ("-0.0812", {}),
     "sensor.amber_5min_current_general_price": ("0.1734", {}),
     "binary_sensor.solarsystemcontrolestimatedprice": ("on", {}),
-    "sensor.solarsystemcontrolload30mavg": ("1.4567", {}),
+    "sensor.solarsystemcontrolload30mavg": ("1.4567", {}),      # what Smiggles' card read
+    "sensor.battman_load_30m_avg": ("1.46", {}),                # what Battman's card reads (v0.17.0: renamed)
     "sensor.solarsystemcontrolrun": ("ok", {"needPower": True}),
 }
 
@@ -181,13 +184,15 @@ async def test_gauges_match_smiggles(hass: HomeAssistant, hass_client) -> None:
         # the Smiggles template sensors the original gauges read, rendered by the Smiggles package
         hass.states.async_set("sensor.sockwh", _render(hass, _package_sensor("SOCkwh")))
         hass.states.async_set("sensor.solarremainingtoday10", _render(hass, _package_sensor("SolarRemainingToday10")))
+        await hass.async_block_till_done()
         o_rows = yaml.safe_load((FIX / "smiggles_gauges.yaml").read_text())[0]["cards"]
         m_rows = card["config"]["cards"]
         for o_row, m_row in zip(o_rows, m_rows, strict=True):
             for o, m in zip(o_row["cards"], m_row["cards"], strict=True):
                 assert _render(hass, o["secondary"]) == _render(hass, m["secondary"]), o["name"]
                 rest_o = {k: v for k, v in o.items() if k not in ("secondary",)}
-                rest_o = json.loads(json.dumps(rest_o).replace("--smiggles-", "--battman-"))
+                rest_o = json.loads(json.dumps(rest_o).replace("--smiggles-", "--battman-")
+                                    .replace('"sensor.gridpower"', '"sensor.battman_grid_power"'))   # v0.17.0
                 assert rest_o == {k: v for k, v in m.items() if k != "secondary"}
 
 

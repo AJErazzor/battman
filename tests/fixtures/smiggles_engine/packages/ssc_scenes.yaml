@@ -1,0 +1,187 @@
+################################
+# SSC Scenes — Morning Break-even feature
+# version: 1.2.0  (2026-10-04: armed run waits for its net target to clear, then logs the result — 'ended HH:MM · net $x · met/not met')
+# version: 1.1.0  (2026-10-03: automation ssc_apply_armed_scene — applies the dock's moon-armed scene at 00:01:30, then disarms)
+# version: 1.0.0  (2026-10-03: script.ssc_apply_scene — one apply path for dock scene taps + 00:01 automation)
+#
+# A "scene" is an entry in sensor.solarsystemcontrolparameters.overridePresets
+# with 2+ values (override ids sell/sellsolar/buy/any/drain, plus optional net).
+# Applying a scene REPLACES everything: overrides and net target not in the
+# scene are cleared. Mirrors the dock's old in-browser sscApply exactly.
+################################
+
+script:
+  ssc_apply_scene:
+    alias: "SSC Apply Scene"
+    icon: mdi:palette-swatch-variant
+    description: "Apply a saved Battery Time scene by name (sets every override + net target, starts its timer)."
+    mode: queued
+    fields:
+      name:
+        name: Scene name
+        description: Name of a saved scene (a preset with 2 or more entries)
+        required: true
+        example: Morning BE
+        selector:
+          text:
+    variables:
+      presets: "{{ state_attr('sensor.solarsystemcontrolparameters', 'overridePresets') or [] }}"
+      found: "{{ presets | selectattr('name', 'eq', name | string) | list }}"
+      v: "{{ found[0]['values'] if found else {} }}"
+      # override id -> attribute prefix (matches the dock's overrides config)
+      ov:
+        sell: sellOverride
+        sellsolar: sellSolar
+        buy: buyOverride
+        any: buyAnytime
+        drain: drainBattery
+      d: >-
+        {% set ns = namespace(d={'action': 'SetAttribute'}) %}
+        {% for id, pre in ov.items() %}
+          {% set o = v.get(id, {}) %}
+          {% set ns.d = dict(ns.d, **{
+               pre ~ 'SOC': o.get('soc', 0) | float(0),
+               pre ~ 'Price': o.get('price', 0) | float(0),
+               pre ~ 'AllowReset': not (o.get('allowReset') is false) }) %}
+        {% endfor %}
+        {% set n = v.get('net', {}) %}
+        {% set side = 'buy' if n.get('side') == 'buy' else 'sell' %}
+        {% set price = n.get('price', 0) | float(0) %}
+        {% set ns.d = dict(ns.d,
+             netTargetSellPrice=(price if n and side == 'sell' else 0),
+             netTargetBuyPrice=(price if n and side == 'buy' else 0)) %}
+        {{ ns.d }}
+      timer_secs: >-
+        {% set p = found[0] if found else {} %}
+        {% if p.get('timer_at') %}
+          {# timestamps, not datetime subtraction: same-tz aware datetimes subtract as wall-clock and go 1h wrong across DST #}
+          {% set t = today_at(p.timer_at) %}
+          {% if as_timestamp(t) - as_timestamp(now()) < 60 %}{% set t = t + timedelta(days=1) %}{% endif %}
+          {{ (as_timestamp(t) - as_timestamp(now())) | round(0) | int }}
+        {% else %}
+          {{ p.get('timer', 0) | float(0) | round(0) | int }}
+        {% endif %}
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ found | length == 0 or v | length < 2 }}"
+        then:
+          - stop: "No scene called '{{ name }}' (a scene needs 2 or more entries)"
+            error: true
+      - event: solarsystemcontrolparametersupdate
+        event_data:
+          action: SetAttribute
+          sellOverrideSOC: "{{ d.sellOverrideSOC }}"
+          sellOverridePrice: "{{ d.sellOverridePrice }}"
+          sellOverrideAllowReset: "{{ d.sellOverrideAllowReset }}"
+          sellSolarSOC: "{{ d.sellSolarSOC }}"
+          sellSolarPrice: "{{ d.sellSolarPrice }}"
+          sellSolarAllowReset: "{{ d.sellSolarAllowReset }}"
+          buyOverrideSOC: "{{ d.buyOverrideSOC }}"
+          buyOverridePrice: "{{ d.buyOverridePrice }}"
+          buyOverrideAllowReset: "{{ d.buyOverrideAllowReset }}"
+          buyAnytimeSOC: "{{ d.buyAnytimeSOC }}"
+          buyAnytimePrice: "{{ d.buyAnytimePrice }}"
+          buyAnytimeAllowReset: "{{ d.buyAnytimeAllowReset }}"
+          drainBatterySOC: "{{ d.drainBatterySOC }}"
+          drainBatteryPrice: "{{ d.drainBatteryPrice }}"
+          drainBatteryAllowReset: "{{ d.drainBatteryAllowReset }}"
+          netTargetSellPrice: "{{ d.netTargetSellPrice }}"
+          netTargetBuyPrice: "{{ d.netTargetBuyPrice }}"
+      - if:
+          - condition: template
+            value_template: "{{ timer_secs > 0 }}"
+        then:
+          - action: timer.start
+            target:
+              entity_id: timer.solarsystemoverridetimer
+            data:
+              duration: "{{ '%d:%02d:%02d' | format(timer_secs // 3600, (timer_secs % 3600) // 60, timer_secs % 60) }}"
+
+automation:
+  # Morning Break-even: the dock's moon button stores a scene name in
+  # sensor.solarsystemcontrolparameters.armedScene. Just after midnight (after
+  # the watchdog's 00:00 net-target reset, and off its 00:01:00 run) apply that
+  # scene, then disarm so it's one night only.
+  - id: ssc_apply_armed_scene
+    alias: "SSC Apply Armed Scene (00:01)"
+    description: "Applies the moon-armed Battery Time scene at 00:01:30, disarms, then logs the outcome when its net target clears. (ssc_scenes.yaml v1.2.0)"
+    mode: single
+    triggers:
+      - trigger: time
+        at: "00:01:30"
+    variables:
+      started: "{{ as_timestamp(now()) }}"
+      armed: "{{ state_attr('sensor.solarsystemcontrolparameters', 'armedScene') | default('', true) | string }}"
+      has_net: >-
+        {{ (state_attr('sensor.solarsystemcontrolparameters', 'overridePresets') or [])
+           | selectattr('name', 'eq', armed) | map(attribute='values') | selectattr('net', 'defined') | list | count > 0 }}
+      exists: >-
+        {{ (state_attr('sensor.solarsystemcontrolparameters', 'overridePresets') or [])
+           | selectattr('name', 'eq', armed) | list | count > 0 }}
+    conditions:
+      - condition: template
+        value_template: "{{ armed | trim not in ['', 'None', 'none', 'unknown'] }}"
+    actions:
+      - if:
+          - condition: template
+            value_template: "{{ exists }}"
+        then:
+          - action: script.ssc_apply_scene
+            continue_on_error: true
+            data:
+              name: "{{ armed }}"
+          - action: logbook.log
+            data:
+              name: Battery Time
+              message: "Applied armed scene '{{ armed }}' at 00:01"
+              entity_id: sensor.solarsystemcontrolparameters
+        else:
+          - action: persistent_notification.create
+            data:
+              title: "Battery Time: armed scene not found"
+              message: "'{{ armed }}' was armed for 00:01 but no scene has that name any more (renamed or deleted). Nothing was applied."
+              notification_id: ssc_armed_scene_missing
+      - event: solarsystemcontrolparametersupdate
+        event_data:
+          action: SetAttribute
+          armedScene: ""
+      # Outcome log: wait (up to ~24h, i.e. before tomorrow's run) for the scene's
+      # net target to be cleared — met, timer end, daily reset or cleared by hand —
+      # then write one logbook line. Nothing is stored. A HA restart or automation
+      # reload while waiting drops this line (the apply itself is unaffected).
+      - if:
+          - condition: template
+            value_template: "{{ exists and has_net }}"
+        then:
+          - wait_template: >-
+              {{ (state_attr('sensor.solarsystemcontrolparameters', 'netTargetSellPrice') | float(0)) == 0
+                 and (state_attr('sensor.solarsystemcontrolparameters', 'netTargetBuyPrice') | float(0)) == 0 }}
+            timeout: "23:50:00"
+            continue_on_timeout: true
+          - variables:
+              p: sensor.solarsystemcontrolparameters
+              net: >-
+                {{ (state_attr('sensor.solarsystemcontrolselltotal', 'day') | float(0))
+                   - (state_attr('sensor.solarsystemcontrolbuytotal', 'day') | float(0))
+                   - (state_attr(p, 'dailyNetworkCharge') | float(0)) }}
+              met_at: >-
+                {% set ns = namespace(t=none) %}
+                {% for k in ['netTargetSellMet', 'netTargetBuyMet'] %}
+                  {% set v = state_attr(p, k) | string %}
+                  {% if '|' in v %}
+                    {% set ts = as_timestamp(v.split('|')[0] | trim, 0) %}
+                    {% if ts > started | float(0) %}{% set ns.t = ts %}{% endif %}
+                  {% endif %}
+                {% endfor %}
+                {{ ns.t }}
+          - action: logbook.log
+            data:
+              name: Battery Time
+              entity_id: sensor.solarsystemcontrolparameters
+              message: >-
+                {% set n = net | float(0) %}
+                {% set money = ('−' if n < -0.005 else '') ~ '$' ~ ('%.2f' | format(n | abs)) %}
+                '{{ armed }}' {{ 'still running at' if not wait.completed else 'ended' }} {{ now().strftime('%H:%M') }}
+                · net today {{ money }} ·
+                {% if met_at not in [none, '', 'None'] %}target met {{ (met_at | float) | timestamp_custom('%H:%M') }}{% else %}target not met{% endif %}

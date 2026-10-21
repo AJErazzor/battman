@@ -171,6 +171,8 @@ SOCkwh and override cards do). The State popup used the inverter's rated_battery
   emoji (🔄 💰 🔋 📊 ☀️ ⚡ 📈 📉 ℹ️ 🕐); the Engine log popup uses them to find sections and pick colours,
   and doesn't show them. A.J. wants the emoji gone: when the engine moves, give the log a plain
   structure (e.g. section names) and update the popup with it.
+- ✅ v0.17.0: the whole engine is Battman's, with Migrate / Hand back (see docs/engine.md,
+  docs/migration.md). The emoji in the log are still there (like for like); removing them is next.
 - **Smiggles sensors the Power view cards still read** (each needs a Battman replacement before
   Smiggles is switched off): `sensor.gridpower` (Gauges needle: import − export; Smiggles labels it
   kWh/energy but it's kW), `sensor.solarsystemcontrolload30mavg` (Gauges; built on the Statistics

@@ -1,0 +1,28 @@
+alias: SolarSystemControlSAPNOverride
+description: Override SAPN export when price is -ve (version 1.0.0)
+triggers:
+  - trigger: numeric_state
+    entity_id:
+      - number.sigen_plant_grid_export_limitation
+    above: 0
+conditions:
+  - condition: state
+    entity_id: input_boolean.solarsystemcontrolnoexport
+    state:
+      - "on"
+actions:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: 0
+    target:
+      entity_id: number.sigen_plant_grid_export_limitation
+    alias: Set export limit to 0
+    enabled: true
+  - action: persistent_notification.create
+    metadata: {}
+    data:
+      message: Curtail export active - SAPN Override
+      title: Curtail export active - SAPN Override
+    enabled: false
+mode: single

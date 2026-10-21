@@ -254,13 +254,14 @@
   const HISTORY_HOURS = 5;
   // Entity IDs come from Battman's entity map (GET /api/battman/entities); this page
   // only knows the Battman names. Panels are built once the map has loaded.
-  const NEEDS = ['mode', 'debug_log_start', 'debug_log_end', 'load_debug_log_script', 'debug_log_file',
+  const NEEDS = ['mode',
                  'buy_price', 'feed_in_price', 'pv_power', 'home_power', 'battery_power', 'load_30m',
-                 'grid_power', 'battery_soc', 'pv_string', 'third_party_pv'];
-  // must exist in HA (pv_string is a pattern, third_party_pv is optional hardware, the log file isn't an entity)
-  const NEED_ENTITIES = NEEDS.filter(k => !['pv_string', 'third_party_pv', 'debug_log_file'].includes(k));
+                 'grid_import_power', 'grid_export_power', 'battery_soc', 'pv_string', 'third_party_pv'];
+  // must exist in HA (pv_string is a pattern, third_party_pv is optional hardware)
+  const NEED_ENTITIES = NEEDS.filter(k => !['pv_string', 'third_party_pv'].includes(k));
   let M = {};                 // the entity map
   let MODE_ENTITY = null;
+  const GRID_ID = '__battman_grid';   // the grid panel's series, worked out in gridSeries()
   let PANELS = [];
   let HISTORY_ENTITIES = [];
 
@@ -279,7 +280,9 @@
           { id: M.battery_power, label: 'Battery', token: '--battman-purple' },
           { id: M.load_30m,      label: 'Load',    token: '--battman-red' },
         ] },
-      { id: 'grid', title: 'Grid (kWh)', unit: '', series: [ { id: M.grid_power, label: 'Grid', token: '--battman-teal' } ] },
+      // grid: worked out from the Sigen import / export history (+ import, - export), so the
+      // graph has full history (Battman's grid power sensor only has history from v0.17.0)
+      { id: 'grid', title: 'Grid (kW)', unit: 'kW', series: [ { id: GRID_ID, label: 'Grid', token: '--battman-teal' } ] },
       { id: 'soc', title: 'Battery SOC (%)', unit: '%', series: [ { id: M.battery_soc, label: 'SOC', token: '--battman-green' } ] },
     ];
 
@@ -307,7 +310,8 @@
       series.push({ id: M.third_party_pv, label: nameFor(M.third_party_pv, '3rd Party'), token: palette[ci % palette.length] }); ci++;
     }
     PANELS.push({ id: 'solar', title: 'Solar per String (kW)', unit: 'kW', series: series }); // at the bottom
-    HISTORY_ENTITIES = [MODE_ENTITY].concat(PANELS.reduce((acc, pn) => acc.concat(pn.series.map(x => x.id)), []));
+    HISTORY_ENTITIES = [MODE_ENTITY].concat(PANELS.reduce((acc, pn) => acc.concat(pn.series.map(x => x.id)), []))
+      .filter(id => id !== GRID_ID).concat([M.grid_import_power, M.grid_export_power]);
   }
 
   const modes = ['Self Consume', 'Charge', 'Charge Solar Off', 'Float', 'Float Solar Off', 'Discharge', 'Solar Soak', 'Drain'];
@@ -533,31 +537,32 @@
     document.getElementById('logToggle').onclick = () => { haptic(); logCard.classList.toggle('collapsed'); };
   })();
 
+  // The engine log for the chosen range, from Battman (GET /api/battman/log): Battman's
+  // log once you've migrated, Smiggles' log file before that.
+  let logRange = null;
   function load() {
-    fetch(M.debug_log_file + '?t=' + Date.now())
-      .then(r => r.text())
-      .then(t => {
+    if (!logRange) return;
+    const token = getHaToken();
+    if (!token) return;
+    const q = '?start=' + encodeURIComponent(logRange[0]) + '&end=' + encodeURIComponent(logRange[1]);
+    fetch('/api/battman/log' + q, { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(new Error(j.message || r.status))))
+      .then(j => {
+        const t = j.lines.join('\n');
         if (t !== last) {
           last = t;
-          allLines = t.trim() ? t.trim().split('\n').filter(l => l.trim()) : [];
+          allLines = j.lines.filter(l => l.trim());
           renderLog();
         }
       })
-      .catch(() => { document.getElementById('log').innerHTML = '<div class="empty">No log file found</div>'; });
+      .catch(e => { document.getElementById('log').innerHTML = '<div class="empty">' + escapeHtml(String(e.message || 'No log found')) + '</div>'; });
   }
 
   // ------------------------------------------------------- range controls
-  async function setRangeAndLoad(start, end) {
-    await haCall('input_datetime', 'set_datetime', {
-      entity_id: M.debug_log_start, datetime: fmtDt(start)
-    });
-    await haCall('input_datetime', 'set_datetime', {
-      entity_id: M.debug_log_end, datetime: fmtDt(end)
-    });
-    const sc = M.load_debug_log_script.split('.');
-    await haCall(sc[0], sc.slice(1).join('.'), {});
-    setTimeout(load, 1500);
-    setTimeout(load, 3500);
+  function setRangeAndLoad(start, end) {
+    logRange = [fmtDt(start), fmtDt(end)];
+    last = '';
+    load();
   }
 
   // haptic feedback: Vibration API (Android/PWA) + the iOS switch-toggle trick
@@ -961,8 +966,27 @@
       }
       const out = {};
       (arr || []).forEach(ser => { if (ser && ser.length && ser[0].entity_id) out[ser[0].entity_id] = ser; });
+      out[GRID_ID] = gridSeries(out[M.grid_import_power], out[M.grid_export_power]);
       return { out, start, end };
     } catch(e) { return null; }
+  }
+
+  // Grid power history from import / export history, with the same rule as Battman's grid
+  // power sensor (and Smiggles' GridPower): whichever side flows over 50 W, import +, export -.
+  // A point only where both are known: no made-up values.
+  function gridSeries(imp, exp) {
+    const ev = [];
+    (imp || []).forEach(s => ev.push({ t: new Date(s.last_changed || s.last_updated).getTime(), k: 'i', v: parseFloat(s.state) }));
+    (exp || []).forEach(s => ev.push({ t: new Date(s.last_changed || s.last_updated).getTime(), k: 'e', v: parseFloat(s.state) }));
+    ev.sort((a, b) => a.t - b.t);
+    let i = NaN, e = NaN; const out = [];
+    for (const p of ev) {
+      if (p.k === 'i') i = p.v; else e = p.v;
+      let g = null;
+      if (isFinite(i) && isFinite(e)) g = (i > 0.05 && i >= e) ? Math.round(i * 100) / 100 : (e > 0.05 && e > i) ? -Math.round(e * 100) / 100 : 0;
+      out.push({ last_changed: new Date(p.t).toISOString(), state: g === null ? 'unavailable' : String(g) });
+    }
+    return out;
   }
 
   function bucketize(series, start, end, n, parse) {

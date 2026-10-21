@@ -1,2 +1,14 @@
 create_dashboard:
 create_live_activity:
+migrate_from_smiggles:
+  fields:
+    confirm:
+      default: false
+      selector:
+        boolean:
+hand_back_to_smiggles:
+  fields:
+    confirm:
+      default: false
+      selector:
+        boolean:
