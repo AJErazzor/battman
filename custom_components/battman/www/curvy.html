@@ -1611,6 +1611,26 @@
       try { await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { preset_tracking: presetTracking } }); } catch (e) {}
     }
     
+
+    // A save only says "Saved" once the curves sensor really has it (it ignores changes while
+    // Battman isn't in charge of the battery), otherwise it says it wasn't saved.
+    const NOT_SAVED = "Not saved: Battman didn't take it (it ignores changes while it isn't in charge of the battery)";
+    function sameData(a, b) {
+      if (typeof a === 'number' || typeof b === 'number') return Math.abs(Number(a) - Number(b)) < 1e-6;
+      if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((x, i) => sameData(x, b[i]));
+      if (a && typeof a === 'object') return !!b && typeof b === 'object' && Object.keys(a).every(k => sameData(a[k], b[k]));
+      return a === b;
+    }
+    async function savedIn(entityId, attr, want, ms = 5000) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < ms) {
+        const h = getHass(), s = h && h.states[entityId];
+        if (s && sameData(want, s.attributes[attr])) return true;
+        await new Promise(r => setTimeout(r, 250));
+      }
+      return false;
+    }
+
     async function saveToHA(silent = false) {
       const hass = getHass(); if (!hass) { showStatus('Not in HA context', 'error'); return; }
       if (!silent) showStatus('Saving...', 'info');
@@ -1618,6 +1638,7 @@
         const curvesData = {};
         months.forEach(month => { curvesData[month] = { sell: data[month].sell, sell_high: data[month].sell_high, buy: data[month].buy, buy_high: data[month].buy_high }; });
         await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { curves: curvesData } });
+        if (!(await savedIn(M.soc_curves, 'curves', curvesData))) { showStatus(NOT_SAVED, 'error'); debugLog('❌ Not saved'); return; }
         if (!silent) { showStatus('Saved!', 'success'); debugLog('✅ Saved to HA'); }
       } catch (error) { showStatus('Save failed', 'error'); debugLog(`❌ ${error.message}`); }
     }
@@ -1665,9 +1686,11 @@
         const currentPresets = entity.attributes.presets || {};
         const src = editMode === 'season' ? data[seasonMonths[currentPeriod][0]] : data[currentPeriod];
         currentPresets[presetNumber] = { sell: [...src.sell], sell_high: [...src.sell_high], buy: [...src.buy], buy_high: [...src.buy_high] };
+        showStatus('Saving…', 'info');
         await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { presets: currentPresets } });
+        if (!(await savedIn(M.soc_curves, 'presets', { [presetNumber]: currentPresets[presetNumber] }))) { showStatus(NOT_SAVED, 'error'); return; }
         showStatus(`Saved to ${presetName}!`, 'success');
-        setTimeout(() => loadPresetInfo(), 500);
+        loadPresetInfo();
       } catch (error) { showStatus('Save failed', 'error'); }
     }
     
@@ -1700,15 +1723,17 @@
         const presetNames = {};
         for (let i = 1; i <= 10; i++) presetNames[String(i)] = document.getElementById(`preset-${i}-name-input`).value || `Preset ${i}`;
         await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { preset_names: presetNames } });
+        if (!(await savedIn(M.soc_curves, 'preset_names', presetNames))) { showStatus(NOT_SAVED, 'error'); return; }
         showStatus('Preset names saved!', 'success');
-        setTimeout(async () => { await loadPresetInfo(); closeManagePresets(); }, 500);
+        await loadPresetInfo(); closeManagePresets();
       } catch (error) { showStatus('Save failed', 'error'); }
     }
     
     function showStatus(message, type) {
       const status = document.getElementById('status');
       status.textContent = message; status.className = 'status ' + type;
-      setTimeout(() => { if (type !== 'info' || !message.includes('Auto-save')) { status.textContent = ''; status.className = ''; } }, 3000);
+      clearTimeout(showStatus.t);
+      showStatus.t = setTimeout(() => { if (type !== 'info' || !message.includes('Auto-save')) { status.textContent = ''; status.className = ''; } }, type === 'error' ? 8000 : 3000);
     }
     
     window.addEventListener('load', async () => {
