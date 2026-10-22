@@ -5,7 +5,7 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 
 | Dependency | Type | Needed by | Get it |
 |---|---|---|---|
-| button-card | Dashboard card | Billing and Solar System cards; the Settings view; every Battman card on the Power view | https://github.com/custom-cards/button-card |
+| button-card | Dashboard card | Billing and Solar System cards; every Battman card on the Power view | https://github.com/custom-cards/button-card |
 | card-mod | Dashboard card | Cost chart and Cost compare cards (flush frames); Battery mode and Limits cards | https://github.com/thomasloven/lovelace-card-mod |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
 | power-pie-card | Dashboard card | NEM mix card | HACS → Frontend → power-pie-card |
@@ -17,7 +17,7 @@ Battman pages also load from the internet:
 - **Chart.js** (cdnjs / jsdelivr): charts on the cost, compare, log, Curvy and Pricy pages.
 - **Google Fonts**: only the theme studio's font browser, and themes that turn on a custom font.
 
-The Curvy, Pricy, Log and Theme studio cards show Battman's pages in a frame and need no extra cards.
+The Curvy, Pricy, Settings, Log and Theme studio cards show Battman's pages in a frame and need no extra cards.
 
 Other integrations Battman's pages read (through the entity map):
 

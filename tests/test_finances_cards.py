@@ -118,8 +118,6 @@ async def test_finances_is_battman_cards(hass: HomeAssistant, hass_client) -> No
         "custom:battman-cost-chart", "custom:battman-cost-compare", "custom:battman-billing", "custom:battman-solar-system"]
     assert fin["header"]["card"] == {"type": "custom:battman-image", "image": "finances-header.webp",
                                      "background": "none", "frame": False, "height": 48}
-    settings = next(v for v in data["views"] if v["path"] == "settings")
-    assert settings["header"]["card"]["type"] == "custom:battman-image"
     for cid, needs in (("cost-chart", []), ("cost-compare", []), ("billing", ["button-card"]), ("solar-system", ["button-card"])):
         card = await (await client.get(f"/api/battman/cards/{cid}")).json()
         assert card["missing_map"] == [] and card["needs"] == needs, cid
@@ -129,7 +127,7 @@ async def test_finances_is_battman_cards(hass: HomeAssistant, hass_client) -> No
         assert card["config"]["url"] == f"/battmanfiles/{cid}.html" and "card_mod" in card["config"]
         assert card["preview"] == f"/battmanfiles/previews/{cid}.webp"
         assert (await client.get(card["preview"])).status == 200
-    for img in ("finances-header.webp", "settings-header.webp"):
+    for img in ("finances-header.webp",):
         assert (await client.get(f"/battmanfiles/images/{img}")).status == 200
     billing = await (await client.get("/api/battman/cards/billing")).json()
     row9 = billing["config"]["custom_fields"]["row9"]

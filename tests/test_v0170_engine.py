@@ -94,10 +94,13 @@ def _fire(hass, key: str, data: dict) -> None:
     hass.bus.async_fire(ENGINE_MAP[key], data)
 
 
-# left out of the like-for-like checks: settings Battman added after the port (Smiggles never had
-# them), and the totals' tracking figures, which Battman's totals work out from a fresh start
-# (v0.18.9) while Smiggles' never start there (they read a date that isn't set yet)
-BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh"}
+# left out of the like-for-like checks, each a known difference:
+# - dashboardTheme: a setting Battman added (v0.18.6); Smiggles never had it
+# - trackingA_Cost / trackingA_kwh: Battman's totals work these out from a fresh start (v0.18.9);
+#   Smiggles' never start there (they read a date that isn't set yet)
+# - alertNotifyTarget: with nothing chosen, Battman's is '' (alerts off, v0.18.10); Smiggles'
+#   default was A.J.'s own phone
+BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh", "alertNotifyTarget"}
 
 
 def _same_tracking(message: str) -> str:
