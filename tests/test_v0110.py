@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 DOMAIN = "battman"
 ORIG = Path(__file__).parent / "fixtures" / "smiggles_limits.yaml"
@@ -22,7 +23,7 @@ async def _setup(hass):
 
 async def test_power_view_first(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
-    data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
+    data = await built(hass)
     power = data["views"][0]
     assert power["path"] == "power" and power["title"] == "Power" and power["theme"] == "Battman Nord"
     assert {"type": "custom:battman-limits"} in power["sections"][1]["cards"]   # layout: test_v0130

@@ -700,7 +700,8 @@
     let M = null;                 // Battman entity map
     let CURVE_GAPS = [];
     let OPTIONAL_MISSING = [];
-    const NEEDS = ['soc_curves', 'soc_curves_update_event', 'control_script', 'battery_soc', 'mode',
+    let FACTORY = null;           // the factory curves: soc_curves_factory's `factory` attribute
+    const NEEDS = ['soc_curves', 'soc_curves_factory', 'soc_curves_update_event', 'control_script', 'battery_soc', 'mode',
                    'buy_price', 'feed_in_price', 'load_30m_avg', 'high_consumption', 'sigen_pv_power', 'solcast_today'];
     const NEED_ENTITIES = ['soc_curves', 'control_script', 'battery_soc', 'mode', 'buy_price', 'feed_in_price',
                            'load_30m_avg', 'high_consumption'];
@@ -727,6 +728,10 @@
       if (!h) return 'Home Assistant not reachable from this page.';
       const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' → ' + M[k]);
       if (bad.length) return 'Battman entity map: entity not found: ' + bad.join(', ');
+      const fac = h.states[M.soc_curves_factory];
+      FACTORY = fac && fac.attributes.factory;
+      if (!FACTORY || ['sell', 'sell_high', 'buy', 'buy_high'].some(t => !Array.isArray(FACTORY[t]) || FACTORY[t].length !== 24))
+        return 'No factory curves: ' + M.soc_curves_factory + ' has no factory attribute (are Battman\'s packages loaded? see Repairs).';
       OPTIONAL_MISSING = Object.keys(OPTIONAL_ENTITIES).filter(k => !h.states[M[k]])
         .map(k => 'No ' + OPTIONAL_ENTITIES[k] + ': ' + k + ' → ' + M[k] + ' not found');
       return null;
@@ -1560,12 +1565,9 @@
       if (autoSave) showStatus('Auto-save enabled', 'info');
     }
     
+    // Battman's factory curves (factory_curves.yaml, read from the curves sensor's `factory` attribute)
     function getFactoryDefaults() {
-      const sellNormal = [25,25,20,20,15,15,15,15,15,15,30,30,50,50,50,50,50,50,45,45,40,40,35,35];
-      const sellHigh = [30,30,25,25,15,15,15,15,15,15,30,30,50,50,50,50,70,70,60,60,50,50,40,40];
-      const buyNormal = [6,6,6,6,6,6,6,6,10,10,25,25,35,35,50,50,40,40,30,30,20,20,10,10];
-      const buyHigh = [...buyNormal];
-      return { sell: sellNormal, sell_high: sellHigh, buy: buyNormal, buy_high: buyHigh };
+      return { sell: [...FACTORY.sell], sell_high: [...FACTORY.sell_high], buy: [...FACTORY.buy], buy_high: [...FACTORY.buy_high] };
     }
     
     async function loadFactoryDefaults() {

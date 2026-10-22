@@ -21,6 +21,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .test_v0130 import run_js
+from .dashboard_views import built
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -231,5 +232,5 @@ async def test_forecast_table_local_time(hass: HomeAssistant, hass_client, day) 
 
 async def test_power_view_section3(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
-    power = (await (await (await hass_client()).get("/api/battman/dashboard")).json())["views"][0]
+    power = (await built(hass))["views"][0]
     assert [c["type"] for c in power["sections"][2]["cards"]] == ["custom:battman-gauges", "custom:battman-nemmix"]

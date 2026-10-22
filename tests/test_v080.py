@@ -7,6 +7,7 @@ from pathlib import Path
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -32,7 +33,7 @@ async def _setup(hass):
 async def test_settings_view(hass: HomeAssistant, hass_client) -> None:
     """Settings is one Battman card now (custom:battman-settings: see test_settings_card)."""
     await _setup(hass)
-    data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
+    data = await built(hass)
     assert data["errors"] == []
     settings = {v["path"]: v for v in data["views"]}["settings"]
     assert settings["type"] == "panel" and [c["type"] for c in settings["cards"]] == ["custom:battman-settings"]

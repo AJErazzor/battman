@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -23,12 +24,10 @@ async def _setup(hass):
     return entry
 
 
-async def test_dashboard_api_fills_the_map(hass: HomeAssistant, hass_client) -> None:
+async def test_dashboard_views_fill_the_map(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
-    r = await client.get("/api/battman/dashboard")
-    assert r.status == 200
-    data = await r.json()
+    data = await built(hass)
     assert data["errors"] == []
     assert [v["path"] for v in data["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme"]
     view = data["views"][3]
@@ -58,8 +57,7 @@ async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
                  "/battmanfiles/images/price-curve-editor-line.webp",
                  "/battmanfiles/images/battman-wrench.webp", "/battmanfiles/images/settings-line.webp", "/battmanfiles/battman-lib.js",
                  "/battmanfiles/images/battman-toilet-mirror.webp", "/battmanfiles/images/logs-line.webp",
-                 "/battmanfiles/images/battman-coins.webp", "/battmanfiles/battman-strategy.js",
-                 "/battmanfiles/battman-cards.js"):
+                 "/battmanfiles/images/battman-coins.webp", "/battmanfiles/battman-cards.js"):
         r = await client.get(path)
         assert r.status == 200, path
 

@@ -14,6 +14,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
@@ -41,7 +42,7 @@ async def test_curvy_card_and_view(hass: HomeAssistant, hass_client) -> None:
     # the page it shows is shipped with Battman
     assert (ROOT / "www/curvy.html").exists()
     # the Curvy view places the card (not the iframe directly)
-    views = (await (await client.get("/api/battman/dashboard")).json())["views"]
+    views = (await built(hass))["views"]
     curvy = next(v for v in views if v["path"] == "curvy")
     assert curvy["type"] == "panel" and [c["type"] for c in curvy["cards"]] == ["custom:battman-curvy"]
     assert "iframe" not in json.dumps(curvy)
@@ -89,7 +90,7 @@ async def test_page_cards_views_and_previews(hass: HomeAssistant, hass_client) -
         assert page_resp.status == 200, page
     # cards without a picture don't claim one
     assert "preview" not in listed["limits"]
-    views = {v["path"]: v for v in (await (await client.get("/api/battman/dashboard")).json())["views"]}
+    views = {v["path"]: v for v in (await built(hass))["views"]}
     for path, card_id in VIEWS.items():
         assert [c["type"] for c in views[path]["cards"]] == [f"custom:battman-{card_id}"], path
 

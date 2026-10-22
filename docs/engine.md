@@ -48,7 +48,7 @@ OpenNEM) are on the Configure screen as before.
 | sensor.solar_system_control_soc_curves / price_curves | sensor.battman_soc_curves / price_curves |
 | sensor.solar_system_control_debug_log | sensor.battman_engine_log |
 | binary_sensor.solarsystemcontrolestimatedprice | binary_sensor.battman_estimated_price |
-| sensor.gridpower, sensor.solarsystemcontrolload30mavg | sensor.battman_grid_power, sensor.battman_load_30m_avg |
+| sensor.gridpower, sensor.solarsystemcontrolload30mavg | sensor.battman_grid_power, sensor.battman_load_30m_avg (a Statistics sensor of home power since v0.19.0) |
 | input_boolean.solarsystemcontrolenable / noexport | input_boolean.battman_enable / no_export |
 | input_select.solarsystemcontrolmode | input_select.battman_mode |
 | input_number.solarsystemcontrolhighconsumption | input_number.battman_high_consumption |
@@ -81,6 +81,14 @@ Only these:
    The Engine log popup and the Log page draw the log with one renderer (`www/battman-enginelog.js`),
    which also reads Smiggles' emoji lines (the ones copied in at migration).
 6. **Grid power and load average** are unavailable (not 0) when what they're made from is missing.
+7. **The load average is Battman's own** (v0.19.0): a Statistics sensor of home power with the
+   settings Smiggles' helper had (mean, 30 minutes, 2 decimals), not a copy of that helper. When it
+   has no value the engine skips the high-consumption check (Smiggles read it as 0) and the log's
+   SOC Limits section says `Load average: missing`.
+8. **Settings and curves have starting values** (v0.19.0): the parameters and curve sensors also
+   work themselves out when HA starts or templates reload, so a fresh install has every setting's
+   default and the factory curves (`factory_curves.yaml`). Values you have are kept. The engine
+   reads its settings with no fallback numbers of its own.
 
 Kept as they are (worth knowing): the curtail automation sets the export limit back to **18.2 kW**
 and Sigen mode resets the PV limit to **20 kW**: both are fixed numbers in Smiggles (your system's).

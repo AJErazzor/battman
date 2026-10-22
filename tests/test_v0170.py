@@ -1,6 +1,7 @@
-"""v0.17.0: Battman's package files (packages/battman/), with the grid power and 30-minute load
-template sensors (Smiggles' GridPower and Load30mAvg, renamed so history carries over), the
-Log page's grid graph from import / export history."""
+"""v0.17.0: Battman's package files (packages/battman/), with the grid power template sensor
+(Smiggles' GridPower, renamed so history carries over) and the 30-minute load average (a
+Statistics sensor of home power since v0.19.0), the Log page's grid graph from import / export
+history."""
 
 import json
 import shutil
@@ -20,7 +21,7 @@ DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
 LOG = Path(__file__).parents[1] / "custom_components/battman/www/log.html"
 IMP, EXP = "sensor.sigen_plant_grid_import_power", "sensor.sigen_plant_grid_export_power"
-L30 = "sensor.solarsystemcontrolload30m"
+HOME = "sensor.sigen_plant_consumed_power"
 CASES = [("2.345", "0"), ("0.04", "0.01"), ("0", "3.217"), ("1.5", "1.5"), ("0.06", "0.02"), ("0.02", "0.06"), ("0", "0")]
 
 
@@ -58,26 +59,31 @@ async def test_grid_power_matches_smiggles(hass: HomeAssistant) -> None:
     assert hass.states.get("sensor.battman_grid_power").state == "unavailable"     # Smiggles showed 0
 
 
-async def test_load_30m_avg_matches_smiggles(hass: HomeAssistant) -> None:
+async def test_load_30m_avg_is_the_mean_of_home_power(hass: HomeAssistant) -> None:
+    """v0.19.0: a Statistics sensor of home power (the same settings as Smiggles' helper:
+    mean, 30 minutes, 2 decimals), not a copy of that helper."""
     await _setup(hass)
-    tpl = Template(_smiggles("SolarSystemControlLoad30mAvg"), hass)
-    for v in ("1.23456", "0", "7.999"):
-        hass.states.async_set(L30, v)
+    for v in ("2.0", "3.456"):
+        hass.states.async_set(HOME, v, {"unit_of_measurement": "kW"})
         await hass.async_block_till_done()
-        assert float(hass.states.get("sensor.battman_load_30m_avg").state) == float(tpl.async_render(parse_result=False))
-    hass.states.async_remove(L30)
-    await hass.async_block_till_done()
-    assert hass.states.get("sensor.battman_load_30m_avg").state == "unavailable"
+    st = hass.states.get("sensor.battman_load_30m_avg")
+    assert float(st.state) == round((2.0 + 3.456) / 2, 2)
+    assert st.attributes["unit_of_measurement"] == "kW"
+    reg = er.async_get(hass)
+    assert reg.async_get_entity_id("sensor", "statistics", "battman_load_30m_avg") == "sensor.battman_load_30m_avg"
 
 
 async def test_follows_the_map(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
-    hass.states.async_set("sensor.my_load", "2.5")
-    hass.config_entries.async_update_entry(entry, options={"load_30m": "sensor.my_load"})
+    hass.states.async_set("sensor.my_power", "2.5", {"unit_of_measurement": "kW"})
+    hass.config_entries.async_update_entry(entry, options={"home_power": "sensor.my_power"})
     await hass.async_block_till_done()
-    assert hass.states.get("sensor.battman_load_30m_avg").state == "2.5"
+    for v in ("3.5", "4.5"):
+        hass.states.async_set("sensor.my_power", v, {"unit_of_measurement": "kW"})
+        await hass.async_block_till_done()
+    assert float(hass.states.get("sensor.battman_load_30m_avg").state) == 4.0
     text = (Path(hass.config.config_dir) / "packages/battman/battman_sensors.yaml").read_text()
-    assert "sensor.my_load" in text and "[[map:" not in text
+    assert "sensor.my_power" in text and "[[map:" not in text
 
 
 async def test_package_file_and_unique_ids(hass: HomeAssistant) -> None:
@@ -86,8 +92,19 @@ async def test_package_file_and_unique_ids(hass: HomeAssistant) -> None:
     assert f.exists() and "Managed by Battman" in f.read_text()
     reg = er.async_get(hass)
     assert reg.async_get_entity_id("sensor", "template", "battman_grid_power") == "sensor.battman_grid_power"
-    assert reg.async_get_entity_id("sensor", "template", "battman_load_30m_avg") == "sensor.battman_load_30m_avg"
+    assert reg.async_get_entity_id("sensor", "statistics", "battman_load_30m_avg") == "sensor.battman_load_30m_avg"
     assert ir.async_get(hass).async_get_issue(DOMAIN, "packages_not_loaded") is None
+
+
+async def test_load_avg_keeps_its_entity_when_it_moves_off_template(hass: HomeAssistant) -> None:
+    """Updating from v0.18: the old template entry held sensor.battman_load_30m_avg. Battman
+    removes it, so the Statistics sensor takes the same entity ID (same history), not a _2."""
+    reg = er.async_get(hass)
+    reg.async_get_or_create("sensor", "template", "battman_load_30m_avg", suggested_object_id="battman_load_30m_avg")
+    await _setup(hass)
+    assert reg.async_get_entity_id("sensor", "template", "battman_load_30m_avg") is None
+    assert reg.async_get_entity_id("sensor", "statistics", "battman_load_30m_avg") == "sensor.battman_load_30m_avg"
+    assert reg.async_get_entity_id("sensor", "template", "battman_grid_power") == "sensor.battman_grid_power"
 
 
 async def test_renamed_smiggles_sensor_keeps_its_entity(hass: HomeAssistant) -> None:

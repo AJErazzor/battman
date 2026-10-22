@@ -18,6 +18,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -132,7 +133,7 @@ async def test_overrides_card_loads(hass: HomeAssistant, hass_client) -> None:
         assert not re.search(old, raw, re.I), old
     text = json.dumps(card["config"])
     assert "/battmanfiles/battman-lib.js" in text and "script.ssc_apply_scene" in text      # the map's scene script
-    power = (await (await client.get("/api/battman/dashboard")).json())["views"][0]
+    power = (await built(hass))["views"][0]
     assert power["sections"][0]["cards"][-1] == {"type": "custom:battman-overrides"}
 
 

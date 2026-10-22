@@ -22,12 +22,12 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, Event, HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
 from . import nem
-from .const import DOMAIN, ENGINE_MAP, SMIGGLES_NAMES
+from .const import ENGINE_MAP, SMIGGLES_NAMES
+from .entity import device_info
 
 # every colour Battman's mode list uses (MODE_HUE in www/battman-lib.js)
 MODE_HUES = ("green", "yellow", "blue", "orange", "red", "purple", "teal", "amber")
@@ -114,12 +114,7 @@ class BattmanThemeModeColoursSensor(SensorEntity):
 
     def __init__(self, entry: ConfigEntry) -> None:
         self._attr_unique_id = f"{entry.entry_id}_theme_mode_colours"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Battman",
-            manufacturer="Battman",
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = device_info(entry)
 
     async def async_added_to_hass(self) -> None:
         @callback

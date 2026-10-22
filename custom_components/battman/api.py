@@ -1,4 +1,4 @@
-"""HTTP endpoints for Battman pages and the managed dashboard."""
+"""HTTP endpoints for Battman pages, plus the views Create dashboard writes."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ from homeassistant.helpers.http import KEY_HASS
 from . import cards, images, themes
 from .const import (
     CARDS_URL,
-    DASHBOARD_URL,
     DOMAIN,
     ENTITY_MAP_DEFAULTS,
     ENTITY_MAP_URL,
@@ -96,7 +95,7 @@ def _card_sizes(obj: Any, sizes: dict[str, Any]) -> Any:
 
 
 async def async_build_dashboard(hass: HomeAssistant) -> dict[str, Any]:
-    """{"views": [...], "errors": [...]} for the managed dashboard."""
+    """{"views": [...], "errors": [...]}: the views Create dashboard writes into /battman."""
     emap = entity_map(hass)
     errors: list[str] = []
     views = []
@@ -123,18 +122,6 @@ class BattmanEntityMapView(HomeAssistantView):
     async def get(self, request):
         hass: HomeAssistant = request.app[KEY_HASS]
         return self.json({"version": self._version, "entities": entity_map(hass)})
-
-
-class BattmanDashboardView(HomeAssistantView):
-    """GET /api/battman/dashboard -> the managed dashboard's views."""
-
-    url = DASHBOARD_URL
-    name = "api:battman:dashboard"
-    requires_auth = True
-
-    async def get(self, request):
-        hass: HomeAssistant = request.app[KEY_HASS]
-        return self.json(await async_build_dashboard(hass))
 
 
 class BattmanThemeSaveView(HomeAssistantView):

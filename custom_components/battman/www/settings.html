@@ -704,8 +704,7 @@
     if (!saved || !urlPath) return;
     try {
       const cfg = await h.connection.sendMessagePromise({ type: 'lovelace/config', url_path: urlPath });
-      if (cfg.strategy && cfg.strategy.type === 'custom:battman') cfg.strategy.theme = theme;   // an older managed dashboard
-      else (cfg.views || []).forEach((v) => { v.theme = theme; });
+      (cfg.views || []).forEach((v) => { v.theme = theme; });
       await h.connection.sendMessagePromise({ type: 'lovelace/config/save', url_path: urlPath, config: cfg });
     } catch (e) { return say(el, 'Theme name saved, but the dashboard could not be changed: ' + ((e && e.message) || e), 'bad'); }
     say(el, '✓ Theme applied', 'ok');

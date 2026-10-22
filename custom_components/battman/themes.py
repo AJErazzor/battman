@@ -15,6 +15,9 @@ from pathlib import Path
 import yaml
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
+
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,6 +110,32 @@ def save_custom(dst: Path, name: str, text: str, overwrite: bool) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     target.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
     return target
+
+
+ISSUE_NOT_LOADED = "themes_not_loaded"
+
+
+async def async_check(hass: HomeAssistant) -> list[str]:
+    """Raise (or clear) the Repair for Battman themes HA hasn't loaded. Returns the missing names.
+
+    HA only reads themes/battman/ when configuration.yaml has
+    `frontend: themes: !include_dir_merge_named themes`.
+    """
+    from homeassistant.components.frontend import DATA_THEMES  # noqa: PLC0415
+
+    shipped = await hass.async_add_executor_job(shipped_names)
+    loaded = hass.data.get(DATA_THEMES, {})
+    missing = sorted(n for n in shipped if n not in loaded)
+    if missing:
+        ir.async_create_issue(
+            hass, DOMAIN, ISSUE_NOT_LOADED, is_fixable=False, severity=ir.IssueSeverity.ERROR,
+            translation_key=ISSUE_NOT_LOADED,
+            translation_placeholders={"folder": "/".join(DST_PARTS), "count": str(len(missing))},
+        )
+        _LOGGER.error("Battman themes in %s aren't loaded by Home Assistant (%d missing)", dst_dir(hass), len(missing))
+    else:
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_NOT_LOADED)
+    return missing
 
 
 async def async_reload(hass: HomeAssistant) -> None:

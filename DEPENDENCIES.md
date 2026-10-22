@@ -38,6 +38,8 @@ Battman's own pieces that other parts rely on:
 - **Entity map** (`/api/battman/entities`): every Battman page. Change it under Configure.
 - **Packages** (`homeassistant: packages: !include_dir_named packages` in configuration.yaml): Battman's
   engine sensors and helpers in `packages/battman/`. Without it, a Repair names what's missing.
+- **Themes** (`frontend: themes: !include_dir_merge_named themes` in configuration.yaml): Battman's
+  themes in `themes/battman/`. Without it, every Battman page says "no theme" and a Repair says what to add.
 - **automations.yaml / scripts.yaml** included in configuration.yaml (HA's default): Battman's engine
   automations and scripts (and the Live Activity ones) are written there. Without them, a Repair.
 - **Recorder** (HA's default): Migrate copies the cost odometers' long-term statistics. Without it,

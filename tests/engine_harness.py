@@ -15,6 +15,7 @@ import yaml
 
 from tools.smiggles_log_text import plain_log
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
@@ -24,9 +25,14 @@ DOMAIN = "battman"
 
 CONFIG = """homeassistant:
   packages: !include_dir_named packages
+frontend:
+  themes: !include_dir_merge_named themes
 automation: !include automations.yaml
 script: !include scripts.yaml
 """
+
+LOAD_AVG = "sensor.battman_load_30m_avg"
+SMIGGLES_LOAD = "sensor.solarsystemcontrolload30m"
 
 HELPER_DOMAINS = ("input_boolean", "input_number", "input_select", "input_datetime", "input_text", "timer")
 
@@ -51,7 +57,7 @@ WORLD_DEFAULTS: dict[str, Any] = {
     "sensor.sigen_plant_third_party_pv_power": "0",
     "sensor.sigen_plant_total_imported_energy": "12000.5",
     "sensor.sigen_plant_total_exported_energy": "18000.25",
-    "sensor.solarsystemcontrolload30m": "1.1",
+    SMIGGLES_LOAD: "1.1",
     "number.sigen_plant_grid_export_limitation": "10",
     "number.sigen_plant_pv_max_power_limit": "20",
     "number.sigen_plant_ess_max_charging_limit": "10",
@@ -131,6 +137,10 @@ async def start(hass: HomeAssistant, smiggles: bool = True, world: dict | None =
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    # the load average is set by hand (set_world) to the value Smiggles' helper has
+    er.async_get(hass).async_update_entity(LOAD_AVG, disabled_by=er.RegistryEntryDisabler.USER)
+    await hass.async_block_till_done()
+    set_world(hass, world or {})
     # Battman's own select / number entities load HA's select and number integrations, whose
     # actions replace the recorders: put the recorders back (the Sigen entities are plain states)
     hass.services.async_register("select", "select_option", rec)
@@ -140,8 +150,15 @@ async def start(hass: HomeAssistant, smiggles: bool = True, world: dict | None =
 
 def set_world(hass: HomeAssistant, world: dict) -> None:
     now = dt_util.now()
-    for ent, val in {**WORLD_DEFAULTS, **{k: v for k, v in world.items() if "." in k}}.items():
+    states = {**WORLD_DEFAULTS, **{k: v for k, v in world.items() if "." in k}}
+    for ent, val in states.items():
         hass.states.async_set(ent, val)
+    # Smiggles reads its 30-minute load helper; Battman works its own out from home power over
+    # 30 minutes (a Statistics sensor, switched off by start() for these runs). For a like-for-like
+    # run both engines see the same average.
+    entry = er.async_get(hass).async_get(LOAD_AVG)
+    if entry is not None and entry.disabled_by is not None:
+        hass.states.async_set(LOAD_AVG, states[SMIGGLES_LOAD], {"unit_of_measurement": "kW"})
     buy = float(world.get("buy", 0.2))
     sell = float(world.get("sell", 0.05))
     rnd = random.Random(world.get("seed", 1))

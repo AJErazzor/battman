@@ -7,11 +7,19 @@ template:
   - trigger:
       - platform: event
         event_type: battman_parameters_update
+      # start / templates reloaded: every setting that has no value yet gets its default below
+      # (a fresh install starts with all of them); settings that have one keep it. Changes (the
+      # update event) only while Battman is in charge.
+      - platform: homeassistant
+        event: start
+        id: start
+      - platform: event
+        event_type: event_template_reloaded
+        id: start
 
     condition:
-      - condition: state
-        entity_id: binary_sensor.battman_in_charge
-        state: "on"
+      - condition: template
+        value_template: "{{ trigger.id == 'start' or is_state('binary_sensor.battman_in_charge', 'on') }}"
     sensor:
       - name: "Battman parameters"
         unique_id: battman_parameters

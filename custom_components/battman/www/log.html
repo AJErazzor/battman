@@ -257,7 +257,7 @@
   // Entity IDs come from Battman's entity map (GET /api/battman/entities); this page
   // only knows the Battman names. Panels are built once the map has loaded.
   const NEEDS = ['mode',
-                 'buy_price', 'feed_in_price', 'pv_power', 'home_power', 'battery_power', 'load_30m',
+                 'buy_price', 'feed_in_price', 'pv_power', 'home_power', 'battery_power', 'load_30m_avg',
                  'grid_import_power', 'grid_export_power', 'battery_soc', 'pv_string', 'third_party_pv'];
   // must exist in HA (pv_string is a pattern, third_party_pv is optional hardware)
   const NEED_ENTITIES = NEEDS.filter(k => !['pv_string', 'third_party_pv'].includes(k));
@@ -280,7 +280,7 @@
           { id: M.pv_power,      label: 'Solar',   token: '--battman-amber' },
           { id: M.home_power,    label: 'Home',    token: '--battman-blue' },
           { id: M.battery_power, label: 'Battery', token: '--battman-purple' },
-          { id: M.load_30m,      label: 'Load',    token: '--battman-red' },
+          { id: M.load_30m_avg,  label: 'Load',    token: '--battman-red' },
         ] },
       // grid: worked out from the Sigen import / export history (+ import, - export), so the
       // graph has full history (Battman's grid power sensor only has history from v0.17.0)

@@ -41,8 +41,7 @@ it isn't there, the card says so instead of drawing.
 A card with no tap action gets `pointer-events: none` from button-card, which also stops
 scrolling inside it; cards that scroll (the forecast table) set `pointer-events: auto`.
 The editor is only there on a dashboard you can edit. The Battman dashboard is an ordinary
-dashboard you own, so every Battman card on it has the editor. (An older *managed* Battman
-dashboard is built by Battman, so HA offers **Take control** instead.)
+dashboard you own, so every Battman card on it has the editor.
 
 | Card | What it shows | Needs |
 |---|---|---|
@@ -151,8 +150,9 @@ dark:                 # in dark mode: the same. On a narrow screen in dark mode,
 itself (no button-card, mushroom or card-mod). It's the first card on the Power view.
 
 Every item has a **Show** switch and its own entity, all set in the card's editor. Leave them
-alone and the card uses Battman's entity map (and the Smiggles entities where the map has no
-entry). An item whose entity doesn't exist isn't drawn. The three devices (the "PC" rows) also
+alone and the card uses Battman's entity map (the PV strings come from its `pv_string` pattern).
+The outside temperature and the three devices have no default: they're drawn once you pick their
+entity. An item whose entity doesn't exist isn't drawn. The three devices (the "PC" rows) also
 take your own text and what goes after the value (e.g. `W`). The pictures are Battman's;
 point House / Battery / Gateway picture at your own (e.g. `/local/house.png`) to change them.
 

@@ -2,7 +2,7 @@
 
 Battman can run the battery instead of Smiggles. Installing or updating Battman changes nothing
 about who controls the battery: Battman's engine is installed switched off
-(`binary_sensor.battman_in_charge` is off). One action moves control across, and one moves it back.
+(`binary_sensor.battman_in_charge` is off; its settings and curves sit at their defaults). One action moves control across, and one moves it back.
 
 ## What Migrate does
 

@@ -7,10 +7,6 @@ Battman cards on it (custom:battman-<id>) keep updating with releases; the views
 layout doesn't. For a fresh copy: delete the dashboard and press Create dashboard again.
 If something is already at /battman, nothing is created and the message says so.
 
-Older Battman versions made "managed" dashboards (their whole config is the Battman
-strategy, {"strategy": {"type": "custom:battman"}}). Those still work, and removing
-Battman deletes them; a dashboard you own is never touched.
-
 HA has no public API for an integration to create a dashboard. This uses the same two
 steps HA uses for its own Map dashboard (create the dashboard item, then save its
 config), reaching HA's dashboards collection through the `lovelace/dashboards/list`
@@ -21,13 +17,11 @@ Battman shows a Repair instead of failing.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
-STRATEGY_CONFIG: dict[str, Any] = {"strategy": {"type": "custom:battman"}}
 BASE_URL_PATH = "battman"
 TITLE = "Battman"
 ICON = "mdi:battery-charging-medium"
@@ -52,29 +46,6 @@ def _collection(hass: HomeAssistant):
         return handler.__self__.storage_collection
     except (KeyError, IndexError, AttributeError, TypeError) as err:
         raise DashboardUnavailable(f"Dashboards collection not found: {err}") from err
-
-
-def _is_managed(config: Any) -> bool:
-    return (
-        isinstance(config, dict)
-        and isinstance(config.get("strategy"), dict)
-        and config["strategy"].get("type") == STRATEGY_CONFIG["strategy"]["type"]
-    )
-
-
-async def async_find_managed(hass: HomeAssistant) -> list[str]:
-    """URL paths of every managed Battman dashboard."""
-    found = []
-    for url_path, dash in list(_lovelace(hass).dashboards.items()):
-        if not url_path or not hasattr(dash, "async_load"):
-            continue
-        try:
-            config = await dash.async_load(False)
-        except Exception:  # noqa: BLE001  (empty / never-saved dashboards raise)
-            continue
-        if _is_managed(config):
-            found.append(url_path)
-    return found
 
 
 def _taken(hass: HomeAssistant, url_path: str) -> bool:
@@ -120,17 +91,3 @@ async def async_create(hass: HomeAssistant) -> tuple[bool, str]:
         raise DashboardUnavailable(f"Creating the dashboard failed: {err}") from err
     _LOGGER.info("Created the Battman dashboard at /%s", url_path)
     return True, url_path
-
-
-async def async_remove_managed(hass: HomeAssistant) -> list[str]:
-    """Delete every managed (older-style) Battman dashboard; leave all others alone."""
-    removed = []
-    lovelace = _lovelace(hass)
-    collection = _collection(hass)
-    for url_path in await async_find_managed(hass):
-        item_id = (lovelace.dashboards[url_path].config or {}).get("id")
-        if not item_id:
-            continue
-        await collection.async_delete_item(item_id)
-        removed.append(url_path)
-    return removed

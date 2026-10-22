@@ -14,11 +14,10 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DOMAIN
+from .entity import device_info
 
 
 async def async_setup_entry(
@@ -38,12 +37,7 @@ class BattmanLiveActivitySwitch(SwitchEntity, RestoreEntity):
     def __init__(self, entry: ConfigEntry) -> None:
         self._attr_unique_id = f"{entry.entry_id}_live_activity"
         self._attr_is_on = False
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Battman",
-            manufacturer="Battman",
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = device_info(entry)
 
     async def async_added_to_hass(self) -> None:
         if (last := await self.async_get_last_state()) is not None:

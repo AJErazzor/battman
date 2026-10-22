@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -31,7 +32,7 @@ async def _setup(hass, options=None):
 
 async def test_log_and_theme_views(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
-    data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
+    data = await built(hass)
     assert data["errors"] == []
     by_path = {v["path"]: v for v in data["views"]}
     log, theme = by_path["log"], by_path["theme"]
@@ -107,7 +108,7 @@ async def test_configure_screen(hass: HomeAssistant, hass_client) -> None:
     client = await hass_client()
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
     assert emap["buy_price"] == "sensor.my_buy" and emap["sell_total"] == "sensor.solarsystemcontrolselltotal"
-    dash = json.dumps(await (await client.get("/api/battman/dashboard")).json())
+    dash = json.dumps(await built(hass))
     assert "sensor.my_buy" in dash and "sensor.amber_5min_current_general_price" not in dash
 
 
@@ -147,7 +148,7 @@ async def test_restart_fix_flow(hass: HomeAssistant, hass_client) -> None:
 async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
-    by_path = {v["path"]: v for v in (await (await client.get("/api/battman/dashboard")).json())["views"]}
+    by_path = {v["path"]: v for v in (await built(hass))["views"]}
     # Curvy is a Battman card now (custom:battman-curvy shows /battmanfiles/curvy.html: see test_curvy_card)
     assert by_path["curvy"]["cards"][0]["type"] == "custom:battman-curvy" and by_path["curvy"]["theme"] == "Battman Nord"
     assert by_path["pricy"]["cards"][0]["type"] == "custom:battman-pricy" and by_path["pricy"]["title"] == "Pricy"

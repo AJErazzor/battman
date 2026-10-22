@@ -6,10 +6,9 @@ const fs = require("fs");
 const path = require("path");
 (async () => {
   const [www, dir] = process.argv.slice(2);
-  for (const f of ["battman-cards.js", "battman-strategy.js", "battman-countdown.js"]) fs.copyFileSync(path.join(www, f), path.join(dir, f));
+  for (const f of ["battman-cards.js", "battman-countdown.js"]) fs.copyFileSync(path.join(www, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html><html><body>
 <script>window.loadCardHelpers = async () => ({ createCardElement: () => document.createElement("div") });</script>
-<script type="module" src="battman-strategy.js"></script>
 <script type="module" src="battman-countdown.js"></script>
 <script type="module" src="battman-cards.js?cards=state,limits"></script>
 </body></html>`);
@@ -23,8 +22,8 @@ const path = require("path");
   const browser = await chromium.launch({ executablePath: process.env.CHROME });
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
-  await page.waitForFunction(() => customElements.get("battman-image") && customElements.get("ll-strategy-dashboard-battman") && customElements.get("battman-countdown"));
-  const tags = ["ll-strategy-dashboard-battman", "battman-countdown", "battman-card-editor", "battman-state", "battman-limits", "battman-image", "battman-image-editor"];
+  await page.waitForFunction(() => customElements.get("battman-image") && customElements.get("battman-countdown"));
+  const tags = ["battman-countdown", "battman-card-editor", "battman-state", "battman-limits", "battman-image", "battman-image-editor"];
   const out = await page.evaluate(async (tags) => {
     // what HA's frontend does: a new registry in window.customElements, and its marker
     const defs = new Map();
