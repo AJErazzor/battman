@@ -14,7 +14,8 @@ ROOT = Path(__file__).parents[1] / "custom_components/battman"
 SENSOR = "sensor.battman_theme_mode_colours"
 PARAMS = "sensor.battman_parameters"
 NORD = {"battman-green": "#a3be8c", "battman-yellow": "#e9d8a6", "battman-blue": "#81a1c1",
-        "battman-orange": "#d08770", "battman-red": "#a85560", "battman-purple": "#b48ead"}
+        "battman-orange": "#d08770", "battman-red": "#a85560", "battman-purple": "#b48ead",
+        "battman-teal": "#8fbcbb", "battman-amber": "#ebcb8b"}
 
 
 async def _settle(hass: HomeAssistant) -> None:

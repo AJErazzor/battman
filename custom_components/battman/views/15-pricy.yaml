@@ -1,4 +1,4 @@
-# Battman managed dashboard view: Pricy
+# Battman dashboard view: Pricy
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
 type: panel
 path: pricy

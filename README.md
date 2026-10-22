@@ -3,7 +3,7 @@
 Home battery automation for Home Assistant.
 
 > Early days: Battman is moving over from Smiggles one piece at a time. So far it
-> ships themes, a dashboard (Power, Finances, Curvy, Pricy, Log, Settings, Theme) and its pages; the
+> ships themes, a dashboard (Power, Curvy, Pricy, Finances, Settings, Log, Theme) and its pages; the
 > battery engine still runs in Smiggles. See [docs/smiggles-inventory.md](docs/smiggles-inventory.md).
 
 ## Install (HACS)
@@ -40,14 +40,14 @@ When you first add the integration, Battman creates a **Battman** dashboard at
 (from `custom_components/battman/views/*.yaml`, entity names filled from the entity map).
 It's an ordinary dashboard and it's **yours from the start**: edit, rearrange, delete views.
 
-Views: **Power** (your control centre, built from Battman cards), **History**,
-**Finances**, **Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log**,
-**Settings** and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
-tab), opened from the button at the bottom of the Finances Billing card, for
-fixing the buy/sell totals of a period. It asks before changing anything.
+Views, in order: **Power** (your control centre, built from Battman cards), **Curvy** (SOC
+curve editor), **Pricy** (price curve editor), **Finances** (cost chart, cost compare,
+Billing and Solar System cards), **Settings**, **Log** and **Theme** (the theme studio).
+To fix a period's buy and sell totals, use **Correct Totals** on the Billing card: it opens a
+popup and asks before changing anything.
 
 What updates with Battman releases: every **Battman card** on it (`custom:battman-<id>`,
-including Curvy, Pricy, Log and the Theme studio) and the pages they show. What doesn't:
+including Curvy, Pricy, Log, the Theme studio and the Finances cards) and the pages they show. What doesn't:
 the views themselves (which cards are on them, and their layout). Battman is moving
 everything into cards so less and less of it is fixed.
 
@@ -76,8 +76,8 @@ or theme colour is missing, the page shows an error saying exactly what.
 
 ## Theme mode colours sensor
 
-`sensor.battman_theme_mode_colours` holds the six mode colours of the Battman
-dashboard's theme as hex, e.g. `{"green":"#a3be8c","yellow":"#e9d8a6",…}`, with each
+`sensor.battman_theme_mode_colours` holds the eight mode colours (green, yellow, blue,
+orange, red, purple, teal, amber) of the Battman dashboard's theme as hex, e.g. `{"green":"#a3be8c","yellow":"#e9d8a6",…}`, with each
 colour also as an attribute. It's for things that can't read theme colours, like an
 iPhone Live Activity. It updates by itself when the dashboard theme changes. Until a
 dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
@@ -131,7 +131,7 @@ number (1–12), e.g. `sensor.sigen_inverter_pv{n}_power`.
 
 ## Dependencies
 
-Battman's dashboard needs some HACS cards (button-card, card-mod, html-card).
+Battman's dashboard needs some HACS cards (button-card, card-mod, and a few more) and browser_mod.
 See [DEPENDENCIES.md](DEPENDENCIES.md). Battman raises a Repair if any are missing.
 
 ## Updating

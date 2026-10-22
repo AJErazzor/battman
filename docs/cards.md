@@ -59,6 +59,10 @@ dashboard is built by Battman, so HA offers **Take control** instead.)
 | `battman-pricy` | The price curve editor (Battman's Pricy page in a frame for now). Sized like Curvy | nothing |
 | `battman-log` | The engine log page (in a frame for now). Sized like Curvy | nothing |
 | `battman-theme-studio` | The Theme studio (in a frame for now). Sized like Curvy | nothing |
+| `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export (Battman's cost chart page in a frame) | card-mod |
+| `battman-cost-compare` | This period against earlier ones (Battman's cost compare page in a frame) | card-mod |
+| `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
+| `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
 | `battman-image` | Any of Battman's images, or yours, with fit, position and size options (see [Battman Image](#battman-image)) | nothing |
 
 `<battman-countdown></battman-countdown>` (the 5-min Amber countdown) is loaded by Battman on

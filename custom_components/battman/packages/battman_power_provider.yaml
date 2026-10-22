@@ -159,7 +159,7 @@ template:
                 {% set energy = states('[[map:total_imported_energy]]') | float(0) %}
                 {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
                 {% set tariff = this.attributes.get('tariff') %}
-                {% if tariff[hour].limit > 0   %}
+                {% if tariff and tariff[hour].limit > 0   %}
                     {{ (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) }}
                 {% else %}
                   {{ 0.0 | float }}
@@ -310,7 +310,7 @@ template:
                 {% set energy = states('[[map:total_exported_energy]]') | float(0) %}
                 {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
                 {% set tariff = this.attributes.get('tariff') %}
-                {% if tariff[hour].limit > 0   %}
+                {% if tariff and tariff[hour].limit > 0   %}
                     {{ (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) }}
                 {% else %}
                   {{ 0.0 | float }}

@@ -4,6 +4,7 @@ The proof: Smiggles' original engine and Battman's port are loaded in the same t
 given the same world (SOC, prices, forecasts, solar, time, settings, overrides, curves);
 they must make the same decisions and write the same run data and log line."""
 
+import re
 import pytest
 from homeassistant.core import HomeAssistant
 
@@ -93,8 +94,18 @@ def _fire(hass, key: str, data: dict) -> None:
     hass.bus.async_fire(ENGINE_MAP[key], data)
 
 
-# settings Battman added after the port (Smiggles never had them): left out of the like-for-like checks
-BATTMAN_ONLY_ATTRS = {"dashboardTheme"}
+# left out of the like-for-like checks: settings Battman added after the port (Smiggles never had
+# them), and the totals' tracking figures, which Battman's totals work out from a fresh start
+# (v0.18.9) while Smiggles' never start there (they read a date that isn't set yet)
+BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh"}
+
+
+def _same_tracking(message: str) -> str:
+    """The log's Tracking Sell/Buy lines as numbers. From a fresh start Smiggles' totals never start
+    (their tracking figure reads a date that isn't there yet), so the log shows its 0.0 default;
+    Battman's start (v0.18.9) and show 0. Same value, written differently."""
+    return re.sub(r"(Tracking (?:Sell|Buy): )\$([-\d.]+) for ([-\d.]+)kwh",
+                  lambda m: f"{m.group(1)}${float(m.group(2))} for {float(m.group(3))}kwh", message)
 
 
 def _strip(attrs) -> dict:
@@ -146,8 +157,8 @@ async def test_engine_decides_like_smiggles(hass: HomeAssistant, freezer) -> Non
             a, b = hass.states.get(SMIGGLES_NAMES[key]).state, hass.states.get(ENGINE_MAP[key]).state
             assert a == b, (n, key, a, b, sc)
         await _same_store(hass, "run")
-        la = hass.states.get(SMIGGLES_NAMES["debug_log"]).attributes["message"]
-        lb = hass.states.get(ENGINE_MAP["debug_log"]).attributes["message"]
+        la = _same_tracking(hass.states.get(SMIGGLES_NAMES["debug_log"]).attributes["message"])
+        lb = _same_tracking(hass.states.get(ENGINE_MAP["debug_log"]).attributes["message"])
         assert la == lb, (n, la, lb)
         seen_modes.add(hass.states.get(ENGINE_MAP["mode"]).state)
         tally[(hass.states.get(ENGINE_MAP["mode"]).state, hass.states.get(ENGINE_MAP["no_export"]).state)] += 1

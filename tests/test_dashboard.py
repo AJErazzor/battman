@@ -39,7 +39,7 @@ async def test_dashboard_lifecycle(hass: HomeAssistant) -> None:
     # 1. install creates the dashboard once, at /battman: views written in (not the strategy)
     cfg = await _cfg(hass, "battman")
     assert "strategy" not in cfg and cfg["title"] == "Battman"
-    assert [v["path"] for v in cfg["views"]][:2] == ["power", "history"]
+    assert [v["path"] for v in cfg["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme"]
     assert "{{" not in json.dumps(cfg)                       # entity names filled in
     curvy = next(v for v in cfg["views"] if v["path"] == "curvy")
     assert curvy["cards"][0]["type"] == "custom:battman-curvy"

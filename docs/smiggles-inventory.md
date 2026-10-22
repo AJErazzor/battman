@@ -73,7 +73,7 @@ Note: both `sensor.sigen_plant_battery_state_of_charge` and `sensor.sigen_invert
 |---|---|---|---|---|
 | `cost-chartv7.html` | buy/sell/fee totals, parameters, Sigen daily export/import | — | 3 | ✅ `/battmanfiles/cost-chart.html` (v0.3.0) |
 | `cost-comparev7.html` | buy/sell/fee totals, parameters | — | 3 | ✅ `/battmanfiles/cost-compare.html` (v0.5.0, Finances view) |
-| `correct_energy4.html` | buy/sell totals | — | 0 | ✅ `/battmanfiles/correct-energy.html` (v0.7.0, Correct Totals subview from the Finances Billing card). Wasn't linked from any Smiggles dashboard. Writes the totals' attributes directly; becomes a Battman action when the odometers move |
+| `correct_energy4.html` | buy/sell totals | — | 0 | ✅ v0.7.0 as a page; since v0.18.9 the Billing card's Correct totals popup, using the totals sensors' SetTotal action |
 | `solar_log_viewer.html` | debug log start/end | — | 0 | ✖ retired — not used by the log page, left behind |
 | `smiggles-logv6.html` | debug log start/end + file, load-log script, mode, `gridpower`, `load30m`, Sigen power + PV strings, Amber current ×2 | — | 14 | ✅ `/battmanfiles/log.html` (v0.6.0, Log view) |
 | `priceeditorv37.html` (live; zip had v35) | price curves, high consumption, load30mavg, Amber current + forecasts | price_curves_update | 23 | ✅ `/battmanfiles/pricy.html` (v0.7.0, Pricy view) |
@@ -98,7 +98,7 @@ These live only in your HA (UI-created or in `configuration.yaml`):
 3. ✅ Managed dashboard + Finances view with cost-compare (v0.4.0 – v0.5.0)
 4. ✅ Configure screen (entity map) + restart prompt (v0.6.0)
 5. ✅ Log page + Log view; Theme studio + Theme view, Save to HA (v0.6.0)
-6. ✅ `correct_energy` → Correct Totals (v0.7.0)
+6. ✅ `correct_energy` → Correct Totals (v0.7.0; the Billing card's popup since v0.18.9)
 7. Override cards (`battman-lib.js` in use by cards) — needs map entries for timer, parameters, SOC, capacity, forecast; browser_mod
 8. ✅ Curve editors → Curvy and Pricy (v0.7.0)
 9. Remaining dashboards as Battman views

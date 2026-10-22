@@ -1,0 +1,19 @@
+# name: Cost compare
+# description: This period against earlier ones: buy, sell, fees and net, side by side.
+# preview: cost-compare.webp
+#
+# A Battman card: on a dashboard it's `type: custom:battman-cost-compare`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/cost-compare.yaml and edit that copy.
+# Shows Battman's cost compare page (/battmanfiles/cost-compare.html) in a frame, flush with the view.
+type: iframe
+url: /battmanfiles/cost-compare.html
+grid_options:
+  columns: full
+  rows: 8
+card_mod:
+  style: |
+    ha-card { height: 100%; background: transparent; border: none; box-shadow: none; padding: 0; overflow: hidden; }
+    .wrapper { height: 100% !important; padding: 0 !important; }
+    iframe { height: 100% !important; width: 100% !important; border: 0 !important; }

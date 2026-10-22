@@ -1,4 +1,4 @@
-# Battman managed dashboard view: Settings (from the Smiggles Settings view).
+# Battman dashboard view: Settings (from the Smiggles Settings view).
 # {{name}} = an entry in Battman's entity map, filled in when the dashboard loads.
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
 type: sections
@@ -3959,22 +3959,11 @@ sections:
 cards: []
 header:
   card:
-    type: custom:html-card
-    content: >-
-      <div
-      style="display:flex;align-items:center;justify-content:center;gap:12px;"><img
-      src="/battmanfiles/images/battman-wrench.webp" alt="Battman"
-      style="height:48px;width:auto;display:block;"><img
-      src="/battmanfiles/images/settings-line.webp" alt="Settings"
-      style="height:26px;width:auto;display:block;"></div>
-    card_mod:
-      style: |
-        ha-card {
-          background: none !important;
-          box-shadow: none !important;
-          border: none !important;
-          padding: 0 !important;
-        }
+    type: custom:battman-image
+    image: settings-header.webp
+    background: none
+    frame: false
+    height: 48
 badges:
   - type: entity
     show_name: true

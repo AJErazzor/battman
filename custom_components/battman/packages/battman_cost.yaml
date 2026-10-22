@@ -1,6 +1,11 @@
 # Battman engine: ported like for like from Smiggles (packages/solarsystemcontrolcost.yaml v1.0.16).
 # Managed by Battman: written into your config and replaced on every Battman update.
 # Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+#
+# Battman addition: the event battman_totals_update with
+#   {attribute: SetTotal, period: day|yesterday|month|bill, buy: <$>, sell: <$>}
+# sets that period's buy and sell totals (the Billing card's Correct totals popup).
+# The sensors record it themselves, so it survives a restart.
 
 template:
   - trigger:
@@ -122,7 +127,12 @@ template:
             {% set stored = this.attributes.get('day_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'day'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.buy | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('day', 0) }}
             {% else %}
                 {% if stored != today %}
@@ -146,7 +156,12 @@ template:
             {% set stored = this.attributes.get('day_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'yesterday'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.buy | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('yesterday', 0) }}
             {% else %}
                 {% if stored != today %}
@@ -194,7 +209,12 @@ template:
             {% set stored = this.attributes.get('month_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'month'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.buy | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('month', 0) }}
             {% else %}
                 {% if stored != month %}
@@ -238,7 +258,12 @@ template:
             {% set stored = this.attributes.get('bill_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'bill'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.buy | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('bill', 0) }}
             {% else %}
                 {% if stored != period %}
@@ -395,7 +420,7 @@ template:
             {% endmacro %}
 
             {% set change = calc_delta() | float(0) %}
-            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker'), now() - timedelta(seconds=1)) %}
             {% set init = 0 | float(0) %}
 
             {% if trigger is defined and trigger.platform == 'event' %}
@@ -418,7 +443,7 @@ template:
             {% endmacro %}
 
             {% set change = calc_delta() | float(0) %}
-            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker'), now() - timedelta(seconds=1)) %}
             {% set init = 0 | float(0) %}
 
             {% if trigger is defined and trigger.platform == 'event' %}
@@ -529,7 +554,12 @@ template:
             {% set stored = this.attributes.get('day_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'day'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.sell | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('day', 0) }}
             {% else %}
                 {% if stored != today %}
@@ -553,7 +583,12 @@ template:
             {% set stored = this.attributes.get('day_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'yesterday'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.sell | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('yesterday', 0) }}
             {% else %}
                 {% if stored != today %}
@@ -601,7 +636,12 @@ template:
             {% set stored = this.attributes.get('month_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'month'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.sell | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('month', 0) }}
             {% else %}
                 {% if stored != month %}
@@ -645,7 +685,12 @@ template:
             {% set stored = this.attributes.get('bill_marker') %}
             {% set init = 0 | float(0) %}
 
-            {% if trigger is defined and trigger.platform == 'event' %}
+            {% if trigger is defined and trigger.platform == 'event'
+               and trigger.event.data.attribute == 'SetTotal'
+               and trigger.event.data.period == 'bill'
+               and trigger.event.data.buy is number and trigger.event.data.sell is number %}
+              {{ trigger.event.data.sell | float | round(4) }}
+            {% elif trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('bill', 0) }}
             {% else %}
                 {% if stored != period %}
@@ -774,7 +819,7 @@ template:
             {% endmacro %}
 
             {% set change = calc_delta() | float(0) %}
-            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker'), now() - timedelta(seconds=1)) %}
             {% set init = 0 | float(0) %}
 
             {% if trigger is defined and trigger.platform == 'event' %}
@@ -797,7 +842,7 @@ template:
             {% endmacro %}
 
             {% set change = calc_delta() | float(0) %}
-            {% set stored = as_datetime(this.attributes.get('trackingA_marker')) %}
+            {% set stored = as_datetime(this.attributes.get('trackingA_marker'), now() - timedelta(seconds=1)) %}
             {% set init = 0 | float(0) %}
 
             {% if trigger is defined and trigger.platform == 'event' %}

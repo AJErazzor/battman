@@ -1,7 +1,7 @@
 """Battman sensors.
 
-Theme mode colours: the six mode colours (green, yellow, blue, orange, red,
-purple) of the Battman dashboard's theme, as hex. Phones can't read CSS
+Theme mode colours: the eight mode colours (green, yellow, blue, orange, red,
+purple, teal, amber) of the Battman dashboard's theme, as hex. Phones can't read CSS
 variables, so things like an iPhone Live Activity read this sensor instead.
 
 It follows the Battman theme you picked (Settings → Dashboard theme, or Make
@@ -29,7 +29,8 @@ from homeassistant.helpers.event import async_track_state_change_event
 from . import nem
 from .const import DOMAIN, ENGINE_MAP, SMIGGLES_NAMES
 
-MODE_HUES = ("green", "yellow", "blue", "orange", "red", "purple")
+# every colour Battman's mode list uses (MODE_HUE in www/battman-lib.js)
+MODE_HUES = ("green", "yellow", "blue", "orange", "red", "purple", "teal", "amber")
 EVENT_THEMES_UPDATED = "themes_updated"
 _HEX = re.compile(r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 _RGB = re.compile(r"^rgba?\(([^)]+)\)$")

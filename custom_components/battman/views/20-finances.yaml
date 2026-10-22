@@ -1,0 +1,46 @@
+# Battman dashboard view: Finances
+# Edit like any dashboard YAML. {{name}} placeholders are filled from Battman's
+# entity map (custom_components/battman/const.py) when the dashboard loads.
+# Files in this folder become views, in filename order.
+type: sections
+max_columns: 4
+title: Finances
+sections:
+- type: grid
+  cards:
+  - type: custom:battman-cost-chart
+  - type: custom:battman-cost-compare
+  - type: custom:battman-billing
+  - type: custom:battman-solar-system
+  column_span: 4
+icon: mdi:chart-box-outline
+show_icon_and_title: true
+header:
+  card:
+    type: custom:battman-image
+    image: finances-header.webp
+    background: none
+    frame: false
+    height: 48
+badges:
+- type: entity
+  show_name: true
+  show_state: true
+  show_icon: true
+  entity: '{{battery_soc}}'
+  name: SOC
+- type: entity
+  show_name: true
+  show_state: true
+  show_icon: true
+  entity: '{{buy_price}}'
+  name: Buy
+  show_entity_picture: false
+- type: entity
+  show_name: true
+  show_state: true
+  show_icon: true
+  entity: '{{feed_in_price}}'
+  name: FIT
+theme: Battman Coffee
+path: finances
