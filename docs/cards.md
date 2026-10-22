@@ -57,6 +57,7 @@ dashboard is built by Battman, so HA offers **Take control** instead.)
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
 | `battman-curvy` | The SOC curve editor (Battman's Curvy page in a frame for now). Size it by dragging in a sections view; it fills a panel view | nothing |
 | `battman-pricy` | The price curve editor (Battman's Pricy page in a frame for now). Sized like Curvy | nothing |
+| `battman-settings` | Every Battman setting on one page; drag sections between two columns (order kept per device). Each change is checked: values Battman won't accept are refused, and it says if a change didn't take | nothing |
 | `battman-log` | The engine log page (in a frame for now). Sized like Curvy | nothing |
 | `battman-theme-studio` | The Theme studio (in a frame for now). Sized like Curvy | nothing |
 | `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export (Battman's cost chart page in a frame) | card-mod |

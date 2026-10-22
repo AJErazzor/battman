@@ -42,7 +42,8 @@ It's an ordinary dashboard and it's **yours from the start**: edit, rearrange, d
 
 Views, in order: **Power** (your control centre, built from Battman cards), **Curvy** (SOC
 curve editor), **Pricy** (price curve editor), **Finances** (cost chart, cost compare,
-Billing and Solar System cards), **Settings**, **Log** and **Theme** (the theme studio).
+Billing and Solar System cards), **Settings** (every setting on one page: drag its sections
+between two columns, the order is kept per device), **Log** and **Theme** (the theme studio).
 To fix a period's buy and sell totals, use **Correct Totals** on the Billing card: it opens a
 popup and asks before changing anything.
 

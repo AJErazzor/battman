@@ -30,17 +30,12 @@ async def _setup(hass):
 
 
 async def test_settings_view(hass: HomeAssistant, hass_client) -> None:
+    """Settings is one Battman card now (custom:battman-settings: see test_settings_card)."""
     await _setup(hass)
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
     assert data["errors"] == []
     settings = {v["path"]: v for v in data["views"]}["settings"]
-    text = json.dumps(settings)
-    assert "{{" not in text and "smiggles" not in text.lower() and "wled" not in text.lower()
-    assert "theme_mode_colours" not in text                      # Battman's sensor does that now
-    assert "solarsystemcontrolbuyrulesattribute" in text and "solarsystemcontrolpowerproviderupdate" in text
-    assert [b["entity"] for b in settings["badges"]][-1] == "script.solarsystemcontrol"
-    assert "config.strategy.theme = theme" in text               # theme switcher keeps it managed
-    assert "dashboardTheme: theme" in text                       # ...and saves the name in Battman
+    assert settings["type"] == "panel" and [c["type"] for c in settings["cards"]] == ["custom:battman-settings"]
 
 
 async def test_mode_colours_sensor(hass: HomeAssistant) -> None:

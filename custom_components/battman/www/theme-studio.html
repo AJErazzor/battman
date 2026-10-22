@@ -1282,7 +1282,7 @@ function pasteFallback(){
 // which this dashboard's hardcoded view themes would override anyway).
 // Battman keeps the dashboard theme's name in the parameters sensor (dashboardTheme):
 // the mode colours sensor (Live Activity bar, theme: battman cards) reads it there.
-// Done here every time, so it's saved even if the Settings view's helper is an older copy.
+// Done here every time Make Active is used.
 function saveThemeName(hass,name){
   var tok=hass.auth&&hass.auth.data&&hass.auth.data.access_token;
   fetch("/api/battman/entities",{headers:{Authorization:"Bearer "+tok}}).then(function(r){
@@ -1315,27 +1315,7 @@ function doMakeActive(){
       window.parent.location.reload();
     }catch(e){window.location.reload();}
   }
-  // reuse the dashboard's own helper if the Settings view has defined it
-  // (it also bridges the WLED neg-buy colour); it returns nothing, so poll
-  // the saved config until every view carries the new theme.
-  try{
-    if(window.parent&&typeof window.parent.__applyDashboardTheme==="function"){
-      window.parent.__applyDashboardTheme(name);
-      setStatus("applying…","ok");
-      var tries=0;
-      (function poll(){
-        hass.connection.sendMessagePromise({type:"lovelace/config",url_path:urlPath}).then(function(cfg){
-          var managed=cfg&&cfg.strategy&&cfg.strategy.type==="custom:battman";
-          var done=managed ? cfg.strategy.theme===name : (cfg.views||[]).every(function(v){return v.theme===name;});
-          if(done)setStatus("applied","ok");   // the helper does its own refresh
-          else if(++tries<20)setTimeout(poll,300);
-          else setStatus("apply timed out","err");
-        },function(){setStatus("apply failed","err");});
-      })();
-      return;
-    }
-  }catch(e){}
-  // self-contained fallback: rewrite every view's theme, then save.
+  // rewrite every view's theme, then save.
   // A managed Battman dashboard has no views of its own (its config is just the
   // Battman strategy), so set the strategy's theme instead: it stays managed and
   // every Battman view on it takes the theme.

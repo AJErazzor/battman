@@ -95,7 +95,7 @@ template:
             {% else %}
               {{ this.attributes.alertNotifyTarget
                  if this.attributes.alertNotifyTarget is defined
-                 else 'mobile_app_ajs_iphone_16' }}
+                 else '' }}
             {% endif %}
 
           amberNegativeBuyAlert: >
@@ -840,7 +840,7 @@ template:
             {% endif %}
 
           # Dashboard theme: the Battman theme your dashboard uses ('' = none picked).
-          # Set by the Settings view's Dashboard theme dropdown and the theme studio's
+          # Set by the Settings page's Dashboard theme and the theme studio's
           # Make Active. sensor.battman_theme_mode_colours reads it (the Live Activity's
           # bar colours, and cards with theme: battman). Not in defaults: Reset leaves it.
           dashboardTheme: >
