@@ -9,7 +9,7 @@ sections:
 - type: grid
   cards:
   - type: iframe
-    url: /battman/cost-chart.html
+    url: /battmanfiles/cost-chart.html
     grid_options:
       columns: full
       rows: 9
@@ -19,7 +19,7 @@ sections:
         .wrapper { height: 100% !important; padding: 0 !important; }
         iframe { height: 100% !important; width: 100% !important; border: 0 !important; }
   - type: iframe
-    url: /battman/cost-compare.html
+    url: /battmanfiles/cost-compare.html
     grid_options:
       columns: full
       rows: 8
@@ -267,7 +267,7 @@ show_icon_and_title: true
 header:
   card:
     type: custom:html-card
-    content: <div style="display:flex;align-items:center;justify-content:center;gap:12px;"><img src="/battman/images/battman-coins.webp" alt="Battman" style="height:48px;width:auto;display:block;"><img src="/battman/images/finances-line.webp" alt="Finances" style="height:26px;width:auto;display:block;"></div>
+    content: <div style="display:flex;align-items:center;justify-content:center;gap:12px;"><img src="/battmanfiles/images/battman-coins.webp" alt="Battman" style="height:48px;width:auto;display:block;"><img src="/battmanfiles/images/finances-line.webp" alt="Finances" style="height:26px;width:auto;display:block;"></div>
     card_mod:
       style: |
         ha-card {

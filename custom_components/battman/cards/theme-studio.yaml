@@ -1,0 +1,17 @@
+# name: Theme studio
+# description: Make and edit Battman themes, preview them on Battman's cards, and make one the dashboard's theme.
+# preview: theme-studio.webp
+#
+# A Battman card: on a dashboard it's `type: custom:battman-theme-studio`, and it updates
+# with Battman releases. For now it shows Battman's Theme studio page (/battmanfiles/theme-studio.html)
+# in a frame; the card name stays the same if that changes later.
+#
+# Size: in a sections view, drag it to the size you want (it fills the card); in a
+# panel view it fills the page. aspect_ratio only applies in an older masonry view.
+type: iframe
+url: /battmanfiles/theme-studio.html?theme=Battman%20Neon%20Drift
+aspect_ratio: "100:100"
+grid_options:
+  columns: full
+  rows: 12
+  min_rows: 6

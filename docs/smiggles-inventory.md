@@ -71,15 +71,15 @@ Note: both `sensor.sigen_plant_battery_state_of_charge` and `sensor.sigen_invert
 
 | File (Smiggles) | Battman entities it reads | Events | `--smiggles-*` vars | Status |
 |---|---|---|---|---|
-| `cost-chartv7.html` | buy/sell/fee totals, parameters, Sigen daily export/import | — | 3 | ✅ `/battman/cost-chart.html` (v0.3.0) |
-| `cost-comparev7.html` | buy/sell/fee totals, parameters | — | 3 | ✅ `/battman/cost-compare.html` (v0.5.0, Finances view) |
-| `correct_energy4.html` | buy/sell totals | — | 0 | ✅ `/battman/correct-energy.html` (v0.7.0, Correct Totals subview from the Finances Billing card). Wasn't linked from any Smiggles dashboard. Writes the totals' attributes directly; becomes a Battman action when the odometers move |
+| `cost-chartv7.html` | buy/sell/fee totals, parameters, Sigen daily export/import | — | 3 | ✅ `/battmanfiles/cost-chart.html` (v0.3.0) |
+| `cost-comparev7.html` | buy/sell/fee totals, parameters | — | 3 | ✅ `/battmanfiles/cost-compare.html` (v0.5.0, Finances view) |
+| `correct_energy4.html` | buy/sell totals | — | 0 | ✅ `/battmanfiles/correct-energy.html` (v0.7.0, Correct Totals subview from the Finances Billing card). Wasn't linked from any Smiggles dashboard. Writes the totals' attributes directly; becomes a Battman action when the odometers move |
 | `solar_log_viewer.html` | debug log start/end | — | 0 | ✖ retired — not used by the log page, left behind |
-| `smiggles-logv6.html` | debug log start/end + file, load-log script, mode, `gridpower`, `load30m`, Sigen power + PV strings, Amber current ×2 | — | 14 | ✅ `/battman/log.html` (v0.6.0, Log view) |
-| `priceeditorv37.html` (live; zip had v35) | price curves, high consumption, load30mavg, Amber current + forecasts | price_curves_update | 23 | ✅ `/battman/pricy.html` (v0.7.0, Pricy view) |
-| `editorv139.html` (live; zip had v137) | SOC curves, mode, high consumption, load30mavg, `script.solarsystemcontrol`, Sigen SOC + Sigen-only PV, Amber current, Solcast | soc_curves_update | 23 | ✅ `/battman/curvy.html` (v0.7.0, Curvy view) |
-| `theme-studiov4.html` | — | — | 27 | ✅ `/battman/theme-studio.html` (v0.6.0, Theme view) |
-| `ssc-lib.js` | (passed in by cards) | parameters update (via cards) | 88 | copy as `/battman/battman-lib.js` for the studio's previews (v0.6.0); the override cards still use Smiggles' copy |
+| `smiggles-logv6.html` | debug log start/end + file, load-log script, mode, `gridpower`, `load30m`, Sigen power + PV strings, Amber current ×2 | — | 14 | ✅ `/battmanfiles/log.html` (v0.6.0, Log view) |
+| `priceeditorv37.html` (live; zip had v35) | price curves, high consumption, load30mavg, Amber current + forecasts | price_curves_update | 23 | ✅ `/battmanfiles/pricy.html` (v0.7.0, Pricy view) |
+| `editorv139.html` (live; zip had v137) | SOC curves, mode, high consumption, load30mavg, `script.solarsystemcontrol`, Sigen SOC + Sigen-only PV, Amber current, Solcast | soc_curves_update | 23 | ✅ `/battmanfiles/curvy.html` (v0.7.0, Curvy view) |
+| `theme-studiov4.html` | — | — | 27 | ✅ `/battmanfiles/theme-studio.html` (v0.6.0, Theme view) |
+| `ssc-lib.js` | (passed in by cards) | parameters update (via cards) | 88 | copy as `/battmanfiles/battman-lib.js` for the studio's previews (v0.6.0); the override cards still use Smiggles' copy |
 
 ## 6. Gaps — referenced but not in the repo
 

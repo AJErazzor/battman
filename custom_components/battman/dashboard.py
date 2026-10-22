@@ -1,15 +1,21 @@
-"""The managed Battman dashboard.
+"""The Battman dashboard.
 
-A dashboard is "managed" when its whole config is the Battman strategy
-({"strategy": {"type": "custom:battman"}}). Battman only ever creates managed
-dashboards and only ever deletes managed ones; a dashboard you've taken control
-of (its config now has views) is never touched.
+Create dashboard (on install, the button, or battman.create_dashboard) makes an ordinary
+dashboard at /battman with Battman's views written into it (views/*.yaml, entity names
+filled from the entity map). It's yours from the start: edit it like any dashboard. The
+Battman cards on it (custom:battman-<id>) keep updating with releases; the views'
+layout doesn't. For a fresh copy: delete the dashboard and press Create dashboard again.
+If something is already at /battman, nothing is created and the message says so.
 
-HA has no public API for an integration to create a dashboard. This uses the
-same two steps HA uses for its own Map dashboard (create the dashboard item,
-then save the strategy config), reaching HA's dashboards collection through the
-`lovelace/dashboards/list` command. If a future HA version changes that,
-DashboardUnavailable is raised and Battman shows a Repair instead of failing.
+Older Battman versions made "managed" dashboards (their whole config is the Battman
+strategy, {"strategy": {"type": "custom:battman"}}). Those still work, and removing
+Battman deletes them; a dashboard you own is never touched.
+
+HA has no public API for an integration to create a dashboard. This uses the same two
+steps HA uses for its own Map dashboard (create the dashboard item, then save its
+config), reaching HA's dashboards collection through the `lovelace/dashboards/list`
+command. If a future HA version changes that, DashboardUnavailable is raised and
+Battman shows a Repair instead of failing.
 """
 
 from __future__ import annotations
@@ -71,33 +77,31 @@ async def async_find_managed(hass: HomeAssistant) -> list[str]:
     return found
 
 
-def _free_url_path(hass: HomeAssistant) -> str:
-    taken = set(_lovelace(hass).dashboards)
+def _taken(hass: HomeAssistant, url_path: str) -> bool:
+    if url_path in _lovelace(hass).dashboards:
+        return True
     try:
         from homeassistant.components import frontend  # noqa: PLC0415
 
-        taken |= set(hass.data.get(frontend.DATA_PANELS, {}))
+        return url_path in hass.data.get(frontend.DATA_PANELS, {})
     except Exception:  # noqa: BLE001
-        pass
-    if BASE_URL_PATH not in taken:
-        return BASE_URL_PATH
-    n = 2
-    while f"{BASE_URL_PATH}-{n}" in taken:
-        n += 1
-    return f"{BASE_URL_PATH}-{n}"
+        return False
 
 
 async def async_create(hass: HomeAssistant) -> tuple[bool, str]:
-    """Create a managed dashboard unless one exists.
+    """Create the Battman dashboard at /battman unless something is already there.
 
-    Returns (created, url_path): created is False when one already existed.
+    Returns (created, url_path): created is False when /battman was taken.
     """
-    existing = await async_find_managed(hass)
-    if existing:
-        return False, existing[0]
+    from .api import async_build_dashboard  # noqa: PLC0415
 
+    url_path = BASE_URL_PATH
+    if _taken(hass, url_path):
+        return False, url_path
+    built = await async_build_dashboard(hass)
+    if built["errors"]:
+        raise DashboardUnavailable("; ".join(built["errors"]))
     collection = _collection(hass)
-    url_path = _free_url_path(hass)
     try:
         await collection.async_create_item(
             {
@@ -109,17 +113,17 @@ async def async_create(hass: HomeAssistant) -> tuple[bool, str]:
                 "show_in_sidebar": True,
             }
         )
-        await _lovelace(hass).dashboards[url_path].async_save(dict(STRATEGY_CONFIG))
+        await _lovelace(hass).dashboards[url_path].async_save({"title": TITLE, "views": built["views"]})
     except DashboardUnavailable:
         raise
     except Exception as err:  # noqa: BLE001
         raise DashboardUnavailable(f"Creating the dashboard failed: {err}") from err
-    _LOGGER.info("Created managed Battman dashboard at /%s", url_path)
+    _LOGGER.info("Created the Battman dashboard at /%s", url_path)
     return True, url_path
 
 
 async def async_remove_managed(hass: HomeAssistant) -> list[str]:
-    """Delete every managed Battman dashboard; leave all others alone."""
+    """Delete every managed (older-style) Battman dashboard; leave all others alone."""
     removed = []
     lovelace = _lovelace(hass)
     collection = _collection(hass)

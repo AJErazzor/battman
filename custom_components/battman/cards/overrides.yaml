@@ -8,7 +8,7 @@
 #
 # Settings change by firing the parameters update event (SetAttribute) and starting or
 # cancelling the override timer, exactly as before, so the current engine stays in charge.
-# Rows and popups come from Battman's library (/battman/battman-lib.js, window.BattmanLib).
+# Rows and popups come from Battman's library (/battmanfiles/battman-lib.js, window.BattmanLib).
 # The rows' settings block is written once (&settings) and shared.
 # No made-up values: a row's kWh uses the rated capacity sensor (shows — if it's missing),
 # a missing SOC shows —, and missing buy / sell totals show — and block setting a Net Target.
@@ -295,7 +295,7 @@ cards:
             var C = _any.color || "var(--battman-purple)";
             var D = _any.dim || "var(--battman-purple-border)";
             var inner = 'var OV=' + ovJson + ';var PARAMS="' + S.params_entity + '";var EVT="' + S.event_name + '";var TMR="' + S.timer_entity + '";var FCE="' + S.forecast_entity + '",CKW="' + S.charge_kw_entity + '",CAP="' + S.capacity_entity + '",SOCE="' + S.soc_entity + '";var PFIELD="' + S.price_field + '",RSTEP=' + (S.round_step_cents || 1) + ',SMIN=' + (S.safety_min_minutes || 30) + ',SIVL=' + (S.safety_min_intervals || 2) + ';'
-              + 'if(!window.BattmanLib){if(!window.__battmanLibLoad){window.__battmanLibLoad=1;var _s=document.createElement("script");_s.src="/battman/battman-lib.js";_s.onload=function(){window.__battmanLibLoad=2;};_s.onerror=function libWaitFailed(){window.__battmanLibLoad=3;};document.head.appendChild(_s);}var _me=arguments.callee,_t0=Date.now();(function libWait(){if(window.BattmanLib)return _me(root);if(window.__battmanLibLoad===3||Date.now()-_t0>15000){root.innerHTML="<div style=\\"padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)\\"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js did not load. Refresh the page.</div>";return;}setTimeout(libWait,100);})();return;}var L=window.BattmanLib;'
+              + 'if(!window.BattmanLib){if(!window.__battmanLibLoad){window.__battmanLibLoad=1;var _s=document.createElement("script");_s.src="/battmanfiles/battman-lib.js";_s.onload=function(){window.__battmanLibLoad=2;};_s.onerror=function libWaitFailed(){window.__battmanLibLoad=3;};document.head.appendChild(_s);}var _me=arguments.callee,_t0=Date.now();(function libWait(){if(window.BattmanLib)return _me(root);if(window.__battmanLibLoad===3||Date.now()-_t0>15000){root.innerHTML="<div style=\\"padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)\\"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js did not load. Refresh the page.</div>";return;}setTimeout(libWait,100);})();return;}var L=window.BattmanLib;'
               + 'window.bmRoot = root; try { (function(r){try{var found=null;function walk(root){if(found)return;var els=root.querySelectorAll("*");for(var i=0;i<els.length;i++){var el=els[i];if(!found){var v=getComputedStyle(el).getPropertyValue("--battman-purple");if(v&&v.trim()){found=el;return;}}if(el.shadowRoot){walk(el.shadowRoot);if(found)return;}}}walk(document);var s=found||document.body;var c=getComputedStyle(s);["--battman-red","--battman-red-wash","--battman-red-border","--battman-red-border-soft","--battman-red-border-light","--battman-red-border-strong","--battman-red-bg","--battman-red-soft-bg","--battman-darkred","--battman-darkred-wash","--battman-darkred-border","--battman-darkred-border-soft","--battman-darkred-border-light","--battman-darkred-border-strong","--battman-darkred-bg","--battman-darkred-soft-bg","--battman-darkred","--battman-darkred-wash","--battman-darkred-border","--battman-darkred-border-soft","--battman-darkred-border-light","--battman-darkred-border-strong","--battman-darkred-bg","--battman-darkred-soft-bg","--battman-orange","--battman-orange-wash","--battman-orange-border","--battman-orange-border-soft","--battman-orange-border-light","--battman-orange-border-strong","--battman-orange-bg","--battman-orange-soft-bg","--battman-amber","--battman-amber-wash","--battman-amber-border","--battman-amber-border-soft","--battman-amber-border-light","--battman-amber-border-strong","--battman-amber-bg","--battman-amber-soft-bg","--battman-yellow","--battman-yellow-wash","--battman-yellow-border","--battman-yellow-border-soft","--battman-yellow-border-light","--battman-yellow-border-strong","--battman-yellow-bg","--battman-yellow-soft-bg","--battman-green","--battman-green-wash","--battman-green-border","--battman-green-border-soft","--battman-green-border-light","--battman-green-border-strong","--battman-green-bg","--battman-green-soft-bg","--battman-blue","--battman-blue-wash","--battman-blue-border","--battman-blue-border-soft","--battman-blue-border-light","--battman-blue-border-strong","--battman-blue-bg","--battman-blue-soft-bg","--battman-purple","--battman-purple-wash","--battman-purple-border","--battman-purple-border-soft","--battman-purple-border-light","--battman-purple-border-strong","--battman-purple-bg","--battman-purple-soft-bg","--battman-darkpurple","--battman-darkpurple-wash","--battman-darkpurple-border","--battman-darkpurple-border-soft","--battman-darkpurple-border-light","--battman-darkpurple-border-strong","--battman-darkpurple-bg","--battman-darkpurple-soft-bg","--battman-teal","--battman-teal-wash","--battman-teal-border","--battman-teal-border-soft","--battman-teal-border-light","--battman-teal-border-strong","--battman-teal-bg","--battman-teal-soft-bg","--battman-text-bright","--battman-text-muted","--battman-text-dim","--battman-surface-card","--battman-surface-popup","--battman-border-neutral","--battman-border-neutral-soft"].forEach(function(v){var x=c.getPropertyValue(v);if(x)r.style.setProperty(v,x.trim());});}catch(e){}})(root); var H = document.querySelector("home-assistant").hass; var P = (H.states[PARAMS] || {}).attributes || {}; var presets = (P.overridePresets || []).slice(); var pins = (OV||[]).filter(function(o){return P[o.pn]==="show";}).map(function(o){return o.id;}).concat((P.pinnedOverrides||[]).filter(function(id){return !(OV||[]).some(function(o){return o.id===id;});})); var MG = false; var SV = false; var SVALS = null; var OPEN = -1; var TDUR = ""; var TUNT = ""; var _tmr = H.states[TMR] || {}; if (_tmr.state === "active" && _tmr.attributes && _tmr.attributes.finishes_at) { TUNT = L.clk(new Date(_tmr.attributes.finishes_at)); } function val(k) { return parseFloat(P[k]) || 0; }'
               + 'var UL = L.runUntilList(H); var presetSec = L.presetSec; function pairs(v) { var a = []; if ((+v.soc || 0) > 0) a.push((+v.soc).toFixed(0) + "%"); if ((+v.price || 0) > 0) a.push((+v.price).toFixed(1) + "\\u00a2"); return a; }'
               + 'var PINP = "M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z"; var AMBER = "var(--battman-amber)"; var lockSvg = L.lockSvg; function phOn() { return P.drainBatteryPlughole === true || P.drainBatteryPlughole === "true"; } function phStyle(on) { return "display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:10px;box-sizing:border-box;" + "background:transparent;border:1px solid var(--battman-border-neutral)"; } function phInner(on) { return "<div style=\\"flex:1;min-width:0\\"><div style=\\"font-size:12px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;color:" + (on ? "var(--battman-red)" : "var(--battman-text-bright)") + "\\">Plughole</div><div style=\\"font-size:10.5px;font-weight:600;line-height:1.35;color:var(--battman-text-muted)\\">Drain instead of House Party</div></div><div style=\\"width:44px;height:26px;border-radius:13px;flex:none;position:relative;background:" + (on ? "var(--battman-red)" : "var(--battman-border-neutral)") + "\\"><div style=\\"position:absolute;top:3px;left:" + (on ? 21 : 3) + "px;width:20px;height:20px;border-radius:50%;background:#fff\\"></div></div>"; } window.bmPhToggle = function (el) { var on = el.getAttribute("data-on") !== "1"; el.setAttribute("data-on", on ? "1" : "0"); el.setAttribute("style", phStyle(on)); el.innerHTML = phInner(on); }; function lockedNow(o) { var a = P[o.ar]; return a === false || a === "false"; } window.bmFire = function (d) { d.action = "SetAttribute"; H.connection.sendMessage({ type: "fire_event", event_type: EVT, event_data: d }); }; window.bmClose = function () { document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", keyCode: 27, bubbles: true, cancelable: true })); }; window.bmToggle = function (i) { var b = bmRoot.querySelector("#bm-b" + i); if (!b) return;'
@@ -546,7 +546,7 @@ cards:
   custom_fields:
     content: |-
       [[[
-        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battman/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
+        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battmanfiles/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
         try{var _bf=getComputedStyle(this).fontFamily; if(_bf) document.documentElement.style.setProperty("--battman-font", _bf);}catch(e){}
         if(!window.BattmanLib||!window.BattmanLib.renderRow) return '';
         return window.BattmanLib.renderRow(variables, states, entity);
@@ -560,7 +560,7 @@ cards:
         style: --mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;
         content: |-
           [[[
-            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
+            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
             return window.BattmanLib.buildPopup(variables, states, entity);
           ]]]
   double_tap_action:
@@ -658,7 +658,7 @@ cards:
   custom_fields:
     content: |-
       [[[
-        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battman/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
+        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battmanfiles/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
         try{var _bf=getComputedStyle(this).fontFamily; if(_bf) document.documentElement.style.setProperty("--battman-font", _bf);}catch(e){}
         if(!window.BattmanLib||!window.BattmanLib.renderRow) return '';
         return window.BattmanLib.renderRow(variables, states, entity);
@@ -672,7 +672,7 @@ cards:
         style: --mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;
         content: |-
           [[[
-            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
+            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
             return window.BattmanLib.buildPopup(variables, states, entity);
           ]]]
   double_tap_action:
@@ -770,7 +770,7 @@ cards:
   custom_fields:
     content: |-
       [[[
-        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battman/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
+        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battmanfiles/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
         try{var _bf=getComputedStyle(this).fontFamily; if(_bf) document.documentElement.style.setProperty("--battman-font", _bf);}catch(e){}
         if(!window.BattmanLib||!window.BattmanLib.renderRow) return '';
         return window.BattmanLib.renderRow(variables, states, entity);
@@ -784,7 +784,7 @@ cards:
         style: --mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;
         content: |-
           [[[
-            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
+            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
             return window.BattmanLib.buildPopup(variables, states, entity);
           ]]]
   double_tap_action:
@@ -886,7 +886,7 @@ cards:
   custom_fields:
     content: |-
       [[[
-        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battman/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
+        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battmanfiles/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
         try{var _bf=getComputedStyle(this).fontFamily; if(_bf) document.documentElement.style.setProperty("--battman-font", _bf);}catch(e){}
         if(!window.BattmanLib||!window.BattmanLib.renderRow) return '';
         return window.BattmanLib.renderRow(variables, states, entity);
@@ -900,7 +900,7 @@ cards:
         style: --mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;
         content: |-
           [[[
-            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
+            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
             return window.BattmanLib.buildPopup(variables, states, entity);
           ]]]
   double_tap_action:
@@ -1022,7 +1022,7 @@ cards:
         style: --mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;
         content: |-
           [[[
-            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
+            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
             return window.BattmanLib.buildPopup(variables, states, entity);
           ]]]
   type: custom:button-card
@@ -1080,7 +1080,7 @@ cards:
   custom_fields:
     content: |-
       [[[
-        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battman/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
+        try{if(!window.BattmanLib&&!window.__battmanLibLoad){window.__battmanLibLoad=1;var _sl=document.createElement("script");_sl.src="/battmanfiles/battman-lib.js";_sl.onload=function(){window.__battmanLibLoad=2;};_sl.onerror=function(){window.__battmanLibLoad=3;};document.head.appendChild(_sl);}}catch(e){}
         try{var _bf=getComputedStyle(this).fontFamily; if(_bf) document.documentElement.style.setProperty("--battman-font", _bf);}catch(e){}
         if(!window.BattmanLib||!window.BattmanLib.renderRow) return '';
         return window.BattmanLib.renderRow(variables, states, entity);
@@ -1094,7 +1094,7 @@ cards:
         style: --mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;
         content: |-
           [[[
-            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
+            if(!window.BattmanLib||!window.BattmanLib.buildPopup) return '<div style="padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js isn\u2019t loaded (libWait). Refresh the page.</div>';
             return window.BattmanLib.buildPopup(variables, states, entity);
           ]]]
   double_tap_action:
@@ -1511,7 +1511,7 @@ cards:
                   var S = variables.battman;
                   var inner = 'var TMR="' + S.timer_entity + '";'
                     + 'var SHEET=' + JSON.stringify(S.timer_sheet_src) + ';'
-                    + 'if(!window.BattmanLib){if(!window.__battmanLibLoad){window.__battmanLibLoad=1;var _s=document.createElement("script");_s.src="/battman/battman-lib.js";_s.onload=function(){window.__battmanLibLoad=2;};_s.onerror=function libWaitFailed(){window.__battmanLibLoad=3;};document.head.appendChild(_s);}var _me=arguments.callee,_t0=Date.now();(function libWait(){if(window.BattmanLib)return _me(root);if(window.__battmanLibLoad===3||Date.now()-_t0>15000){root.innerHTML="<div style=\\"padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)\\"><b>Battman card problem</b><br>Battman library /battman/battman-lib.js did not load. Refresh the page.</div>";return;}setTimeout(libWait,100);})();return;}var L=window.BattmanLib;'
+                    + 'if(!window.BattmanLib){if(!window.__battmanLibLoad){window.__battmanLibLoad=1;var _s=document.createElement("script");_s.src="/battmanfiles/battman-lib.js";_s.onload=function(){window.__battmanLibLoad=2;};_s.onerror=function libWaitFailed(){window.__battmanLibLoad=3;};document.head.appendChild(_s);}var _me=arguments.callee,_t0=Date.now();(function libWait(){if(window.BattmanLib)return _me(root);if(window.__battmanLibLoad===3||Date.now()-_t0>15000){root.innerHTML="<div style=\\"padding:16px;color:var(--error-color,#db4437);font-family:var(--battman-font,sans-serif)\\"><b>Battman card problem</b><br>Battman library /battmanfiles/battman-lib.js did not load. Refresh the page.</div>";return;}setTimeout(libWait,100);})();return;}var L=window.BattmanLib;'
                     + 'var CLOSE=function(){document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",keyCode:27,bubbles:true,cancelable:true}));};'
                     + '(function(r){try{var found=null;function walk(root){if(found)return;var els=root.querySelectorAll("*");for(var i=0;i<els.length;i++){var el=els[i];if(!found){var v=getComputedStyle(el).getPropertyValue("--battman-purple");if(v&&v.trim()){found=el;return;}}if(el.shadowRoot){walk(el.shadowRoot);if(found)return;}}}walk(document);var s=found||document.body;var c=getComputedStyle(s);["--battman-red","--battman-red-wash","--battman-red-border","--battman-red-border-soft","--battman-red-border-light","--battman-red-border-strong","--battman-red-bg","--battman-red-soft-bg","--battman-darkred","--battman-darkred-wash","--battman-darkred-border","--battman-darkred-border-soft","--battman-darkred-border-light","--battman-darkred-border-strong","--battman-darkred-bg","--battman-darkred-soft-bg","--battman-darkred","--battman-darkred-wash","--battman-darkred-border","--battman-darkred-border-soft","--battman-darkred-border-light","--battman-darkred-border-strong","--battman-darkred-bg","--battman-darkred-soft-bg","--battman-orange","--battman-orange-wash","--battman-orange-border","--battman-orange-border-soft","--battman-orange-border-light","--battman-orange-border-strong","--battman-orange-bg","--battman-orange-soft-bg","--battman-amber","--battman-amber-wash","--battman-amber-border","--battman-amber-border-soft","--battman-amber-border-light","--battman-amber-border-strong","--battman-amber-bg","--battman-amber-soft-bg","--battman-yellow","--battman-yellow-wash","--battman-yellow-border","--battman-yellow-border-soft","--battman-yellow-border-light","--battman-yellow-border-strong","--battman-yellow-bg","--battman-yellow-soft-bg","--battman-green","--battman-green-wash","--battman-green-border","--battman-green-border-soft","--battman-green-border-light","--battman-green-border-strong","--battman-green-bg","--battman-green-soft-bg","--battman-blue","--battman-blue-wash","--battman-blue-border","--battman-blue-border-soft","--battman-blue-border-light","--battman-blue-border-strong","--battman-blue-bg","--battman-blue-soft-bg","--battman-purple","--battman-purple-wash","--battman-purple-border","--battman-purple-border-soft","--battman-purple-border-light","--battman-purple-border-strong","--battman-purple-bg","--battman-purple-soft-bg","--battman-darkpurple","--battman-darkpurple-wash","--battman-darkpurple-border","--battman-darkpurple-border-soft","--battman-darkpurple-border-light","--battman-darkpurple-border-strong","--battman-darkpurple-bg","--battman-darkpurple-soft-bg","--battman-teal","--battman-teal-wash","--battman-teal-border","--battman-teal-border-soft","--battman-teal-border-light","--battman-teal-border-strong","--battman-teal-bg","--battman-teal-soft-bg","--battman-text-bright","--battman-text-muted","--battman-text-dim","--battman-surface-card","--battman-surface-popup","--battman-border-neutral","--battman-border-neutral-soft"].forEach(function(v){var x=c.getPropertyValue(v);if(x)r.style.setProperty(v,x.trim());});}catch(e){}})(root);try{new Function("root","TMR","CLOSE","L",SHEET)(root,TMR,CLOSE,L);}'
                     + 'catch(e){root.innerHTML="<div style=\\"color:var(--battman-darkred);font-size:12px;padding:12px\\">Timer sheet error: "+(e&&e.message?e.message:e)+"</div>";}';

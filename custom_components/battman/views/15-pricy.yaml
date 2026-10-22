@@ -7,6 +7,4 @@ icon: mdi:looks
 show_icon_and_title: true
 theme: Battman Nord
 cards:
-  - type: iframe
-    url: /battman/pricy.html
-    aspect_ratio: "100:100"
+  - type: custom:battman-pricy

@@ -3963,9 +3963,9 @@ header:
     content: >-
       <div
       style="display:flex;align-items:center;justify-content:center;gap:12px;"><img
-      src="/battman/images/battman-wrench.webp" alt="Battman"
+      src="/battmanfiles/images/battman-wrench.webp" alt="Battman"
       style="height:48px;width:auto;display:block;"><img
-      src="/battman/images/settings-line.webp" alt="Settings"
+      src="/battmanfiles/images/settings-line.webp" alt="Settings"
       style="height:26px;width:auto;display:block;"></div>
     card_mod:
       style: |

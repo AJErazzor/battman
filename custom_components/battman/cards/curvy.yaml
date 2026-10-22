@@ -1,14 +1,15 @@
 # name: Curvy
 # description: The SOC curve editor: the battery's target charge for each hour, by month or season.
+# preview: curvy.webp
 #
 # A Battman card: on a dashboard it's `type: custom:battman-curvy`, and it updates
-# with Battman releases. For now it shows Battman's Curvy page (/battman/curvy.html)
+# with Battman releases. For now it shows Battman's Curvy page (/battmanfiles/curvy.html)
 # in a frame; the card name stays the same if that changes later.
 #
 # Size: in a sections view, drag it to the size you want (it fills the card); in a
 # panel view it fills the page. aspect_ratio only applies in an older masonry view.
 type: iframe
-url: /battman/curvy.html
+url: /battmanfiles/curvy.html
 aspect_ratio: "100:100"
 grid_options:
   columns: full

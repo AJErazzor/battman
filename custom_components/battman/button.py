@@ -19,7 +19,7 @@ async def async_setup_entry(
 
 
 class BattmanCreateDashboardButton(ButtonEntity):
-    """Create a managed Battman dashboard (does nothing if one exists)."""
+    """Create the Battman dashboard at /battman (does nothing if /battman is taken)."""
 
     _attr_has_entity_name = True
     _attr_translation_key = "create_dashboard"

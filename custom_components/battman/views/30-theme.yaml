@@ -7,6 +7,4 @@ icon: mdi:palette
 show_icon_and_title: true
 theme: Battman Coffee
 cards:
-  - type: iframe
-    url: /battman/theme-studio.html?theme=Battman%20Neon%20Drift
-    aspect_ratio: "100:100"
+  - type: custom:battman-theme-studio

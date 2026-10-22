@@ -7,7 +7,7 @@
 <style>
 /* ════════════════════════════════════════════════════════════
    Battman Theme Studio — palette editor for Battman themes.
-   Served by the Battman integration at /battman/theme-studio.html.
+   Served by the Battman integration at /battmanfiles/theme-studio.html.
    Colours of the studio itself come from the view's Battman theme (no fallbacks).
    Version 2.1.0 (2026-10-10): live preview shows the real Power-view
    state card (its JS + fx CSS read from the dashboard) as a HOOOOVER demo.
@@ -1041,7 +1041,7 @@ setInterval(function(){
 // load the real dock library so renderRow is pixel-exact
 function loadBattmanLib(cb){
   if(window.BattmanLib){cb&&cb();return;}
-  var s=document.createElement("script");s.src="/battman/battman-lib.js";
+  var s=document.createElement("script");s.src="/battmanfiles/battman-lib.js";
   s.onload=function(){cb&&cb();};s.onerror=function(){cb&&cb();};
   document.head.appendChild(s);
 }

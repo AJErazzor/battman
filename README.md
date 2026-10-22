@@ -3,7 +3,7 @@
 Home battery automation for Home Assistant.
 
 > Early days: Battman is moving over from Smiggles one piece at a time. So far it
-> ships themes, a managed dashboard (Finances, Log, Theme) and its pages; the
+> ships themes, a dashboard (Power, Finances, Curvy, Pricy, Log, Settings, Theme) and its pages; the
 > battery engine still runs in Smiggles. See [docs/smiggles-inventory.md](docs/smiggles-inventory.md).
 
 ## Install (HACS)
@@ -35,48 +35,39 @@ Smiggles themes until they move.
 
 ## The Battman dashboard
 
-When you first add the integration, Battman creates a **Battman** dashboard in the
-sidebar. It's *managed*: its whole config is
+When you first add the integration, Battman creates a **Battman** dashboard at
+`/battman` in the sidebar, with all of Battman's views written into it
+(from `custom_components/battman/views/*.yaml`, entity names filled from the entity map).
+It's an ordinary dashboard and it's **yours from the start**: edit, rearrange, delete views.
 
-```yaml
-strategy:
-  type: custom:battman
-```
-
-so Battman builds its views (from `custom_components/battman/views/*.yaml`), and
-new or changed views arrive with Battman updates. Views so far: **Power** (built from Battman cards), **Finances**,
-**Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log**, **Settings**
-and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
+Views: **Power** (your control centre, built from Battman cards), **History**,
+**Finances**, **Curvy** (SOC curve editor), **Pricy** (price curve editor), **Log**,
+**Settings** and **Theme** (the theme studio). **Correct Totals** is a hidden view (no
 tab), opened from the button at the bottom of the Finances Billing card, for
 fixing the buy/sell totals of a period. It asks before changing anything.
 
-To theme the whole managed dashboard, pick a theme under **Settings → Dashboard
-options**, or use **Make Active** in the Theme view (they do the same thing). It
-sets one line in the dashboard config, so the dashboard stays managed:
+What updates with Battman releases: every **Battman card** on it (`custom:battman-<id>`,
+including Curvy, Pricy, Log and the Theme studio) and the pages they show. What doesn't:
+the views themselves (which cards are on them, and their layout). Battman is moving
+everything into cards so less and less of it is fixed.
 
-```yaml
-strategy:
-  type: custom:battman
-  theme: Battman Nord
-```
-
-- **Want to edit it?** Edit dashboard → **Take control**. It becomes a normal
-  dashboard you own (rename it, change anything). Battman never touches it again.
-- **Want a managed one back?** Press **Create dashboard** on the Battman device
-  (Settings → Devices & services → Battman), or run the action
-  `battman.create_dashboard`. It creates a new managed dashboard at the next free
-  address (`/battman`, `/battman-2`, …) and does nothing if one already exists.
-- **Removing Battman** deletes managed dashboards only; ones you've taken control
-  of stay.
+- **Want a fresh one?** Delete the dashboard (Settings → Dashboards), then press
+  **Create dashboard** on the Battman device (Settings → Devices & services → Battman),
+  or run the action `battman.create_dashboard`. If something is already at `/battman`,
+  nothing is created and the message says so.
+- **Theme:** pick one under **Settings → Dashboard options**, or use **Make Active** in
+  the Theme view (they do the same thing).
+- **Older managed dashboards** (config `strategy: {type: custom:battman}`) still work.
+  Removing Battman deletes those only; a dashboard you own is never touched.
 
 ## Pages
 
-Battman serves its pages and images from `/battman/` (`cost-chart.html`,
+Battman serves its pages and images from `/battmanfiles/` (`cost-chart.html`,
 `cost-compare.html`, `log.html`, `theme-studio.html`, `images/…`), for example:
 
 ```yaml
 type: iframe
-url: /battman/cost-chart.html
+url: /battmanfiles/cost-chart.html
 ```
 
 Pages find their entities through Battman's **entity map** (Battman name →

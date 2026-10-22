@@ -9,5 +9,5 @@ subview: true
 theme: Battman Coffee
 cards:
   - type: iframe
-    url: /battman/correct-energy.html
+    url: /battmanfiles/correct-energy.html
     aspect_ratio: "100:100"
