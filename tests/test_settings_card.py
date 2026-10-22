@@ -9,6 +9,7 @@ from pathlib import Path
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 PAGE = (ROOT / "www/settings.html").read_text()
@@ -77,6 +78,6 @@ async def test_settings_card_and_view(hass: HomeAssistant, hass_client) -> None:
     assert card["preview"] == "/battmanfiles/previews/settings.webp"
     assert (await client.get(card["preview"])).status == 200
     assert (await client.get("/battmanfiles/settings.html")).status == 200
-    views = {v["path"]: v for v in (await (await client.get("/api/battman/dashboard")).json())["views"]}
+    views = {v["path"]: v for v in (await built(hass))["views"]}
     assert views["settings"]["type"] == "panel" and views["settings"]["cards"] == [{"type": "custom:battman-settings",
                                                                                      "grid_options": {"columns": "full", "rows": 16, "min_rows": 8}}]

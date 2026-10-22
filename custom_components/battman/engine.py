@@ -16,15 +16,13 @@ their traces, and read every step.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.util.file import write_utf8_file_atomic
-from homeassistant.util.yaml import dump, load_yaml
 
+from . import automation_files
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -75,35 +73,6 @@ class EngineError(Exception):
     """automations.yaml / scripts.yaml couldn't be read or written."""
 
 
-def _paths(hass: HomeAssistant) -> tuple[Path, Path]:
-    return Path(hass.config.path("automations.yaml")), Path(hass.config.path("scripts.yaml"))
-
-
-def _write_missing(auto_path: Path, script_path: Path) -> list[str]:
-    added: list[str] = []
-    try:
-        autos = load_yaml(str(auto_path)) if auto_path.exists() else []
-        scripts = load_yaml(str(script_path)) if script_path.exists() else {}
-    except Exception as err:  # noqa: BLE001
-        raise EngineError(f"Couldn't read automations.yaml / scripts.yaml: {err}") from err
-    autos = autos or []
-    scripts = scripts or {}
-    if not isinstance(autos, list):
-        raise EngineError("automations.yaml isn't a list of automations")
-    if not isinstance(scripts, dict):
-        raise EngineError("scripts.yaml isn't a set of scripts")
-    have = {a.get("id") for a in autos if isinstance(a, dict)}
-    new_autos = [a for a in AUTOMATIONS if a["id"] not in have]
-    new_scripts = {k: v for k, v in SCRIPTS.items() if k not in scripts}
-    if new_scripts:
-        write_utf8_file_atomic(str(script_path), dump({**scripts, **new_scripts}))
-        added += list(new_scripts)
-    if new_autos:
-        write_utf8_file_atomic(str(auto_path), dump([*autos, *new_autos]))
-        added += [a["id"] for a in new_autos]
-    return added
-
-
 def entity_ids(hass: HomeAssistant) -> dict[str, str | None]:
     """Engine item id -> its entity id (None if HA hasn't loaded it)."""
     reg = er.async_get(hass)
@@ -121,8 +90,13 @@ def missing(hass: HomeAssistant) -> list[str]:
 
 async def async_write_missing(hass: HomeAssistant) -> list[str]:
     """Write any missing engine automations/scripts into the files (no reload). Returns ids added."""
-    auto_path, script_path = _paths(hass)
-    added = await hass.async_add_executor_job(_write_missing, auto_path, script_path)
+    auto_path, script_path = automation_files.paths(hass)
+    try:
+        added = await hass.async_add_executor_job(
+            automation_files.write_missing, auto_path, script_path, AUTOMATIONS, SCRIPTS
+        )
+    except automation_files.AutomationFileError as err:
+        raise EngineError(str(err)) from err
     if added:
         _LOGGER.info("Battman wrote engine automations/scripts: %s", ", ".join(added))
     return added

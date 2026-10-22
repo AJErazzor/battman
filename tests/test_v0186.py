@@ -84,4 +84,4 @@ def test_both_theme_pickers_save_the_name() -> None:
     assert "saveThemeName(hass,name);" in make_active[:make_active.index("function reloadParent")]
     assert "dashboardTheme:name" in studio and "parameters_update_event" in studio
     sensor = (ROOT / "sensor.py").read_text()
-    assert "lovelace" not in sensor and "async_find_managed" not in sensor
+    assert "lovelace" not in sensor

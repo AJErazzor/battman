@@ -1316,12 +1316,8 @@ function doMakeActive(){
     }catch(e){window.location.reload();}
   }
   // rewrite every view's theme, then save.
-  // A managed Battman dashboard has no views of its own (its config is just the
-  // Battman strategy), so set the strategy's theme instead: it stays managed and
-  // every Battman view on it takes the theme.
   hass.connection.sendMessagePromise({type:"lovelace/config",url_path:urlPath}).then(function(cfg){
-    if(cfg&&cfg.strategy&&cfg.strategy.type==="custom:battman"){ cfg.strategy.theme=name; }
-    else (cfg.views||[]).forEach(function(v){v.theme=name;});
+    (cfg.views||[]).forEach(function(v){v.theme=name;});
     return hass.connection.sendMessagePromise({type:"lovelace/config/save",url_path:urlPath,config:cfg});
   }).then(reloadParent,function(){setStatus("apply failed","err");});
 }

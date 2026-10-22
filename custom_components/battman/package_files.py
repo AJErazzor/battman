@@ -2,7 +2,8 @@
 
 Battman writes them into <config>/packages/battman/ (HA reads that folder when
 configuration.yaml has `homeassistant: packages: !include_dir_named packages`), with
-[[map:name]] markers filled from the entity map, then reloads template entities and helpers,
+[[map:name]] markers filled from the entity map and [[factory:soc]] / [[factory:price]] from
+factory_curves.yaml, then reloads template entities and helpers,
 so no restart is needed. They're rewritten on every Battman update and whenever the entity
 map changes. Files Battman no longer ships are removed from that folder.
 
@@ -15,9 +16,11 @@ If HA isn't reading the folder (packages not set up), a Repair says what to add.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -26,6 +29,7 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.reload import async_reload_integration_platforms
 from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
@@ -35,20 +39,34 @@ _LOGGER = logging.getLogger(__name__)
 SRC = Path(__file__).parent / "packages"
 DST_PARTS = ("packages", "battman")
 MAP_MARK = re.compile(r"\[\[map:([a-z0-9_]+)\]\]")
+FACTORY = Path(__file__).parent / "factory_curves.yaml"
+FACTORY_MARK = re.compile(r"\[\[factory:([a-z]+)\]\]")
 ISSUE = "packages_not_loaded"
 # helper domains a package file may define (reloaded with template when the files change)
 HELPER_DOMAINS = ("input_boolean", "input_number", "input_select", "timer")
+# YAML sensor platforms a package file may use (`sensor: - platform: statistics`)
+PLATFORM_DOMAINS = ("statistics",)
 
 
 def dst_dir(hass: HomeAssistant) -> Path:
     return Path(hass.config.path(*DST_PARTS))
 
 
+def factory_curves() -> dict[str, Any]:
+    """Battman's factory curves (factory_curves.yaml): {"soc": {...}, "price": {...}}."""
+    return yaml.safe_load(FACTORY.read_text(encoding="utf-8"))
+
+
 def render(emap: dict[str, str]) -> dict[str, str]:
-    """File name -> text with the map filled in. Raises KeyError on an unknown map entry."""
+    """File name -> text with the map and the factory curves filled in.
+
+    Raises KeyError on an unknown map entry or factory curve set.
+    """
+    factory = {k: json.dumps(v, separators=(",", ":")) for k, v in factory_curves().items()}
     out = {}
     for f in sorted(SRC.glob("*.yaml")):
-        out[f.name] = MAP_MARK.sub(lambda m: emap[m.group(1)], f.read_text(encoding="utf-8"))
+        text = MAP_MARK.sub(lambda m: emap[m.group(1)], f.read_text(encoding="utf-8"))
+        out[f.name] = FACTORY_MARK.sub(lambda m: factory[m.group(1)], text)
     return out
 
 
@@ -68,16 +86,36 @@ def write(dst: Path, files: dict[str, str]) -> bool:
     return changed
 
 
-def unique_ids(files: dict[str, str]) -> list[tuple[str, str]]:
-    """(domain, unique_id) of every template entity in the files."""
-    ids = []
+def remove_files(dst: Path) -> list[str]:
+    """Battman removed: delete its package files (and the folder, if nothing else is in it)."""
+    if not dst.is_dir():
+        return []
+    gone = []
+    for f in sorted(dst.glob("*.yaml")):
+        f.unlink()
+        gone.append(f.name)
+    try:
+        dst.rmdir()
+    except OSError:
+        pass
+    return gone
+
+
+def entities(files: dict[str, str]) -> list[tuple[str, str, str]]:
+    """(domain, platform, unique_id) of every entity the files define with a unique ID:
+    template sensors / binary sensors, and sensors from a YAML platform (e.g. statistics)."""
+    out = []
     for text in files.values():
-        for block in (yaml.safe_load(text) or {}).get("template", []):
+        data = yaml.safe_load(text) or {}
+        for block in data.get("template", []):
             for domain in ("sensor", "binary_sensor"):
                 for ent in block.get(domain, []) or []:
                     if "unique_id" in ent:
-                        ids.append((domain, ent["unique_id"]))
-    return ids
+                        out.append((domain, "template", ent["unique_id"]))
+        for ent in data.get("sensor", []) or []:
+            if "unique_id" in ent and "platform" in ent:
+                out.append(("sensor", ent["platform"], ent["unique_id"]))
+    return out
 
 
 def helpers(files: dict[str, str]) -> list[str]:
@@ -97,6 +135,41 @@ async def _reload(hass: HomeAssistant, domain: str) -> None:
         await hass.services.async_call(domain, "reload", blocking=True)
 
 
+async def _reload_all(hass: HomeAssistant) -> None:
+    """Re-read everything the files define: helpers, template entities, YAML sensor platforms."""
+    for domain in (*HELPER_DOMAINS, "template"):
+        await _reload(hass, domain)
+    # statistics only has a reload action once a YAML statistics sensor exists, so set its
+    # sensor platform up (or again) the way that action does
+    for platform in PLATFORM_DOMAINS:
+        await async_reload_integration_platforms(hass, platform, ["sensor"])
+
+
+@callback
+def _retire_template_entries(hass: HomeAssistant, files: dict[str, str]) -> list[str]:
+    """Remove registry entries of Battman template entities the files no longer define.
+
+    A Battman entity that moves from a template to another platform (e.g. the load average,
+    now a statistics sensor) keeps its entity ID that way: HA would otherwise give the new one
+    a _2 name, because the old registry entry still holds it. Battman's template entities are
+    the ones whose unique ID starts with battman_.
+    """
+    current = set(entities(files))
+    reg = er.async_get(hass)
+    stale = [
+        e.entity_id
+        for e in list(reg.entities.values())
+        if e.platform == "template"
+        and str(e.unique_id).startswith("battman_")
+        and (e.domain, "template", e.unique_id) not in current
+    ]
+    for entity_id in stale:
+        reg.async_remove(entity_id)
+    if stale:
+        _LOGGER.info("Battman removed registry entries of retired template entities: %s", stale)
+    return stale
+
+
 async def async_sync(hass: HomeAssistant) -> list[str]:
     """Write the packages, reload what they define, check it loaded. Returns missing entities.
 
@@ -113,15 +186,17 @@ async def _sync(hass: HomeAssistant) -> list[str]:
     files = await hass.async_add_executor_job(render, entity_map(hass))
     changed = await hass.async_add_executor_job(write, dst_dir(hass), files)
     helper_ids = helpers(files)
-    if changed or not hass.services.has_service("template", "reload") or any(
-        hass.states.get(h) is None for h in helper_ids
-    ):
-        for domain in (*HELPER_DOMAINS, "template"):
-            await _reload(hass, domain)
-        _LOGGER.info("Battman packages written to %s and reloaded", dst_dir(hass))
     reg = er.async_get(hass)
-    missing = [f"{d}.{uid}" for d, uid in unique_ids(files) if not reg.async_get_entity_id(d, "template", uid)]
-    missing += [h for h in helper_ids if hass.states.get(h) is None]
+
+    def _missing() -> list[str]:
+        out = [f"{d}.{uid}" for d, p, uid in entities(files) if not reg.async_get_entity_id(d, p, uid)]
+        return out + [h for h in helper_ids if hass.states.get(h) is None]
+
+    if changed or not hass.services.has_service("template", "reload") or _missing():
+        _retire_template_entries(hass, files)
+        await _reload_all(hass)
+        _LOGGER.info("Battman packages written to %s and reloaded", dst_dir(hass))
+    missing = _missing()
     if missing:
         ir.async_create_issue(
             hass, DOMAIN, ISSUE, is_fixable=False, severity=ir.IssueSeverity.ERROR, translation_key=ISSUE,

@@ -5,10 +5,9 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .entity import device_info
 from .services import async_create_dashboard_and_report, async_create_live_activity_and_report
 
 
@@ -27,12 +26,7 @@ class BattmanCreateDashboardButton(ButtonEntity):
 
     def __init__(self, entry: ConfigEntry) -> None:
         self._attr_unique_id = f"{entry.entry_id}_create_dashboard"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Battman",
-            manufacturer="Battman",
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = device_info(entry)
 
     async def async_press(self) -> None:
         await async_create_dashboard_and_report(self.hass, notify=True)
@@ -47,12 +41,7 @@ class BattmanCreateLiveActivityButton(ButtonEntity):
 
     def __init__(self, entry: ConfigEntry) -> None:
         self._attr_unique_id = f"{entry.entry_id}_create_live_activity"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Battman",
-            manufacturer="Battman",
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = device_info(entry)
 
     async def async_press(self) -> None:
         await async_create_live_activity_and_report(self.hass, notify=True)

@@ -18,6 +18,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .dashboard_views import built
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -133,7 +134,7 @@ async def test_new_cards_load(hass: HomeAssistant) -> None:
 
 async def test_power_view_layout(hass: HomeAssistant) -> None:
     client = await _setup(hass)
-    power = (await (await client.get("/api/battman/dashboard")).json())["views"][0]
+    power = (await built(hass))["views"][0]
     s1 = [c["type"] for c in power["sections"][0]["cards"]]
     assert s1.index("custom:battman-state") + 1 == s1.index("custom:battman-profitloss")   # full order: test_v0160
     s2 = power["sections"][1]

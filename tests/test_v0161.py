@@ -10,6 +10,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.battman import api
+from .dashboard_views import built
 
 DOMAIN = "battman"
 JS = Path(__file__).parents[1] / "custom_components/battman/www/battman-cards.js"
@@ -32,7 +33,7 @@ def _cards(view):
 
 async def test_power_view_cards_full_width(hass: HomeAssistant, hass_client) -> None:
     client = await _client(hass, hass_client)
-    power = (await (await client.get("/api/battman/dashboard")).json())["views"][0]
+    power = (await built(hass))["views"][0]
     cards = _cards(power)
     for cid in FULL:
         assert cards[cid]["grid_options"]["columns"] == "full", cid

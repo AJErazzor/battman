@@ -25,12 +25,16 @@ async def test_both_engines_load(hass: HomeAssistant, caplog) -> None:
     assert ids["battman_engine_loop"] == "automation.battman_engine_main_loop"
     assert all(hass.states.get(e).state == "on" for e in ids.values() if e.startswith("automation."))
     assert hass.states.get("binary_sensor.battman_in_charge").state == "off"
-    # Battman's engine sensors don't move before migrating
-    assert hass.states.get("sensor.battman_parameters").state == "unknown"
+    # before migrating, Battman's settings are its defaults (worked out at start, v0.19.0)
+    params = hass.states.get("sensor.battman_parameters")
+    assert params.state == "False" and params.attributes["needyTriggerPVGap"] == 3
     # errors: only Smiggles' own (its copy-curves automation can't load; power provider without a tariff)
+    # (and the watchdog's as_datetime error from before Battman's settings exist on a fresh install:
+    # known and parked, it doesn't matter)
     bad = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"
            and "Smiggles - Copy" not in r.getMessage() and "solarsystemcontrolpowerprovider" not in r.getMessage()
-           and "None has no element" not in r.getMessage()]
+           and "None has no element" not in r.getMessage()
+           and "'watchdogResetOverridesAt') | as_datetime" not in r.getMessage()]
     assert not bad, bad
 
 
@@ -45,6 +49,9 @@ from custom_components.battman.const import ENGINE_MAP, IN_CHARGE, SMIGGLES_NAME
 MODES = ["Self Consume", "Discharge", "Charge", "Charge Solar Off", "Float", "Float Solar Off", "Solar Soak", "Drain"]
 # run data that's a time stamp, so differs by when each ran
 TIME_ATTRS = {"lastRunAt"}
+# defaults of "today": each parameters sensor sets them the first time it works its settings out,
+# Battman's at start (v0.19.0), Smiggles' at its first change, so they're days apart in these runs
+FIRST_RENDER_ATTRS = {"systemInstallDate", "watchdogResetOverridesAt"}
 
 
 def scenarios(n: int = 300) -> list[dict]:
@@ -100,7 +107,8 @@ def _fire(hass, key: str, data: dict) -> None:
 #   Smiggles' never start there (they read a date that isn't set yet)
 # - alertNotifyTarget: with nothing chosen, Battman's is '' (alerts off, v0.18.10); Smiggles'
 #   default was A.J.'s own phone
-BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh", "alertNotifyTarget"}
+# - factory: the curve sensors' factory curves (v0.19.0); Smiggles' never had them
+BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh", "alertNotifyTarget", "factory"}
 
 
 def _same_tracking(message: str) -> str:
@@ -113,13 +121,15 @@ def _same_tracking(message: str) -> str:
 
 def _strip(attrs) -> dict:
     return {k: v for k, v in attrs.items()
-            if k not in ("friendly_name", "icon") and k not in TIME_ATTRS and k not in BATTMAN_ONLY_ATTRS}
+            if k not in ("friendly_name", "icon") and k not in TIME_ATTRS and k not in BATTMAN_ONLY_ATTRS
+            and k not in FIRST_RENDER_ATTRS}
 
 
 async def _same_store(hass, key: str) -> None:
     a, b = hass.states.get(SMIGGLES_NAMES[key]), hass.states.get(ENGINE_MAP[key])
     assert a is not None and b is not None, key
-    assert (a.state, _strip(a.attributes)) == (b.state, _strip(b.attributes)), key
+    sa, sb = _strip(a.attributes), _strip(b.attributes)
+    assert (a.state, sa) == (b.state, sb), (key, {k: (sa.get(k), sb.get(k)) for k in set(sa) | set(sb) if sa.get(k) != sb.get(k)})
 
 
 async def test_engine_decides_like_smiggles(hass: HomeAssistant, freezer) -> None:

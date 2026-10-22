@@ -28,23 +28,23 @@ sequence:
     sellSOCProrate: true
     buySOCProrate: true
     powerProvider: '{{state_attr(''sensor.battman_power_provider_buy'',''provider'')}}'
-    remainingPVGapAllowedkwh: '{{state_attr(''sensor.battman_parameters'',''needyTriggerPVGap'') | float(5)}}'
-    highConsumptionkw: '{{state_attr(''sensor.battman_parameters'',''needyTriggerConsumption'') | float(2.5)}}'
-    spikePrice1: '{{(state_attr(''sensor.battman_parameters'',''sellSpikePrice1'') | float(100)) / 100}}'
-    spikeLowSOC1: '{{state_attr(''sensor.battman_parameters'',''sellSpikeSOC1'') | float(99)}}'
-    spikePrice2: '{{(state_attr(''sensor.battman_parameters'',''sellSpikePrice2'') | float(100)) /100}}'
-    spikeLowSOC2: '{{state_attr(''sensor.battman_parameters'',''sellSpikeSOC2'') | float(99)}}'
-    buyAnytimePrice: '{{(state_attr(''sensor.battman_parameters'',''buyAnytimePrice'') | float(0)) /100}}'
-    buyAnytimeSOCBelow: '{{state_attr(''sensor.battman_parameters'',''buyAnytimeSOC'') | float(0)}}'
-    overrideSellPrice: '{{(state_attr(''sensor.battman_parameters'',''sellOverridePrice'') | float(0)) /100}}'
-    overrideSellSOC: '{{state_attr(''sensor.battman_parameters'',''sellOverrideSOC'') | float(0)}}'
-    solarSellPrice: '{{(state_attr(''sensor.battman_parameters'',''sellSolarPrice'') | float(0)) /100}}'
-    solarSellSOC: '{{state_attr(''sensor.battman_parameters'',''sellSolarSOC'') | float(0)}}'
-    overrideBuyPrice: '{{(state_attr(''sensor.battman_parameters'',''buyOverridePrice'') | float(0)) /100}}'
-    overrideBuySOC: '{{state_attr(''sensor.battman_parameters'',''buyOverrideSOC'') | float(0)}}'
-    drainBatteryPrice: '{{(state_attr(''sensor.battman_parameters'',''drainBatteryPrice'') | float(0)) /100}}'
-    drainBatterySOC: '{{state_attr(''sensor.battman_parameters'',''drainBatterySOC'') | float(0)}}'
-    drainBatteryPlughole: '{{ state_attr(''sensor.battman_parameters'',''drainBatteryPlughole'') |  default(false) | bool }}'
+    remainingPVGapAllowedkwh: '{{state_attr(''sensor.battman_parameters'',''needyTriggerPVGap'') | float}}'
+    highConsumptionkw: '{{state_attr(''sensor.battman_parameters'',''needyTriggerConsumption'') | float}}'
+    spikePrice1: '{{(state_attr(''sensor.battman_parameters'',''sellSpikePrice1'') | float) / 100}}'
+    spikeLowSOC1: '{{state_attr(''sensor.battman_parameters'',''sellSpikeSOC1'') | float}}'
+    spikePrice2: '{{(state_attr(''sensor.battman_parameters'',''sellSpikePrice2'') | float) /100}}'
+    spikeLowSOC2: '{{state_attr(''sensor.battman_parameters'',''sellSpikeSOC2'') | float}}'
+    buyAnytimePrice: '{{(state_attr(''sensor.battman_parameters'',''buyAnytimePrice'') | float) /100}}'
+    buyAnytimeSOCBelow: '{{state_attr(''sensor.battman_parameters'',''buyAnytimeSOC'') | float}}'
+    overrideSellPrice: '{{(state_attr(''sensor.battman_parameters'',''sellOverridePrice'') | float) /100}}'
+    overrideSellSOC: '{{state_attr(''sensor.battman_parameters'',''sellOverrideSOC'') | float}}'
+    solarSellPrice: '{{(state_attr(''sensor.battman_parameters'',''sellSolarPrice'') | float) /100}}'
+    solarSellSOC: '{{state_attr(''sensor.battman_parameters'',''sellSolarSOC'') | float}}'
+    overrideBuyPrice: '{{(state_attr(''sensor.battman_parameters'',''buyOverridePrice'') | float) /100}}'
+    overrideBuySOC: '{{state_attr(''sensor.battman_parameters'',''buyOverrideSOC'') | float}}'
+    drainBatteryPrice: '{{(state_attr(''sensor.battman_parameters'',''drainBatteryPrice'') | float) /100}}'
+    drainBatterySOC: '{{state_attr(''sensor.battman_parameters'',''drainBatterySOC'') | float}}'
+    drainBatteryPlughole: '{{ state_attr(''sensor.battman_parameters'',''drainBatteryPlughole'') | bool }}'
   alias: Limits
 - variables:
     tariffSwap10: "{{ now() >= today_at('10:00') and now() < today_at('10:01') }}  \n"
@@ -79,9 +79,11 @@ sequence:
 - variables:
     needSun: |
       {{ (pvRemainingNotGood and tariffImportSolarSponge) | bool(false)  }}
-    needPower: "{% set homekwh30Adv = states('sensor.battman_load_30m_avg') | float(0) %}   {{ (homekwh30Adv > highConsumptionkw) | bool(false)   }}  \n"
+    loadAvgKnown: "{{ has_value('sensor.battman_load_30m_avg') }}"
+    needPower: |
+      {{ loadAvgKnown and (states('sensor.battman_load_30m_avg') | float > highConsumptionkw) }}
     highConsumption: |
-      {% set homekwh30Adv = states('sensor.battman_load_30m_avg') | float(0) %}   {{ ((homekwh30Adv > highConsumptionkw) or (pvRemainingNotGood and tariffImportSolarSponge)) | bool(false)  }}
+      {{ needPower or (pvRemainingNotGood and tariffImportSolarSponge) }}
     highConsumptionText: |
       {% if highConsumption %}
          {{ '_high' }}
@@ -122,16 +124,16 @@ sequence:
     forecastSellPrice: '{{ state_attr(sensors.power.feed_in_forecast,''Forecasts'') | default([])}}'
     isEstimate: |
       {{ is_state('binary_sensor.battman_estimated_price', 'on') }}
-    minSOCForSellProratedOffset: '{{state_attr(''sensor.battman_parameters'',''sellProrateSOCOffset'') | float(0)}}'
-    minSOCForSellLowOffset: '{{state_attr(''sensor.battman_parameters'',''sellLowSOCOffset'') | float(0)}}'
-    minSOCForBuyProratedOffset: '{{state_attr(''sensor.battman_parameters'',''buyProrateSOCOffset'') | float(0)}}'
-    minSOCForBuyHighOffset: '{{state_attr(''sensor.battman_parameters'',''buyHighSOCOffset'') | float(0)}}'
+    minSOCForSellProratedOffset: '{{state_attr(''sensor.battman_parameters'',''sellProrateSOCOffset'') | float}}'
+    minSOCForSellLowOffset: '{{state_attr(''sensor.battman_parameters'',''sellLowSOCOffset'') | float}}'
+    minSOCForBuyProratedOffset: '{{state_attr(''sensor.battman_parameters'',''buyProrateSOCOffset'') | float}}'
+    minSOCForBuyHighOffset: '{{state_attr(''sensor.battman_parameters'',''buyHighSOCOffset'') | float}}'
     minSOCForSellLow: '{{  min((minSOCForSell + minSOCForSellLowOffset),101)  | float(0) }}'
     minSOCForSellProrated: '{{ min((minSOCForSell + minSOCForSellProratedOffset),101) | float(0) }}'
     minSOCForBuyProrated: '{{ max((minSOCForBuy - minSOCForBuyProratedOffset),0) | float(0) }}'
     minSOCForBuyHigh: '{{ max((minSOCForBuy - minSOCForBuyHighOffset),0) | float(0) }}'
     todayCost: |
-      {% set todaysellCost = state_attr('sensor.battman_sell_total','day') | float(0)  %}   {% set todaybuyCost = state_attr('sensor.battman_buy_total','day') | float(0)  %}   {% set todayfee =  state_attr('sensor.battman_parameters','dailyNetworkCharge') | float(0)  %}   {{todaysellCost-todaybuyCost-todayfee}}
+      {% set todaysellCost = state_attr('sensor.battman_sell_total','day') | float(0)  %}   {% set todaybuyCost = state_attr('sensor.battman_buy_total','day') | float(0)  %}   {% set todayfee =  state_attr('sensor.battman_parameters','dailyNetworkCharge') | float  %}   {{todaysellCost-todaybuyCost-todayfee}}
     todaysImportCostCentsPerKwh: |
       {% set todaysellCost = state_attr('sensor.battman_sell_total','trackingA_Cost') | float(0)  %}   {% set todaybuyCost = state_attr('sensor.battman_buy_total','trackingA_Cost') | float(0)  %}   {% set todaybuykwh = state_attr('sensor.battman_buy_total','trackingA_kwh') | float(0)  %} {% set todaybuycuttoffcKwh = state_attr('sensor.battman_buy_total','trackingA_CutOffcKwh') | float(0)  %}    {% set todaybuycuttoffKwh = state_attr('sensor.battman_buy_total','trackingA_CutOffKwh') | float(0)  %}    {% set todaybuyOffset = state_attr('sensor.battman_buy_total','trackingA_Offset') | float(0)  %}     {% if todaybuyCost <= 0 or todaybuykwh <= todaybuycuttoffKwh or todaybuycuttoffcKwh <= 0 or todaybuyCost <= todaysellCost %} 0   {% elif (todaybuyCost/todaybuykwh)*100 <= todaybuycuttoffcKwh %} 0   {% else  %}{{((todaybuyCost/todaybuykwh)+(todaybuyOffset/100)) | round(2)}}  {% endif %}
   alias: Prices
@@ -224,7 +226,7 @@ sequence:
     buyReason: "{% if solar_mode == 'Charge'%}\n  {{buyReason}}\n{% elif solar_mode == 'Charge Solar Off'  %}\n  {{[true, 9, 'Hooover']}}\n{% elif solar_mode == 'Float Solar Off' %}\n  {{[true, 10, 'House Party']}}\n{% else %}\n  {{[false, buyReason[1], buyReason[2]]}}\n{% endif %} \n          \n"
   alias: Set mode
 - variables:
-    prettyMessage: "Run: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}\n\nMode: {{currentMode}} → {{solar_mode}} {% if buyReason[0] %}({{buyReason[2]}}){% elif sellReason[0]%}({{sellReason[2]}}){%endif%}\n                \nPrices: {% if isEstimate %} (Est){% endif %} {% if spikePrice1 <= currentSellPrice %} (Spike 1){% endif %}{% if spikePrice2 <= currentSellPrice %} (Spike 2){% endif %}\n  Sell: ${% if overrideSellPrice > 0 %} {{ overrideSellPrice }} (Overriding ${{sellPrice | round(4)}}) {% else %} {{ sellPrice | round(4) }}{% endif %} (Current: ${{currentSellPrice}}) (Prorate: ${{defaultSellPrice}}/${{lowSellPrice}})\n  Buy: ${% if overrideBuyPrice > 0 %} {{ overrideBuyPrice }} (Overriding ${{buyPrice | round(4)}}) {% else %}{{buyPrice | round(4)}} {% endif %}(Current: ${{currentBuyPrice}}) (Prorate: ${{defaultBuyPrice}}/${{highBuyPrice}})\n  {% if todaysImportCostCentsPerKwh > 0 %}Min Sell: ${{todaysImportCostCentsPerKwh}} until buy is recovered{% endif %}\n\n  \nBattery: {{currentSOC}}% ({{currentSOCkwh | round(1)}} kWh)\n\nSOC Limits:{% if highConsumption %} (On High Curve!){% endif %} \n  Sell Above: {% if overrideSellSOC > 0  %} {{ overrideSellSOC}}% (Overriding {{minSOCForSell}}%) {% else %} {{minSOCForSell}}% {% endif %} {% if sellSOCProrate %} (Prorate: {{ minSOCForSellA}}%/{{ minSOCForSellB}}%) {% endif %}\n  Buy Below: {% if overrideBuySOC > 0  %} {{ overrideBuySOC}}% (Overriding {{minSOCForBuy}}%) {% else %} {{minSOCForBuy}}% {% endif %} {% if buySOCProrate %} (Prorate: {{ minSOCForBuyA}}%/{{ minSOCForBuyB}}%)  {% endif %}\n\nSolar:{% if pvRemainingNotGood and tariffImportSolarSponge %} (Bad!){% endif %}\n  Remaining (10%): {{pvRemaining10kwh}} kWh\n\nActions:\n  Curtail: {{curtail}}\n  Soak: {{soak}}\n  Sell Discharge: {{sellDischarge}}\n  Buy Charge: {{buyCharge}}\n  Soak Charge: {{soakCharge}}\n  Hold Mode: {{holdMode}}\n\nSell Forecasts:\n  Next Sell: ${{avg_fit_Next}}{% if sellRule and sellRule.isActive %}\n  \n  Sell rule is Active and looking ahead {{sellRule.hours_ahead}} hrs\n  Best Avg Sell is: ${{sellRuleResult}} for the Window\n  Rule : Offset {{sellRule.offset}}c/kwh, Rounding {{sellRule.roundtype}} {{sellRule.roundTo}}\n  Grouping {{sellRule.grouping_minutes}} minutes, Low sell {{sellRule.allowLastChance}}\n\n  {% for i in range(0, sellRuleAvgsDetail  | length) %}\n  {{sellRuleAvgsDetail[i].start}} To {{sellRuleAvgsDetail[i].end}} Avg {{sellRuleAvgsDetail[i].avg }} c/kwh{% endfor %}\n    \n  {% endif %}\n  \n \n  \nBuy Forecasts:\n  Next Buy: ${{avg_buy_Next}}{% if buyRule and buyRule.isActive %}\n\n  Buy rule is Active and looking ahead {{buyRule.hours_ahead}} hrs\n  Best Avg Buy is: ${{buyRuleResult}} for the Window\n  Rule : Offset {{buyRule.offset}}c/kwh, Rounding {{buyRule.roundtype}} {{buyRule.roundTo}}\n  Grouping {{buyRule.grouping_minutes}} minutes\n\n  {% for i in range(0, buyRuleAvgsDetail  | length) %}\n  {{buyRuleAvgsDetail[i].start}} To {{buyRuleAvgsDetail[i].end}} Avg {{buyRuleAvgsDetail[i].avg }} c/kwh{% endfor %}\n                 \n  {% endif %}\n \nVersion: {{version}}\nDebug: \nToday Cost: ${{todayCost | round(2)}}\nProtected Sell: {{todaysImportCostCentsPerKwh}}c/kwh\nTracking Sell: ${{state_attr('sensor.battman_sell_total','trackingA_Cost') | float(0) }} for {{state_attr('sensor.battman_sell_total','trackingA_kwh') | float(0) }}kwh. \nTracking Buy: ${{state_attr('sensor.battman_buy_total','trackingA_Cost') | float(0) }} for {{state_attr('sensor.battman_buy_total','trackingA_kwh') | float(0) }}kwh} \n"
+    prettyMessage: "Run: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}\n\nMode: {{currentMode}} → {{solar_mode}} {% if buyReason[0] %}({{buyReason[2]}}){% elif sellReason[0]%}({{sellReason[2]}}){%endif%}\n                \nPrices: {% if isEstimate %} (Est){% endif %} {% if spikePrice1 <= currentSellPrice %} (Spike 1){% endif %}{% if spikePrice2 <= currentSellPrice %} (Spike 2){% endif %}\n  Sell: ${% if overrideSellPrice > 0 %} {{ overrideSellPrice }} (Overriding ${{sellPrice | round(4)}}) {% else %} {{ sellPrice | round(4) }}{% endif %} (Current: ${{currentSellPrice}}) (Prorate: ${{defaultSellPrice}}/${{lowSellPrice}})\n  Buy: ${% if overrideBuyPrice > 0 %} {{ overrideBuyPrice }} (Overriding ${{buyPrice | round(4)}}) {% else %}{{buyPrice | round(4)}} {% endif %}(Current: ${{currentBuyPrice}}) (Prorate: ${{defaultBuyPrice}}/${{highBuyPrice}})\n  {% if todaysImportCostCentsPerKwh > 0 %}Min Sell: ${{todaysImportCostCentsPerKwh}} until buy is recovered{% endif %}\n\n  \nBattery: {{currentSOC}}% ({{currentSOCkwh | round(1)}} kWh)\n\nSOC Limits:{% if highConsumption %} (On High Curve!){% endif %} \n{% if not loadAvgKnown %}  Load average: missing (sensor.battman_load_30m_avg has no value), high consumption check skipped\n{% endif %}  Sell Above: {% if overrideSellSOC > 0  %} {{ overrideSellSOC}}% (Overriding {{minSOCForSell}}%) {% else %} {{minSOCForSell}}% {% endif %} {% if sellSOCProrate %} (Prorate: {{ minSOCForSellA}}%/{{ minSOCForSellB}}%) {% endif %}\n  Buy Below: {% if overrideBuySOC > 0  %} {{ overrideBuySOC}}% (Overriding {{minSOCForBuy}}%) {% else %} {{minSOCForBuy}}% {% endif %} {% if buySOCProrate %} (Prorate: {{ minSOCForBuyA}}%/{{ minSOCForBuyB}}%)  {% endif %}\n\nSolar:{% if pvRemainingNotGood and tariffImportSolarSponge %} (Bad!){% endif %}\n  Remaining (10%): {{pvRemaining10kwh}} kWh\n\nActions:\n  Curtail: {{curtail}}\n  Soak: {{soak}}\n  Sell Discharge: {{sellDischarge}}\n  Buy Charge: {{buyCharge}}\n  Soak Charge: {{soakCharge}}\n  Hold Mode: {{holdMode}}\n\nSell Forecasts:\n  Next Sell: ${{avg_fit_Next}}{% if sellRule and sellRule.isActive %}\n  \n  Sell rule is Active and looking ahead {{sellRule.hours_ahead}} hrs\n  Best Avg Sell is: ${{sellRuleResult}} for the Window\n  Rule : Offset {{sellRule.offset}}c/kwh, Rounding {{sellRule.roundtype}} {{sellRule.roundTo}}\n  Grouping {{sellRule.grouping_minutes}} minutes, Low sell {{sellRule.allowLastChance}}\n\n  {% for i in range(0, sellRuleAvgsDetail  | length) %}\n  {{sellRuleAvgsDetail[i].start}} To {{sellRuleAvgsDetail[i].end}} Avg {{sellRuleAvgsDetail[i].avg }} c/kwh{% endfor %}\n    \n  {% endif %}\n  \n \n  \nBuy Forecasts:\n  Next Buy: ${{avg_buy_Next}}{% if buyRule and buyRule.isActive %}\n\n  Buy rule is Active and looking ahead {{buyRule.hours_ahead}} hrs\n  Best Avg Buy is: ${{buyRuleResult}} for the Window\n  Rule : Offset {{buyRule.offset}}c/kwh, Rounding {{buyRule.roundtype}} {{buyRule.roundTo}}\n  Grouping {{buyRule.grouping_minutes}} minutes\n\n  {% for i in range(0, buyRuleAvgsDetail  | length) %}\n  {{buyRuleAvgsDetail[i].start}} To {{buyRuleAvgsDetail[i].end}} Avg {{buyRuleAvgsDetail[i].avg }} c/kwh{% endfor %}\n                 \n  {% endif %}\n \nVersion: {{version}}\nDebug: \nToday Cost: ${{todayCost | round(2)}}\nProtected Sell: {{todaysImportCostCentsPerKwh}}c/kwh\nTracking Sell: ${{state_attr('sensor.battman_sell_total','trackingA_Cost') | float(0) }} for {{state_attr('sensor.battman_sell_total','trackingA_kwh') | float(0) }}kwh. \nTracking Buy: ${{state_attr('sensor.battman_buy_total','trackingA_Cost') | float(0) }} for {{state_attr('sensor.battman_buy_total','trackingA_kwh') | float(0) }}kwh} \n"
   alias: Debug Message
 - choose:
   - conditions:

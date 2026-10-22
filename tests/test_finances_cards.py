@@ -15,6 +15,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from . import engine_harness as H
+from .dashboard_views import built
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 LIB = ROOT / "www/battman-lib.js"
@@ -110,7 +111,7 @@ async def _setup(hass):
 async def test_finances_is_battman_cards(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
-    data = await (await client.get("/api/battman/dashboard")).json()
+    data = await built(hass)
     assert data["errors"] == []
     assert [v["path"] for v in data["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme"]
     fin = next(v for v in data["views"] if v["path"] == "finances")

@@ -94,15 +94,16 @@ OTHER_MAP_DEFAULTS: dict[str, str] = {
     "grid_export_today": "sensor.sigen_plant_daily_grid_export_energy",
     "grid_import_today": "sensor.sigen_plant_daily_grid_import_energy",
     "pv_power": "sensor.sigen_plant_pv_power",
+    "solar_today": "sensor.sigen_plant_daily_pv_energy",
+    "home_today": "sensor.sigen_plant_daily_load_consumption",
+    "battery_temperature": "sensor.sigen_inverter_battery_maximum_temperature",
     "home_power": "sensor.sigen_plant_consumed_power",
     "battery_power": "sensor.sigen_plant_battery_power",
     "third_party_pv": "sensor.sigen_plant_third_party_pv_power",
     # pattern: {n} = string number 1..12; the Log page shows the ones that exist
     "pv_string": "sensor.sigen_inverter_pv{n}_power",
-    # 30-minute mean of home power: a Statistics helper you made for Smiggles
-    "load_30m": "sensor.solarsystemcontrolload30m",
-    # Battman's template sensors (packages/battman/battman_sensors.yaml):
-    # grid power from the Sigen import / export power below; load avg from load_30m
+    # Battman's own sensors (packages/battman/battman_sensors.yaml): grid power from the Sigen
+    # import / export power below; the 30-minute load average from home_power
     "grid_power": "sensor.battman_grid_power",
     "load_30m_avg": "sensor.battman_load_30m_avg",
     "grid_import_power": "sensor.sigen_plant_grid_import_power",
@@ -131,8 +132,15 @@ OTHER_MAP_DEFAULTS: dict[str, str] = {
     "opennem": "sensor.opennem_sa",
 }
 
+# Battman's own curve sensors, whichever engine is in charge: Curvy and Pricy read the factory
+# curves from their `factory` attribute (Smiggles' curve sensors don't have one).
+FACTORY_MAP: dict[str, str] = {
+    "soc_curves_factory": "sensor.battman_soc_curves",
+    "price_curves_factory": "sensor.battman_price_curves",
+}
+
 # Every map entry with its Battman default.
-ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **OTHER_MAP_DEFAULTS}
+ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **FACTORY_MAP, **OTHER_MAP_DEFAULTS}
 
 # Entries that aren't entities (the Configure screen shows a text box for these).
 MAP_TEXT_ENTRIES = {"pv_string"}
@@ -147,7 +155,3 @@ CARDS_URL = "/api/battman/cards"
 # authenticated, like /local/, because an <img> can't send a login).
 IMAGES_URL = "/api/battman/images"
 IMAGE_URL = "/api/battman/image"
-
-# Authenticated API that hands the managed dashboard its views (views/*.yaml with
-# {{name}} placeholders filled from the entity map).
-DASHBOARD_URL = "/api/battman/dashboard"

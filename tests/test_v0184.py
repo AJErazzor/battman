@@ -2,8 +2,7 @@
 
 HA's frontend replaces window.customElements with its own registry (a compatibility layer) as
 it starts. Battman's start-up scripts load at the same time; anything they registered just
-before the swap was lost to HA ("Timeout waiting for strategy element", "Custom element doesn't
-exist"). Each script now registers again in the new registry."""
+before the swap was lost to HA ("Custom element doesn't exist"). Each script now registers again in the new registry."""
 
 import json
 import os
@@ -19,7 +18,7 @@ NODE_PATH = "/tmp/pwtest/node_modules"
 
 
 def test_every_registration_goes_through_the_helper() -> None:
-    for name in ("battman-strategy.js", "battman-countdown.js", "battman-cards.js"):
+    for name in ("battman-countdown.js", "battman-cards.js"):
         js = (WWW / name).read_text()
         assert "function battmanDefine(tag, cls)" in js and "window.CustomElementRegistryPolyfill" in js, name
         direct = [l for l in js.splitlines() if "customElements.define(" in l]

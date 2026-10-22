@@ -540,15 +540,16 @@
     const ampm = h => h === 0 ? '12am' : h < 12 ? h+'am' : h === 12 ? '12pm' : (h-12)+'pm';
 
     // ── Defaults ──────────────────────────────────────────────────────────────
-    const makeDefaultSell     = () => ({ low:[5,5,5,5,5,5,5,5,8,10,8,5,5,5,5,5,10,15,20,25,25,20,15,10], high:[15,15,15,15,15,15,15,15,20,25,20,15,15,15,15,18,30,50,60,80,70,50,35,25] });
-    const makeDefaultSellHigh = () => ({ low:[8,8,8,8,8,8,8,8,12,15,12,8,8,8,8,8,15,20,28,35,35,28,20,15], high:[20,20,20,20,20,20,20,20,28,35,28,20,20,20,20,25,40,65,75,95,85,65,45,32] });
-    const makeDefaultBuy      = () => ({ low:[-20,-20,-20,-20,-20,-20,-10,-5,5,10,5,-10,-20,-20,-10,-5,5,15,25,30,25,20,15,10], high:[5,5,5,5,5,5,10,15,25,30,20,10,5,5,10,15,25,40,60,70,60,45,30,20] });
-    const makeDefaultBuyHigh  = () => ({ low:[-15,-15,-15,-15,-15,-15,-8,-3,8,15,8,-8,-15,-15,-8,-3,8,20,32,38,32,26,20,12], high:[8,8,8,8,8,8,14,20,30,38,26,14,8,8,14,20,32,50,72,82,72,55,38,26] });
-    const factoryFor = type => ({ sell:makeDefaultSell, sell_high:makeDefaultSellHigh, buy:makeDefaultBuy, buy_high:makeDefaultBuyHigh })[type]();
+    // Battman's factory curves (factory_curves.yaml), read from the curves sensor's `factory` attribute
+    let FACTORY = null;
+    const CURVE_TYPES = ['sell', 'sell_high', 'buy', 'buy_high'];
+    const factoryFor = type => ({ low: [...FACTORY[type].low], high: [...FACTORY[type].high] });
 
     // ── Data ──────────────────────────────────────────────────────────────────
     const data = {};
-    MONTHS.forEach(m => { data[m] = { sell:makeDefaultSell(), sell_high:makeDefaultSellHigh(), buy:makeDefaultBuy(), buy_high:makeDefaultBuyHigh() }; });
+    function factoryMonths(months) {
+      months.forEach(m => { data[m] = {}; CURVE_TYPES.forEach(type => { data[m][type] = factoryFor(type); }); });
+    }
 
     // ── State ─────────────────────────────────────────────────────────────────
     let editMode         = 'month';
@@ -676,7 +677,7 @@
     let M = null;                 // Battman entity map
     let CURVE_GAPS = [];
     let OPTIONAL_MISSING = [];
-    const NEEDS = ['price_curves', 'price_curves_update_event', 'control_script', 'buy_price', 'feed_in_price',
+    const NEEDS = ['price_curves', 'price_curves_factory', 'price_curves_update_event', 'control_script', 'buy_price', 'feed_in_price',
                    'buy_forecast', 'feed_in_forecast', 'load_30m_avg', 'high_consumption'];
     const NEED_ENTITIES = ['price_curves', 'control_script', 'buy_price', 'feed_in_price', 'load_30m_avg', 'high_consumption'];
     // shown if missing, but the editor still works without them (they only add the forecast overlay)
@@ -703,6 +704,10 @@
       if (!h) return 'Home Assistant not reachable from this page.';
       const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' → ' + M[k]);
       if (bad.length) return 'Battman entity map: entity not found: ' + bad.join(', ');
+      const fac = h.states[M.price_curves_factory];
+      FACTORY = fac && fac.attributes.factory;
+      if (!FACTORY || CURVE_TYPES.some(t => !FACTORY[t] || [FACTORY[t].low, FACTORY[t].high].some(a => !Array.isArray(a) || a.length !== 24)))
+        return 'No factory curves: ' + M.price_curves_factory + ' has no factory attribute (are Battman\'s packages loaded? see Repairs).';
       OPTIONAL_MISSING = Object.keys(OPTIONAL_ENTITIES).filter(k => !h.states[M[k]])
         .map(k => 'No ' + OPTIONAL_ENTITIES[k] + ': ' + k + ' → ' + M[k] + ' not found');
       return null;
@@ -836,6 +841,7 @@
 
     // ── HA load/save ──────────────────────────────────────────────────────────
     async function loadFromHA() {
+      factoryMonths(MONTHS);   // months or curves missing from the sensor show the factory curves (and say so)
       const hass = getHass();
       if (!hass) { debugLog('❌ No hass context'); return false; }
       try {
@@ -1019,8 +1025,7 @@
     async function loadFactoryDefaults() {
       if (!confirm(`Load factory defaults for ${periodName()}?\n\nThis resets all 4 curve types.`)) return;
       getMonths(currentPeriod).forEach(m => {
-        data[m].sell = makeDefaultSell(); data[m].sell_high = makeDefaultSellHigh();
-        data[m].buy  = makeDefaultBuy();  data[m].buy_high  = makeDefaultBuyHigh();
+        CURVE_TYPES.forEach(type => { data[m][type] = factoryFor(type); });
       });
       const presetKey = editMode === 'season' ? `season_${currentPeriod}` : `month_${currentPeriod}`;
       delete lastLoadedPreset[presetKey]; delete modifiedPeriods[presetKey];

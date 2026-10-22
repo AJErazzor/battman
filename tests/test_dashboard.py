@@ -9,7 +9,6 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 DOMAIN = "battman"
-STRATEGY = {"strategy": {"type": "custom:battman"}}
 
 
 async def _cfg(hass, url_path):
@@ -73,17 +72,9 @@ async def test_dashboard_lifecycle(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     assert "battman" not in hass.data[LOVELACE_DATA].dashboards
 
-    # 6. an older managed dashboard is still removed with Battman; yours is never touched
+    # 6. removing Battman leaves your dashboard alone
     await _create(hass)
     mine_cfg = await _cfg(hass, "battman")
-    from custom_components.battman import dashboard
-
-    await dashboard._collection(hass).async_create_item(
-        {"allow_single_word": True, "icon": "mdi:battery", "title": "Old", "url_path": "battman-old",
-         "require_admin": False, "show_in_sidebar": True})
-    await hass.data[LOVELACE_DATA].dashboards["battman-old"].async_save(STRATEGY)
-    assert await dashboard.async_find_managed(hass) == ["battman-old"]
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
-    assert "battman-old" not in hass.data[LOVELACE_DATA].dashboards
     assert await _cfg(hass, "battman") == mine_cfg

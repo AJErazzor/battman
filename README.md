@@ -2,11 +2,28 @@
 
 Home battery automation for Home Assistant.
 
-> Early days: Battman is moving over from Smiggles one piece at a time. So far it
-> ships themes, a dashboard (Power, Curvy, Pricy, Finances, Settings, Log, Theme) and its pages; the
-> battery engine still runs in Smiggles. See [docs/smiggles-inventory.md](docs/smiggles-inventory.md).
+Battman controls a Sigenergy battery from Amber prices and a Solcast solar forecast. It ships its
+engine (as Home Assistant blueprints and packages you can open and trace), a dashboard (Power,
+Curvy, Pricy, Finances, Settings, Log, Theme), its cards, pages and themes. It started as
+[Smiggles](https://github.com/biggls73/Smiggles) and can take over from it (see below).
 
 ## Install (HACS)
+
+Before you start, have these in place (the full list, and why: [DEPENDENCIES.md](DEPENDENCIES.md)):
+
+- The integrations it reads: Sigenergy (Sigenergy-Local-Modbus), Amber, Solcast, and optionally OpenNEM.
+- The HACS cards it draws with (button-card, card-mod, modern-circular-gauge, power-pie-card) and browser_mod.
+- These lines in `configuration.yaml` (Battman writes its engine and themes into these folders; a
+  Repair tells you if a line is missing):
+
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+frontend:
+  themes: !include_dir_merge_named themes
+```
+
+Then:
 
 1. HACS → ⋮ → **Custom repositories** → add `https://github.com/AJErazzor/battman`, category **Integration**.
 2. Install **Battman**, then restart Home Assistant.
@@ -58,8 +75,6 @@ everything into cards so less and less of it is fixed.
   nothing is created and the message says so.
 - **Theme:** pick one under **Settings → Dashboard options**, or use **Make Active** in
   the Theme view (they do the same thing).
-- **Older managed dashboards** (config `strategy: {type: custom:battman}`) still work.
-  Removing Battman deletes those only; a dashboard you own is never touched.
 
 ## Pages
 
@@ -88,10 +103,19 @@ dashboard theme is picked (or if a colour can't be read) it's `unknown`, and the
 
 Battman's engine is Smiggles' engine ported like for like (same decisions, renamed): template
 sensors and helpers in `packages/battman/`, and automations and scripts made from Battman's
-blueprints. It's installed switched off and does nothing until you run
-**Migrate from Smiggles** (`battman.migrate_from_smiggles`), which turns Smiggles off, copies
-everything across and puts Battman in charge. **Hand back to Smiggles** reverses it.
+blueprints. It runs while `binary_sensor.battman_in_charge` is on. Today the way to put it in
+charge is **Migrate from Smiggles** (`battman.migrate_from_smiggles`), which turns Smiggles off,
+copies everything across and puts Battman in charge. **Hand back to Smiggles** reverses it.
 Details: [docs/engine.md](docs/engine.md). Step by step: [docs/migration.md](docs/migration.md).
+
+**Starting values.** On a fresh install every setting starts at its default and the SOC and price
+curves start as Battman's factory curves (`custom_components/battman/factory_curves.yaml`, the same
+ones Curvy's and Pricy's **Factory defaults** buttons load). Your own settings and curves are never
+replaced by them.
+
+**30-minute load average.** `sensor.battman_load_30m_avg` is a Statistics sensor Battman makes from
+home power (`home_power` in the entity map): the mean over the last 30 minutes. When it has no
+value the engine skips its high-consumption check and says so in the engine log.
 
 Battman writes `packages/battman/` on every update (don't edit those files). HA reads that folder
 when `configuration.yaml` has `homeassistant: packages: !include_dir_named packages`; if it doesn't,
@@ -124,7 +148,7 @@ it follows on the Battman dashboard, **Settings → Live Activity**. See
 ## Entity map (Configure)
 
 Battman names (`buy_total`, `battery_soc`, `pv_string`, …) point at entities in
-your HA. The defaults match a Smiggles + Sigenergy + Amber setup. To change one
+your HA. The defaults match a Sigenergy + Amber + Solcast setup. To change one
 (say a different inverter): Settings → Devices & services → Battman →
 **Configure**. Only the entries you change are stored, so new defaults in later
 releases still reach the rest. `pv_string` is a pattern: `{n}` is the string
@@ -134,6 +158,14 @@ number (1–12), e.g. `sensor.sigen_inverter_pv{n}_power`.
 
 Battman's dashboard needs some HACS cards (button-card, card-mod, and a few more) and browser_mod.
 See [DEPENDENCIES.md](DEPENDENCIES.md). Battman raises a Repair if any are missing.
+
+## Removing Battman
+
+Deleting the Battman integration takes away what Battman wrote: its engine and Live Activity
+automations and scripts (by their ids; everything else in `automations.yaml` / `scripts.yaml`
+stays), `packages/battman/` and the entities it made, its blueprints and its shipped themes. It
+keeps the engine log (`battman/engine.log`), your own cards, images and themes, and your Battman
+dashboard. A notification lists what was removed.
 
 ## Updating
 

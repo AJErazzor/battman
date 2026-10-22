@@ -1,0 +1,29 @@
+# Battman's factory curves: the curves a fresh install starts with, and what the Factory
+# defaults buttons in Curvy and Pricy load. One set, used for every month.
+#
+# Battman fills these into its curve sensors when it writes packages/battman/ (the
+# [[factory:soc]] and [[factory:price]] markers in battman_sensors.yaml), so the sensors
+# carry them as their `factory` attribute and start with them when they have no curves.
+# Your own curves are never replaced by these.
+
+# Curvy: SOC %, one number per hour (00:00 to 23:00)
+soc:
+  sell:      [25, 25, 20, 20, 15, 15, 15, 15, 15, 15, 30, 30, 50, 50, 50, 50, 50, 50, 45, 45, 40, 40, 35, 35]
+  sell_high: [30, 30, 25, 25, 15, 15, 15, 15, 15, 15, 30, 30, 50, 50, 50, 50, 70, 70, 60, 60, 50, 50, 40, 40]
+  buy:       [6, 6, 6, 6, 6, 6, 6, 6, 10, 10, 25, 25, 35, 35, 50, 50, 40, 40, 30, 30, 20, 20, 10, 10]
+  buy_high:  [6, 6, 6, 6, 6, 6, 6, 6, 10, 10, 25, 25, 35, 35, 50, 50, 40, 40, 30, 30, 20, 20, 10, 10]
+
+# Pricy: c/kWh, low and high, one number per hour (00:00 to 23:00)
+price:
+  sell:
+    low:  [5, 5, 5, 5, 5, 5, 5, 5, 8, 10, 8, 5, 5, 5, 5, 5, 10, 15, 20, 25, 25, 20, 15, 10]
+    high: [15, 15, 15, 15, 15, 15, 15, 15, 20, 25, 20, 15, 15, 15, 15, 18, 30, 50, 60, 80, 70, 50, 35, 25]
+  sell_high:
+    low:  [8, 8, 8, 8, 8, 8, 8, 8, 12, 15, 12, 8, 8, 8, 8, 8, 15, 20, 28, 35, 35, 28, 20, 15]
+    high: [20, 20, 20, 20, 20, 20, 20, 20, 28, 35, 28, 20, 20, 20, 20, 25, 40, 65, 75, 95, 85, 65, 45, 32]
+  buy:
+    low:  [-20, -20, -20, -20, -20, -20, -10, -5, 5, 10, 5, -10, -20, -20, -10, -5, 5, 15, 25, 30, 25, 20, 15, 10]
+    high: [5, 5, 5, 5, 5, 5, 10, 15, 25, 30, 20, 10, 5, 5, 10, 15, 25, 40, 60, 70, 60, 45, 30, 20]
+  buy_high:
+    low:  [-15, -15, -15, -15, -15, -15, -8, -3, 8, 15, 8, -8, -15, -15, -8, -3, 8, 20, 32, 38, 32, 26, 20, 12]
+    high: [8, 8, 8, 8, 8, 8, 14, 20, 30, 38, 26, 14, 8, 8, 14, 20, 32, 50, 72, 82, 72, 55, 38, 26]

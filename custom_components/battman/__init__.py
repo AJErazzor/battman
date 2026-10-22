@@ -9,7 +9,7 @@ from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import CoreState, HomeAssistant
+from homeassistant.core import CoreState, Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
@@ -17,19 +17,18 @@ from homeassistant.loader import async_get_integration
 from . import (
     blueprint_install,
     cards,
-    dashboard,
     dependencies,
     engine,
     engine_log,
     migrate,
     package_files,
     themes,
+    uninstall,
     update_check,
 )
 from .api import (
     BattmanCardsView,
     BattmanCardView,
-    BattmanDashboardView,
     BattmanEntityMapView,
     BattmanImagesView,
     BattmanImageView,
@@ -68,15 +67,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         [StaticPathConfig(STATIC_URL, str(WWW_DIR), cache_headers=False)]
     )
     hass.http.register_view(BattmanEntityMapView(str(integration.version)))
-    hass.http.register_view(BattmanDashboardView())
     hass.http.register_view(BattmanThemeSaveView())
     hass.http.register_view(BattmanCardsView())
     hass.http.register_view(BattmanCardView())
     hass.http.register_view(BattmanImagesView())
     hass.http.register_view(BattmanImageView())
     hass.http.register_view(engine_log.BattmanLogView())
-    # The dashboard strategy, loaded on every HA page (no Lovelace resource needed).
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-strategy.js?v={integration.version}")
     # <battman-countdown>: the 5-minute Amber countdown some Battman cards show.
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-countdown.js?v={integration.version}")
     # Battman's card library (window.BattmanLib): the Overrides card's rows and popups.
@@ -108,6 +104,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await themes.async_reload(hass)
     except OSError as err:
         _LOGGER.error("Could not install Battman themes into %s: %s", dst, err)
+    await themes.async_check(hass)
+
+    async def _themes_reloaded(_event: Event) -> None:
+        await themes.async_check(hass)
+
+    entry.async_on_unload(hass.bus.async_listen("themes_updated", _themes_reloaded))
 
     await blueprint_install.async_install(hass)
 
@@ -166,17 +168,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Battman removed: take its shipped themes, blueprints and managed dashboards away too.
-
-    Dashboards you've taken control of, and your own themes (themes/battman/custom/),
-    are left alone.
-    """
-    try:
-        removed = await dashboard.async_remove_managed(hass)
-        if removed:
-            _LOGGER.info("Removed managed Battman dashboard(s): %s", removed)
-    except dashboard.DashboardUnavailable as err:
-        _LOGGER.warning("Could not remove the managed Battman dashboard: %s", err)
-    if await hass.async_add_executor_job(themes.remove_shipped, themes.dst_dir(hass)):
-        await themes.async_reload(hass)
-    await blueprint_install.async_remove(hass)
+    """Battman removed: take away what it wrote into your config (see uninstall.py)."""
+    await uninstall.async_remove(hass)
