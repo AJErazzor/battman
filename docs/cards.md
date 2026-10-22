@@ -64,6 +64,7 @@ dashboard is built by Battman, so HA offers **Take control** instead.)
 | `battman-cost-compare` | This period against earlier ones (Battman's cost compare page in a frame) | card-mod |
 | `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
 | `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
+| `battman-house` | The house picture with live prices, solar, PV strings, home, grid, battery, temperature and three of your own devices, with moving flow lines (see [Battman House](#battman-house)) | nothing |
 | `battman-image` | Any of Battman's images, or yours, with fit, position and size options (see [Battman Image](#battman-image)) | nothing |
 
 `<battman-countdown></battman-countdown>` (the 5-min Amber countdown) is loaded by Battman on
@@ -143,3 +144,26 @@ dark:                 # in dark mode: the same. On a narrow screen in dark mode,
   image on a page can't send one. Don't put anything private in that folder.
 - **Problems** show on the card: an image that isn't there (named), a setting it doesn't know, or
   `fill` with no height to fill. Never a blank space or a different image.
+
+## Battman House
+
+`custom:battman-house` is the house picture from the Smiggles Power view, drawn by Battman
+itself (no button-card, mushroom or card-mod). It's the first card on the Power view.
+
+Every item has a **Show** switch and its own entity, all set in the card's editor. Leave them
+alone and the card uses Battman's entity map (and the Smiggles entities where the map has no
+entry). An item whose entity doesn't exist isn't drawn. The three devices (the "PC" rows) also
+take your own text and what goes after the value (e.g. `W`). The pictures are Battman's;
+point House / Battery / Gateway picture at your own (e.g. `/local/house.png`) to change them.
+
+Only what you change is written to the card's YAML, e.g.:
+
+```yaml
+type: custom:battman-house
+buy:
+  show: false
+pc1:
+  label: Office PC
+  entity: sensor.office_pc_power
+  suffix: W
+```

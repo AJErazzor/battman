@@ -1592,7 +1592,8 @@
             const c = curves[month];
             if (!c) { gaps.push(month); return; }
             ['sell','sell_high','buy','buy_high'].forEach(t => { if (!Array.isArray(c[t]) || c[t].length !== 24) gaps.push(month + '.' + t); });
-            data[month] = { sell: c.sell, sell_high: c.sell_high, buy: c.buy, buy_high: c.buy_high };
+            // copies: editing must not change HA's own copy of the sensor (the save check compares against it)
+            data[month] = { sell: [...c.sell], sell_high: [...c.sell_high], buy: [...c.buy], buy_high: [...c.buy_high] };
           });
           if (gaps.length) { CURVE_GAPS = gaps; }
           const pt = entity.attributes.preset_tracking || {};
