@@ -18,6 +18,9 @@
          font-size: 15px; line-height: 1.5; padding: 16px; }
   input, select, button { font-family: inherit; }
 
+  .hdr { max-width: 1400px; margin: 0 auto 16px; display: flex; align-items: center; gap: 10px; }
+  .hdr .who { height: 44px; width: auto; flex: none; }
+  .hdr .word { width: 230px; max-width: 100%; min-width: 0; height: auto; flex: 0 1 auto; }
   .cols { display: flex; gap: 14px; align-items: flex-start; max-width: 1400px; margin: 0 auto; }
   .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; min-height: 60px; }
   @media (max-width: 900px) { .cols { flex-direction: column; } .col { width: 100%; flex: none; } }
@@ -104,6 +107,7 @@
 </style>
 </head>
 <body>
+<h2 class="hdr"><img src="/battmanfiles/images/battman-wrench.webp" alt="Battman" class="who"><img src="/battmanfiles/images/settings-line.webp" alt="Settings" class="word"></h2>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
 <script>
 (function () {
