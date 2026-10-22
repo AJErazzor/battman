@@ -2,8 +2,9 @@
 
 DOMAIN = "battman"
 
-# URL the files in custom_components/battman/www/ are served from.
-STATIC_URL = "/battman"
+# URL the files in custom_components/battman/www/ are served from. Not /battman: that's the
+# dashboard's address, and a browser refresh on /battman/<view> must reach the dashboard.
+STATIC_URL = "/battmanfiles"
 
 # Authenticated API that hands Battman pages the entity map.
 ENTITY_MAP_URL = "/api/battman/entities"

@@ -218,7 +218,7 @@ class BattmanImageView(HomeAssistantView):
 
     url = IMAGE_URL + "/{name}"
     name = "api:battman:image"
-    requires_auth = False   # an <img> can't send a login; same as /local/ and /battman/images/
+    requires_auth = False   # an <img> can't send a login; same as /local/ and /battmanfiles/images/
 
     async def get(self, request, name: str):
         hass: HomeAssistant = request.app[KEY_HASS]

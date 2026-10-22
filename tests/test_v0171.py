@@ -83,7 +83,7 @@ def test_smiggles_lines_still_read() -> None:
 
 def test_log_page_uses_the_popup_renderer() -> None:
     page = (WWW / "log.html").read_text()
-    assert '<script src="/battman/battman-enginelog.js"></script>' in page
+    assert '<script src="/battmanfiles/battman-enginelog.js"></script>' in page
     assert "EL.render(p.message" in page and "emojiRegex" not in page
     card = (ROOT / "custom_components/battman/cards/batterymode.yaml").read_text()
     assert "R.render(raw, { title: 'Engine log' })" in card and "emojiOf" not in card

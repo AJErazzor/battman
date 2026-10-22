@@ -35,10 +35,10 @@ async def test_log_and_theme_views(hass: HomeAssistant, hass_client) -> None:
     assert data["errors"] == []
     by_path = {v["path"]: v for v in data["views"]}
     log, theme = by_path["log"], by_path["theme"]
-    assert log["cards"][0]["url"] == "/battman/log.html"
-    assert theme["cards"][0]["url"].startswith("/battman/theme-studio.html")
+    # Log and Theme studio are Battman cards now (they show these pages: see test_curvy_card)
+    assert log["cards"][0]["type"] == "custom:battman-log"
+    assert theme["cards"][0]["type"] == "custom:battman-theme-studio"
     text = json.dumps(data["views"][1:])
-    assert "/battman/log.html" in text and "/battman/theme-studio.html" in text
     assert "smiggles" not in text.lower() and "{{" not in text
 
 
@@ -150,7 +150,7 @@ async def test_correct_totals_subview(hass: HomeAssistant, hass_client) -> None:
     by_path = {v["path"]: v for v in data["views"]}
     fin, sub = by_path["finances"], by_path["correct-totals"]
     assert sub["path"] == "correct-totals" and sub["subview"] is True       # hidden: no tab
-    assert sub["cards"][0]["url"] == "/battman/correct-energy.html"
+    assert sub["cards"][0]["url"] == "/battmanfiles/correct-energy.html"
     billing = fin["sections"][0]["cards"][2]
     assert "/correct-totals" in billing["custom_fields"]["row9"] and "Correct Totals" in billing["custom_fields"]["row9"]
     assert "row9" in billing["styles"]["grid"][0]["grid-template-areas"]
@@ -160,9 +160,9 @@ async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
     by_path = {v["path"]: v for v in (await (await client.get("/api/battman/dashboard")).json())["views"]}
-    # Curvy is a Battman card now (custom:battman-curvy shows /battman/curvy.html: see test_curvy_card)
+    # Curvy is a Battman card now (custom:battman-curvy shows /battmanfiles/curvy.html: see test_curvy_card)
     assert by_path["curvy"]["cards"][0]["type"] == "custom:battman-curvy" and by_path["curvy"]["theme"] == "Battman Nord"
-    assert by_path["pricy"]["cards"][0]["url"] == "/battman/pricy.html" and by_path["pricy"]["title"] == "Pricy"
+    assert by_path["pricy"]["cards"][0]["type"] == "custom:battman-pricy" and by_path["pricy"]["title"] == "Pricy"
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
     assert emap["sigen_pv_power"] == "sensor.sigen_plant_sigen_pv_power"      # Sigen-only, separate from pv_power
     assert emap["pv_power"] == "sensor.sigen_plant_pv_power"

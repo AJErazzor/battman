@@ -104,7 +104,7 @@
   "services": {
     "create_dashboard": {
       "name": "Create dashboard",
-      "description": "Creates a managed Battman dashboard in the sidebar. Does nothing if one already exists; dashboards you have taken control of are never touched."
+      "description": "Creates the Battman dashboard at /battman, with all of Battman's views, as a normal dashboard you can edit. Does nothing if something is already at /battman: delete it first for a fresh copy."
     },
     "create_live_activity": {
       "name": "Create Live Activity automations",

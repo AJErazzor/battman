@@ -111,6 +111,11 @@ class BattmanCard extends HTMLElement {
     this.style.display = "contents";
     // a preview in HA's card picker: draw it in PREVIEW_THEME (unless it names a theme)
     this._inPicker = inCardPicker(this);
+    // ...or, if the card file names a picture (# preview:), show that instead
+    if (this._inPicker && this._data && this._data.preview && this._state === "ready" && !this._previewShown) {
+      this._showPreview(this._data);
+      return;
+    }
     if (!this._themeName() && this._themeKeys && this._themeKeys.length) {
       for (const k of this._themeKeys) this.style.removeProperty(k);
       this._themeKeys = [];
@@ -127,6 +132,8 @@ class BattmanCard extends HTMLElement {
   setConfig(config) {
     this._config = config;
     this._inner = null;
+    this._data = null;
+    this._previewShown = false;
     this._state = "new";
     this._themeObj = null;
     if (!this._themeName()) {
@@ -205,6 +212,12 @@ class BattmanCard extends HTMLElement {
     } catch (e) {
       return this._problem(`Couldn't load the Battman card “${id}”: ${errText(e)}`);
     }
+    this._data = data;
+    // in HA's card picker, a card that names a picture shows it (a framed page would be blank there)
+    if ((this._inPicker || inCardPicker(this)) && data.preview) {
+      this._inPicker = true;
+      return this._showPreview(data);
+    }
     if (data.missing_map.length) {
       return this._problem(`Battman entity map has no entry for: ${data.missing_map.join(", ")} (card “${data.name}”).`);
     }
@@ -238,7 +251,21 @@ class BattmanCard extends HTMLElement {
     this.dispatchEvent(new Event("card-visibility-changed", { bubbles: true, composed: true }));
   }
 
-  _problem(message) {
+  _showPreview(data) {
+    const card = document.createElement("ha-card");
+    card.style.cssText = "overflow:hidden";
+    const img = document.createElement("img");
+    img.src = data.preview;
+    img.alt = data.name;
+    img.style.cssText = "display:block;width:100%;height:auto";
+    card.append(img);
+    this.replaceChildren(card);
+    this._inner = null;
+    this._previewShown = true;
+    this._state = "ready";
+  }
+
+    _problem(message) {
     this._state = "failed";
     this._inner = null;
     const card = document.createElement("ha-card");

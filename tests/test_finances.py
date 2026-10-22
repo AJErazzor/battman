@@ -39,7 +39,7 @@ async def test_dashboard_api_fills_the_map(hass: HomeAssistant, hass_client) -> 
     assert "sensor.solarsystemcontrolbuytotal" in text       # ...from the map
     assert "solarsystemcontrolparametersupdate" in text      # events too
     assert "--smiggles-" not in text                         # Battman colours only
-    assert "/battman/cost-compare.html" in text and "/battman/images/battman-coins.webp" in text
+    assert "/battmanfiles/cost-compare.html" in text and "/battmanfiles/images/battman-coins.webp" in text
     assert [b["entity"] for b in view["badges"]] == [
         "sensor.sigen_plant_battery_state_of_charge",
         "sensor.amber_5min_current_general_price",
@@ -50,15 +50,15 @@ async def test_dashboard_api_fills_the_map(hass: HomeAssistant, hass_client) -> 
 async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> None:
     await _setup(hass)
     client = await hass_client_no_auth()
-    for path in ("/battman/cost-compare.html", "/battman/images/finances-line.webp",
-                 "/battman/log.html", "/battman/theme-studio.html", "/battman/correct-energy.html",
-                 "/battman/curvy.html", "/battman/pricy.html", "/battman/images/battman-lying.webp",
-                 "/battman/images/battman-money.webp", "/battman/images/soc-curve-editor-line.webp",
-                 "/battman/images/price-curve-editor-line.webp",
-                 "/battman/images/battman-wrench.webp", "/battman/images/settings-line.webp", "/battman/battman-lib.js",
-                 "/battman/images/battman-toilet-mirror.webp", "/battman/images/logs-line.webp",
-                 "/battman/images/battman-coins.webp", "/battman/battman-strategy.js",
-                 "/battman/battman-cards.js"):
+    for path in ("/battmanfiles/cost-compare.html", "/battmanfiles/images/finances-line.webp",
+                 "/battmanfiles/log.html", "/battmanfiles/theme-studio.html", "/battmanfiles/correct-energy.html",
+                 "/battmanfiles/curvy.html", "/battmanfiles/pricy.html", "/battmanfiles/images/battman-lying.webp",
+                 "/battmanfiles/images/battman-money.webp", "/battmanfiles/images/soc-curve-editor-line.webp",
+                 "/battmanfiles/images/price-curve-editor-line.webp",
+                 "/battmanfiles/images/battman-wrench.webp", "/battmanfiles/images/settings-line.webp", "/battmanfiles/battman-lib.js",
+                 "/battmanfiles/images/battman-toilet-mirror.webp", "/battmanfiles/images/logs-line.webp",
+                 "/battmanfiles/images/battman-coins.webp", "/battmanfiles/battman-strategy.js",
+                 "/battmanfiles/battman-cards.js"):
         r = await client.get(path)
         assert r.status == 200, path
 

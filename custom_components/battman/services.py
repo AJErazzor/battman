@@ -21,7 +21,7 @@ ISSUE_DASHBOARD = "dashboard_unavailable"
 
 
 async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -> dict:
-    """Create the managed dashboard if needed and say what happened."""
+    """Create the Battman dashboard if /battman is free and say what happened."""
     try:
         created, url_path = await dashboard.async_create(hass)
     except dashboard.DashboardUnavailable as err:
@@ -38,9 +38,10 @@ async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -
     else:
         ir.async_delete_issue(hass, DOMAIN, ISSUE_DASHBOARD)
         message = (
-            f"Created the Battman dashboard at /{url_path}."
+            f"Created the Battman dashboard at /{url_path}. It's yours: edit it like any dashboard."
             if created
-            else f"A managed Battman dashboard already exists at /{url_path}; nothing changed."
+            else f"There's already a dashboard at /{url_path}, so nothing was created. "
+            "For a fresh Battman dashboard, delete that one first."
         )
         result = {"created": created, "url_path": url_path, "message": message}
     if notify:

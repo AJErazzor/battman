@@ -24,7 +24,7 @@ window.loadCardHelpers = async () => ({ createCardElement: (cfg) => { const d = 
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
   await page.waitForFunction(() => customElements.get("battman-curvy"));
   const out = await page.evaluate(async () => {
-    const card = { config: { type: "iframe", url: "/battman/curvy.html" }, missing_map: [], needs: [], name: "Curvy",
+    const card = { config: { type: "iframe", url: "/battmanfiles/curvy.html" }, missing_map: [], needs: [], name: "Curvy",
                    grid_options: { columns: "full", rows: 12, min_rows: 6 } };
     const hass = { states: {}, themes: { darkMode: true, themes: {} }, callApi: async () => card };
     const wait = () => new Promise((r) => setTimeout(r, 200));
@@ -49,6 +49,28 @@ window.loadCardHelpers = async () => ({ createCardElement: (cfg) => { const d = 
     b.hass = hass;
     await wait();
     r.none = b.querySelector(".inner").layout === undefined;
+    // in HA's card picker (added the way HA adds it), a card naming a picture shows that picture
+    if (!customElements.get("hui-card-picker")) customElements.define("hui-card-picker", class extends HTMLElement {});
+    const picker = document.createElement("hui-card-picker");
+    picker.attachShadow({ mode: "open" });
+    document.body.append(picker);
+    card.preview = "/battmanfiles/previews/curvy.webp";   // (the wrapper fetches each card once per page)
+    const hass2 = hass;
+    const pv = document.createElement("battman-curvy");
+    pv.setConfig({ type: "custom:battman-curvy" });
+    pv.hass = hass2;
+    const wrap = document.createElement("div");
+    wrap.append(pv);
+    picker.shadowRoot.append(wrap);
+    await wait();
+    r.picker = { img: pv.querySelector("img") && pv.querySelector("img").getAttribute("src"), inner: !!pv.querySelector(".inner") };
+    // placed (not in the picker): the card itself, never the picture
+    const placed = document.createElement("battman-curvy");
+    document.body.append(placed);
+    placed.setConfig({ type: "custom:battman-curvy" });
+    placed.hass = hass2;
+    await wait();
+    r.placed = { img: !!placed.querySelector("img"), inner: !!placed.querySelector(".inner") };
     return r;
   });
   console.log(JSON.stringify(out));

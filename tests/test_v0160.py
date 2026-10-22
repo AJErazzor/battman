@@ -70,7 +70,7 @@ def templates(card, variables=None, entity=None, path=()):
 
 def norm(s: str) -> str:
     """Rename the original's names to Battman's (what the card port did)."""
-    s = s.replace("/local/smiggles/ssc-lib.js?v=8", "/battman/battman-lib.js").replace("/local/smiggles/ssc-lib.js?v=1", "/battman/battman-lib.js")
+    s = s.replace("/local/smiggles/ssc-lib.js?v=8", "/battmanfiles/battman-lib.js").replace("/local/smiggles/ssc-lib.js?v=1", "/battmanfiles/battman-lib.js")
     s = s.replace("ssc_timer_unit", "battman_timer_unit")
     s = s.replace("__ssclibLoad", "__battmanLibLoad").replace("SSCLIB", "BattmanLib").replace("variables.ssc", "variables.battman")
     s = re.sub(r"\bssc(?=[A-Za-z_-])", "bm", s)
@@ -131,7 +131,7 @@ async def test_overrides_card_loads(hass: HomeAssistant, hass_client) -> None:
     for old in (r"smiggles", r"solarsystemcontrol", r"(?<![a-z])ssc", r"kwh_per_pct:"):
         assert not re.search(old, raw, re.I), old
     text = json.dumps(card["config"])
-    assert "/battman/battman-lib.js" in text and "script.ssc_apply_scene" in text      # the map's scene script
+    assert "/battmanfiles/battman-lib.js" in text and "script.ssc_apply_scene" in text      # the map's scene script
     power = (await (await client.get("/api/battman/dashboard")).json())["views"][0]
     assert power["sections"][0]["cards"][-1] == {"type": "custom:battman-overrides"}
 

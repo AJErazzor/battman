@@ -17,7 +17,7 @@ Copy and paste it anywhere like any card. Every copy updates when Battman does.
 **Make one copy your own:** open the card's editor → **Convert to plain YAML**. You
 get the full card YAML with your entities filled in; that copy stops updating.
 A card file's top-level `grid_options` (e.g. `columns: full`) is its size in a sections view.
-HA only reads `grid_options` on the card as placed, so Battman passes it on: the managed
+HA only reads `grid_options` on the card as placed, so Battman passes it on: Create
 dashboard adds it, a card added from the card picker comes with it, and the card reports it
 to HA once loaded. A `grid_options` you set on the placed card always wins.
 
@@ -40,11 +40,9 @@ it isn't there, the card says so instead of drawing.
 
 A card with no tap action gets `pointer-events: none` from button-card, which also stops
 scrolling inside it; cards that scroll (the forecast table) set `pointer-events: auto`.
-The editor is only there on a dashboard you can edit. Battman's own dashboard is built
-by Battman, so HA offers **Take control** instead of an editor. Taking control makes it an
-ordinary dashboard you can rearrange: its Battman cards keep updating, but changes to the
-views themselves (new cards, layout) stop arriving. To go back, set its raw configuration
-to `strategy: {type: custom:battman}`.
+The editor is only there on a dashboard you can edit. The Battman dashboard is an ordinary
+dashboard you own, so every Battman card on it has the editor. (An older *managed* Battman
+dashboard is built by Battman, so HA offers **Take control** instead.)
 
 | Card | What it shows | Needs |
 |---|---|---|
@@ -58,6 +56,9 @@ to `strategy: {type: custom:battman}`.
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
 | `battman-curvy` | The SOC curve editor (Battman's Curvy page in a frame for now). Size it by dragging in a sections view; it fills a panel view | nothing |
+| `battman-pricy` | The price curve editor (Battman's Pricy page in a frame for now). Sized like Curvy | nothing |
+| `battman-log` | The engine log page (in a frame for now). Sized like Curvy | nothing |
+| `battman-theme-studio` | The Theme studio (in a frame for now). Sized like Curvy | nothing |
 | `battman-image` | Any of Battman's images, or yours, with fit, position and size options (see [Battman Image](#battman-image)) | nothing |
 
 `<battman-countdown></battman-countdown>` (the 5-min Amber countdown) is loaded by Battman on
