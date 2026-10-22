@@ -134,7 +134,7 @@
   "issues": {
     "dashboard_unavailable": {
       "title": "Battman could not create its dashboard",
-      "description": "Battman could not create its dashboard at /battman ({error}).\n\nPress **Create dashboard** on the Battman device (Settings → Devices & services → Battman), or run the action `battman.create_dashboard`. If it still fails, a Home Assistant update has changed how dashboards are made and Battman needs a fix: report it at https://github.com/AJErazzor/battman/issues with the error above."
+      "description": "Battman could not create its dashboard at /battman ({error}).\n\nPress **Create dashboard** on the Battman device (Settings → Devices & services → Battman), or run the action `battman.create_dashboard`. If it still fails, a Home Assistant update has changed how dashboards are made and Battman needs a fix: report it at {issues_url} with the error above."
     },
     "missing_dependencies": {
       "title": "Battman needs other dashboard cards",

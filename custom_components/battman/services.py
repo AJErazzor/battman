@@ -18,6 +18,7 @@ SERVICE_MIGRATE = "migrate_from_smiggles"
 SERVICE_HAND_BACK = "hand_back_to_smiggles"
 CONFIRM_SCHEMA = vol.Schema({vol.Optional("confirm", default=False): cv.boolean})
 ISSUE_DASHBOARD = "dashboard_unavailable"
+ISSUES_URL = "https://github.com/AJErazzor/battman/issues"
 
 
 async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -> dict:
@@ -32,7 +33,7 @@ async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -
             is_fixable=False,
             severity=ir.IssueSeverity.WARNING,
             translation_key=ISSUE_DASHBOARD,
-            translation_placeholders={"error": str(err)},
+            translation_placeholders={"error": str(err), "issues_url": ISSUES_URL},
         )
         result = {"created": False, "url_path": None, "message": f"Could not create the Battman dashboard: {err}"}
     else:
