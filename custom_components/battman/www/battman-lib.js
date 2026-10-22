@@ -592,3 +592,33 @@ window.BattmanLib.applyTotal = function (btn, period) {
     })();
   }, function (e) { say('Error: ' + ((e && e.message) || e), false); });
 };
+
+// ---------------------------------------------------------------------------------------------
+// Battman: a save you can trust. Sends the event, then waits for the sensor to show the change
+// (Battman's sensors ignore changes while it isn't in charge, or values they won't accept), and
+// says what happened in HA's own toast, which survives the card redrawing with the new value.
+window.BattmanLib.NOT_SAVED = "Not saved: Battman didn't take it (it ignores changes while it isn't in charge of the battery)";
+window.BattmanLib.toast = function (el, message) {
+  (el || document.querySelector('home-assistant')).dispatchEvent(new CustomEvent('hass-notification', { detail: { message: message }, bubbles: true, composed: true }));
+};
+window.BattmanLib.fireChecked = function (el, eventType, data, check, okText) {
+  var hass = document.querySelector('home-assistant').hass;
+  if (el && el.tagName === 'BUTTON') el.disabled = true;
+  var done = function (ok, msg) {
+    if (el && el.tagName === 'BUTTON') el.disabled = false;
+    window.BattmanLib.toast(el, msg);
+    return ok;
+  };
+  return hass.callWS({ type: 'fire_event', event_type: eventType, event_data: data }).then(function () {
+    var t0 = Date.now();
+    return new Promise(function (resolve) {
+      (function poll() {
+        var ok = false;
+        try { ok = !!check(document.querySelector('home-assistant').hass.states); } catch (e) {}
+        if (ok) return resolve(done(true, okText || '✓ Saved'));
+        if (Date.now() - t0 > 5000) return resolve(done(false, window.BattmanLib.NOT_SAVED));
+        setTimeout(poll, 250);
+      })();
+    });
+  }, function (e) { return done(false, 'Not saved: ' + ((e && e.message) || e)); });
+};

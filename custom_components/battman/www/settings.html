@@ -13,19 +13,30 @@
 <title>Battman Settings</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { background: var(--battman-surface-popup); }
+  /* the same panel look as Curvy and Pricy: the page is one rounded card on the theme's
+     background, each section an inner panel */
+  html, body { background: var(--primary-background-color); }
   body { color: var(--battman-text-bright); font-family: var(--primary-font-family, sans-serif);
-         font-size: 15px; line-height: 1.5; padding: 16px; }
+         font-size: 15px; line-height: 1.5; padding: 12px; }
+  @media (min-width: 600px) { body { padding: 20px; } }
+  .page { max-width: 2200px; margin: 0 auto; background: var(--card-background-color);
+          border-radius: var(--ha-card-border-radius, 14px); padding: 20px;
+          box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06));
+          border: 1px solid var(--divider-color); }
+  @media (min-width: 600px) { .page { padding: 28px; } }
   input, select, button { font-family: inherit; }
 
-  .cols { display: flex; gap: 14px; align-items: flex-start; max-width: 1400px; margin: 0 auto; }
-  .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; min-height: 60px; }
+  .hdr { margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+  .hdr .who { height: 44px; width: auto; flex: none; }
+  .hdr .word { width: 230px; max-width: 100%; min-width: 0; height: auto; flex: 0 1 auto; }
+  .cols { display: flex; gap: 16px; align-items: flex-start; }
+  .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; min-height: 60px; }
   @media (max-width: 900px) { .cols { flex-direction: column; } .col { width: 100%; flex: none; } }
 
-  .sec { background: var(--battman-surface-card); border: 1px solid var(--battman-border-neutral);
-         border-radius: var(--ha-card-border-radius, 12px); padding-bottom: 12px; }
+  .sec { background: var(--secondary-background-color); border: 1px solid var(--divider-color);
+         border-radius: calc(var(--ha-card-border-radius, 14px) - 2px); padding-bottom: 12px; overflow: hidden; }
   .sec.dragging { box-shadow: 0 10px 30px rgba(0,0,0,0.45); opacity: 0.97; }
-  .placeholder { border: 2px dashed var(--battman-border-neutral); border-radius: 12px; }
+  .placeholder { border: 2px dashed var(--divider-color); border-radius: calc(var(--ha-card-border-radius, 14px) - 2px); }
   .glabel { display: flex; align-items: center; justify-content: space-between; gap: 8px;
             padding: 16px 16px 0; font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
   .glabel-left { display: flex; align-items: center; gap: 7px; }
@@ -51,7 +62,7 @@
   .subdiv { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--battman-text-muted);
             background: var(--battman-surface-popup); padding: 6px 16px; border-bottom: 1px solid var(--battman-border-neutral); }
   .field { display: inline-flex; align-items: center; width: 130px; flex: none; background: var(--battman-surface-popup);
-           border: 1px solid var(--battman-border-neutral); border-radius: 4px; min-height: 40px; }
+           border: 1px solid var(--battman-border-neutral); border-radius: 8px; min-height: 40px; }
   .field input { background: transparent; border: none; outline: none; color: var(--battman-text-bright); font-size: 14px;
                  padding: 6px 8px; flex: 1; min-width: 0; width: 0; text-align: right; }
   .field .sfx { font-size: 12px; color: var(--battman-text-muted); padding: 0 8px 0 2px; white-space: nowrap; }
@@ -61,28 +72,28 @@
   .wide { width: 220px; }
   .wide input { text-align: left; }
   input[type=time], input[type=date], select { background: var(--battman-surface-popup); border: 1px solid var(--battman-border-neutral);
-       border-radius: 4px; color: var(--battman-text-bright); font-size: 14px; padding: 6px 8px; width: 130px; flex: none; min-height: 40px; }
+       border-radius: 8px; color: var(--battman-text-bright); font-size: 14px; padding: 6px 8px; width: 130px; flex: none; min-height: 40px; }
   select { width: 150px; cursor: pointer; }
   input[type=time]:focus, input[type=date]:focus, select:focus { outline: none; border-color: var(--battman-green); }
-  button.rst { background: var(--battman-green-soft-bg); border: 1px solid var(--battman-border-neutral); border-radius: 4px;
+  button.rst { background: var(--battman-green-soft-bg); border: 1px solid var(--battman-border-neutral); border-radius: 8px;
                color: var(--battman-text-muted); font-size: 12px; padding: 4px 10px; cursor: pointer; flex: none; }
   button.rst:hover { border-color: var(--battman-green); color: var(--battman-green); }
   .hpick { display: flex; align-items: center; gap: 4px; flex: none; }
   .hbtn { width: 40px; height: 40px; background: var(--battman-surface-popup); border: 1px solid var(--battman-border-neutral);
-          border-radius: 4px; color: var(--battman-text-muted); font-size: 18px; cursor: pointer; }
+          border-radius: 8px; color: var(--battman-text-muted); font-size: 18px; cursor: pointer; }
   .hbtn:hover { border-color: var(--battman-green); color: var(--battman-green); }
   .hval { min-width: 52px; text-align: center; font-size: 14px; padding: 8px; background: var(--battman-surface-popup);
-          border: 1px solid var(--battman-border-neutral); border-radius: 4px; }
-  .tabs { display: flex; gap: 2px; margin: 16px 16px 0; background: var(--battman-surface-popup); border-radius: 6px; padding: 3px;
+          border: 1px solid var(--battman-border-neutral); border-radius: 8px; }
+  .tabs { display: flex; gap: 2px; margin: 16px 16px 0; background: var(--battman-surface-popup); border-radius: 8px; padding: 3px;
           border: 1px solid var(--battman-border-neutral); }
-  .tabs button { flex: 1; padding: 7px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;
+  .tabs button { flex: 1; padding: 7px 0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
                  background: transparent; color: var(--battman-text-muted); }
   .tabs button.on { background: var(--battman-green-border-strong); color: var(--battman-text-bright); }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 16px 0; }
   .chip { display: inline-flex; gap: 5px; align-items: center; padding: 4px 10px; background: var(--battman-green-soft-bg);
           border: 1px solid var(--battman-green-border); border-radius: 6px; font-size: 12px; color: var(--battman-text-muted); }
   .chip b { color: var(--battman-green); }
-  .act { display: block; width: calc(100% - 32px); margin: 12px 16px 0; padding: 10px; border: none; border-radius: 6px;
+  .act { display: block; width: calc(100% - 32px); margin: 12px 16px 0; padding: 10px; border: none; border-radius: 8px;
          background: var(--battman-green-border-strong); color: var(--battman-text-bright); font-size: 13px; font-weight: 600; cursor: pointer; }
   .qdaily { font-size: 11px; color: var(--battman-text-muted); text-align: right; }
   .sw { position: relative; width: 46px; height: 26px; flex: none; cursor: pointer; }
@@ -104,7 +115,10 @@
 </style>
 </head>
 <body>
+<div class="page">
+<h2 class="hdr"><img src="/battmanfiles/images/battman-wrench.webp" alt="Battman" class="who"><img src="/battmanfiles/images/settings-line.webp" alt="Settings" class="word"></h2>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
+</div>
 <script>
 (function () {
   'use strict';
@@ -162,7 +176,8 @@
     const h = getHass(); if (!h) return 'Home Assistant not reachable from this page.';
     let ps; try { ps = window.parent.getComputedStyle(window.frameElement || window.parent.document.documentElement); }
     catch (e) { return 'Cannot read the dashboard theme.'; }
-    const keys = themeKeys(h).concat(['primary-font-family', 'ha-card-border-radius']);
+    const keys = themeKeys(h).concat(['primary-font-family', 'ha-card-border-radius', 'ha-card-box-shadow', 'primary-background-color',
+                                      'secondary-background-color', 'card-background-color', 'divider-color', 'primary-text-color']);
     keys.forEach((k) => { const v = ps.getPropertyValue('--' + k).trim(); if (v) document.documentElement.style.setProperty('--' + k, v); });
     const need = ['battman-surface-card', 'battman-surface-popup', 'battman-text-bright', 'battman-text-muted', 'battman-border-neutral',
                   'battman-green', 'battman-green-soft-bg', 'battman-green-border', 'battman-green-border-strong', 'battman-red', 'battman-red-soft-bg'];
