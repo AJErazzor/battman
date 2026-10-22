@@ -3599,9 +3599,13 @@ sections:
                   const hass = document.querySelector('home-assistant').hass;
                   const urlPath = window.location.pathname.split('/').filter(Boolean)[0];
                   if (!theme || !urlPath) return;
+                  // Battman keeps the name too (parameters' dashboardTheme): the mode colours
+                  // sensor (Live Activity bar, theme: battman cards) reads it from there.
+                  hass.connection.sendMessagePromise({type: 'fire_event', event_type: '{{parameters_update_event}}', event_data: {action: 'SetAttribute', dashboardTheme: theme}})
+                    .catch(function(err) { console.error('[dashboard theme] saving the name in Battman failed:', err); });
                   hass.connection.sendMessagePromise({type: 'lovelace/config', url_path: urlPath}).then(function(config) {
                     // Battman managed dashboard: set the strategy's theme so it stays managed
-                    // (every Battman view takes it, and Battman's mode colours sensor follows it)
+                    // (every Battman view takes it)
                     if (config.strategy && config.strategy.type === 'custom:battman') config.strategy.theme = theme;
                     else (config.views || []).forEach(function(v) { v.theme = theme; });
                     return hass.connection.sendMessagePromise({type: 'lovelace/config/save', url_path: urlPath, config: config});

@@ -31,11 +31,12 @@ To give one card its own colours (say on a view without a Battman theme), add `t
 ```yaml
 type: custom:battman-state
 theme: Battman Nord     # a theme by name
-# theme: battman        # or the managed Battman dashboard's theme, following it when it changes
+# theme: battman        # or the Battman dashboard's theme, following it when it changes
 ```
 
-`theme: battman` needs a managed Battman dashboard (one you haven't taken control of). If the
-theme isn't there, the card says so instead of drawing.
+`theme: battman` uses the theme picked in Settings → Dashboard theme (or the theme studio's
+Make Active), whether or not you've taken control of the dashboard. If no theme is picked or
+it isn't there, the card says so instead of drawing.
 
 A card with no tap action gets `pointer-events: none` from button-card, which also stops
 scrolling inside it; cards that scroll (the forecast table) set `pointer-events: auto`.

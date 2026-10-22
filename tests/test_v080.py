@@ -4,7 +4,6 @@ import pytest
 import json
 from pathlib import Path
 
-from homeassistant.components.lovelace.const import LOVELACE_DATA
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -13,6 +12,7 @@ pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 SENSOR = "sensor.battman_theme_mode_colours"
+SMIGGLES_PARAMS = "sensor.solarsystemcontrolparameters"   # the map's parameters while Smiggles is in charge
 COMPONENT = Path(__file__).resolve().parent.parent / "custom_components" / "battman"
 
 NORD = {"battman-green": "#a3be8c", "battman-yellow": "#e9d8a6", "battman-blue": "#81a1c1",
@@ -28,14 +28,6 @@ async def _setup(hass):
     return entry
 
 
-async def _save_strategy(hass, theme=None):
-    strategy = {"type": "custom:battman"}
-    if theme:
-        strategy["theme"] = theme
-    await hass.data[LOVELACE_DATA].dashboards["battman"].async_save({"strategy": strategy})
-    await hass.async_block_till_done()
-
-
 async def test_settings_view(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     data = await (await (await hass_client()).get("/api/battman/dashboard")).json()
@@ -47,9 +39,11 @@ async def test_settings_view(hass: HomeAssistant, hass_client) -> None:
     assert "solarsystemcontrolbuyrulesattribute" in text and "solarsystemcontrolpowerproviderupdate" in text
     assert [b["entity"] for b in settings["badges"]][-1] == "script.solarsystemcontrol"
     assert "config.strategy.theme = theme" in text               # theme switcher keeps it managed
+    assert "dashboardTheme: theme" in text                       # ...and saves the name in Battman
 
 
 async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
+    """The theme name comes from the parameters sensor (Smiggles' here: it's in charge)."""
     from homeassistant.components.frontend import DATA_THEMES
 
     await _setup(hass)
@@ -59,23 +53,28 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
                        "battman-purple": "var(--primary-color)",
                        **{f"x-{k}": "rgb(1, 2, 3)" for k in ("green", "yellow", "blue", "orange", "red")}},
     }
-    # the dashboard Battman created has no theme yet -> unknown, and says why
-    await _save_strategy(hass)
+
+    async def _pick(theme=None):
+        hass.states.async_set(SMIGGLES_PARAMS, "on", {"dashboardTheme": theme} if theme else {})
+        await hass.async_block_till_done()
+
+    # no theme picked yet -> unknown, and says why
+    await _pick()
     st = hass.states.get(SENSOR)
     assert st.state == "unknown" and "No dashboard theme picked" in st.attributes["problem"]
 
-    await _save_strategy(hass, "Battman Nord")                  # lovelace_updated -> refresh
+    await _pick("Battman Nord")                                 # parameters change -> refresh
     st = hass.states.get(SENSOR)
     assert json.loads(st.state) == {k[8:]: v for k, v in NORD.items()}
     assert st.attributes["theme"] == "Battman Nord" and st.attributes["green"] == "#a3be8c"
     assert list(json.loads(st.state)) == ["green", "yellow", "blue", "orange", "red", "purple"]
 
-    await _save_strategy(hass, "Battman HA")                    # var() followed; one can't be resolved
+    await _pick("Battman HA")                                   # var() followed; one can't be resolved
     st = hass.states.get(SENSOR)
     assert st.state == "unknown" and "battman-purple" not in st.attributes["problem"]
     assert "primary-color not in theme" in st.attributes["problem"]
 
-    await _save_strategy(hass, "Battman Gone")
+    await _pick("Battman Gone")
     assert "isn't loaded" in hass.states.get(SENSOR).attributes["problem"]
 
 
