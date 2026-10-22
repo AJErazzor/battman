@@ -103,7 +103,9 @@ blueprint:
             object: {}
         mode_hues:
           name: Theme colour for each battery mode
-          description: green, yellow, blue, orange, red or purple
+          description: >-
+            green, yellow, blue, orange, red, purple, teal or amber. The default is Battman's one
+            list (the Power view's Battery mode buttons; MODE_HUE in battman-lib.js).
           default:
             Self Consume: blue
             Charge: yellow
@@ -111,8 +113,8 @@ blueprint:
             Float: orange
             Drain: red
             Charge Solar Off: purple
-            Float Solar Off: purple
-            Solar Soak: orange
+            Float Solar Off: teal
+            Solar Soak: amber
           selector:
             object: {}
         tag:

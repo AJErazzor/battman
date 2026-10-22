@@ -1,10 +1,10 @@
-# Battman managed dashboard view: Log
+# Battman dashboard view: Theme studio
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
 type: panel
-path: log
-title: Log
-icon: mdi:script-text-outline
+path: theme
+title: Theme
+icon: mdi:palette
 show_icon_and_title: true
 theme: Battman Coffee
 cards:
-  - type: custom:battman-log
+  - type: custom:battman-theme-studio

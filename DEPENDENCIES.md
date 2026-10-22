@@ -5,12 +5,11 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 
 | Dependency | Type | Needed by | Get it |
 |---|---|---|---|
-| button-card | Dashboard card | Finances view (Billing, Financials/ROI cards); every Battman card on the Power view | https://github.com/custom-cards/button-card |
-| card-mod | Dashboard card | All Battman views (full-bleed page cards, header); Limits card | https://github.com/thomasloven/lovelace-card-mod |
-| html-card | Dashboard card | Finances view header | https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-card |
+| button-card | Dashboard card | Billing and Solar System cards; the Settings view; every Battman card on the Power view | https://github.com/custom-cards/button-card |
+| card-mod | Dashboard card | Cost chart and Cost compare cards (flush frames); Battery mode and Limits cards | https://github.com/thomasloven/lovelace-card-mod |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
 | power-pie-card | Dashboard card | NEM mix card | HACS → Frontend → power-pie-card |
-| browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup) | https://github.com/thomasloven/hass-browser_mod |
+| browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup), Billing card (Correct totals popup) | https://github.com/thomasloven/hass-browser_mod |
 
 
 Battman pages also load from the internet:
@@ -18,7 +17,7 @@ Battman pages also load from the internet:
 - **Chart.js** (cdnjs / jsdelivr): charts on the cost, compare, log, Curvy and Pricy pages.
 - **Google Fonts**: only the theme studio's font browser, and themes that turn on a custom font.
 
-The Log and Theme views are plain iframe pages and need no extra cards.
+The Curvy, Pricy, Log and Theme studio cards show Battman's pages in a frame and need no extra cards.
 
 Other integrations Battman's pages read (through the entity map):
 
@@ -49,7 +48,5 @@ Battman's own pieces that other parts rely on:
   attributes, because power-pie-card can only read states. They replace hand-made template sensors
   (`sensor.opennem_sa_*`, `sensor.sa_*`): once the NEM mix card checks out, those can go.
 - **Battman theme** (`--battman-*` colours): every Battman page shows an error without one.
-- **`battman-lib.js`** (`window.BattmanLib`): the Overrides card's rows and popups, and the theme studio's dock previews.
-  Battman's copy of Smiggles' `ssc-lib.js` v8 (checked line for line), so `/local/smiggles/ssc-lib.js` isn't needed by Battman.
-- **Smiggles curve stores, events and control script** (`soc_curves`, `price_curves`, their `…_update_event`s, `control_script`): Curvy and Pricy read and save curves through Smiggles, which stays in charge of the battery.
-- **Debug log file + load script** (`debug_log_file`, `load_debug_log_script` in the map): the Log page's log panel. Both still come from Smiggles.
+- **`battman-lib.js`** (`window.BattmanLib`): the Overrides card's rows and popups, the theme studio's dock previews,
+  the Billing card's Correct totals popup, and the battery mode colours (`MODE_HUE`) the Log page uses.

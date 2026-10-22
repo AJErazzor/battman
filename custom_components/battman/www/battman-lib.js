@@ -456,3 +456,139 @@ window.BattmanLib.openPopup = function(ov_id, type){
     hass.callService('browser_mod','popup',{content: content, title: ' ', style: '--mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;'});
   }catch(e){ try{console.error('BattmanLib.openPopup',e);}catch(_){} }
 };
+
+// ---------------------------------------------------------------------------------------------
+// Battman: mode colours. The one list every Battman piece uses for the battery modes (the Log
+// page's timeline, the Live Activity bar via sensor.battman_theme_mode_colours). The five
+// everyday modes are the Power view's Battery mode buttons; the three party modes (rainbow on
+// those buttons) each get their own colour so a timeline never mixes them up.
+window.BattmanLib.MODE_HUE = {
+  'Self Consume':     'blue',
+  'Charge':           'yellow',
+  'Discharge':        'green',
+  'Float':            'orange',
+  'Drain':            'red',
+  'Charge Solar Off': 'purple',
+  'Float Solar Off':  'teal',
+  'Solar Soak':       'amber',
+};
+
+// ---------------------------------------------------------------------------------------------
+// Battman: Correct totals (the Billing card's popup). Sets a period's buy and sell totals with
+// the totals event's SetTotal action, which the totals sensors record themselves.
+window.BattmanLib.TOTAL_PERIODS = [['day', 'Today'], ['yesterday', 'Yesterday'], ['month', 'This Month'], ['bill', 'Billing Period']];
+
+// A browser_mod popup sits outside the themed view: hand it the view's Battman colours.
+window.BattmanLib.themeStyle = function (el) {
+  var hass = document.querySelector('home-assistant').hass;
+  var themes = (hass.themes && hass.themes.themes) || {};
+  var name = Object.keys(themes).filter(function (n) { return /^Battman /.test(n); })[0];
+  if (!name) return '';
+  var keys = Object.keys(themes[name]).filter(function (k) { return /^battman-/.test(k); });
+  keys.push('primary-font-family', 'ha-card-border-radius');
+  var cs = getComputedStyle(el), out = '';
+  keys.forEach(function (k) { var v = cs.getPropertyValue('--' + k).trim(); if (v) out += '--' + k + ':' + v + ';'; });
+  return out;
+};
+
+// A popup's style: its width, the view's Battman colours, and the dialog itself in the theme's
+// card colour (otherwise it takes HA's default dialog colour, which may not match).
+window.BattmanLib.popupStyle = function (el, width) {
+  var surface = getComputedStyle(el).getPropertyValue('--battman-surface-card').trim();
+  var text = getComputedStyle(el).getPropertyValue('--battman-text-bright').trim();
+  return '--mdc-dialog-min-width:' + width + ';--mdc-dialog-max-width:' + width + ';'
+    + (surface ? '--mdc-theme-surface:' + surface + ';--ha-dialog-surface-background:' + surface + ';--ha-card-background:' + surface + ';--card-background-color:' + surface + ';' : '')
+    + (text ? '--primary-text-color:' + text + ';--mdc-dialog-heading-ink-color:' + text + ';' : '')
+    + window.BattmanLib.themeStyle(el);
+};
+
+window.BattmanLib.correctTotals = function (btn, ids) {
+  var hass = document.querySelector('home-assistant').hass;
+  window.BattmanLib._totals = ids;
+  hass.callService('browser_mod', 'popup', {
+    title: 'Correct totals',
+    style: window.BattmanLib.popupStyle(btn, 'min(94vw,420px)'),
+    content: {
+      type: 'custom:button-card',
+      entity: ids.buy,
+      triggers_update: [ids.buy, ids.sell],
+      show_icon: false, show_name: false, show_state: false,
+      tap_action: { action: 'none' },
+      styles: { card: [{ padding: '0' }, { background: 'var(--battman-surface-card)' }, { 'box-shadow': 'none' }, { border: 'none' }],
+                grid: [{ 'grid-template-areas': '"body"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { body: [{ width: '100%' }] } },
+      custom_fields: { body: '[[[ return window.BattmanLib.totalsForm(states); ]]]' },
+    },
+  });
+};
+
+window.BattmanLib.totalsForm = function (states) {
+  var ids = window.BattmanLib._totals;
+  var b = states[ids.buy], s = states[ids.sell];
+  if (!b || !s) return '<div style="padding:12px;color:var(--battman-red)">Correct totals: ' + (!b ? ids.buy : ids.sell) + ' not found</div>';
+  var f4 = function (v) { var n = parseFloat(v); return isFinite(n) ? n.toFixed(4) : ''; };
+  var INP = 'width:110px;text-align:right;font:inherit;font-size:14px;font-weight:600;padding:5px 8px;background:var(--battman-surface-card);border:1px solid var(--battman-border-neutral);border-radius:6px;color:var(--battman-text-bright)';
+  var BTN = 'flex:1;height:34px;border-radius:8px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;background:transparent';
+  var stop = 'onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"';
+  var html = '<div style="padding:4px 0 8px;font-size:13px;color:var(--battman-text-muted);line-height:1.4;white-space:normal">Fix a period\'s running totals. Battman asks first.</div>';
+  window.BattmanLib.TOTAL_PERIODS.forEach(function (p) {
+    var row = function (side, label) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">'
+        + '<span style="font-size:13px;color:var(--battman-text-muted)">' + label + ' $</span>'
+        + '<input type="number" step="0.0001" data-side="' + side + '" value="' + f4((side === 'buy' ? b : s).attributes[p[0]]) + '" ' + stop + ' style="' + INP + '"></div>';
+    };
+    html += '<div data-period="' + p[0] + '" style="margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--battman-surface-popup);border:1px solid var(--battman-border-neutral)">'
+      + '<div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--battman-text-bright);margin-bottom:4px">' + p[1] + '</div>'
+      + row('sell', 'Sell') + row('buy', 'Buy')
+      + '<div style="display:flex;gap:8px;margin-top:8px">'
+      + '<button onclick="event.stopPropagation();window.BattmanLib.applyTotal(this,\'' + p[0] + '\')" style="' + BTN + ';border:1px solid var(--battman-amber);color:var(--battman-amber)">Apply</button>'
+      + '<button onclick="event.stopPropagation();window.BattmanLib.resetTotal(this,\'' + p[0] + '\')" style="' + BTN + ';border:1px solid var(--battman-border-neutral);color:var(--battman-text-muted)">Reset</button>'
+      + '</div><div class="bm-status" style="min-height:16px;margin-top:6px;font-size:12px"></div></div>';
+  });
+  return html;
+};
+
+window.BattmanLib._totalInputs = function (btn) {
+  var box = btn.closest('[data-period]');
+  return { box: box, buy: box.querySelector('input[data-side="buy"]'), sell: box.querySelector('input[data-side="sell"]'),
+           status: box.querySelector('.bm-status') };
+};
+
+window.BattmanLib.resetTotal = function (btn, period) {
+  var ids = window.BattmanLib._totals, st = document.querySelector('home-assistant').hass.states;
+  var el = window.BattmanLib._totalInputs(btn);
+  el.buy.value = parseFloat(st[ids.buy].attributes[period]).toFixed(4);
+  el.sell.value = parseFloat(st[ids.sell].attributes[period]).toFixed(4);
+  el.status.textContent = '';
+};
+
+// What Apply sends (kept separate so it can be checked without a browser).
+window.BattmanLib.setTotalEvent = function (period, buyText, sellText) {
+  var buy = parseFloat(buyText), sell = parseFloat(sellText);
+  if (String(buyText).trim() === '' || String(sellText).trim() === '' || !isFinite(buy) || !isFinite(sell)) return null;
+  return { attribute: 'SetTotal', period: period, buy: Math.round(buy * 10000) / 10000, sell: Math.round(sell * 10000) / 10000 };
+};
+
+window.BattmanLib.applyTotal = function (btn, period) {
+  var ids = window.BattmanLib._totals, hass = document.querySelector('home-assistant').hass;
+  var el = window.BattmanLib._totalInputs(btn);
+  var label = window.BattmanLib.TOTAL_PERIODS.filter(function (p) { return p[0] === period; })[0][1];
+  var say = function (t, ok) { el.status.textContent = t; el.status.style.color = ok ? 'var(--battman-green)' : 'var(--battman-red)'; };
+  var data = window.BattmanLib.setTotalEvent(period, el.buy.value, el.sell.value);
+  if (!data) { say(label + ': enter a number for both Sell and Buy', false); return; }
+  var oldB = parseFloat(hass.states[ids.buy].attributes[period]).toFixed(4), oldS = parseFloat(hass.states[ids.sell].attributes[period]).toFixed(4);
+  if (!confirm('Set ' + label + ':\n\nSell  $' + oldS + ' → $' + data.sell.toFixed(4) + '\nBuy   $' + oldB + ' → $' + data.buy.toFixed(4) + '\n\nThis overwrites the running totals.')) return;
+  say('Applying…', true);
+  hass.callWS({ type: 'fire_event', event_type: ids.event, event_data: data }).then(function () {
+    // check the sensors took it (they ignore it if Battman isn't in charge): no silent success
+    var t0 = Date.now();
+    (function check() {
+      var st = document.querySelector('home-assistant').hass.states;
+      var okB = Math.abs(parseFloat(st[ids.buy].attributes[period]) - data.buy) < 0.00005;
+      var okS = Math.abs(parseFloat(st[ids.sell].attributes[period]) - data.sell) < 0.00005;
+      if (okB && okS) return say('✓ ' + label + ' updated', true);
+      if (Date.now() - t0 > 5000) return say(label + ': not changed. The totals ignored it (is Battman in charge of the battery?)', false);
+      setTimeout(check, 300);
+    })();
+  }, function (e) { say('Error: ' + ((e && e.message) || e), false); });
+};

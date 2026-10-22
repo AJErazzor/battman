@@ -16,7 +16,8 @@ SMIGGLES_PARAMS = "sensor.solarsystemcontrolparameters"   # the map's parameters
 COMPONENT = Path(__file__).resolve().parent.parent / "custom_components" / "battman"
 
 NORD = {"battman-green": "#a3be8c", "battman-yellow": "#e9d8a6", "battman-blue": "#81a1c1",
-        "battman-orange": "#d08770", "battman-red": "#a85560", "battman-purple": "#b48ead"}
+        "battman-orange": "#d08770", "battman-red": "#a85560", "battman-purple": "#b48ead",
+        "battman-teal": "#8fbcbb", "battman-amber": "#ebcb8b"}
 
 
 async def _setup(hass):
@@ -49,9 +50,9 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
     await _setup(hass)
     hass.data[DATA_THEMES] = {
         "Battman Nord": NORD,
-        "Battman HA": {**{f"battman-{k}": "var(--x-%s)" % k for k in ("green", "yellow", "blue", "orange", "red")},
+        "Battman HA": {**{f"battman-{k}": "var(--x-%s)" % k for k in ("green", "yellow", "blue", "orange", "red", "teal", "amber")},
                        "battman-purple": "var(--primary-color)",
-                       **{f"x-{k}": "rgb(1, 2, 3)" for k in ("green", "yellow", "blue", "orange", "red")}},
+                       **{f"x-{k}": "rgb(1, 2, 3)" for k in ("green", "yellow", "blue", "orange", "red", "teal", "amber")}},
     }
 
     async def _pick(theme=None):
@@ -67,7 +68,7 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
     st = hass.states.get(SENSOR)
     assert json.loads(st.state) == {k[8:]: v for k, v in NORD.items()}
     assert st.attributes["theme"] == "Battman Nord" and st.attributes["green"] == "#a3be8c"
-    assert list(json.loads(st.state)) == ["green", "yellow", "blue", "orange", "red", "purple"]
+    assert list(json.loads(st.state)) == ["green", "yellow", "blue", "orange", "red", "purple", "teal", "amber"]
 
     await _pick("Battman HA")                                   # var() followed; one can't be resolved
     st = hass.states.get(SENSOR)

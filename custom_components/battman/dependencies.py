@@ -21,7 +21,6 @@ ISSUE_MISSING = "missing_dependencies"
 FRONTEND_CARDS: dict[str, tuple[str, str]] = {
     "button-card": ("button-card", "https://github.com/custom-cards/button-card"),
     "card-mod": ("card-mod", "https://github.com/thomasloven/lovelace-card-mod"),
-    "html-card": ("html-card", "https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-card"),
     "modern-circular-gauge": ("modern-circular-gauge", "https://github.com/selvalt7/modern-circular-gauge"),
     "power-pie-card": ("power-pie-card", "HACS → Frontend → search power-pie-card"),
 }

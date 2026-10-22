@@ -1,4 +1,4 @@
-# Battman managed dashboard view: Power. Built from Battman cards (custom:battman-<id>),
+# Battman dashboard view: Power. Built from Battman cards (custom:battman-<id>),
 # added one at a time as they move over from Smiggles.
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
 #

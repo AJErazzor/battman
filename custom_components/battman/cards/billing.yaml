@@ -1,0 +1,138 @@
+# name: Billing
+# description: This billing period's buy, sell, days and income, the network fee, banking and resetting new income, and Correct totals.
+#
+# A Battman card: on a dashboard it's `type: custom:battman-billing`, and it updates
+# with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
+# when it's a whole value). To try changes on your own HA, copy this file to
+# config/battman/cards/billing.yaml and edit that copy.
+# Correct totals opens a popup (browser_mod) to fix a period's buy and sell totals: it sends the
+# totals sensors' SetTotal action, so they record the correction themselves.
+type: custom:button-card
+entity: '[[map:parameters]]'
+show_icon: false
+show_state: false
+show_name: false
+tap_action:
+  action: none
+hold_action:
+  action: none
+double_tap_action:
+  action: none
+styles:
+  card:
+  - padding: '0'
+  - overflow: hidden
+  - border-radius: 12px
+  - border: 1px solid var(--battman-border-neutral)
+  - background: var(--battman-surface-card)
+  grid:
+  - grid-template-areas: |
+      "header"
+      "row1"
+      "row2"
+      "row3"
+      "row4"
+      "row5"
+      "row6"
+      "row7"
+      "row8"
+      "row9"
+  - grid-template-columns: 1fr
+  - row-gap: '0'
+  custom_fields:
+    header:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row0:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row1:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row2:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row3:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row4:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row5:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row6:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row7:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row8:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+    row9:
+    - pointer-events: all
+    - width: 100%
+    - margin: 0
+    - padding: 0
+custom_fields:
+  header: '[[[ return `<div style="padding:12px 16px;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-text-bright);background:var(--battman-surface-card);border-bottom:1px solid var(--battman-border-neutral);">Billing</div>`; ]]]'
+  row1: |-
+    [[[
+      const v = entity.attributes.dailyNetworkCharge ?? 0;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Network Fee</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:13px;color:var(--battman-text-muted);">$</span><input type="number" value="${v}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="width:80px;text-align:right;font-size:14px;font-weight:600;padding:5px 8px;background:var(--battman-surface-card);border:1px solid var(--battman-border-neutral);border-radius:6px;color:var(--battman-text-bright);font-family:inherit;" onchange="document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;[[map:parameters_update_event]]&quot;,event_data:{action:&quot;SetAttribute&quot;,dailyNetworkCharge:this.value}})"></div></div>`;
+    ]]]
+  row2: '[[[ const v=''$''+Number(states[''[[map:buy_total]]''].state ?? 0).toFixed(2); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Buy</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+  row3: '[[[ const v=''$''+Number(states[''[[map:sell_total]]''].state ?? 0).toFixed(2); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Sell</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+  row4: '[[[ const v=Number(states[''[[map:sell_total]]''].attributes.days ?? 0); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Days</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+  row5: |-
+    [[[
+      const buy=Number(states['[[map:buy_total]]'].state ?? 0);
+      const sell=Number(states['[[map:sell_total]]'].state ?? 0);
+      const days=Number(states['[[map:buy_total]]'].attributes.days ?? 0);
+      const fee=Number(entity.attributes.dailyNetworkCharge ?? 0);
+      const nv=sell-buy-days*fee;
+      const col=nv>=0?'var(--battman-green)':'var(--battman-red)';
+      const txt=(nv<0?'-$':'$')+Math.abs(nv).toFixed(2);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">New Income</span><span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:${col};">${txt}</span></div>`;
+    ]]]
+  row6: '[[[ const v=''$''+Number(entity.attributes.energyIncome ?? 0).toFixed(2); return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--battman-surface-popup);border-bottom:1px solid var(--battman-border-neutral);pointer-events:all;"><span style="font-size:13px;color:var(--battman-text-muted);">Banked Income</span><span style="font-size:15px;font-weight:600;color:var(--battman-text-bright);font-variant-numeric:tabular-nums;">${v}</span></div>`; ]]]'
+  row7: |-
+    [[[
+      const buy=Number(states['[[map:buy_total]]'].state ?? 0);
+      const sell=Number(states['[[map:sell_total]]'].state ?? 0);
+      const days=Number(states['[[map:buy_total]]'].attributes.days ?? 0);
+      const fee=Number(entity.attributes.dailyNetworkCharge ?? 0);
+      const banked=Number(entity.attributes.energyIncome ?? 0);
+      const total=(banked+(sell-buy-days*fee)).toFixed(2);
+      return `<div style="padding:12px 16px 6px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;[[map:parameters_update_event]]&quot;,event_data:{action:&quot;SetAttribute&quot;,energyIncome:&quot;${total}&quot;}});" style="width:100%;height:40px;border:1px solid var(--battman-green);border-radius:8px;background:var(--battman-green-soft-bg);color:var(--battman-green);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Bank New Income</button></div>`;
+    ]]]
+  row8: '[[[ return `<div style="padding:6px 16px 6px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();document.querySelector(&quot;home-assistant&quot;).hass.connection.sendMessage({type:&quot;fire_event&quot;,event_type:&quot;[[map:totals_update_event]]&quot;,event_data:{attribute:&quot;ResetTotals&quot;}});" style="width:100%;height:38px;border:1px solid var(--battman-red);border-radius:8px;background:transparent;color:var(--battman-red);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Reset New Income</button></div>`; ]]]'
+  # Correct totals: a popup to fix a period's buy and sell totals (Battman's card library, battman-lib.js)
+  row9: |-
+    [[[
+      if (!window.BattmanLib || !window.BattmanLib.correctTotals) return `<div style="padding:6px 16px 14px;color:var(--battman-red);background:var(--battman-surface-popup)">Correct totals: Battman's card library (battman-lib.js) isn't loaded. Refresh the page.</div>`;
+      return `<div style="padding:6px 16px 14px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();window.BattmanLib.correctTotals(this,{buy:'[[map:buy_total]]',sell:'[[map:sell_total]]',event:'[[map:totals_update_event]]'})" style="width:100%;height:38px;border:1px solid var(--battman-amber);border-radius:8px;background:transparent;color:var(--battman-amber);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Correct Totals</button></div>`;
+    ]]]
+grid_options:
+  columns: full

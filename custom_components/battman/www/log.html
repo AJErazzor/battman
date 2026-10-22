@@ -269,7 +269,7 @@
 
   function buildPanels() {
     MODE_ENTITY = M.mode;
-    // Line-chart panels (mirrors the History view's traces). Each panel becomes its own
+    // Line-chart panels (price, power, grid, SOC, solar). Each panel becomes its own
     // synced chart; Buy+Sell share one (same units). unit '' = read the sensor's own unit.
     PANELS = [
       { id: 'price', title: 'Price (c/kWh)', unit: 'c', series: [
@@ -321,22 +321,10 @@
   let periodFilter = null;     // { start, end, mode } — limit the log to a tapped mode period
   let lastOut = null;          // last fetched raw history (for price/SOC readout lookups)
 
-  // Matches the Power-view Mode card button colours (same live theme tokens, so this
-  // tracks the card automatically). Mode→token from each mode button's `state`:
-  // Buy/Charge=green, Self Consume=blue, Sell Solar/Float=purple,
-  // House Party/Float Solar Off=yellow, Sell/Discharge=amber, Drain=red.
-  // Two engine modes have no button there, so they take the free tokens to stay distinct:
-  // Charge Solar Off (HOOOOVER, green on the card) → orange, Solar Soak → teal.
-  const modeToken = {
-    'Self Consume':    '--battman-blue',
-    'Charge':          '--battman-green',
-    'Charge Solar Off':'--battman-orange',
-    'Float':           '--battman-purple',
-    'Float Solar Off': '--battman-yellow',
-    'Discharge':       '--battman-amber',
-    'Solar Soak':      '--battman-teal',
-    'Drain':           '--battman-red',
-  };
+  // Mode colours: Battman's one list (window.BattmanLib.MODE_HUE in battman-lib.js, loaded on
+  // every HA page), so the timeline matches the Power view's Battery mode buttons and the Live
+  // Activity. Read from the HA page this page sits in; checked at start (no fallback colours).
+  let modeToken = {};
   let modeColor = {};
   let accentHex = '#4da6ff';
   // every Battman theme colour this page uses; all must come from the view's theme
@@ -1180,6 +1168,12 @@
     try { await loadEntityMap(); } catch (e) { showFatal(e.message); return; }
     const problem = checkTheme() || checkEntities();
     if (problem) { showFatal(problem); return; }
+    let hues = null;
+    try { hues = window.parent.BattmanLib && window.parent.BattmanLib.MODE_HUE; } catch (e) {}
+    if (!hues) { showFatal("Battman's card library (battman-lib.js) isn't loaded on this HA page, so the mode colours aren't known. Refresh the page."); return; }
+    const noHue = modes.filter(m => !hues[m]);
+    if (noHue.length) { showFatal('Battman mode colours (MODE_HUE) have no colour for: ' + noHue.join(', ')); return; }
+    modeToken = Object.fromEntries(modes.map(m => [m, '--battman-' + hues[m]]));
     syncTheme();
     applyModeColors();
     buildPanels();

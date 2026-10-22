@@ -1,6 +1,6 @@
 """v0.17.0: Battman's package files (packages/battman/), with the grid power and 30-minute load
 template sensors (Smiggles' GridPower and Load30mAvg, renamed so history carries over), the
-Log page's grid graph from import / export history, and the History view."""
+Log page's grid graph from import / export history."""
 
 import json
 import shutil
@@ -112,12 +112,10 @@ async def test_map_and_views(hass: HomeAssistant, hass_client) -> None:
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
     assert emap["grid_power"] == "sensor.battman_grid_power"
     assert emap["load_30m_avg"] == "sensor.battman_load_30m_avg"
-    views = (await (await client.get("/api/battman/dashboard")).json())["views"]
-    hist = next(v for v in views if v["path"] == "history")
-    text = json.dumps(hist)
-    assert "sensor.battman_grid_power" in text and "sensor.gridpower" not in text and "{{" not in text
-    names = [e["name"] for e in hist["sections"][0]["cards"][0]["entities"]]
-    assert names == ["Mode", "Buy Price", "Sell Price", "SOC", "Grid", "Home", "Battery", "Load", "Solar"]
+    # Battman's grid power sensor feeds the Gauges card (the History view that also used it is gone)
+    gauges = await (await client.get("/api/battman/cards/gauges")).json()
+    text = json.dumps(gauges["config"])
+    assert "sensor.battman_grid_power" in text and "sensor.gridpower" not in text and "[[map:" not in text
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs node")
