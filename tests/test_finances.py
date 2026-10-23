@@ -51,7 +51,7 @@ async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
     await _setup(hass)
     client = await hass_client_no_auth()
     for path in ("/battmanfiles/cost-compare.html", "/battmanfiles/images/finances-line.webp",
-                 "/battmanfiles/log.html", "/battmanfiles/theme-studio.html",
+                 "/battmanfiles/battman-log.js", "/battmanfiles/theme-studio.html",
                  "/battmanfiles/curvy.html", "/battmanfiles/pricy.html", "/battmanfiles/images/battman-lying.webp",
                  "/battmanfiles/images/battman-money.webp", "/battmanfiles/images/soc-curve-editor-line.webp",
                  "/battmanfiles/images/price-curve-editor-line.webp",

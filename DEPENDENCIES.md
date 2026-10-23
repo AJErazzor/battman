@@ -12,12 +12,13 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 | browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup), Billing card (Correct totals popup) | https://github.com/thomasloven/hass-browser_mod |
 
 
-Battman pages also load from the internet:
+Battman ships **Chart.js** 4.4.0 and its datalabels add-on (`www/vendor/`), so the charts on the Log
+card and the Curvy, Pricy, Cost chart and Cost compare pages work without the internet. The only
+thing loaded from the internet is **Google Fonts**: the theme studio's font browser, and themes that
+turn on a custom font.
 
-- **Chart.js** (cdnjs / jsdelivr): charts on the cost, compare, log, Curvy and Pricy pages.
-- **Google Fonts**: only the theme studio's font browser, and themes that turn on a custom font.
-
-The Curvy, Pricy, Settings, Log and Theme studio cards show Battman's pages in a frame and need no extra cards.
+The Log card draws itself; the Curvy, Pricy, Settings and Theme studio cards show Battman's pages in
+a frame. None of them need extra cards.
 
 Other integrations Battman's pages read (through the entity map):
 
@@ -31,7 +32,7 @@ Other integrations Battman's pages read (through the entity map):
 
 The Sigenergy integration ships some sensors **disabled**: enable **Sigen PV Power**
 (Curvy's actual-solar overlay), and **PV Power** and **Third-Party PV Power** if you
-have a third-party solar inverter (Log page). Settings → Entities → search → Enable.
+have a third-party solar inverter (Log card). Settings → Entities → search → Enable.
 
 Battman's own pieces that other parts rely on:
 
@@ -44,11 +45,11 @@ Battman's own pieces that other parts rely on:
   automations and scripts (and the Live Activity ones) are written there. Without them, a Repair.
 - **Recorder** (HA's default): Migrate copies the cost odometers' long-term statistics. Without it,
   Migrate still runs and says the statistics weren't copied.
-- **Engine log**: `<config>/battman/engine.log`, written by Battman. Before you migrate, the Log page
+- **Engine log**: `<config>/battman/engine.log`, written by Battman. Before you migrate, the Log card
   reads Smiggles' `<config>/smiggles/solar_debug.log`.
 - **NEM sensors** (`sensor.battman_nem_*`, 14 of them, MW): made by Battman from the OpenNEM sensor's
   attributes, because power-pie-card can only read states. They replace hand-made template sensors
   (`sensor.opennem_sa_*`, `sensor.sa_*`): once the NEM mix card checks out, those can go.
 - **Battman theme** (`--battman-*` colours): every Battman page shows an error without one.
 - **`battman-lib.js`** (`window.BattmanLib`): the Overrides card's rows and popups, the theme studio's dock previews,
-  the Billing card's Correct totals popup, and the battery mode colours (`MODE_HUE`) the Log page uses.
+  the Billing card's Correct totals popup, and the battery mode colours (`MODE_HUE`) the Log card uses.

@@ -1,34 +1,86 @@
-<!DOCTYPE html>
-<!-- Battman Log (readout shows mode block duration in minutes) -->
-<!-- Served by the Battman integration at /battmanfiles/log.html. Entities come from Battman's entity map; colours from a Battman theme (no fallbacks). -->
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Battman Log</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<!-- the engine log renderer, shared with the Engine log popup so they look the same -->
-<script src="/battmanfiles/battman-enginelog.js"></script>
-<style>
-  :root {
-    --ha-bg:     var(--primary-background-color, #111318);
-    --ha-card:   var(--card-background-color, #1c1e24);
-    --ha-text:   var(--primary-text-color, #c9d1d9);
-    --ha-muted:  var(--secondary-text-color, #6e7681);
-    --ha-border: var(--divider-color, #2a2d35);
-    --ha-accent: var(--accent-color, #4da6ff);
+// Battman Log: custom:battman-log. The engine log (each run's decisions) with the mode timeline and
+// price, power, grid, battery and solar charts over the same window. A real card (it used to be the
+// Log page, /battmanfiles/log.html, in a frame): HA hands it its connection and theme directly.
+//
+//   type: custom:battman-log
+//
+// Same as the Log page it replaces: the Filter Log controls (quick ranges, ‹ › pager, From / To),
+// the Log (collapsed to start; mode and Changes Only filters), the Mode timeline (tap a point to
+// see it and to limit the log to that 5-minute block; drag to scrub) and the chart panels, which
+// you drag into your own order by their grip (kept per device).
+//
+// Live: when the engine logs a run, the log reloads; on a quick range (4h, 1h, ...) the window moves
+// on to now, keeping your filters. The charts also refresh every minute.
+//
+// Entities come from Battman's entity map, colours from the Battman theme, the mode colours from
+// BattmanLib.MODE_HUE (battman-lib.js). Anything missing is shown on the card, never made up.
+// The charts use Chart.js, shipped with Battman (/battmanfiles/vendor/).
+// ---------------------------------------------------------------------------------------------
+
+const LOG_FILES = "/battmanfiles";
+const LOG_DOCS = "https://github.com/AJErazzor/battman/blob/main/docs/cards.md#battman-log";
+const LOG_EVENT = "battman_engine_log";
+
+// Register a custom element so HA finds it (as in battman-cards.js: HA may swap its element
+// registry while it starts, so register again in the new one if that happens after us).
+function battmanDefine(tag, cls) {
+  const reg = window.customElements;
+  if (!reg.get(tag)) reg.define(tag, cls);
+  const t0 = Date.now();
+  (function watch() {
+    const now = window.customElements;
+    if (now !== reg) {
+      if (!now.get(tag)) {
+        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
+      }
+      return;
+    }
+    if (window.CustomElementRegistryPolyfill) return;
+    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
+  })();
+}
+
+// Chart.js, loaded once per HA page the first time a Battman Log card needs it.
+let logChartLoad = null;
+function logLoadChartJs() {
+  if (window.Chart) return Promise.resolve(window.Chart);
+  if (!logChartLoad) {
+    logChartLoad = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = `${LOG_FILES}/vendor/chart.umd.min.js`;
+      s.onload = () => (window.Chart ? resolve(window.Chart) : reject(new Error("Chart.js loaded but didn't start")));
+      s.onerror = () => { logChartLoad = null; reject(new Error(`couldn't load ${s.src}`)); };
+      document.head.appendChild(s);
+    });
+  }
+  return logChartLoad;
+}
+
+// True inside HA's card picker (Add card), looking up through the page's shadow roots.
+function logInCardPicker(el) {
+  for (let n = el; n; n = n.parentNode || n.host) if (n.tagName === "HUI-CARD-PICKER") return true;
+  return false;
+}
+
+const LOG_CSS = `
+  :host {
+    display: block;
+    --ha-bg:     var(--battman-surface-popup);
+    --ha-card:   var(--battman-surface-card);
+    --ha-text:   var(--primary-text-color);
+    --ha-muted:  var(--secondary-text-color);
+    --ha-border: var(--divider-color);
+    --ha-accent: var(--primary-color);
     --chip:      var(--battman-blue);
     --chip-brd:  var(--battman-blue-border);
     --chip-bg:   var(--battman-surface-card);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { background: var(--ha-bg); }
+  ha-card { overflow: hidden; }
   input, textarea, select, button { font-family: inherit; }
-  body {
+  .page {
+    background: var(--ha-bg);
     color: var(--ha-text);
     font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif);
     font-size: 15px;
@@ -37,7 +89,9 @@
   }
   .wrap { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 
-  .hdr h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .hdr h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; margin: 0; }
+  .hdr .who { height: 56px; width: auto; flex: none; }
+  .hdr .word { height: 30px; width: auto; max-width: 100%; min-width: 0; flex: 0 1 auto; }
   @media (max-width: 600px) { .hdr h1 { font-size: 18px; } }
 
   .card {
@@ -81,6 +135,7 @@
   .chip.pgr { min-width: 40px; justify-content: center; font-size: 18px; font-weight: 800; padding: 0 10px; }
   .chip.disabled { opacity: 0.35; pointer-events: none; }
   .pgrspan { font-size: 12px; color: var(--ha-muted); font-variant-numeric: tabular-nums; }
+  .live { font-size: 12px; color: var(--ha-muted); margin-top: 6px; }
 
   /* --- always-visible range editor (From/To value + Set button) --- */
   .rangeEditor {
@@ -122,13 +177,13 @@
   .hiddenPicker { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -9999px; }
 
   /* --- filters --- */
-  #filters { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
-  #filters label {
+  .filters { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+  .filters label {
     color: var(--ha-text); font-size: 13px; cursor: pointer;
     display: flex; align-items: center; gap: 5px; user-select: none;
   }
-  #filters label.heading { color: var(--ha-muted); font-size: 12px; cursor: default; margin-right: 2px; }
-  #filters input[type="checkbox"] { accent-color: var(--mode-accent, var(--ha-accent)); width: 15px; height: 15px; cursor: pointer; }
+  .filters label.heading { color: var(--ha-muted); font-size: 12px; cursor: default; margin-right: 2px; }
+  .filters input[type="checkbox"] { accent-color: var(--mode-accent, var(--ha-accent)); width: 15px; height: 15px; cursor: pointer; }
   .divider { width: 1px; height: 20px; background: var(--ha-border); margin: 0 4px; }
 
   /* --- log --- */
@@ -139,13 +194,10 @@
   #logCard.collapsed .chev { transform: rotate(-90deg); }
   #log { display: flex; flex-direction: column; gap: 8px; }
   .entry { background: var(--ha-bg); border-radius: 8px; padding: 10px 14px; border-left: 3px solid var(--ha-accent); }
-  .section { padding: 2px 0; color: var(--ha-text); }
   .empty { color: var(--ha-muted); text-align: center; padding: 40px 20px; font-size: 16px; }
   .count { color: var(--ha-muted); font-size: 13px; text-align: right; padding-bottom: 6px; border-bottom: 1px solid var(--ha-border); margin-bottom: 4px; }
 
   /* --- history --- */
-  .subttl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ha-muted); margin-bottom: 6px; }
-  .histPanel { margin-top: 16px; }
   .chartWrap { position: relative; height: 170px; touch-action: pan-y; }
   .chart-empty { color: var(--ha-muted); text-align: center; padding: 24px; font-size: 14px; }
   /* mode state-timeline strip */
@@ -160,9 +212,6 @@
   .mreadout .hint { color: var(--ha-muted); }
   .mreadout .ro-dur { color: var(--ha-text); font-weight: 700; font-variant-numeric: tabular-nums; }
   .mreadout .ro-extra { color: var(--ha-muted); font-variant-numeric: tabular-nums; }
-  .mreadout button { font: inherit; font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--ha-border); background: transparent; color: var(--ha-text); cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .mreadout button:active { background: color-mix(in srgb, var(--ha-accent) 25%, transparent); }
-  .mreadout .periodClear { color: var(--ha-muted); }
   .mticks { position: relative; height: 13px; margin-top: 4px; font-size: 10px; color: var(--ha-muted); font-variant-numeric: tabular-nums; }
   .mticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
   .mlegend { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 8px; font-size: 11px; color: var(--ha-muted); }
@@ -170,7 +219,7 @@
   .mlegend .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
 
   /* --- drag-to-reorder blocks --- */
-  .reorder { display: flex; flex-direction: column; gap: 14px; }
+  .reorder { display: flex; flex-direction: column; gap: 14px; position: relative; }
   /* synced scrubber guide — a thin 1px line inside each chart's plot area only */
   .cline { position: absolute; width: 1px; margin-left: -0.5px; background: #ff3b30;
     box-shadow: 0 0 0 0.5px rgba(0,0,0,0.25); opacity: 0; pointer-events: none;
@@ -190,38 +239,40 @@
   .re-placeholder { border: 2px dashed var(--ha-border); border-radius: 12px;
     background: color-mix(in srgb, var(--ha-accent) 7%, transparent); }
 
-</style>
-</head>
-<body>
+  .preview { display: block; width: 100%; height: auto; }
+`;
+
+const LOG_HTML = `
 <label class="hiddenPicker" aria-hidden="true"><input type="checkbox" switch id="hapticSwitch"></label>
 <div class="wrap">
 
-  <div class="hdr"><h1 style="display:flex;align-items:center;gap:10px;margin:0;"><img src="/battmanfiles/images/battman-toilet-mirror.webp" alt="Battman" style="height:56px;width:auto;flex:none;"><img src="/battmanfiles/images/logs-line.webp" alt="Logs" style="height:30px;width:auto;max-width:100%;min-width:0;flex:0 1 auto;"></h1></div>
+  <div class="hdr"><h1><img class="who" src="${LOG_FILES}/images/battman-toilet-mirror.webp" alt="Battman"><img class="word" src="${LOG_FILES}/images/logs-line.webp" alt="Logs"></h1></div>
 
-  <!-- Reorderable stack: Filter Log + Log + Mode + chart panels (drag the ⠿ grip; order saved per-device) -->
+  <!-- Reorderable stack: Filter Log + Log + Mode + chart panels (drag the grip; order saved per-device) -->
   <div class="reorder" id="reorder">
 
     <!-- Filter Log controls -->
     <div class="card reCard" id="controlsCard" data-block="controls">
       <div class="title cardHead"><span>Filter Log</span><span class="grip" data-grip></span></div>
-    <div class="chips" id="rangeChips"></div>
-    <div class="pager">
-      <button class="chip pgr" id="pagePrev" aria-label="Previous window">‹</button>
-      <span class="pgrspan" id="pgrSpan"></span>
-      <button class="chip pgr" id="pageNext" aria-label="Next window">›</button>
-    </div>
-    <div class="rangeEditor">
-      <div class="crow">
-        <span class="clabel">From</span>
-        <span class="cval" id="fromLabel">—</span>
-        <span class="editWrap"><button class="btn small">Set</button><input type="datetime-local" id="fromDt" step="300" class="overlayPicker"></span>
+      <div class="chips" id="rangeChips"></div>
+      <div class="pager">
+        <button class="chip pgr" id="pagePrev" aria-label="Previous window">‹</button>
+        <span class="pgrspan" id="pgrSpan"></span>
+        <button class="chip pgr" id="pageNext" aria-label="Next window">›</button>
       </div>
-      <div class="crow">
-        <span class="clabel">To</span>
-        <span class="cval" id="toLabel">—</span>
-        <span class="editWrap"><button class="btn small">Set</button><input type="datetime-local" id="toDt" step="300" class="overlayPicker"></span>
+      <div class="rangeEditor">
+        <div class="crow">
+          <span class="clabel">From</span>
+          <span class="cval" id="fromLabel">—</span>
+          <span class="editWrap"><button class="btn small">Set</button><input type="datetime-local" id="fromDt" step="300" class="overlayPicker"></span>
+        </div>
+        <div class="crow">
+          <span class="clabel">To</span>
+          <span class="cval" id="toLabel">—</span>
+          <span class="editWrap"><button class="btn small">Set</button><input type="datetime-local" id="toDt" step="300" class="overlayPicker"></span>
+        </div>
       </div>
-    </div>
+      <div class="live" id="liveNote" hidden></div>
     </div>
 
     <!-- Log -->
@@ -231,7 +282,7 @@
         <span class="grip" data-grip></span>
       </div>
       <div class="logBody" id="logBody">
-        <div id="filters"></div>
+        <div class="filters" id="filters"></div>
         <div id="log"><div class="empty">Loading&hellip;</div></div>
       </div>
     </div>
@@ -242,20 +293,25 @@
       <div id="modeStrip"><div class="chart-empty">Loading&hellip;</div></div>
     </div>
 
-    <!-- chart panel cards injected here by JS -->
+    <!-- chart panel cards are added here -->
   </div>
 
-</div>
+</div>`;
 
-<script>
+// The Log itself: everything the card draws and does, on its shadow root. Returns
+// { resume, pause, themeChanged } for the card to call.
+function battmanLogRun(card, root) {
+  const $ = (id) => root.getElementById(id);
+  const haObj = () => card._hass;
+
   // ------------------------------------------------------------------ state
   let last = '';
   let allLines = [];
   let changesOnly = false;
 
   const HISTORY_HOURS = 5;
-  // Entity IDs come from Battman's entity map (GET /api/battman/entities); this page
-  // only knows the Battman names. Panels are built once the map has loaded.
+  // Entity IDs come from Battman's entity map (GET /api/battman/entities); the card only knows
+  // the Battman names. Panels are built once the map has loaded.
   const NEEDS = ['mode',
                  'buy_price', 'feed_in_price', 'pv_power', 'home_power', 'battery_power', 'load_30m_avg',
                  'grid_import_power', 'grid_export_power', 'battery_soc', 'pv_string', 'third_party_pv'];
@@ -288,15 +344,14 @@
       { id: 'soc', title: 'Battery SOC (%)', unit: '%', series: [ { id: M.battery_soc, label: 'SOC', token: '--battman-green' } ] },
     ];
 
-    // Solar per-string panel: auto-detects however many strings (from the map's pv_string
-    // pattern, {n} = 1..12) are PRESENT and AVAILABLE, plus the plant total and an optional
-    // third-party feed.
+    // Solar per-string panel: however many strings (from the map's pv_string pattern, {n} = 1..12)
+    // are PRESENT and AVAILABLE, plus the plant total and an optional third-party feed.
     const h = haObj();
     const palette = ['--battman-blue', '--battman-green', '--battman-purple', '--battman-teal',
                      '--battman-red', '--battman-yellow', '--battman-orange'];
     const avail = id => { const st = h && h.states && h.states[id]; return !!(st && st.state !== 'unavailable' && st.state !== 'unknown'); };
-    // use a custom friendly name (e.g. "North Solar") when the entity's been renamed;
-    // fall back to the generic label if it's still the default "…PVn Power" name
+    // a custom friendly name (e.g. "North Solar") when the entity's been renamed; the generic
+    // label if it's still the default "…PVn Power" name
     const nameFor = (id, generic) => {
       const st = h && h.states && h.states[id];
       const fn = ((st && st.attributes && st.attributes.friendly_name) || '').replace(/\s*power$/i, '').trim();
@@ -319,38 +374,19 @@
   const modes = ['Self Consume', 'Charge', 'Charge Solar Off', 'Float', 'Float Solar Off', 'Discharge', 'Solar Soak', 'Drain'];
   let activeModes = new Set(modes);
   let periodFilter = null;     // { start, end, mode } — limit the log to a tapped mode period
-  let lastOut = null;          // last fetched raw history (for price/SOC readout lookups)
 
   // Mode colours: Battman's one list (window.BattmanLib.MODE_HUE in battman-lib.js, loaded on
   // every HA page), so the timeline matches the Power view's Battery mode buttons and the Live
-  // Activity. Read from the HA page this page sits in; checked at start (no fallback colours).
+  // Activity. Checked at start (no fallback colours).
   let modeToken = {};
   let modeColor = {};
-  let accentHex = '#4da6ff';
-  // every Battman theme colour this page uses; all must come from the view's theme
+  let accentHex = '';
+  // every Battman theme colour the card uses; all must come from the view's theme
   const THEME_VARS = ['--battman-blue', '--battman-green', '--battman-red', '--battman-orange',
     '--battman-purple', '--battman-amber', '--battman-teal', '--battman-yellow', '--battman-text-muted',
     '--battman-blue-border', '--battman-blue-soft-bg', '--battman-surface-card', '--battman-surface-popup',
     '--battman-border-neutral', '--battman-darkred', '--battman-text-dim'];
-  let FATAL = null;   // set when the page can't run; shown instead of everything else
-
-  // -------------------------------------------------------------- HA access
-  function haObj() {
-    try { return parent.document.querySelector('home-assistant').hass; } catch(e) { return null; }
-  }
-  function getHaToken() {
-    const h = haObj();
-    return (h && h.auth && h.auth.data && h.auth.data.access_token) || null;
-  }
-  async function haCall(domain, service, data) {
-    const token = getHaToken();
-    if (!token) return;
-    await fetch('/api/services/' + domain + '/' + service, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify(data || {})
-    });
-  }
+  let FATAL = null;   // set when the card can't run; shown instead of everything else
 
   function pad(n) { return n.toString().padStart(2, '0'); }
   function fmtDt(d) {
@@ -368,47 +404,23 @@
   function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
   // ----------------------------------------------------------------- theme
-  function syncTheme() {
-    let el;
-    try { el = window.frameElement || parent.document.documentElement; } catch(e) { return; }
-    const ps = parent.getComputedStyle(el);
-    const base = {
-      '--ha-bg': '--primary-background-color',
-      '--ha-card': '--card-background-color',
-      '--ha-text': '--primary-text-color',
-      '--primary-text-color': '--primary-text-color',
-      '--ha-muted': '--secondary-text-color',
-      '--ha-border': '--divider-color',
-      '--ha-accent': '--primary-color',
-      '--primary-font-family': '--primary-font-family',
-    };
-    for (const [local, themeVar] of Object.entries(base)) {
-      const val = ps.getPropertyValue(themeVar).trim();
-      if (val) document.documentElement.style.setProperty(local, val);
-    }
-    // Canvas text can't read CSS var() — set Chart.js's font from the live theme font.
-    if (window.Chart) { const ff = getComputedStyle(document.documentElement).getPropertyValue('--primary-font-family').trim(); if (ff) Chart.defaults.font.family = ff; }
-    const surf = ps.getPropertyValue('--battman-surface-card').trim();
-    if (surf) document.documentElement.style.setProperty('--ha-card', surf);
-    const pop = ps.getPropertyValue('--battman-surface-popup').trim();
-    if (pop) document.documentElement.style.setProperty('--ha-bg', pop);
-    const acc = getComputedStyle(document.documentElement).getPropertyValue('--ha-accent').trim();
-    if (acc) accentHex = acc;
-    // copy the Battman palette into this iframe so CSS and gc() can resolve colours
-    THEME_VARS.forEach(t => {
-      const v = ps.getPropertyValue(t).trim();
-      if (v) document.documentElement.style.setProperty(t, v);
-    });
+  // A theme colour, read from the card (CSS variables reach it from its view's theme).
+  function gc(name) {
+    return getComputedStyle(card).getPropertyValue(name).trim();
+  }
+  function syncColors() {
+    if (window.Chart) { const ff = gc('--primary-font-family'); if (ff) window.Chart.defaults.font.family = ff; }
+    accentHex = gc('--ha-accent');
     modeColor = {};
     for (const [mode, token] of Object.entries(modeToken)) {
-      const val = ps.getPropertyValue(token).trim();
+      const val = gc(token);
       if (val) modeColor[mode] = val;
     }
   }
 
   // --------------------------------------------------------------- filters
 
-  const filtersEl = document.getElementById('filters');
+  const filtersEl = $('filters');
   const modesHeading = document.createElement('label');
   modesHeading.className = 'heading';
   modesHeading.textContent = 'Modes:';
@@ -481,15 +493,10 @@
     return '<div class="entry"' + border + '>' + EL.render(p.message, { title: 'Engine run', timePrefix: '' }) + '</div>';
   }
 
-  function setLogCount(txt) {
-    const lc = document.getElementById('logCount');
-    if (lc) lc.textContent = txt;
-  }
-
   function renderLog() {
-    const el = document.getElementById('log');
+    if (FATAL) return;
+    const el = $('log');
     if (allLines.length === 0) {
-      setLogCount('');
       el.innerHTML = '<div class="empty">Pick a range above to load the log</div>';
       return;
     }
@@ -505,7 +512,6 @@
       }
       return true;
     });
-    setLogCount(filtered.length + ' / ' + allLines.length);
     if (filtered.length === 0) {
       el.innerHTML = '<div class="empty">No entries match filters' + (periodFilter ? ' (block ' + escapeHtml(periodFilter.label || '') + ')' : '') + '</div>';
       return;
@@ -515,22 +521,16 @@
     el.innerHTML = countHtml + filtered.slice().reverse().map(format).join('');
   }
 
-  // collapse / expand the log to reach the chart quickly
-  (function () {
-    const logCard = document.getElementById('logCard');
-    document.getElementById('logToggle').onclick = () => { haptic(); logCard.classList.toggle('collapsed'); };
-  })();
+  // collapse / expand the log to reach the charts quickly
+  $('logToggle').onclick = () => { haptic(); $('logCard').classList.toggle('collapsed'); };
 
-  // The engine log for the chosen range, from Battman (GET /api/battman/log): Battman's
-  // log once you've migrated, Smiggles' log file before that.
+  // The engine log for the chosen range, from Battman (GET /api/battman/log): Battman's log once
+  // you've migrated, Smiggles' log file before that.
   let logRange = null;
   function load() {
-    if (!logRange) return;
-    const token = getHaToken();
-    if (!token) return;
+    if (!logRange || FATAL) return;
     const q = '?start=' + encodeURIComponent(logRange[0]) + '&end=' + encodeURIComponent(logRange[1]);
-    fetch('/api/battman/log' + q, { headers: { 'Authorization': 'Bearer ' + token } })
-      .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(new Error(j.message || r.status))))
+    haObj().callApi('GET', 'battman/log' + q)
       .then(j => {
         const t = j.lines.join('\n');
         if (t !== last) {
@@ -539,7 +539,7 @@
           renderLog();
         }
       })
-      .catch(e => { document.getElementById('log').innerHTML = '<div class="empty">' + escapeHtml(String(e.message || 'No log found')) + '</div>'; });
+      .catch(e => { $('log').innerHTML = '<div class="empty">' + escapeHtml(String((e && e.body && e.body.message) || (e && e.message) || 'No log found')) + '</div>'; });
   }
 
   // ------------------------------------------------------- range controls
@@ -552,17 +552,18 @@
   // haptic feedback: Vibration API (Android/PWA) + the iOS switch-toggle trick
   function haptic() {
     try { if (navigator.vibrate) navigator.vibrate(8); } catch(e) {}
-    try { const s = document.getElementById('hapticSwitch'); if (s) s.click(); } catch(e) {}
+    try { const s = $('hapticSwitch'); if (s) s.click(); } catch(e) {}
   }
 
   // quick-range chips + always-visible From/To editor
   const rangePresets = [['5m', 5], ['10m', 10], ['15m', 15], ['30m', 30], ['1h', 60], ['2h', 120], ['4h', 240], ['8h', 480], ['12h', 720], ['24h', 1440]];
-  const chipsEl = document.getElementById('rangeChips');
-  const fromEl = document.getElementById('fromDt');
-  const toEl = document.getElementById('toDt');
-  const fromLabel = document.getElementById('fromLabel');
-  const toLabel = document.getElementById('toLabel');
+  const chipsEl = $('rangeChips');
+  const fromEl = $('fromDt');
+  const toEl = $('toDt');
+  const fromLabel = $('fromLabel');
+  const toLabel = $('toLabel');
   let curStart = null, curEnd = null;
+  let presetMins = null;       // the quick range in use (null = a range you set): follows now on each run
 
   function fmtStamp(d) {
     return d.toLocaleString([], { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
@@ -589,8 +590,22 @@
   }
   function loadPreset(mins, chip) {
     haptic();
+    presetMins = mins;
     const now = new Date();
     applyRange(new Date(now.getTime() - mins * 60 * 1000), now, chip);
+  }
+  // a run was logged: on a quick range the window moves on to now (filters and the tapped point
+  // stay); on a range you set, it stays put
+  function follow() {
+    if (presetMins == null || FATAL) return;
+    const now = new Date();
+    curStart = new Date(now.getTime() - presetMins * 60 * 1000); curEnd = now;
+    renderSummary();
+    fromEl.value = toInputVal(curStart);
+    toEl.value = toInputVal(curEnd);
+    setRangeAndLoad(curStart, curEnd);
+    refreshChart();
+    updatePager();
   }
 
   rangePresets.forEach(([label, mins]) => {
@@ -601,9 +616,9 @@
     chipsEl.appendChild(c);
   });
 
-  // The native pickers overlay the "Set" buttons, so a tap opens them directly
-  // (reliable on iOS); showPicker() is a desktop convenience. Editing either end
-  // clears the active preset chip (it's now a custom range).
+  // The native pickers overlay the "Set" buttons, so a tap opens them directly (reliable on iOS);
+  // showPicker() is a desktop convenience. Editing either end clears the active quick range (it's
+  // now a range you set).
   function wirePicker(inp, isFrom) {
     inp.addEventListener('click', () => { haptic(); try { inp.showPicker && inp.showPicker(); } catch(e) {} });
     inp.addEventListener('change', () => {
@@ -612,6 +627,7 @@
       const picked = new Date(inp.value);
       picked.setSeconds(0, 0);
       picked.setMinutes(Math.round(picked.getMinutes() / 5) * 5);
+      presetMins = null;
       if (isFrom) applyRange(picked, curEnd || new Date(), null);
       else applyRange(curStart || new Date(Date.now() - 15 * 60000), picked, null);
     });
@@ -620,9 +636,9 @@
   wirePicker(toEl, false);
 
   // ‹ › pager: step the window backward/forward by its own span (like HA history)
-  const pagePrev = document.getElementById('pagePrev');
-  const pageNext = document.getElementById('pageNext');
-  const pgrSpan = document.getElementById('pgrSpan');
+  const pagePrev = $('pagePrev');
+  const pageNext = $('pageNext');
+  const pgrSpan = $('pgrSpan');
   function fmtSpan(ms) {
     const m = Math.round(ms / 60000);
     if (m < 60) return m + 'm';
@@ -642,32 +658,35 @@
     const now = Date.now();
     let ns = curStart.getTime() + dir * D;
     let ne = curEnd.getTime() + dir * D;
-    if (ne > now) { ne = now; ns = now - D; }   // don't page into the future; snap to live
-    applyRange(new Date(ns), new Date(ne), chipsEl.querySelector('.chip.active'));
+    const live = ne >= now;
+    if (live) { ne = now; ns = now - D; }   // don't page into the future; snap to live
+    if (!live) presetMins = null;           // an earlier window stays where it is
+    applyRange(new Date(ns), new Date(ne), live ? chipsEl.querySelector('.chip.active') : null);
   }
   pagePrev.onclick = () => shiftRange(-1);
   pageNext.onclick = () => shiftRange(1);
 
   // ----------------------------------------------------------- history chart
-  // Same graph base as Curvy: Chart.js 4.4 (canvas), colours read live from theme.
+  // Same graph base as Curvy: Chart.js 4.4 (canvas), colours read from the theme.
   const charts = {};   // panel id -> Chart instance
-  const HIST_BUCKETS = 60;
   let modeStripState = null;   // { pts, t0, t1 } for the tap-readout on the mode strip
   let lastTapMs = null;        // last tapped/scrubbed time on the strip (for the marker + zoom anchor)
-  let restoreScrub = null;     // re-applies the scrub guide after a refresh (set by the scrub IIFE)
+  let restoreScrub = null;     // re-applies the scrub guide after a refresh (set by the scrub block)
+  let ChartLib = null;         // Chart.js, once loaded
+  let chartProblem = null;     // why it couldn't be loaded
 
   // tap / drag on the mode strip -> show mode + time + price + SOC at that point, and
   // optionally limit the log below to that mode period.
   (function () {
-    const strip = document.getElementById('modeStrip');
+    const strip = $('modeStrip');
     let lastReadSeg = null, lastT = null, downX = null, moved = false;
 
     // scrub guide = a thin line drawn inside each chart's own plot area (see drawChartLines)
-    const reorder = document.getElementById('reorder');
+    const reorder = $('reorder');
 
-    // price + SOC come from the nearest log line at-or-before t (the 5-min price
-    // sensors are recorder-excluded, so their history is empty — the log text is the
-    // only surviving contemporaneous source).
+    // price + SOC come from the nearest log line at-or-before t (the 5-min price sensors are
+    // recorder-excluded, so their history is empty — the log text is the only surviving
+    // contemporaneous source).
     function nearestLine(t) {
       let best = null, bestDiff = Infinity;
       for (let i = 0; i < allLines.length; i++) {
@@ -691,10 +710,10 @@
       };
     }
 
-    // Core scrub: given a wall-clock time, draw the strip marker + the full-stack guide
-    // line + the readout. Time-based so the strip OR any chart can drive it, and so it can
-    // be re-applied after a refresh (the strip bar is the shared geometry reference — it's
-    // inset to the charts' plot area, so one screen-x maps to the same time in all panels).
+    // Core scrub: given a wall-clock time, draw the strip marker + the guide line in each chart +
+    // the readout. Time-based so the strip OR any chart can drive it, and so it can be re-applied
+    // after a refresh (the strip bar is inset to the charts' plot area, so one screen-x maps to the
+    // same time in all panels).
     function scrubToTime(t) {
       if (!modeStripState) return;
       const bar = strip.querySelector('.mbar');
@@ -718,10 +737,10 @@
       lastReadSeg = { start: segStart, end: segEnd, mode: m };
       lastT = t;
 
-      // how long this mode block runs before it switches, from the mode entity's real
-      // change times (so it's the true length even if it spills past the window edges).
-      // Last block has no next change yet → "so far"; a block whose start sits at the
-      // window's left edge may have begun earlier → "+".
+      // how long this mode block runs before it switches, from the mode entity's real change
+      // times (so it's the true length even if it spills past the window edges). Last block has
+      // no next change yet → "so far"; a block whose start sits at the window's left edge may
+      // have begun earlier → "+".
       let durTxt = '';
       if (idx >= 0) {
         const realStart = pts[idx].t;
@@ -747,15 +766,15 @@
         '<span class="ro-extra">buy ' + cents(v.buy) + ' · sell ' + cents(v.sell) + ' · SOC ' + pct(v.soc) + '</span>';
     }
 
-    // keep the guide alive across the 60-s auto-refresh (the refresh rebuilds the strip)
+    // keep the guide alive across a refresh (the refresh rebuilds the strip)
     restoreScrub = () => { if (lastTapMs != null) scrubToTime(lastTapMs); };
 
-    // draw the guide as a thin line inside each visible chart's plot area (not across the
-    // whole stack) — same x-fraction everywhere since all panels share the plot range.
+    // draw the guide as a thin line inside each visible chart's plot area (not across the whole
+    // stack) — same x-fraction everywhere since all panels share the plot range.
     function drawChartLines(frac) {
       Object.keys(charts).forEach(id => {
         const ch = charts[id];
-        const wrap = document.getElementById('wrap-' + id);
+        const wrap = $('wrap-' + id);
         if (!wrap) return;
         let line = wrap.querySelector('.cline');
         if (!ch || !ch.chartArea || wrap.style.display === 'none') { if (line) line.style.opacity = '0'; return; }
@@ -794,9 +813,9 @@
     }
 
     // tap = filter the log to the 5-minute block around the tapped point; drag = just scrub.
-    // We anchor to the NEAREST actual log line and take ±2.5 min around it, so it never
-    // depends on timestamps being exactly on the 5-min mark and always contains that line
-    // (never empty). Pick a pill up top to reset.
+    // Anchored to the NEAREST actual log line, ±2.5 min around it, so it never depends on
+    // timestamps being exactly on the 5-min mark and always contains that line (never empty).
+    // Pick a range up top to reset.
     function setFilter() {
       if (lastT == null) return;
       const line = nearestLine(lastT);
@@ -830,9 +849,9 @@
     });
   })();
 
-  // build a chart panel card per PANELS entry, appended into the reorder stack
+  // a chart panel card per PANELS entry, appended into the reorder stack
   function buildPanelCards() {
-    const host = document.getElementById('reorder');
+    const host = $('reorder');
     PANELS.forEach(p => {
       const div = document.createElement('div');
       div.className = 'card reCard';
@@ -845,16 +864,26 @@
     });
   }
 
+  // the element that scrolls the dashboard (HA's view or the page), for scrolling while dragging
+  function scrollParent() {
+    for (let n = card.parentNode || card.host; n; n = n.parentNode || n.host) {
+      if (n.nodeType !== 1) continue;
+      const oy = getComputedStyle(n).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+
   // ---- drag-to-reorder (grip only) with per-device localStorage persistence ----
   function initReorder() {
-    const container = document.getElementById('reorder');
+    const container = $('reorder');
     const KEY = 'battman.logOrder';
     // one-time move of the order saved by the old Smiggles page
     try {
       const old = localStorage.getItem('smigglesLogOrderV1');
       if (old !== null) { if (localStorage.getItem(KEY) === null) localStorage.setItem(KEY, old); localStorage.removeItem('smigglesLogOrderV1'); }
     } catch (e) {}
-    let dragEl = null, placeholder = null, startY = 0, startTop = 0, startLeft = 0, w = 0;
+    let dragEl = null, placeholder = null, startY = 0, startTop = 0, scroller = null;
 
     const cards = () => Array.from(container.querySelectorAll('.reCard'));
 
@@ -871,31 +900,39 @@
       });
     }
 
+    // the dragged card is lifted out of the stack (absolute, inside it) and follows the pointer;
+    // a dashed placeholder shows where it will land
+    function placeAt(clientY) {
+      const top = startTop + (clientY - startY) - container.getBoundingClientRect().top;
+      dragEl.style.top = top + 'px';
+    }
     function onDown(e) {
       const grip = e.target.closest('[data-grip]');
       if (!grip) return;
-      const card = grip.closest('.reCard');
-      if (!card) return;
+      const cardEl = grip.closest('.reCard');
+      if (!cardEl) return;
       e.preventDefault(); e.stopPropagation();
       haptic();
-      dragEl = card;
-      const rect = card.getBoundingClientRect();
-      w = rect.width; startLeft = rect.left; startTop = rect.top; startY = e.clientY;
+      dragEl = cardEl;
+      scroller = scrollParent();
+      const rect = cardEl.getBoundingClientRect();
+      startTop = rect.top; startY = e.clientY;
       placeholder = document.createElement('div');
       placeholder.className = 're-placeholder';
       placeholder.style.height = rect.height + 'px';
-      card.parentNode.insertBefore(placeholder, card.nextSibling);
-      card.classList.add('dragging');
-      card.style.position = 'fixed'; card.style.zIndex = '999'; card.style.width = w + 'px';
-      card.style.left = startLeft + 'px'; card.style.top = startTop + 'px';
-      card.style.margin = '0'; card.style.pointerEvents = 'none';
-      document.addEventListener('pointermove', onMove);
-      document.addEventListener('pointerup', onUp, { once: true });
+      cardEl.parentNode.insertBefore(placeholder, cardEl.nextSibling);
+      cardEl.classList.add('dragging');
+      cardEl.style.position = 'absolute'; cardEl.style.zIndex = '999';
+      cardEl.style.left = '0'; cardEl.style.right = '0';
+      cardEl.style.margin = '0'; cardEl.style.pointerEvents = 'none';
+      placeAt(e.clientY);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp, { once: true });
     }
     function onMove(e) {
       if (!dragEl) return;
       const y = e.clientY;
-      dragEl.style.top = (startTop + (y - startY)) + 'px';
+      placeAt(y);
       let inserted = false;
       for (const c of cards()) {
         if (c === dragEl) continue;
@@ -904,17 +941,17 @@
       }
       if (!inserted) container.appendChild(placeholder);
       const vh = window.innerHeight;
-      if (y < 70) window.scrollBy(0, -14);
-      else if (y > vh - 70) window.scrollBy(0, 14);
+      if (y < 70) scroller.scrollBy(0, -14);
+      else if (y > vh - 70) scroller.scrollBy(0, 14);
     }
     function onUp() {
-      document.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointermove', onMove);
       if (!dragEl) return;
       container.insertBefore(dragEl, placeholder);
       placeholder.remove(); placeholder = null;
       dragEl.classList.remove('dragging');
-      dragEl.style.position = ''; dragEl.style.zIndex = ''; dragEl.style.width = '';
-      dragEl.style.left = ''; dragEl.style.top = ''; dragEl.style.margin = ''; dragEl.style.pointerEvents = '';
+      dragEl.style.position = ''; dragEl.style.zIndex = ''; dragEl.style.left = ''; dragEl.style.right = '';
+      dragEl.style.top = ''; dragEl.style.margin = ''; dragEl.style.pointerEvents = '';
       dragEl = null;
       saveOrder();
       try { Object.values(charts).forEach(ch => ch && ch.resize()); requestAnimationFrame(alignModeStrip); } catch (e) {}
@@ -928,26 +965,15 @@
     applyOrder();
   }
 
-  function gc(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
-
   async function fetchHistoryRaw() {
-    // sync the chart window to the log's selected range (fallback: last 5 h)
+    // the chart window is the log's selected range (last 5 h until one is picked)
     const end = curEnd ? new Date(curEnd) : new Date();
     const start = curStart ? new Date(curStart) : new Date(end.getTime() - HISTORY_HOURS * 3600 * 1000);
-    const h = haObj();
     const path = 'history/period/' + start.toISOString() +
       '?filter_entity_id=' + HISTORY_ENTITIES.join(',') +
       '&end_time=' + end.toISOString() + '&minimal_response';
     try {
-      let arr = null;
-      if (h && h.callApi) arr = await h.callApi('GET', path);
-      else {
-        const token = getHaToken(); if (!token) return null;
-        const r = await fetch('/api/' + path, { headers: { 'Authorization': 'Bearer ' + token } });
-        if (!r.ok) return null; arr = await r.json();
-      }
+      const arr = await haObj().callApi('GET', path);
       const out = {};
       (arr || []).forEach(ser => { if (ser && ser.length && ser[0].entity_id) out[ser[0].entity_id] = ser; });
       out[GRID_ID] = gridSeries(out[M.grid_import_power], out[M.grid_export_power]);
@@ -955,8 +981,8 @@
     } catch(e) { return null; }
   }
 
-  // Grid power history from import / export history, with the same rule as Battman's grid
-  // power sensor (and Smiggles' GridPower): whichever side flows over 50 W, import +, export -.
+  // Grid power history from import / export history, with the same rule as Battman's grid power
+  // sensor (and Smiggles' GridPower): whichever side flows over 50 W, import +, export -.
   // A point only where both are known: no made-up values.
   function gridSeries(imp, exp) {
     const ev = [];
@@ -986,10 +1012,9 @@
     return out;
   }
 
-  // Shared 5-min bucket grid so the Mode strip and every line panel cover an identical
-  // x-domain. 5-min buckets (price/mode cadence); 1-min on sub-hour windows for detail
-  // (1 min divides 5, so 5-min alignment still holds). Floors start / ceils end to whole
-  // buckets — the same domain every consumer then maps onto.
+  // Shared bucket grid so the Mode strip and every line panel cover an identical x-domain.
+  // 5-min buckets (price/mode cadence); 1-min on sub-hour windows for detail (1 min divides 5, so
+  // 5-min alignment still holds). Floors start / ceils end to whole buckets.
   function gridDomain(start, end) {
     const FIVE = 300000, ONE = 60000;
     const width = ((end.getTime() - start.getTime()) / FIVE >= 12) ? FIVE : ONE;
@@ -998,13 +1023,12 @@
     return { t0: t0, tEnd: t0 + n * width, width: width, n: n };
   }
 
-  // Mode is its own state-timeline strip (like the original history-graph), NOT
-  // mixed into the price chart.
+  // Mode is its own state-timeline strip, not mixed into the price chart.
   function renderModeStrip(modeRaw, start, end) {
-    const el = document.getElementById('modeStrip');
-    document.querySelectorAll('.cline').forEach(l => l.style.opacity = '0');
-    // Lock the strip to the SAME 5-min grid the line panels use, so a time on the
-    // strip sits directly above the same column in the charts below.
+    const el = $('modeStrip');
+    root.querySelectorAll('.cline').forEach(l => l.style.opacity = '0');
+    // Lock the strip to the SAME grid the line panels use, so a time on the strip sits directly
+    // above the same column in the charts below.
     const { t0, tEnd, width, n } = gridDomain(start, end);
     const t1 = tEnd, span = Math.max(1, t1 - t0);
     const pts = (modeRaw || []).map(s => ({ t: new Date(s.last_changed || s.last_updated).getTime(), m: s.state }))
@@ -1015,8 +1039,8 @@
     let bar = '';
     const seen = [];
     for (let i = 0; i < pts.length; i++) {
-      // back-fill the first mode across the leading <5-min sliver (t0..first point) so the
-      // bar fills from the grid's left edge, mirroring the charts' first bucket.
+      // back-fill the first mode across the leading <5-min sliver (t0..first point) so the bar
+      // fills from the grid's left edge, mirroring the charts' first bucket.
       const segStart = (i === 0) ? t0 : Math.max(t0, pts[i].t);
       const segEnd = Math.min(t1, (i + 1 < pts.length) ? pts[i + 1].t : t1);
       if (segEnd <= segStart) continue;
@@ -1041,22 +1065,20 @@
                    '<div class="mlegend">' + legend + '</div>';
   }
 
-  // Generic line panel (Curvy Chart.js base); one or more series sharing a unit.
+  // Generic line panel (Curvy's Chart.js base); one or more series sharing a unit.
   function renderLinePanel(panel, data) {
-    const wrap = document.getElementById('wrap-' + panel.id);
-    const empty = document.getElementById('empty-' + panel.id);
+    const wrap = $('wrap-' + panel.id);
+    const empty = $('empty-' + panel.id);
     function showEmpty(msg) { if (empty) { empty.style.display = ''; empty.textContent = msg; } if (wrap) wrap.style.display = 'none'; }
-    if (typeof Chart === 'undefined') return showEmpty('Chart library unavailable (offline?)');
+    if (!ChartLib) return showEmpty('Chart library unavailable: ' + (chartProblem || 'not loaded yet'));
     if (!data) return showEmpty('History unavailable');
     const { out, start, end } = data;
     if (!panel.series.some(s => out[s.id] && out[s.id].length)) return showEmpty('No data in range');
     if (empty) empty.style.display = 'none';
     if (wrap) wrap.style.display = '';
 
-    // Unified time grid for EVERY panel, aligned to the 5-min price/mode cadence so all
-    // panels line up vertically. 5-min buckets, falling back to 1-min on sub-hour windows
-    // for detail (1 min still divides 5 min, so alignment holds). Panel-independent, so
-    // price, power, solar, battery, SOC and grid all share the same columns.
+    // One time grid for EVERY panel, aligned to the 5-min price/mode cadence so all panels line
+    // up vertically.
     const { t0, tEnd, width, n } = gridDomain(start, end);
     const gStart = new Date(t0), gEnd = new Date(tEnd), step = width;
     const every = Math.max(1, Math.round(n / 8));
@@ -1088,26 +1110,25 @@
           tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y == null ? '—' : c.parsed.y.toFixed(1) + (unit ? ' ' + unit : '')) } }
         },
         scales: {
-          // fixed y-axis width → every panel's plot area starts at the same x, so the
-          // panels line up with each other AND the Mode strip can be inset to match.
+          // fixed y-axis width → every panel's plot area starts at the same x, so the panels line
+          // up with each other AND the Mode strip can be inset to match.
           y: { afterFit: (s) => { s.width = 52; }, title: { display: !!unit, text: unit, font: { size: 11, weight: 'bold' }, color: muted }, ticks: { color: muted }, grid: { color: grid } },
-          // offset:true centres each point in its time-band (band i → (i+0.5)/n), the
-          // same linear mapping the Mode strip uses, so columns align across all of them.
+          // offset:true centres each point in its time-band (band i → (i+0.5)/n), the same linear
+          // mapping the Mode strip uses, so columns align across all of them.
           x: { offset: true, ticks: { color: muted, maxRotation: 0, autoSkip: false }, grid: { color: grid } }
         }
       }
     };
 
     if (charts[panel.id]) charts[panel.id].destroy();
-    charts[panel.id] = new Chart(document.getElementById('cv-' + panel.id).getContext('2d'), cfg);
+    charts[panel.id] = new ChartLib($('cv-' + panel.id).getContext('2d'), cfg);
   }
 
-  // Inset the Mode strip's bar + ticks to sit exactly over the charts' plot area
-  // (left = y-axis gutter, right = chart's right padding), measured from a live chart.
-  // The strip card and the chart cards share an identical content width, so chartArea
-  // pixels map 1:1 onto the strip.
+  // Inset the Mode strip's bar + ticks to sit exactly over the charts' plot area (left = y-axis
+  // gutter, right = chart's right padding), measured from a live chart. The strip card and the
+  // chart cards share an identical content width, so chartArea pixels map 1:1 onto the strip.
   function alignModeStrip() {
-    const strip = document.getElementById('modeStrip');
+    const strip = $('modeStrip');
     if (!strip) return;
     const bar = strip.querySelector('.mbar');
     const ticks = strip.querySelector('.mticks');
@@ -1119,19 +1140,18 @@
   }
 
   async function refreshChart() {
+    if (FATAL || !PANELS.length) return;
     const data = await fetchHistoryRaw();
-    const modeEl = document.getElementById('modeStrip');
+    const modeEl = $('modeStrip');
     if (!data) {
-      lastOut = null;
       if (modeEl) modeEl.innerHTML = '<div class="chart-empty">History unavailable</div>';
       PANELS.forEach(p => renderLinePanel(p, null));
       return;
     }
-    lastOut = data.out;
     renderModeStrip(data.out[MODE_ENTITY], data.start, data.end);
     PANELS.forEach(p => renderLinePanel(p, data));
-    // re-align the strip, then re-draw the scrub guide if one was active (range changes
-    // null lastTapMs, so a new range correctly clears it; a plain refresh keeps it).
+    // re-align the strip, then re-draw the scrub guide if one was active (range changes null
+    // lastTapMs, so a new range clears it; a plain refresh keeps it).
     requestAnimationFrame(() => { alignModeStrip(); if (restoreScrub) restoreScrub(); });
   }
 
@@ -1139,56 +1159,169 @@
   // Startup checks: entity map + Battman theme. Problems are shown, never papered over.
   function showFatal(msg) {
     FATAL = msg;
-    document.getElementById('reorder').innerHTML =
+    $('reorder').innerHTML =
       '<div class="card"><div class="title">Battman Log problem</div><div class="empty">' + escapeHtml(msg) + '</div></div>';
   }
   async function loadEntityMap() {
-    const tok = getHaToken();
-    if (!tok) throw new Error('Not logged in to Home Assistant (no access token from the parent page).');
-    const r = await fetch('/api/battman/entities', { headers: { Authorization: 'Bearer ' + tok } });
-    if (!r.ok) throw new Error('Battman entity map unavailable (HTTP ' + r.status + '). Is the Battman integration installed and set up?');
-    const m = (await r.json()).entities || {};
+    let r;
+    try { r = await haObj().callApi('GET', 'battman/entities'); }
+    catch (e) { throw new Error('Battman entity map unavailable (' + ((e && e.status_code) || (e && e.message) || e) + '). Is the Battman integration installed and set up?'); }
+    const m = (r && r.entities) || {};
     const missing = NEEDS.filter(k => k !== 'third_party_pv' && !m[k]);
     if (missing.length) throw new Error('Battman entity map has no entry for: ' + missing.join(', '));
     if (m.pv_string.indexOf('{n}') < 0) throw new Error('Battman entity map: pv_string must contain {n} (e.g. sensor.sigen_inverter_pv{n}_power).');
     M = m;
   }
   function checkEntities() {
-    const h = haObj(); if (!h) return 'Home Assistant not reachable from this page.';
-    const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' \u2192 ' + M[k]);
+    const h = haObj();
+    const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' → ' + M[k]);
     return bad.length ? 'Battman entity map: entity not found: ' + bad.join(', ') : null;
   }
   function checkTheme() {
-    let ps; try { ps = parent.getComputedStyle(window.frameElement || parent.document.documentElement); } catch (e) { return 'Cannot read the dashboard theme.'; }
-    const missing = THEME_VARS.filter(v => !ps.getPropertyValue(v).trim());
-    return missing.length ? 'Theme colour ' + missing.join(', ') + ' not found \u2014 this view needs a Battman theme.' : null;
+    const missing = THEME_VARS.filter(v => !gc(v));
+    return missing.length ? 'Theme colour ' + missing.join(', ') + ' not found — this view needs a Battman theme.' : null;
   }
+
+  // live: each engine run reloads the log (and moves a quick range on to now)
+  let unsubLive = null, liveTimer = null;
+  function setLiveNote(text) {
+    const n = $('liveNote');
+    if (!n) return;
+    n.hidden = !text;
+    n.textContent = text || '';
+  }
+  function subscribeLive() {
+    if (unsubLive || FATAL) return;
+    const conn = haObj().connection;
+    unsubLive = conn.subscribeEvents(() => {
+      clearTimeout(liveTimer);
+      // Battman writes the run into engine.log as the event arrives; read it a moment later
+      liveTimer = setTimeout(() => { if (presetMins != null) follow(); else { last = ''; load(); } }, 1500);
+    }, LOG_EVENT);
+    unsubLive.then(() => setLiveNote(''), (e) => {
+      unsubLive = null;
+      setLiveNote('Live updates off: ' + ((e && e.message) || (e && e.code) || e) + '. Pick a range to reload.');
+    });
+  }
+  function unsubscribeLive() {
+    clearTimeout(liveTimer);
+    if (unsubLive) { const u = unsubLive; unsubLive = null; u.then((f) => f && f()).catch(() => {}); }
+  }
+
+  let chartTimer = null;
+  let started = false;
+  let resizeObs = null;
 
   (async function start() {
     try { await loadEntityMap(); } catch (e) { showFatal(e.message); return; }
     const problem = checkTheme() || checkEntities();
     if (problem) { showFatal(problem); return; }
-    let hues = null;
-    try { hues = window.parent.BattmanLib && window.parent.BattmanLib.MODE_HUE; } catch (e) {}
+    const hues = window.BattmanLib && window.BattmanLib.MODE_HUE;
     if (!hues) { showFatal("Battman's card library (battman-lib.js) isn't loaded on this HA page, so the mode colours aren't known. Refresh the page."); return; }
     const noHue = modes.filter(m => !hues[m]);
     if (noHue.length) { showFatal('Battman mode colours (MODE_HUE) have no colour for: ' + noHue.join(', ')); return; }
     modeToken = Object.fromEntries(modes.map(m => [m, '--battman-' + hues[m]]));
-    syncTheme();
+    try { ChartLib = await logLoadChartJs(); } catch (e) { chartProblem = e.message; }
+    syncColors();
     applyModeColors();
     buildPanels();
     buildPanelCards();
     initReorder();
-    setInterval(() => { syncTheme(); applyModeColors(); renderLog(); }, 3000);
     // default view: last 4 hours, no haptic on load
     const now = new Date();
+    presetMins = 240;
     const chip4h = Array.from(chipsEl.querySelectorAll('.chip')).find(c => c.textContent === '4h');
     applyRange(new Date(now.getTime() - 4 * 60 * 60 * 1000), now, chip4h);
-    setTimeout(load, 2000);
-    setInterval(load, 3000);
-    setInterval(refreshChart, 60000);
-    window.addEventListener('resize', () => requestAnimationFrame(alignModeStrip));
+    resizeObs = new ResizeObserver(() => requestAnimationFrame(alignModeStrip));
+    resizeObs.observe($('reorder'));
+    started = true;
+    if (card.isConnected) resume();
   })();
-</script>
-</body>
-</html>
+
+  let paused = false;
+  function resume() {
+    if (!started || FATAL) return;
+    subscribeLive();
+    if (!chartTimer) chartTimer = setInterval(refreshChart, 60000);
+    // back on screen after another view: catch up (a quick range moves on to now)
+    if (paused) { paused = false; if (presetMins != null) follow(); else refreshChart(); }
+  }
+  function pause() {
+    paused = true;
+    unsubscribeLive();
+    clearInterval(chartTimer); chartTimer = null;
+  }
+  // the view's theme changed: redraw in the new colours
+  function themeChanged() {
+    if (!started || FATAL) return;
+    syncColors();
+    applyModeColors();
+    renderLog();
+    refreshChart();
+  }
+  return { resume, pause, themeChanged };
+}
+
+class BattmanLogCard extends HTMLElement {
+  static getStubConfig() {
+    return {};
+  }
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  setConfig(config) {
+    const extra = Object.keys(config || {}).filter((k) => !["type", "grid_options", "view_layout", "visibility"].includes(k));
+    if (extra.length) throw new Error(`Battman Log has no options (found: ${extra.join(", ")}).`);
+    this._config = config;
+  }
+
+  set hass(hass) {
+    const old = this._hass;
+    this._hass = hass;
+    if (!old) return this._build();
+    if (this._run && old.themes !== hass.themes) this._run.themeChanged();
+  }
+
+  _build() {
+    // in HA's card picker: a picture of the card instead of the whole thing
+    if (logInCardPicker(this)) {
+      this.shadowRoot.innerHTML = `<style>${LOG_CSS}</style><ha-card><img class="preview" src="${LOG_FILES}/previews/log.webp" alt="Battman Log"></ha-card>`;
+      return;
+    }
+    this.shadowRoot.innerHTML = `<style>${LOG_CSS}</style><ha-card><div class="page">${LOG_HTML}</div></ha-card>`;
+    if (!window.battmanEngineLog) {
+      this.shadowRoot.querySelector(".page").innerHTML =
+        `<div class="card"><div class="title">Battman Log problem</div><div class="empty">Battman's engine log renderer (battman-enginelog.js) isn't loaded on this HA page. Refresh the page.</div></div>`;
+      return;
+    }
+    this._run = battmanLogRun(this, this.shadowRoot);
+  }
+
+  connectedCallback() {
+    if (this._run) this._run.resume();
+  }
+
+  disconnectedCallback() {
+    if (this._run) this._run.pause();
+  }
+
+  getCardSize() {
+    return 12;
+  }
+
+  getGridOptions() {
+    return { columns: "full", rows: "auto" };
+  }
+}
+battmanDefine("battman-log", BattmanLogCard);
+
+window.customCards = window.customCards || [];
+if (!window.customCards.some((c) => c.type === "battman-log")) {
+  window.customCards.push({
+    type: "battman-log", name: "Battman Log", preview: true, documentationURL: LOG_DOCS,
+    description: "The engine log: each run's decisions, with power, prices and battery charge charted over the day.",
+  });
+}

@@ -79,7 +79,7 @@ everything into cards so less and less of it is fixed.
 ## Pages
 
 Battman serves its pages and images from `/battmanfiles/` (`cost-chart.html`,
-`cost-compare.html`, `log.html`, `theme-studio.html`, `images/…`), for example:
+`cost-compare.html`, `theme-studio.html`, `images/…`), for example:
 
 ```yaml
 type: iframe

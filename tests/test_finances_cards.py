@@ -161,8 +161,8 @@ def test_one_list_of_mode_colours() -> None:
         theme = next(iter(yaml.safe_load(f.read_text()).values()))
         for h in MODE_HUES:
             assert f"battman-{h}" in theme, (f.name, h)
-    # the Log page takes its colours from the list (no colours of its own)
-    log = (ROOT / "www/log.html").read_text()
+    # the Log card takes its colours from the list (no colours of its own)
+    log = (ROOT / "www/battman-log.js").read_text()
     assert "BattmanLib.MODE_HUE" in log and "'Self Consume':    '--battman-blue'" not in log
 
 

@@ -82,6 +82,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-enginelog.js?v={integration.version}")
     # The Battman House card (custom:battman-house): the house picture with live numbers on it.
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-house.js?v={integration.version}")
+    # The Battman Log card (custom:battman-log): the engine log, mode timeline and charts.
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-log.js?v={integration.version}")
     # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
     # start are passed along so the cards exist before any dashboard draws them.
     local = cards.local_dir(hass)

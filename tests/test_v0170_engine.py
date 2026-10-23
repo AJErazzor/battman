@@ -545,8 +545,8 @@ async def test_log_page_reads_smiggles_log_before_migrating(hass: HomeAssistant,
     r = await client.get("/api/battman/log", params={"start": "2026-10-20 09:04:00", "end": "2026-10-20 09:06:00"})
     assert (await r.json())["lines"] == ["2026-10-20T09:05:00.5+10:30|second run"]
     assert (await client.get("/api/battman/log")).status == 400
-    page = (Path(__file__).parents[1] / "custom_components/battman/www/log.html").read_text()
-    assert "/api/battman/log" in page and "debug_log_file" not in page and "load_debug_log_script" not in page
+    page = (Path(__file__).parents[1] / "custom_components/battman/www/battman-log.js").read_text()
+    assert "'battman/log' + q" in page and "debug_log_file" not in page and "load_debug_log_script" not in page
 
 
 async def test_engine_log_file_written_and_pruned(hass: HomeAssistant) -> None:
