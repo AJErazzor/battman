@@ -13,19 +13,19 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 
 
 Battman ships **Chart.js** 4.4.0 (`www/vendor/`), so the charts on the Log, Cost chart and Cost
-compare cards and the Curvy and Pricy pages work without the internet. The only
+compare, Curvy and Pricy cards work without the internet. The only
 thing loaded from the internet is **Google Fonts**: the theme studio's font browser, and themes that
 turn on a custom font.
 
-The Log, Cost chart, Cost compare, Settings and Theme studio cards draw themselves; the Curvy and
-Pricy cards show Battman's pages in a frame. None of them need extra cards.
+The Log, Curvy, Pricy, Cost chart, Cost compare, Settings and Theme studio cards draw themselves.
+None of them need extra cards.
 
-Other integrations Battman's pages read (through the entity map):
+Other integrations Battman's cards read (through the entity map):
 
 | Integration | Used for | If it's missing |
 |---|---|---|
-| Sigenergy (Sigenergy-Local-Modbus) | Battery SOC, power, grid, solar (Log, Finances, Curvy) | Page shows which entity is missing |
-| Amber | Current prices (all price views, price grid, State); price forecasts (Pricy overlay, price grid, forecast table, State projection) | Prices: error. Forecasts: Pricy shows a note and works without the overlay |
+| Sigenergy (Sigenergy-Local-Modbus) | Battery SOC, power, grid, solar (Log, Finances, Curvy) | The card shows which entity is missing |
+| Amber | Current prices (all price views, price grid, State); price forecasts (Pricy overlay, price grid, forecast table, State projection) | Prices: error. Forecasts: Pricy shows a note and works without the forecast part of the overlay |
 | HA Companion app | Live Activity blueprints (the phone it shows on) | Only needed if you use the Live Activity |
 | Solcast | Solar forecast (Curvy overlay and badge; State projection; Gauges' remaining-today 10% figure) | Curvy and the State popup show a note and work without it; Gauges show — |
 | OpenNEM | Region generation and demand (`opennem` in the map, e.g. `sensor.opennem_sa`): Battman's NEM sensors and the NEM mix card | The NEM sensors are unavailable and the NEM mix card names them |

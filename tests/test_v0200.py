@@ -55,9 +55,7 @@ def test_no_cdn_left() -> None:
     for f in [*WWW.glob("*.html"), *WWW.glob("*.js"), *(ROOT / "cards").glob("*.yaml")]:
         text = f.read_text()
         assert "cdnjs.cloudflare.com" not in text and "cdn.jsdelivr.net" not in text, f.name
-    for page in ("curvy.html", "pricy.html"):
-        assert '<script src="/battmanfiles/vendor/chart.umd.min.js"></script>' in (WWW / page).read_text(), page
-    assert "/vendor/chart.umd.min.js" in (WWW / "battman-card-base.js").read_text()   # the Log and cost cards' loader
+    assert "/vendor/chart.umd.min.js" in (WWW / "battman-card-base.js").read_text()   # every chart card's loader
 
 
 def test_vendor_files_are_the_published_builds() -> None:
@@ -104,5 +102,6 @@ def test_older_card_list_still_gets_the_log_card() -> None:
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
-    assert out == {"real": dict.fromkeys(("log", "cost-compare", "cost-chart", "settings", "theme-studio"), "BattmanCardBase"),
+    assert out == {"real": dict.fromkeys(("log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy"),
+                                         "BattmanCardBase"),
                    "log": "BattmanLogCard", "state": "BattmanCard", "logPicker": 1}

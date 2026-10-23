@@ -8,8 +8,6 @@ custom_components/battman/cards/<id>.yaml   shipped with Battman, updated by rel
 A card file is ordinary dashboard-card YAML. Header comments name it:
     # name: Limits
     # description: Grid export, PV max and max charge limits.
-    # preview: curvy.webp      (optional) a picture HA's card picker shows instead of the
-                               card itself: a file in custom_components/battman/www/previews/
 [[map:name]] anywhere in it is replaced by that entry of Battman's entity map.
 """
 
@@ -24,15 +22,13 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
-from .const import DOMAIN, STATIC_URL
+from .const import DOMAIN
 
 SHIPPED = Path(__file__).parent / "cards"
 LOCAL_PARTS = ("battman", "cards")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,40}$")
 MAP_MARK = re.compile(r"\[\[map:([a-z0-9_]+)\]\]")
 ISSUE_LOCAL = "local_cards"
-PREVIEWS = Path(__file__).parent / "www" / "previews"
-PREVIEW_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,40}\.(webp|png|jpe?g)$")
 
 
 class CardError(Exception):
@@ -50,17 +46,9 @@ def _header(text: str) -> dict[str, str]:
     for line in text.splitlines():
         if not line.startswith("#"):
             break
-        if m := re.match(r"#\s*(name|description|preview)\s*:\s*(.+)$", line):
+        if m := re.match(r"#\s*(name|description)\s*:\s*(.+)$", line):
             meta[m.group(1)] = m.group(2).strip()
     return meta
-
-
-def preview_url(meta: dict[str, str]) -> str | None:
-    """The card picker picture's URL, if the card names one Battman ships."""
-    name = meta.get("preview", "")
-    if PREVIEW_RE.match(name) and (PREVIEWS / name).is_file():
-        return f"{STATIC_URL}/previews/{name}"
-    return None
 
 
 def _files(local: Path) -> dict[str, tuple[Path, str]]:
@@ -85,8 +73,6 @@ def list_cards(local: Path) -> list[dict[str, str]]:
             "description": meta.get("description", ""),
             "source": source,
         }
-        if preview := preview_url(meta):
-            card["preview"] = preview
         cards.append(card)
     return cards
 
@@ -147,7 +133,6 @@ def get_card(local: Path, card_id: str, emap: dict[str, str]) -> dict[str, Any]:
         "source": source,
         "config": filled,
         "missing_map": sorted(missing),
-        "preview": preview_url(meta),
         "needs": sorted(_custom_types(filled, set())),
         # the card's own width/height in a sections view (e.g. columns: full); HA only reads
         # grid_options on the card as placed, so the wrapper and the dashboard pass it on

@@ -36,7 +36,7 @@ async def test_log_and_theme_views(hass: HomeAssistant, hass_client) -> None:
     assert data["errors"] == []
     by_path = {v["path"]: v for v in data["views"]}
     log, theme = by_path["log"], by_path["theme"]
-    # Log and Theme studio are Battman cards now (they show these pages: see test_curvy_card)
+    # Log and Theme studio are Battman cards now (see test_card_wrapper)
     assert log["cards"][0]["type"] == "custom:battman-log"
     assert theme["cards"][0]["type"] == "custom:battman-theme-studio"
     text = json.dumps(data["views"][1:])
@@ -149,7 +149,7 @@ async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
     by_path = {v["path"]: v for v in (await built(hass))["views"]}
-    # Curvy is a Battman card now (custom:battman-curvy shows /battmanfiles/curvy.html: see test_curvy_card)
+    # Curvy and Pricy are Battman cards now (see test_card_wrapper)
     assert by_path["curvy"]["cards"][0]["type"] == "custom:battman-curvy" and by_path["curvy"]["theme"] == "Battman Nord"
     assert by_path["pricy"]["cards"][0]["type"] == "custom:battman-pricy" and by_path["pricy"]["title"] == "Pricy"
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]

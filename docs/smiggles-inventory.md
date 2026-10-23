@@ -76,8 +76,8 @@ Note: both `sensor.sigen_plant_battery_state_of_charge` and `sensor.sigen_invert
 | `correct_energy4.html` | buy/sell totals | — | 0 | ✅ v0.7.0 as a page; since v0.18.9 the Billing card's Correct totals popup, using the totals sensors' SetTotal action |
 | `solar_log_viewer.html` | debug log start/end | — | 0 | ✖ retired — not used by the log page, left behind |
 | `smiggles-logv6.html` | debug log start/end + file, load-log script, mode, `gridpower`, `load30m`, Sigen power + PV strings, Amber current ×2 | — | 14 | ✅ `/battmanfiles/log.html` (v0.6.0, Log view) |
-| `priceeditorv37.html` (live; zip had v35) | price curves, high consumption, load30mavg, Amber current + forecasts | price_curves_update | 23 | ✅ `/battmanfiles/pricy.html` (v0.7.0, Pricy view) |
-| `editorv139.html` (live; zip had v137) | SOC curves, mode, high consumption, load30mavg, `script.solarsystemcontrol`, Sigen SOC + Sigen-only PV, Amber current, Solcast | soc_curves_update | 23 | ✅ `/battmanfiles/curvy.html` (v0.7.0, Curvy view) |
+| `priceeditorv37.html` (live; zip had v35) | price curves, high consumption, load30mavg, Amber current + forecasts | price_curves_update | 23 | ✅ `custom:battman-pricy` (a page from v0.7.0, a card since v0.22.0; Pricy view) |
+| `editorv139.html` (live; zip had v137) | SOC curves, mode, high consumption, load30mavg, `script.solarsystemcontrol`, Sigen SOC + Sigen-only PV, Amber current, Solcast | soc_curves_update | 23 | ✅ `custom:battman-curvy` (a page from v0.7.0, a card since v0.22.0; Curvy view) |
 | `theme-studiov4.html` | — | — | 27 | ✅ `/battmanfiles/theme-studio.html` (v0.6.0, Theme view) |
 | `ssc-lib.js` | (passed in by cards) | parameters update (via cards) | 88 | copy as `/battmanfiles/battman-lib.js` for the studio's previews (v0.6.0); the override cards still use Smiggles' copy |
 

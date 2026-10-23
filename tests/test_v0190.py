@@ -80,13 +80,13 @@ async def test_your_settings_and_curves_are_kept(hass: HomeAssistant) -> None:
 
 
 def test_factory_curves_live_in_one_place() -> None:
-    for page, attr in (("curvy.html", "soc_curves_factory"), ("pricy.html", "price_curves_factory")):
+    for page, attr in (("battman-curvy.js", "soc_curves_factory"), ("battman-pricy.js", "price_curves_factory")):
         text = (ROOT / "www" / page).read_text()
         assert f"M.{attr}" in text and "attributes.factory" in text, page
         assert "No factory curves" in text, page                        # says so, no hidden copy
-    curvy = (ROOT / "www/curvy.html").read_text()
+    curvy = (ROOT / "www/battman-curvy.js").read_text()
     assert "[25,25,20,20,15,15" not in curvy and "sell: [...FACTORY.sell]" in curvy
-    assert "makeDefault" not in (ROOT / "www/pricy.html").read_text()
+    assert "makeDefault" not in (ROOT / "www/battman-pricy.js").read_text()
     for soc_type in ("sell", "sell_high", "buy", "buy_high"):
         assert len(FACTORY["soc"][soc_type]) == 24
         assert len(FACTORY["price"][soc_type]["low"]) == len(FACTORY["price"][soc_type]["high"]) == 24

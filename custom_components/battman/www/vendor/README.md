@@ -8,4 +8,4 @@ the library's own published build, unchanged (its licence banner is at the top o
 | `chart.umd.min.js` | Chart.js | 4.4.0 | MIT | npm `chart.js@4.4.0`, `dist/chart.umd.js` |
 
 To update one: replace the file with the new version's published build, change the version here,
-and check every page that draws a chart (the Log, Cost chart and Cost compare cards, and the Curvy and Pricy pages).
+and check every card that draws a chart (the Log, Cost chart, Cost compare, Curvy and Pricy cards).
