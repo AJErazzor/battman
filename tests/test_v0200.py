@@ -6,9 +6,14 @@
 - Chart.js 4.4.0 and chartjs-plugin-datalabels 2.2.0 are in www/vendor/; nothing loads them from a CDN.
 """
 
+import json
+import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
@@ -77,3 +82,25 @@ async def test_vendor_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
 def test_picker_shows_the_preview_picture() -> None:
     assert (WWW / "previews/log.webp").stat().st_size > 1000
     assert re.search(r'previews/log\.webp', JS) and 'type: "battman-log", name: "Battman Log"' in JS
+
+
+CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+NODE_PATH = "/tmp/pwtest/node_modules"
+
+
+def test_card_wrapper_leaves_the_log_to_its_script() -> None:
+    cards_js = (WWW / "battman-cards.js").read_text()
+    assert 'const OWN_SCRIPT_CARDS = { log: "battman-log.js" };' in cards_js
+
+
+@pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
+                    reason="needs Playwright and Chromium")
+def test_older_card_list_still_gets_the_log_card() -> None:
+    """A page open since before the update (its list of card files still names "log", and it has no
+    battman-log.js of its own): the Log card still comes from battman-log.js."""
+    r = subprocess.run(["node", str(Path(__file__).parent / "js/stale_list_check.js"), str(WWW)],
+                       capture_output=True, text=True, timeout=120,
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME})
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out == {"log": "BattmanLogCard", "state": "BattmanCard", "logPicker": 1}
