@@ -335,7 +335,10 @@ const cardClasses = new Map();   // tag -> class, made once (registered again if
 // Battman cards that draw themselves (their own script, not a card file). A page still holding an
 // older list of card files (open since before an update) may name one of them: load its script
 // instead of making a card-file card under its name.
-const OWN_SCRIPT_CARDS = { log: "battman-log.js" };
+const OWN_SCRIPT_CARDS = {
+  log: "battman-log.js", "cost-compare": "battman-cost-compare.js", "cost-chart": "battman-cost-chart.js",
+  settings: "battman-settings.js", "theme-studio": "battman-theme-studio.js",
+};
 
 function defineCard(id, name, description) {
   const tag = `battman-${id}`;

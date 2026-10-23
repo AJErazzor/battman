@@ -1,4 +1,4 @@
-"""Battman's pages as cards (custom:battman-curvy / -pricy / -log / -theme-studio): their views
+"""Battman's pages as cards (custom:battman-curvy / -pricy) and the views of the real ones: their views
 place the cards, the card wrapper passes HA's view layout on (so the frame fills a sections /
 panel view and resizes), the card picker shows a picture, and the pages are served from
 /battmanfiles so a browser refresh on /battman/<view> reaches the dashboard."""
@@ -70,8 +70,7 @@ def test_card_wrapper_passes_layout_in_a_browser(tmp_path) -> None:
     assert out["placed"] == {"img": False, "inner": True}                                    # placed: the card
 
 
-PAGES = {"curvy": "curvy.html", "pricy": "pricy.html",
-         "theme-studio": "theme-studio.html?theme=Battman%20Neon%20Drift"}
+PAGES = {"curvy": "curvy.html", "pricy": "pricy.html"}
 VIEWS = {"curvy": "curvy", "pricy": "pricy", "log": "log", "theme": "theme-studio"}
 
 
@@ -90,7 +89,8 @@ async def test_page_cards_views_and_previews(hass: HomeAssistant, hass_client) -
         assert page_resp.status == 200, page
     # cards without a picture don't claim one
     assert "preview" not in listed["limits"]
-    assert "log" not in listed                 # the Log is a real card now (battman-log.js), not a page in a frame
+    for real in ("log", "theme-studio"):       # real cards now (battman-<id>.js), not pages in a frame
+        assert real not in listed, real
     views = {v["path"]: v for v in (await built(hass))["views"]}
     for path, card_id in VIEWS.items():
         assert [c["type"] for c in views[path]["cards"]] == [f"custom:battman-{card_id}"], path

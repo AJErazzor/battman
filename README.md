@@ -78,17 +78,20 @@ everything into cards so less and less of it is fixed.
 
 ## Pages
 
-Battman serves its pages and images from `/battmanfiles/` (`cost-chart.html`,
-`cost-compare.html`, `theme-studio.html`, `images/…`), for example:
+Battman serves its pages and images from `/battmanfiles/` (`curvy.html`, `pricy.html`,
+`images/…`), for example:
 
 ```yaml
 type: iframe
-url: /battmanfiles/cost-chart.html
+url: /battmanfiles/curvy.html
 ```
 
-Pages find their entities through Battman's **entity map** (Battman name →
+The Log, Cost chart, Cost compare, Settings and Theme studio are cards that draw themselves
+(`custom:battman-log` and so on): add them like any card, no frame needed.
+
+Pages and cards find their entities through Battman's **entity map** (Battman name →
 entity in your HA) and take their colours from a **Battman theme**. If an entity
-or theme colour is missing, the page shows an error saying exactly what.
+or theme colour is missing, the page or card shows an error saying exactly what.
 
 ## Theme mode colours sensor
 

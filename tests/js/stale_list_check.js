@@ -1,6 +1,6 @@
-// Real-browser check: a page that still has an older list of card files naming "log" (open since
-// before the update) gets the Log card from battman-log.js, not a card-file card called "log"
-// (run by tests/test_v0200.py).
+// Real-browser check: a page that still has an older list of card files naming cards that are real
+// cards now (open since before the update) gets each from its own script (battman-log.js and so
+// on), not a card-file card of that name (run by tests/test_v0200.py).
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node stale_list_check.js <www dir>
 const { chromium } = require("playwright");
 const fs = require("fs");
@@ -10,7 +10,7 @@ const http = require("http");
   const www = process.argv[2];
   const page = `<!doctype html><html><body>
 <script>window.loadCardHelpers = async () => ({ createCardElement: () => document.createElement("div") });</script>
-<script type="module" src="/battmanfiles/battman-cards.js?v=0.19.1&cards=state,log,limits"></script>
+<script type="module" src="/battmanfiles/battman-cards.js?v=0.19.1&cards=state,log,limits,cost-compare,cost-chart,settings,theme-studio"></script>
 </body></html>`;
   const server = http.createServer((req, res) => {
     const u = req.url.split("?")[0];
@@ -23,12 +23,15 @@ const http = require("http");
   const browser = await chromium.launch({ executablePath: process.env.CHROME });
   const p = await browser.newPage();
   await p.goto(`http://127.0.0.1:${server.address().port}/index.html`);
-  await p.waitForFunction(() => customElements.get("battman-log") && customElements.get("battman-state"), null, { timeout: 10000 });
-  const out = await p.evaluate(() => ({
+  const REAL = ["log", "cost-compare", "cost-chart", "settings", "theme-studio"];
+  await p.waitForFunction((real) => customElements.get("battman-state") && real.every((c) => customElements.get("battman-" + c)),
+                          REAL, { timeout: 10000 });
+  const out = await p.evaluate((real) => ({
+    real: Object.fromEntries(real.map((c) => [c, Object.getPrototypeOf(customElements.get("battman-" + c)).name])),
     log: customElements.get("battman-log").name,
     state: Object.getPrototypeOf(customElements.get("battman-state")).name,
     logPicker: window.customCards.filter((c) => c.type === "battman-log").length,
-  }));
+  }), REAL);
   console.log(JSON.stringify(out));
   await browser.close(); server.close();
 })();
