@@ -1,4 +1,4 @@
-"""Settings as one Battman card (custom:battman-settings, the page www/settings.html): every
+"""Settings as one Battman card (custom:battman-settings, www/battman-settings.js): every
 setting the old Settings view had is still there, and the page's limits are the ones the
 parameters sensor accepts."""
 
@@ -12,8 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
-PAGE = (ROOT / "www/settings.html").read_text()
-JS = PAGE[PAGE.index("<script>") + 8:PAGE.index("</script>")]
+JS = (ROOT / "www/battman-settings.js").read_text()
 
 # every setting the old Settings view (button-card sections) changed, and how it was sent
 PARAMS = ["buyProrateSOCOffset", "buyHighSOCOffset", "sellProrateSOCOffset", "sellLowSOCOffset", "sellSpikePrice1",
@@ -45,7 +44,7 @@ def test_every_old_setting_is_on_the_page() -> None:
     for sec in ("buy", "buyRules", "needy", "watchdog", "billing", "system", "sell", "sellRules", "spike", "protection",
                 "provider", "alert", "liveActivity", "dashboard", "defaults"):
         assert re.search(rf"\b{sec}:\s+\{{ title:", JS), sec
-    assert "{{" not in PAGE and "[[map:" not in PAGE                         # entity names come from the map at run time
+    assert "{{" not in JS and "[[map:" not in JS                             # entity names come from the map at run time
     assert "?? " not in JS                                                    # no made-up values for missing settings
 
 
@@ -62,8 +61,8 @@ def test_limits_match_what_the_parameters_sensor_accepts() -> None:
         assert re.search(rf"data\.{key} \| {t} <= {re.escape(hi)}(\.0)?\b", block), (key, "max", hi)
 
 
-def test_page_script_parses() -> None:
-    subprocess.run(["node", "--check", "-"], input=JS, text=True, check=True, capture_output=True)
+def test_card_script_parses() -> None:
+    subprocess.run(["node", "--check", str(ROOT / "www/battman-settings.js")], check=True, capture_output=True)
 
 
 async def test_settings_card_and_view(hass: HomeAssistant, hass_client) -> None:
@@ -73,11 +72,9 @@ async def test_settings_card_and_view(hass: HomeAssistant, hass_client) -> None:
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     client = await hass_client()
-    card = await (await client.get("/api/battman/cards/settings")).json()
-    assert card["config"]["url"] == "/battmanfiles/settings.html" and card["needs"] == [] and card["missing_map"] == []
-    assert card["preview"] == "/battmanfiles/previews/settings.webp"
-    assert (await client.get(card["preview"])).status == 200
-    assert (await client.get("/battmanfiles/settings.html")).status == 200
+    # a real card now (battman-settings.js, loaded on every HA page), not a page in a frame
+    assert (await client.get("/api/battman/cards/settings")).status == 404
+    assert (await client.get("/battmanfiles/battman-settings.js")).status == 200
+    assert (await client.get("/battmanfiles/settings.html")).status == 404
     views = {v["path"]: v for v in (await built(hass))["views"]}
-    assert views["settings"]["type"] == "panel" and views["settings"]["cards"] == [{"type": "custom:battman-settings",
-                                                                                     "grid_options": {"columns": "full", "rows": 16, "min_rows": 8}}]
+    assert views["settings"]["type"] == "panel" and views["settings"]["cards"] == [{"type": "custom:battman-settings"}]

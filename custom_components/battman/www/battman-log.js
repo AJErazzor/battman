@@ -17,50 +17,9 @@
 // The charts use Chart.js, shipped with Battman (/battmanfiles/vendor/).
 // ---------------------------------------------------------------------------------------------
 
-const LOG_FILES = "/battmanfiles";
-const LOG_DOCS = "https://github.com/AJErazzor/battman/blob/main/docs/cards.md#battman-log";
+import { BattmanCardBase, FILES, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+
 const LOG_EVENT = "battman_engine_log";
-
-// Register a custom element so HA finds it (as in battman-cards.js: HA may swap its element
-// registry while it starts, so register again in the new one if that happens after us).
-function battmanDefine(tag, cls) {
-  const reg = window.customElements;
-  if (!reg.get(tag)) reg.define(tag, cls);
-  const t0 = Date.now();
-  (function watch() {
-    const now = window.customElements;
-    if (now !== reg) {
-      if (!now.get(tag)) {
-        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
-      }
-      return;
-    }
-    if (window.CustomElementRegistryPolyfill) return;
-    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
-  })();
-}
-
-// Chart.js, loaded once per HA page the first time a Battman Log card needs it.
-let logChartLoad = null;
-function logLoadChartJs() {
-  if (window.Chart) return Promise.resolve(window.Chart);
-  if (!logChartLoad) {
-    logChartLoad = new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = `${LOG_FILES}/vendor/chart.umd.min.js`;
-      s.onload = () => (window.Chart ? resolve(window.Chart) : reject(new Error("Chart.js loaded but didn't start")));
-      s.onerror = () => { logChartLoad = null; reject(new Error(`couldn't load ${s.src}`)); };
-      document.head.appendChild(s);
-    });
-  }
-  return logChartLoad;
-}
-
-// True inside HA's card picker (Add card), looking up through the page's shadow roots.
-function logInCardPicker(el) {
-  for (let n = el; n; n = n.parentNode || n.host) if (n.tagName === "HUI-CARD-PICKER") return true;
-  return false;
-}
 
 const LOG_CSS = `
   :host {
@@ -77,7 +36,7 @@ const LOG_CSS = `
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  ha-card { overflow: hidden; }
+  ha-card { overflow: hidden; container-type: inline-size; }
   input, textarea, select, button { font-family: inherit; }
   .page {
     background: var(--ha-bg);
@@ -92,7 +51,7 @@ const LOG_CSS = `
   .hdr h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; margin: 0; }
   .hdr .who { height: 56px; width: auto; flex: none; }
   .hdr .word { height: 30px; width: auto; max-width: 100%; min-width: 0; flex: 0 1 auto; }
-  @media (max-width: 600px) { .hdr h1 { font-size: 18px; } }
+  @container (max-width: 600px) { .hdr h1 { font-size: 18px; } }
 
   .card {
     background: var(--ha-card);
@@ -239,14 +198,13 @@ const LOG_CSS = `
   .re-placeholder { border: 2px dashed var(--ha-border); border-radius: 12px;
     background: color-mix(in srgb, var(--ha-accent) 7%, transparent); }
 
-  .preview { display: block; width: 100%; height: auto; }
 `;
 
-const LOG_HTML = `
+const LOG_HTML = `<ha-card><div class="page">
 <label class="hiddenPicker" aria-hidden="true"><input type="checkbox" switch id="hapticSwitch"></label>
 <div class="wrap">
 
-  <div class="hdr"><h1><img class="who" src="${LOG_FILES}/images/battman-toilet-mirror.webp" alt="Battman"><img class="word" src="${LOG_FILES}/images/logs-line.webp" alt="Logs"></h1></div>
+  <div class="hdr"><h1><img class="who" src="${FILES}/images/battman-toilet-mirror.webp" alt="Battman"><img class="word" src="${FILES}/images/logs-line.webp" alt="Logs"></h1></div>
 
   <!-- Reorderable stack: Filter Log + Log + Mode + chart panels (drag the grip; order saved per-device) -->
   <div class="reorder" id="reorder">
@@ -296,13 +254,14 @@ const LOG_HTML = `
     <!-- chart panel cards are added here -->
   </div>
 
-</div>`;
+</div>
+</div></ha-card>`;
 
 // The Log itself: everything the card draws and does, on its shadow root. Returns
 // { resume, pause, themeChanged } for the card to call.
 function battmanLogRun(card, root) {
   const $ = (id) => root.getElementById(id);
-  const haObj = () => card._hass;
+  const haObj = () => card.hass;
 
   // ------------------------------------------------------------------ state
   let last = '';
@@ -404,10 +363,7 @@ function battmanLogRun(card, root) {
   function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
   // ----------------------------------------------------------------- theme
-  // A theme colour, read from the card (CSS variables reach it from its view's theme).
-  function gc(name) {
-    return getComputedStyle(card).getPropertyValue(name).trim();
-  }
+  const gc = (name) => cssVar(card, name);
   function syncColors() {
     if (window.Chart) { const ff = gc('--primary-font-family'); if (ff) window.Chart.defaults.font.family = ff; }
     accentHex = gc('--ha-accent');
@@ -1162,26 +1118,6 @@ function battmanLogRun(card, root) {
     $('reorder').innerHTML =
       '<div class="card"><div class="title">Battman Log problem</div><div class="empty">' + escapeHtml(msg) + '</div></div>';
   }
-  async function loadEntityMap() {
-    let r;
-    try { r = await haObj().callApi('GET', 'battman/entities'); }
-    catch (e) { throw new Error('Battman entity map unavailable (' + ((e && e.status_code) || (e && e.message) || e) + '). Is the Battman integration installed and set up?'); }
-    const m = (r && r.entities) || {};
-    const missing = NEEDS.filter(k => k !== 'third_party_pv' && !m[k]);
-    if (missing.length) throw new Error('Battman entity map has no entry for: ' + missing.join(', '));
-    if (m.pv_string.indexOf('{n}') < 0) throw new Error('Battman entity map: pv_string must contain {n} (e.g. sensor.sigen_inverter_pv{n}_power).');
-    M = m;
-  }
-  function checkEntities() {
-    const h = haObj();
-    const bad = NEED_ENTITIES.filter(k => !h.states[M[k]]).map(k => k + ' → ' + M[k]);
-    return bad.length ? 'Battman entity map: entity not found: ' + bad.join(', ') : null;
-  }
-  function checkTheme() {
-    const missing = THEME_VARS.filter(v => !gc(v));
-    return missing.length ? 'Theme colour ' + missing.join(', ') + ' not found — this view needs a Battman theme.' : null;
-  }
-
   // live: each engine run reloads the log (and moves a quick range on to now)
   let unsubLive = null, liveTimer = null;
   function setLiveNote(text) {
@@ -1213,15 +1149,18 @@ function battmanLogRun(card, root) {
   let resizeObs = null;
 
   (async function start() {
-    try { await loadEntityMap(); } catch (e) { showFatal(e.message); return; }
-    const problem = checkTheme() || checkEntities();
+    try {
+      M = await battmanMap(haObj(), NEEDS.filter(k => k !== 'third_party_pv'));
+      if (M.pv_string.indexOf('{n}') < 0) throw new Error('Battman entity map: pv_string must contain {n} (e.g. sensor.sigen_inverter_pv{n}_power).');
+    } catch (e) { showFatal(e.message); return; }
+    const problem = missingThemeVars(card, THEME_VARS) || missingEntities(haObj(), M, NEED_ENTITIES);
     if (problem) { showFatal(problem); return; }
     const hues = window.BattmanLib && window.BattmanLib.MODE_HUE;
     if (!hues) { showFatal("Battman's card library (battman-lib.js) isn't loaded on this HA page, so the mode colours aren't known. Refresh the page."); return; }
     const noHue = modes.filter(m => !hues[m]);
     if (noHue.length) { showFatal('Battman mode colours (MODE_HUE) have no colour for: ' + noHue.join(', ')); return; }
     modeToken = Object.fromEntries(modes.map(m => [m, '--battman-' + hues[m]]));
-    try { ChartLib = await logLoadChartJs(); } catch (e) { chartProblem = e.message; }
+    try { ChartLib = await loadChartJs(); } catch (e) { chartProblem = e.message; }
     syncColors();
     applyModeColors();
     buildPanels();
@@ -1262,66 +1201,25 @@ function battmanLogRun(card, root) {
   return { resume, pause, themeChanged };
 }
 
-class BattmanLogCard extends HTMLElement {
-  static getStubConfig() {
-    return {};
-  }
-
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  setConfig(config) {
-    const extra = Object.keys(config || {}).filter((k) => !["type", "grid_options", "view_layout", "visibility"].includes(k));
-    if (extra.length) throw new Error(`Battman Log has no options (found: ${extra.join(", ")}).`);
-    this._config = config;
-  }
-
-  set hass(hass) {
-    const old = this._hass;
-    this._hass = hass;
-    if (!old) return this._build();
-    if (this._run && old.themes !== hass.themes) this._run.themeChanged();
-  }
-
-  _build() {
-    // in HA's card picker: a picture of the card instead of the whole thing
-    if (logInCardPicker(this)) {
-      this.shadowRoot.innerHTML = `<style>${LOG_CSS}</style><ha-card><img class="preview" src="${LOG_FILES}/previews/log.webp" alt="Battman Log"></ha-card>`;
-      return;
-    }
-    this.shadowRoot.innerHTML = `<style>${LOG_CSS}</style><ha-card><div class="page">${LOG_HTML}</div></ha-card>`;
-    if (!window.battmanEngineLog) {
-      this.shadowRoot.querySelector(".page").innerHTML =
-        `<div class="card"><div class="title">Battman Log problem</div><div class="empty">Battman's engine log renderer (battman-enginelog.js) isn't loaded on this HA page. Refresh the page.</div></div>`;
-      return;
-    }
-    this._run = battmanLogRun(this, this.shadowRoot);
-  }
-
-  connectedCallback() {
-    if (this._run) this._run.resume();
-  }
-
-  disconnectedCallback() {
-    if (this._run) this._run.pause();
-  }
+class BattmanLogCard extends BattmanCardBase {
+  static cardName = "Battman Log";
+  static preview = "log.webp";
+  static gridOptions = { columns: "full", rows: "auto" };
+  static css = LOG_CSS;
+  static html = LOG_HTML;
 
   getCardSize() {
     return 12;
   }
 
-  getGridOptions() {
-    return { columns: "full", rows: "auto" };
+  run(root) {
+    if (!window.battmanEngineLog) {
+      this.problem("Battman's engine log renderer (battman-enginelog.js) isn't loaded on this HA page. Refresh the page.");
+      return {};
+    }
+    return battmanLogRun(this, root);
   }
 }
 battmanDefine("battman-log", BattmanLogCard);
-
-window.customCards = window.customCards || [];
-if (!window.customCards.some((c) => c.type === "battman-log")) {
-  window.customCards.push({
-    type: "battman-log", name: "Battman Log", preview: true, documentationURL: LOG_DOCS,
-    description: "The engine log: each run's decisions, with power, prices and battery charge charted over the day.",
-  });
-}
+battmanPicker("battman-log", "Battman Log",
+  "The engine log: each run's decisions, with power, prices and battery charge charted over the day.", "battman-log");

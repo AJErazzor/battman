@@ -3,7 +3,8 @@
 - custom:battman-log draws itself (no frame): loaded on every HA page, talks to HA through the
   hass object it's handed (no borrowed login token), reads colours straight from the theme, and
   reloads the log when the engine logs a run (no 3-second polling).
-- Chart.js 4.4.0 and chartjs-plugin-datalabels 2.2.0 are in www/vendor/; nothing loads them from a CDN.
+- Chart.js 4.4.0 is in www/vendor/; nothing loads it from a CDN. (The datalabels plugin shipped
+  here too until v0.21.0: no card used it.)
 """
 
 import json
@@ -27,12 +28,14 @@ JS = (WWW / "battman-log.js").read_text()
 def test_log_card_is_a_real_card() -> None:
     assert subprocess.run(["node", "--check", str(WWW / "battman-log.js")]).returncode == 0
     assert 'battmanDefine("battman-log", BattmanLogCard)' in JS
-    assert 'add_extra_js_url(hass, f"{STATIC_URL}/battman-log.js' in (ROOT / "__init__.py").read_text()
+    init = (ROOT / "__init__.py").read_text()
+    assert '"log", ' in init and 'add_extra_js_url(hass, f"{STATIC_URL}/battman-{name}.js' in init
     assert not (WWW / "log.html").exists() and not (ROOT / "cards/log.yaml").exists()
     # HA's connection, not a token taken from the page around it, and no frame
     for gone in ("access_token", "parent.document", "frameElement", "fetch(", "haCall", "iframe"):
         assert gone not in JS, gone
-    assert "callApi('GET', 'battman/log' + q)" in JS and "callApi('GET', 'battman/entities')" in JS
+    assert "callApi('GET', 'battman/log' + q)" in JS and "await battmanMap(haObj()," in JS
+    assert 'hass.callApi("GET", "battman/entities")' in (WWW / "battman-card-base.js").read_text()
     # live: the engine's log event, not polling every 3 s
     assert 'const LOG_EVENT = "battman_engine_log";' in JS and "subscribeEvents(" in JS
     assert "setInterval(load" not in JS and "3000)" not in JS
@@ -52,19 +55,17 @@ def test_no_cdn_left() -> None:
     for f in [*WWW.glob("*.html"), *WWW.glob("*.js"), *(ROOT / "cards").glob("*.yaml")]:
         text = f.read_text()
         assert "cdnjs.cloudflare.com" not in text and "cdn.jsdelivr.net" not in text, f.name
-    for page in ("curvy.html", "pricy.html", "cost-chart.html", "cost-compare.html"):
+    for page in ("curvy.html", "pricy.html"):
         assert '<script src="/battmanfiles/vendor/chart.umd.min.js"></script>' in (WWW / page).read_text(), page
-    assert '<script src="/battmanfiles/vendor/chartjs-plugin-datalabels.min.js"></script>' in (WWW / "cost-chart.html").read_text()
-    assert "/vendor/chart.umd.min.js" in JS
+    assert "/vendor/chart.umd.min.js" in (WWW / "battman-card-base.js").read_text()   # the Log and cost cards' loader
 
 
 def test_vendor_files_are_the_published_builds() -> None:
     chart = (WWW / "vendor/chart.umd.min.js").read_text()
-    labels = (WWW / "vendor/chartjs-plugin-datalabels.min.js").read_text()
     assert chart.startswith("/*!\n * Chart.js v4.4.0") and "Released under the MIT License" in chart[:300]
-    assert labels.startswith("/*!\n * chartjs-plugin-datalabels v2.2.0") and "MIT" in labels[:300]
     readme = (WWW / "vendor/README.md").read_text()
-    assert "4.4.0" in readme and "2.2.0" in readme
+    assert "4.4.0" in readme and "datalabels" not in readme
+    assert not (WWW / "vendor/chartjs-plugin-datalabels.min.js").exists()
 
 
 async def test_vendor_files_served(hass: HomeAssistant, hass_client_no_auth) -> None:
@@ -74,14 +75,14 @@ async def test_vendor_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     client = await hass_client_no_auth()
-    for path in ("vendor/chart.umd.min.js", "vendor/chartjs-plugin-datalabels.min.js", "battman-log.js"):
+    for path in ("vendor/chart.umd.min.js", "battman-log.js"):
         r = await client.get(f"/battmanfiles/{path}")
         assert r.status == 200, path
 
 
 def test_picker_shows_the_preview_picture() -> None:
     assert (WWW / "previews/log.webp").stat().st_size > 1000
-    assert re.search(r'previews/log\.webp', JS) and 'type: "battman-log", name: "Battman Log"' in JS
+    assert 'static preview = "log.webp";' in JS and 'battmanPicker("battman-log", "Battman Log",' in JS
 
 
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
@@ -90,7 +91,7 @@ NODE_PATH = "/tmp/pwtest/node_modules"
 
 def test_card_wrapper_leaves_the_log_to_its_script() -> None:
     cards_js = (WWW / "battman-cards.js").read_text()
-    assert 'const OWN_SCRIPT_CARDS = { log: "battman-log.js" };' in cards_js
+    assert 'log: "battman-log.js"' in cards_js[cards_js.index("const OWN_SCRIPT_CARDS = {"):]
 
 
 @pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
@@ -103,4 +104,5 @@ def test_older_card_list_still_gets_the_log_card() -> None:
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
-    assert out == {"log": "BattmanLogCard", "state": "BattmanCard", "logPicker": 1}
+    assert out == {"real": dict.fromkeys(("log", "cost-compare", "cost-chart", "settings", "theme-studio"), "BattmanCardBase"),
+                   "log": "BattmanLogCard", "state": "BattmanCard", "logPicker": 1}

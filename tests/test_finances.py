@@ -50,8 +50,8 @@ async def test_dashboard_views_fill_the_map(hass: HomeAssistant, hass_client) ->
 async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> None:
     await _setup(hass)
     client = await hass_client_no_auth()
-    for path in ("/battmanfiles/cost-compare.html", "/battmanfiles/images/finances-line.webp",
-                 "/battmanfiles/battman-log.js", "/battmanfiles/theme-studio.html",
+    for path in ("/battmanfiles/battman-cost-compare.js", "/battmanfiles/images/finances-line.webp",
+                 "/battmanfiles/battman-log.js", "/battmanfiles/battman-theme-studio.js",
                  "/battmanfiles/curvy.html", "/battmanfiles/pricy.html", "/battmanfiles/images/battman-lying.webp",
                  "/battmanfiles/images/battman-money.webp", "/battmanfiles/images/soc-curve-editor-line.webp",
                  "/battmanfiles/images/price-curve-editor-line.webp",

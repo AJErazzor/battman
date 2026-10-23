@@ -206,7 +206,7 @@ def test_themes_line_in_dependencies() -> None:
 
 def test_old_dashboard_strategy_gone() -> None:
     assert not (ROOT / "www/battman-strategy.js").exists()
-    for f in [*ROOT.glob("*.py"), ROOT / "www/settings.html", ROOT / "www/theme-studio.html"]:
+    for f in [*ROOT.glob("*.py"), ROOT / "www/battman-settings.js", ROOT / "www/battman-theme-studio.js"]:
         assert "strategy" not in f.read_text(), f
     text = json.loads((ROOT / "translations/en.json").read_text())["issues"]["dashboard_unavailable"]["description"]
     assert "Create dashboard" in text and "battman.create_dashboard" in text and "strategy" not in text

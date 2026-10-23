@@ -6,19 +6,19 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 | Dependency | Type | Needed by | Get it |
 |---|---|---|---|
 | button-card | Dashboard card | Billing and Solar System cards; every Battman card on the Power view | https://github.com/custom-cards/button-card |
-| card-mod | Dashboard card | Cost chart and Cost compare cards (flush frames); Battery mode and Limits cards | https://github.com/thomasloven/lovelace-card-mod |
+| card-mod | Dashboard card | Battery mode, Limits and Overrides cards | https://github.com/thomasloven/lovelace-card-mod |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
 | power-pie-card | Dashboard card | NEM mix card | HACS → Frontend → power-pie-card |
 | browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup), Billing card (Correct totals popup) | https://github.com/thomasloven/hass-browser_mod |
 
 
-Battman ships **Chart.js** 4.4.0 and its datalabels add-on (`www/vendor/`), so the charts on the Log
-card and the Curvy, Pricy, Cost chart and Cost compare pages work without the internet. The only
+Battman ships **Chart.js** 4.4.0 (`www/vendor/`), so the charts on the Log, Cost chart and Cost
+compare cards and the Curvy and Pricy pages work without the internet. The only
 thing loaded from the internet is **Google Fonts**: the theme studio's font browser, and themes that
 turn on a custom font.
 
-The Log card draws itself; the Curvy, Pricy, Settings and Theme studio cards show Battman's pages in
-a frame. None of them need extra cards.
+The Log, Cost chart, Cost compare, Settings and Theme studio cards draw themselves; the Curvy and
+Pricy cards show Battman's pages in a frame. None of them need extra cards.
 
 Other integrations Battman's pages read (through the entity map):
 

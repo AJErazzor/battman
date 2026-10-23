@@ -56,11 +56,11 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
 | `battman-curvy` | The SOC curve editor (Battman's Curvy page in a frame for now). Size it by dragging in a sections view; it fills a panel view | nothing |
 | `battman-pricy` | The price curve editor (Battman's Pricy page in a frame for now). Sized like Curvy | nothing |
-| `battman-settings` | Every Battman setting on one page; drag sections between two columns (order kept per device). Each change is checked: values Battman won't accept are refused, and it says if a change didn't take | nothing |
+| `battman-settings` | Every Battman setting on one card; drag sections between two columns (order kept per device). Each change is checked: values Battman won't accept are refused, and it says if a change didn't take. Draws itself; no options | nothing |
 | `battman-log` | The engine log, mode timeline and charts (see [Battman Log](#battman-log)) | nothing |
-| `battman-theme-studio` | The Theme studio (in a frame for now). Sized like Curvy | nothing |
-| `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export (Battman's cost chart page in a frame) | card-mod |
-| `battman-cost-compare` | This period against earlier ones (Battman's cost compare page in a frame) | card-mod |
+| `battman-theme-studio` | The Theme studio: edit a Battman theme with a live preview (including the real State card), save it to HA or make it the dashboard's theme. Draws itself; no options | nothing |
+| `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export, over N days, a bill cycle or From / To (the range is kept per device; it starts on 5 days on a narrow card, 10 on a wide one). Draws itself; no options | nothing |
+| `battman-cost-compare` | This bill cycle against the last: the running net cost day by day, and how far ahead or behind you are. Draws itself; no options | nothing |
 | `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
 | `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
 | `battman-house` | The house picture with live prices, solar, PV strings, home, grid, battery, temperature and three of your own devices, with moving flow lines (see [Battman House](#battman-house)) | nothing |
@@ -158,6 +158,32 @@ options. It looks and works as the page did:
 - **Order**: drag any block by its grip; the order is kept per device.
 - **Live**: when the engine logs a run the log reloads, and on a quick range the window moves on to
   now (your filters stay). The charts also refresh every minute.
+
+## Battman Cost chart
+
+`custom:battman-cost-chart` is each day's buy, sell and network fee, the net cost, and your Sigen
+import and export, from the cost totals' long-term statistics (so it reaches back past the
+recorder's purge). Pick 5 to 30 days, this or last bill cycle, or From / To; the range is kept per
+device. A "bank it" day is rebuilt from that day's hourly figures. It has no options.
+
+## Battman Cost compare
+
+`custom:battman-cost-compare` is this bill cycle against the last: the running net cost day by day
+from your bill day, with how far ahead or behind you are today. It refreshes every minute. It has
+no options.
+
+## Battman Settings
+
+`custom:battman-settings` is every Battman setting on one card, in sections you can drag between
+two columns (the order is kept per device). Each change is sent to Battman and checked: it shows
+**✓ Saved**, or why not (a value out of range, or Battman not in charge of the battery). It has no
+options.
+
+## Battman Theme studio
+
+`custom:battman-theme-studio` edits a Battman theme: the palette, surfaces, fonts and mode
+effects, with a live preview that includes the real State card. **Save to HA** saves it as one of
+your themes; **Make Active** makes it the dashboard's theme. It has no options.
 
 ## Battman House
 

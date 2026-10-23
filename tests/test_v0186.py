@@ -77,9 +77,9 @@ async def test_theme_name_in_parameters_drives_the_colours(hass: HomeAssistant) 
 
 
 def test_both_theme_pickers_save_the_name() -> None:
-    settings = (ROOT / "www/settings.html").read_text()      # the Settings page's Dashboard theme
+    settings = (ROOT / "www/battman-settings.js").read_text()      # the Settings page's Dashboard theme
     assert "setParam(el, 'dashboardTheme', theme" in settings
-    studio = (ROOT / "www/theme-studio.html").read_text()
+    studio = (ROOT / "www/battman-theme-studio.js").read_text()
     make_active = studio[studio.index("function doMakeActive(){"):]
     assert "saveThemeName(hass,name);" in make_active[:make_active.index("function reloadParent")]
     assert "dashboardTheme:name" in studio and "parameters_update_event" in studio

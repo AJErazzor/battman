@@ -119,15 +119,16 @@ async def test_finances_is_battman_cards(hass: HomeAssistant, hass_client) -> No
         "custom:battman-cost-chart", "custom:battman-cost-compare", "custom:battman-billing", "custom:battman-solar-system"]
     assert fin["header"]["card"] == {"type": "custom:battman-image", "image": "finances-header.webp",
                                      "background": "none", "frame": False, "height": 48}
-    for cid, needs in (("cost-chart", []), ("cost-compare", []), ("billing", ["button-card"]), ("solar-system", ["button-card"])):
+    for cid in ("billing", "solar-system"):
         card = await (await client.get(f"/api/battman/cards/{cid}")).json()
-        assert card["missing_map"] == [] and card["needs"] == needs, cid
+        assert card["missing_map"] == [] and card["needs"] == ["button-card"], cid
         assert "{{" not in json.dumps(card["config"]), cid
+    # the cost cards draw themselves (battman-cost-*.js), no page in a frame and no card-mod
     for cid in ("cost-chart", "cost-compare"):
-        card = await (await client.get(f"/api/battman/cards/{cid}")).json()
-        assert card["config"]["url"] == f"/battmanfiles/{cid}.html" and "card_mod" in card["config"]
-        assert card["preview"] == f"/battmanfiles/previews/{cid}.webp"
-        assert (await client.get(card["preview"])).status == 200
+        assert (await client.get(f"/api/battman/cards/{cid}")).status == 404, cid
+        assert (await client.get(f"/battmanfiles/battman-{cid}.js")).status == 200, cid
+        assert (await client.get(f"/battmanfiles/{cid}.html")).status == 404, cid
+        assert (await client.get(f"/battmanfiles/previews/{cid}.webp")).status == 200, cid
     for img in ("finances-header.webp",):
         assert (await client.get(f"/battmanfiles/images/{img}")).status == 200
     billing = await (await client.get("/api/battman/cards/billing")).json()

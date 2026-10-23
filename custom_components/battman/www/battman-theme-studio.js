@@ -1,0 +1,1423 @@
+// Battman Theme studio: custom:battman-theme-studio. The palette editor for Battman themes: pick a
+// Battman theme, edit its hues, neutrals, font and button effects with a live preview (the
+// Power view's own mode buttons, override rows and state card), then Save to HA (your own themes,
+// themes/battman/custom/), export, or Make Active (every view of this dashboard). Its own colours
+// come from the view's Battman theme (no fallbacks). Google Fonts are loaded into the page only
+// for the font browser and themes that use a custom font.
+
+import { BattmanCardBase, FILES, battmanDefine, battmanPicker, missingThemeVars } from "./battman-card-base.js";
+
+class BattmanThemeStudioCard extends BattmanCardBase {
+  static cardName = "Battman Theme studio";
+  static preview = "theme-studio.webp";
+  static css = `
+/* ════════════════════════════════════════════════════════════
+   Battman Theme Studio — palette editor for Battman themes.
+   Served by the Battman integration at /battmanfiles/theme-studio.html.
+   Colours of the studio itself come from the view's Battman theme (no fallbacks).
+   Version 2.1.0 (2026-10-10): live preview shows the real Power-view
+   state card (its JS + fx CSS read from the dashboard) as a HOOOOVER demo.
+   Version 2.0.0 (2026-10-05): Make Active redraws the dashboard
+   in place after saving (no full app reload / HA-logo splash).
+   Pure HA-variable chrome (matches editorv137 / priceeditor look).
+   The PREVIEW panel is scoped to the theme being EDITED, so it is
+   independent of whichever theme is currently active in HA.
+   ════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box}
+:host{display:block}
+ha-card{overflow:hidden;container-type:inline-size;background:var(--primary-background-color,#201d24)}
+.studio{color-scheme:dark;max-width:100%;overflow-x:hidden;font-size:16px;line-height:normal;
+  font-family:var(--primary-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif);
+  margin:0;padding:12px;
+  color:var(--primary-text-color,#fff);
+  -webkit-font-smoothing:antialiased;
+}
+@container (min-width:700px){.studio{padding:18px}}
+a{color:inherit}
+
+.container{
+  max-width:1500px;margin:0 auto;
+  background:var(--card-background-color,#2a262f);
+  border-radius:var(--ha-card-border-radius,16px);
+  padding:16px;
+  box-shadow:var(--ha-card-box-shadow,0 8px 28px rgba(0,0,0,.35));
+  border:1px solid var(--divider-color,rgba(255,255,255,.08));
+}
+@container (min-width:700px){.container{padding:24px}}
+
+/* ── Header / toolbar ── */
+.hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.hd h1{font-size:19px;font-weight:800;letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:9px}
+.hd .dot{width:11px;height:11px;border-radius:50%;background:var(--primary-color,#c44569);box-shadow:0 0 10px var(--primary-color,#c44569)}
+.spacer{flex:1}
+/* transient toast (replaces the persistent status pill) */
+.toast{
+  position:fixed;left:50%;bottom:16px;z-index:50;
+  transform:translateX(-50%) translateY(10px);
+  font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;
+  background:var(--card-background-color,#2a262f);
+  color:var(--primary-text-color,#fff);
+  border:1px solid var(--divider-color,rgba(255,255,255,.14));
+  box-shadow:0 6px 20px rgba(0,0,0,.35);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{color:var(--battman-green);border-color:var(--battman-green)}
+.toast.err{color:var(--battman-red);border-color:var(--battman-red)}
+.pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;
+  background:var(--secondary-background-color,#201d24);color:var(--secondary-text-color,#c9b8c0);
+  border:1px solid var(--divider-color,rgba(255,255,255,.1));white-space:nowrap}
+
+.toolbar{display:flex;flex-direction:column;gap:10px;align-items:flex-start;margin-bottom:16px}
+.toolbar>select{width:100%;max-width:420px}        /* dropdown on its own wide row */
+.tbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}  /* buttons: uniform gap, left-aligned (Curvy-style) */
+select,input[type=text]{
+  font-family:inherit;font-size:13px;
+  padding:7px 11px;border-radius:9px;
+  background:var(--secondary-background-color,#201d24);
+  color:var(--primary-text-color,#fff);
+  border:1px solid var(--divider-color,rgba(255,255,255,.12));
+}
+select{cursor:pointer}
+/* Themed action buttons — same --c/--c-fill system as the Curvy editor:
+   soft hue fill + hue text + neutral border; variants set the hue. */
+.btn{
+  --c:var(--battman-blue);
+  --c-fill:var(--battman-blue-soft-bg);
+  font-family:inherit;font-size:12.5px;font-weight:600;
+  padding:7px 13px;border-radius:8px;cursor:pointer;
+  background:var(--c-fill,transparent);
+  color:var(--c,var(--primary-text-color));
+  border:1px solid var(--battman-border-neutral);
+  transition:background .12s,border-color .12s,transform .08s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+}
+@media(hover:hover){.btn:hover:not([disabled]){border-color:var(--c)}}
+.btn:active:not([disabled]){background:color-mix(in srgb,var(--c) 32%,transparent);border-color:var(--c);transform:scale(.97)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+/* variants */
+.btn-apply{--c:var(--battman-green);--c-fill:var(--battman-green-soft-bg);border-color:var(--battman-green-border-strong);font-weight:700}
+.btn-new{--c:var(--battman-purple);--c-fill:var(--battman-purple-soft-bg)}
+.btn-load{--c:var(--battman-blue);--c-fill:var(--battman-blue-soft-bg)}
+.btn-io{--c:var(--battman-teal);--c-fill:var(--battman-teal-soft-bg)}
+.btn-danger{--c:var(--battman-red);--c-fill:var(--battman-red-soft-bg)}
+.btn.sel{background:color-mix(in srgb,var(--c) 30%,transparent);border-color:var(--c);font-weight:700}
+
+/* ── Layout ── */
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+@container (min-width:1050px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+
+.panel{
+  background:var(--secondary-background-color,#201d24);
+  border:1px solid var(--divider-color,rgba(255,255,255,.08));
+  border-radius:14px;padding:14px;
+}
+.panel+.panel{margin-top:14px}
+.panel>h2,details.panel>summary h2{   /* expandable sections get the same small heading */
+  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;
+  margin:0 0 12px;color:var(--secondary-text-color,#c9b8c0);
+  display:flex;align-items:center;gap:8px;
+}
+.panel>h2 .hint,details.panel>summary h2 .hint{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px;color:var(--disabled-text-color,#8a7d86)}
+details.panel>summary{list-style:none;cursor:pointer;margin:-14px;padding:14px;}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary h2{margin:0}
+details.panel[open]>summary h2{margin-bottom:0}
+details.panel[open]>summary{margin-bottom:0}
+details.panel>summary h2::after{content:"▸";margin-left:auto;transition:transform .15s}
+details.panel[open]>summary h2::after{transform:rotate(90deg)}
+details.panel>.body{margin-top:14px}
+
+/* ── Swatch rows ── */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+.sw{
+  display:flex;align-items:center;gap:9px;
+  background:var(--card-background-color,#2a262f);
+  border:1px solid var(--divider-color,rgba(255,255,255,.08));
+  border-radius:10px;padding:7px 9px;
+}
+.sw .chip{
+  width:30px;height:30px;border-radius:7px;flex:none;cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);position:relative;overflow:hidden;padding:0;
+}
+.sw .chip input[type=color]{position:absolute;inset:-6px;width:150%;height:150%;border:none;padding:0;cursor:pointer;background:none}
+.sw .meta{min-width:0;flex:1}
+.sw .meta .nm{font-size:11px;font-weight:700;color:var(--primary-text-color,#fff);text-transform:capitalize}
+.sw .meta input.hex{
+  width:100%;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  padding:3px 6px;margin-top:3px;border-radius:6px;
+  background:var(--secondary-background-color,#201d24);
+  color:var(--secondary-text-color,#c9b8c0);
+  border:1px solid var(--divider-color,rgba(255,255,255,.1));
+}
+.sw .derived{display:flex;gap:3px;margin-top:5px}
+.sw .derived i{flex:1;height:9px;border-radius:2px;display:block;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+
+.rolegrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@container (max-width:560px){.rolegrid{grid-template-columns:1fr}}
+.role{display:flex;flex-direction:column;gap:4px}
+.role label{font-size:11px;font-weight:700;color:var(--secondary-text-color,#c9b8c0)}
+.role .rsel{display:flex;align-items:center;gap:7px}
+.role .rsel .dotc{width:15px;height:15px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.3);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.role select{flex:1;font-size:12px;padding:5px 8px}
+
+.fontrow{display:flex;flex-direction:column;gap:10px}
+.fontrow .line{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.fontrow .line label:not(.switch){font-size:12px;font-weight:700;min-width:70px;color:var(--secondary-text-color,#c9b8c0)}
+.fontrow input[type=text]{flex:1;min-width:180px}
+/* font browser: curated Google Fonts, each row drawn in its own face (lazy, text-subset) */
+.fpick{display:flex;flex-direction:column;gap:8px}
+.fpick[hidden]{display:none}
+.fcats{display:flex;flex-wrap:wrap;gap:6px}
+.fcats .btn{font-size:11.5px;padding:5px 10px}
+.flist{max-height:280px;overflow-y:auto;border:1px solid var(--divider-color,#3a343f);border-radius:8px;background:var(--secondary-background-color,#201d24)}
+.frow{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--divider-color,#3a343f)}
+.frow:last-child{border-bottom:0}
+.frow:hover{background:color-mix(in srgb,var(--primary-text-color,#fff) 6%,transparent)}
+.frow.sel{background:color-mix(in srgb,var(--battman-green) 14%,transparent);box-shadow:inset 3px 0 0 var(--battman-green)}
+.frow .fn{flex:1;min-width:0;font-size:17px;line-height:1.25;color:var(--primary-text-color,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .fc{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--disabled-text-color,#8a7d86);flex:none}
+.frow .fb{font-size:10px;font-weight:700;color:var(--battman-amber);border:1px solid currentColor;border-radius:4px;padding:0 5px;flex:none}
+.frow.try .fn{font-size:13px;font-style:italic;color:var(--secondary-text-color,#c9b8c0)}
+/* compact HA-switch look (matches Settings): grey knob/track off, white knob + green track on */
+.switch{display:inline-block;position:relative;width:34px;height:20px;flex:none;vertical-align:middle}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1}
+.switch .sl{position:absolute;inset:0;border-radius:999px;cursor:pointer;transition:.18s ease;background:var(--battman-border-neutral)}
+.switch .sl::before{content:"";position:absolute;height:14px;width:14px;left:3px;top:3px;border-radius:50%;background:var(--battman-text-dim);box-shadow:0 1px 2px rgba(0,0,0,.45);transition:.18s ease}
+.switch input:checked+.sl{background:var(--battman-green)}
+.switch input:checked+.sl::before{transform:translateX(14px);background:#fff}
+
+/* per-mode FX rows */
+.fxrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 2px;border-bottom:1px solid var(--divider-color,rgba(255,255,255,.06))}
+.fxrow:last-child{border-bottom:none}
+.fxrow .fxname{font-size:12.5px;font-weight:700;min-width:96px;color:var(--primary-text-color,#fff)}
+.fxrow .fxctl{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.fxrow.off .fxctl{opacity:.35;pointer-events:none}
+.fxrow .fxctl .k{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--disabled-text-color,#8a7d86)}
+.fxrow .fxctl select{font-size:11.5px;padding:4px 7px}
+.fxrow .fxctl input[type=text]{font-size:11.5px;padding:4px 6px;width:54px;text-align:center}
+
+.harm{display:flex;flex-direction:column;gap:11px}
+.harm .line{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.harm .schemes{display:flex;gap:6px;flex-wrap:wrap}
+.harm .schemes .btn{font-size:11.5px;padding:6px 10px}
+.harm .preview12{display:flex;gap:3px;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--divider-color,rgba(255,255,255,.1))}
+.harm .preview12 i{flex:1;display:block}
+.seedwrap{position:relative;width:34px;height:34px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.2);flex:none}
+.seedwrap input{position:absolute;inset:-6px;width:150%;height:150%;border:none;cursor:pointer;background:none}
+
+/* ════════════ PREVIEW (scoped to edited theme) ════════════ */
+#preview{
+  font-family:var(--battman-font);
+  background:var(--battman-surface-popup);
+  border-radius:14px;padding:16px;overflow:hidden;
+  border:1px solid var(--battman-border-neutral);
+  color:var(--battman-text-bright);
+}
+.pvsec{margin-bottom:20px}
+.pvsec:last-child{margin-bottom:0}
+.pvsec>.cap{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--battman-text-dim);margin-bottom:9px}
+
+/* ── Mode buttons (ported verbatim from the Power-view button-card) ── */
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+@container (max-width:560px){.modes{grid-template-columns:repeat(2,1fr)}}
+@keyframes fx-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes fx-glow-mono{0%,100%{box-shadow:0 0 5px 0 var(--fx-glow-color,transparent)}50%{box-shadow:0 0 18px 4px var(--fx-glow-color,transparent)}}
+@keyframes fx-glow-rainbow{
+  0%{box-shadow:0 0 16px 4px var(--battman-red)}16%{box-shadow:0 0 16px 4px var(--battman-orange)}
+  33%{box-shadow:0 0 16px 4px var(--battman-yellow)}50%{box-shadow:0 0 16px 4px var(--battman-green)}
+  66%{box-shadow:0 0 16px 4px var(--battman-blue)}83%{box-shadow:0 0 16px 4px var(--battman-purple)}
+  100%{box-shadow:0 0 16px 4px var(--battman-red)}
+}
+.mbtn{
+  position:relative;overflow:hidden;cursor:pointer;
+  height:40px;min-height:40px;padding:0 10px;border-radius:8px;box-shadow:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  background:var(--battman-surface-card);
+  border:var(--fx-border,1px solid var(--battman-border-neutral));
+  animation:var(--fx-glow-name,none) var(--fx-glow-duration,0s) ease-in-out infinite;
+}
+.mbtn::before{content:'';position:absolute;z-index:0;top:50%;left:50%;width:360px;height:360px;
+  transform:translate(-50%,-50%);background:var(--fx-chase-gradient,none);
+  animation:fx-spin var(--fx-chase-duration,0s) linear infinite;display:var(--fx-ring,none)}
+.mbtn::after{content:'';position:absolute;z-index:1;inset:var(--fx-ring-width,2px);border-radius:6px;
+  background:linear-gradient(var(--fx-fill-soft,var(--battman-surface-card)),var(--fx-fill-soft,var(--battman-surface-card))),var(--battman-surface-card);
+  display:var(--fx-ring,none)}
+.mbtn>*{position:relative;z-index:2}
+.mbtn .nm{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--battman-text-muted);line-height:1.1}
+.mbtn .st{font-size:10px;font-weight:600;color:var(--battman-text-dim);line-height:1}
+.mbtn.active .nm,.mbtn.active .st{color:var(--mhue)}
+@media(prefers-reduced-motion:reduce){.mbtn,.mbtn::before{animation:none!important}}
+
+/* ── Override dock: rows injected verbatim by BattmanLib.renderRow ── */
+.dock{display:flex;flex-direction:column;gap:8px}
+.dockfallback .orow{display:flex;align-items:center;gap:8px;height:60px;border-radius:8px;padding:0 12px;
+  border:1px solid var(--battman-border-neutral);background:var(--battman-surface-card);color:var(--battman-text-muted)}
+
+/* ── Amber price timeline: SELL + BUY sections, colour-coded forecast boxes ── */
+.hero{border-radius:12px;overflow:hidden;border:1px solid var(--battman-border-neutral);background:var(--battman-surface-card)}
+.herosec{padding:11px 13px}
+.herosec+.herosec{border-top:1px solid var(--battman-border-neutral)}
+.herosec.sell{background:linear-gradient(var(--battman-darkred-wash),var(--battman-darkred-wash)),var(--battman-surface-card)}
+.herosec.buy{background:linear-gradient(var(--battman-amber-wash),var(--battman-amber-wash)),var(--battman-surface-card)}
+.herohd{display:flex;align-items:baseline;gap:9px;margin-bottom:9px}
+.herohd .lab{font-size:11px;font-weight:800;letter-spacing:.07em;color:var(--battman-text-muted);text-transform:uppercase}
+.herohd .big{font-size:27px;font-weight:800;letter-spacing:-.5px;line-height:.9}
+.herohd .spark{margin-left:auto;opacity:.8}
+.herohd .cdwrap{display:flex;align-items:baseline;gap:5px;line-height:1}
+.herohd .cdwrap .k{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--battman-text-muted)}
+.herohd .cdwrap .cd{font-size:14px;font-weight:800;color:var(--battman-text-bright);font-variant-numeric:tabular-nums}
+.herogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+@container (max-width:560px){.herogrid{grid-template-columns:repeat(2,1fr)}}
+.fbox{border-radius:7px;padding:5px 8px;display:flex;flex-direction:column;gap:1px;
+  background:var(--fbg);border:1px solid var(--fbd)}
+.fbox .t{font-size:10px;font-weight:700;color:var(--battman-text-muted);display:flex;align-items:center;justify-content:space-between;gap:4px}
+.fbox .t .arw{color:var(--fc);font-size:12px;font-weight:800}
+.fbox .p{font-size:15px;font-weight:800;color:var(--fc);font-variant-numeric:tabular-nums;line-height:1.1}
+
+.note{font-size:11.5px;color:var(--disabled-text-color,#8a7d86);line-height:1.5;margin-top:6px}
+.note code{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--secondary-background-color,#201d24);padding:1px 5px;border-radius:5px}
+textarea#yaml{
+  width:100%;height:220px;margin-top:10px;resize:vertical;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.5;
+  padding:11px;border-radius:10px;
+  background:var(--secondary-background-color,#201d24);
+  color:var(--primary-text-color,#fff);
+  border:1px solid var(--divider-color,rgba(255,255,255,.12));
+}
+`;
+  static html = `<ha-card><div class="studio"><div class="container">
+  <div class="hd">
+    <h1><span class="dot"></span>Theme Studio</h1>
+    <span class="spacer"></span>
+  </div>
+
+  <div class="toolbar">
+    <select id="themeSel" title="Battman themes"></select>
+    <div class="tbtns">
+      <button class="btn btn-apply" id="btnActive" title="Apply this theme to every view of this dashboard">Make Active</button>
+      <button class="btn btn-apply" id="btnReload" title="Make HA re-read the themes folder (after a file was saved there)">Reload Themes</button>
+      <button class="btn btn-io" id="btnImport" title="Load a theme .yaml from your device">Import</button>
+      <input type="file" id="fileImport" accept=".yaml,.yml,text/yaml" style="display:none">
+      <button class="btn btn-apply" id="btnSave" title="Save this theme to Home Assistant as one of your own themes">Save to HA</button>
+      <button class="btn btn-io" id="btnDownload" title="Download this theme as a .yaml file">Export</button>
+      <button class="btn btn-new" id="btnExport" title="Copy the YAML to the clipboard">Copy</button>
+      <button class="btn btn-new" id="btnPaste" title="Paste a theme from the clipboard">Paste</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <div class="grid">
+    <!-- ░░░░░ LEFT: controls ░░░░░ -->
+    <div>
+      <div class="panel">
+        <h2>Palette <span class="hint">· base hue → derived shades auto-generated</span></h2>
+        <div class="swatches" id="hues"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Surfaces · Text · Borders</h2>
+        <div class="swatches" id="neutrals"></div>
+      </div>
+
+
+      <details class="panel" open>
+        <summary><h2>Harmonic palette generator</h2></summary>
+        <div class="body harm">
+          <div class="line">
+            <span class="seedwrap"><input type="color" id="seed" value="#c44569"></span>
+            <span style="font-size:12px;font-weight:700;color:var(--secondary-text-color)">Seed colour</span>
+            <input type="text" id="seedHex" style="width:110px" value="#c44569">
+          </div>
+          <div class="schemes" id="schemes"></div>
+          <div class="preview12" id="harmPrev"></div>
+          <div class="line">
+            <button class="btn btn-apply" id="btnApplyHarm">Apply to 12 hues</button>
+            <span class="note" style="margin:0">Keeps each slot's brightness; rotates hue around the wheel per scheme.</span>
+          </div>
+        </div>
+      </details>
+
+      <div class="panel">
+        <h2>Theme font</h2>
+        <div class="fontrow">
+          <div class="line">
+            <label class="switch"><input type="checkbox" id="fontOn"><span class="sl"></span></label>
+            <span style="font-size:12px;font-weight:700;color:var(--secondary-text-color)">Enable custom font</span>
+          </div>
+          <div class="line"><label>Font</label><input type="text" id="fontFamily" placeholder="IM Fell English"><button type="button" class="btn" id="btnFontBrowse" aria-expanded="false" aria-controls="fontPick" style="--c:var(--battman-blue)">Browse</button></div>
+          <div class="fpick" id="fontPick" hidden>
+            <div class="line"><input type="text" id="fontSearch" placeholder="Search fonts…" autocomplete="off" spellcheck="false"></div>
+            <div class="fcats" id="fontCats"></div>
+            <div class="flist" id="fontList" role="listbox" aria-label="Fonts"></div>
+          </div>
+          <div class="line"><label>Fallback</label><input type="text" id="fontFallback" placeholder="Georgia"></div>
+          <div class="line"><label>Generic</label><select id="fontGeneric">
+            <option value="">(none)</option>
+            <option value="sans-serif">sans-serif</option>
+            <option value="serif">serif</option>
+            <option value="monospace">monospace</option>
+            <option value="system-ui">system-ui</option>
+            <option value="cursive">cursive</option>
+          </select></div>
+          <div class="note" style="margin:0"><b>Browse</b> opens the font list — <b>tap a font</b> to preview it live (it also switches the custom font on and sets a matching Fallback + Generic). <b>No bold</b> = the font has no bold weight, so the dashboard's bold text will look smudged. Any name typed in <b>Font</b> also loads from Google Fonts. The <b>Font</b> box is auto-loaded from Google Fonts; Fallback + Generic are used if it fails to load. Saved as <code>Font, Fallback, Generic</code>. When off, the block is written commented-out, like the shipped themes.</div>
+        </div>
+      </div>
+
+      <details class="panel">
+        <summary><h2>Button FX <span class="hint">· advanced · per-mode chase/glow</span></h2></summary>
+        <div class="body" id="fxbody"><div class="note">Loading…</div></div>
+      </details>
+    </div>
+
+    <!-- ░░░░░ RIGHT: live preview ░░░░░ -->
+    <div>
+      <div class="panel" style="position:sticky;top:8px">
+        <h2>Live preview <span class="hint" id="pvname">· tap a mode to preview its active + FX state</span></h2>
+        <div id="preview">
+          <div class="pvsec">
+            <div class="cap">Battery mode buttons</div>
+            <div class="modes" id="pvModes"></div>
+          </div>
+          <div class="pvsec">
+            <div class="cap">State card · HOOOOVER demo</div>
+            <div id="pvChill" style="--primary-font-family:var(--battman-font)"><div class="note">Loading the live card…</div></div>
+          </div>
+          <div class="pvsec">
+            <div class="cap">Override dock</div>
+            <div class="dock" id="pvDock"></div>
+          </div>
+          <div class="pvsec">
+            <div class="cap">Amber 5-min price timeline</div>
+            <div class="hero" id="heroCard"></div>
+          </div>
+        </div>
+      </div>
+
+      <details class="panel">
+        <summary><h2>YAML</h2></summary>
+        <div class="body">
+          <div class="note">Live YAML for this theme. <b>Save to HA</b> stores it as one of your own themes (in <code>themes/battman/custom/</code>, which Battman updates never touch) and reloads themes. <b>Copy</b> / <b>Export</b> give you the YAML for backups or sharing; paste a theme in here and hit <b>Load from box</b> to import.</div>
+          <textarea id="yaml" spellcheck="false"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn btn-io" id="btnCopyBox">Copy</button>
+            <button class="btn btn-new" id="btnLoadBox" title="Parse and load the YAML in the box above">Load from box</button>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+</div></div></ha-card>`;
+
+  run(root) {
+    const card = this;
+    const $ = (id) => root.getElementById(id);
+    var HUES = ["red","darkred","orange","amber","yellow","green","blue","purple","darkpurple","teal","pink","sky"];
+    var DERIVED = [
+      {suf:"-wash",        a:0.06},
+      {suf:"-soft-bg",     a:0.13},
+      {suf:"-border-soft", a:0.16},
+      {suf:"-border-light",a:0.30},
+      {suf:"-border",      a:0.35},
+      {suf:"-border-strong",a:0.40}
+    ];
+    var BG_RATIO_DEFAULT = 0.086;
+    var NEUTRALS = [
+      {key:"battman-text-bright", nm:"Text bright"},
+      {key:"battman-text-muted",  nm:"Text muted"},
+      {key:"battman-text-dim",    nm:"Text dim"},
+      {key:"battman-surface-card",nm:"Surface card"},
+      {key:"battman-surface-popup",nm:"Surface popup"},
+      {key:"battman-border-neutral",nm:"Border neutral"}
+    ];
+    var ROLES = [
+      {key:"primary-color",            nm:"Primary color"},
+      {key:"accent-color",             nm:"Accent color"},
+      {key:"primary-text-color",       nm:"Primary text"},
+      {key:"secondary-text-color",     nm:"Secondary text"},
+      {key:"disabled-text-color",      nm:"Disabled text"},
+      {key:"divider-color",            nm:"Divider"},
+      {key:"card-background-color",    nm:"Card background"},
+      {key:"primary-background-color", nm:"Primary background"},
+      {key:"secondary-background-color",nm:"Secondary background"}
+    ];
+    // Font cascade keys (all point at --primary-font-family).
+    var FONT_CASCADE = ["ha-font-family-body","ha-font-family-heading","ha-font-family-code",
+      "mdc-typography-font-family","paper-font-common-base_-_font-family","paper-font-body1_-_font-family",
+      "ha-font-family","mdc-typography-headline6-font-family","mdc-typography-button-font-family",
+      "mdc-typography-subtitle1-font-family","mdc-typography-body2-font-family",
+      "paper-font-headline_-_font-family","paper-font-title_-_font-family","paper-font-subhead_-_font-family"];
+    // Preview mode buttons — the real Power-view lineup (name / active hue / FX namespace)
+    var PV_MODES = [
+      {t:"Active",       hue:"green",  ns:"enable"},
+      {t:"Curtail",      hue:"amber",  ns:"curtail"},
+      {t:"Buy",          hue:"yellow", ns:"buy"},
+      {t:"Sell",         hue:"green",  ns:"sell"},
+      {t:"Self Consume", hue:"blue",   ns:"selfconsume"},
+      {t:"Sell Solar",   hue:"purple", ns:"sellsolar"},
+      {t:"Drain",        hue:"red",    ns:"drain"},
+      {t:"House Party",  hue:"yellow", ns:"houseparty"},
+      {t:"HOOOOVER",     hue:"green",  ns:"hooover"}
+    ];
+    var activeModeIdx = 8; // HOOOOVER — shows FX on the Hunk theme by default
+    // Real dock-row overrides (tokens + direction/money) for BattmanLib.renderRow
+    function ovr(id,label,hue,dir,money,special_at,special_desc,allow_neg){
+      return {id:id,row_label:label,
+        color:"var(--battman-"+hue+")",dim:"var(--battman-"+hue+"-border)",
+        shade:"var(--battman-"+hue+"-wash)",shade_border:"var(--battman-"+hue+"-border-soft)",
+        bg:"var(--battman-"+hue+"-soft-bg)",
+        attr_soc:id+"SOC",attr_price:id+"Price",attr_reset:id+"Reset",
+        direction:dir,money_label:money,special_at:special_at||0,special_desc:special_desc||"",
+        allow_negative:!!allow_neg};
+    }
+    var BM_OVERRIDES=[
+      ovr("sell","SELL<br>OVERRIDE","green","down","EARN",100,"NO SELLING"),
+      ovr("sellsolar","SELL<br>SOLAR","orange","down","EARN"),
+      ovr("buy","BUY<br>OVERRIDE","yellow","up","COST"),
+      ovr("any","BUY<br>ANYTIME","purple","up","COST"),
+      ovr("drain","DRAIN<br>BATTERY","darkred","down","COST")
+    ];
+    // Mock entity attributes → a realistic mix of on / price-only / off rows
+    var MOCK_ATTR={
+      sellSOC:20, sellPrice:35, sellReset:true,
+      sellsolarSOC:0, sellsolarPrice:18, sellsolarReset:true,
+      buySOC:90, buyPrice:6, buyReset:false,
+      anySOC:0, anyPrice:0, anyReset:true,
+      drainSOC:5, drainPrice:0, drainReset:true,
+      overridePresets:[]
+    };
+    var MOCK_CUR_SOC=62;
+
+    /* ───────────────────────── state ───────────────────────── */
+    var vars = {};          // live map of theme keys → values (no leading --)
+    var order = [];         // key insertion order (best-effort for export grouping)
+    var themeName = "Untitled";
+    var alphaProfile = {};  // hue → {suf:alpha, bgRatio}
+    var fx = {};            // namespace → {chaseDisplay,chaseGradient,chaseDuration,border,glowName,glowDuration}
+    var dirty = false;      // unsaved edits since last load/export
+    function touch(){ dirty = true; $("pvname").textContent = "· unsaved edits"; }
+
+    /* ───────────────────────── colour helpers ───────────────────────── */
+    function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+    function hexToRgb(h){
+      if(!h)return null; h=String(h).trim();
+      var m=h.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i); if(!m)return null;
+      var s=m[1]; if(s.length===3)s=s[0]+s[0]+s[1]+s[1]+s[2]+s[2];
+      return {r:parseInt(s.substr(0,2),16),g:parseInt(s.substr(2,2),16),b:parseInt(s.substr(4,2),16)};
+    }
+    function rgbToHex(r,g,b){
+      function c(x){x=clamp(Math.round(x),0,255).toString(16);return x.length<2?"0"+x:x;}
+      return "#"+c(r)+c(g)+c(b);
+    }
+    function parseRgba(s){
+      var m=String(s).match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/i);
+      if(!m)return null; return {r:+m[1],g:+m[2],b:+m[3],a:m[4]===undefined?1:+m[4]};
+    }
+    function rgba(r,g,b,a){
+      // trim trailing zeros like the shipped theme (0.060 → 0.06)
+      var as=String(Math.round(a*1000)/1000);
+      return "rgba("+Math.round(r)+","+Math.round(g)+","+Math.round(b)+","+as+")";
+    }
+    function rgbToHsl(r,g,b){
+      r/=255;g/=255;b/=255;
+      var mx=Math.max(r,g,b),mn=Math.min(r,g,b),h,s,l=(mx+mn)/2;
+      if(mx===mn){h=s=0;}
+      else{var d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+        switch(mx){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4;}
+        h/=6;}
+      return {h:h*360,s:s,l:l};
+    }
+    function hslToRgb(h,s,l){
+      h=(h%360+360)%360/360;
+      function hue2(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;}
+      var r,g,b;
+      if(s===0){r=g=b=l;}
+      else{var q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;r=hue2(p,q,h+1/3);g=hue2(p,q,h);b=hue2(p,q,h-1/3);}
+      return {r:r*255,g:g*255,b:b*255};
+    }
+
+    /* ───────────────────────── derivation ───────────────────────── */
+    function captureAlphaProfile(){
+      alphaProfile={};
+      HUES.forEach(function(h){
+        var base=hexToRgb(vars["battman-"+h]); if(!base)return;
+        var prof={};
+        DERIVED.forEach(function(d){
+          var v=parseRgba(vars["battman-"+h+d.suf]);
+          prof[d.suf]=v?v.a:d.a;
+        });
+        var bg=hexToRgb(vars["battman-"+h+"-bg"]);
+        var ratio=BG_RATIO_DEFAULT;
+        if(bg){
+          var parts=[]; if(base.r)parts.push(bg.r/base.r); if(base.g)parts.push(bg.g/base.g); if(base.b)parts.push(bg.b/base.b);
+          if(parts.length)ratio=parts.reduce(function(a,c){return a+c;},0)/parts.length;
+        }
+        prof.bgRatio=ratio;
+        alphaProfile[h]=prof;
+      });
+    }
+    function regenHue(h){
+      var base=hexToRgb(vars["battman-"+h]); if(!base)return;
+      var prof=alphaProfile[h]||{};
+      DERIVED.forEach(function(d){
+        var a=(prof[d.suf]!==undefined)?prof[d.suf]:d.a;
+        vars["battman-"+h+d.suf]=rgba(base.r,base.g,base.b,a);
+      });
+      var ratio=(prof.bgRatio!==undefined)?prof.bgRatio:BG_RATIO_DEFAULT;
+      vars["battman-"+h+"-bg"]=rgbToHex(base.r*ratio,base.g*ratio,base.b*ratio);
+    }
+
+    /* ─────────────────── theme of the studio itself ─────────────────── */
+    var STUDIO_VARS=["battman-red", "battman-red-wash", "battman-red-border", "battman-red-border-soft", "battman-red-border-light", "battman-red-border-strong", "battman-red-bg", "battman-red-soft-bg", "battman-darkred", "battman-darkred-wash", "battman-darkred-border", "battman-darkred-border-soft", "battman-darkred-border-light", "battman-darkred-border-strong", "battman-darkred-bg", "battman-darkred-soft-bg", "battman-orange", "battman-orange-wash", "battman-orange-border", "battman-orange-border-soft", "battman-orange-border-light", "battman-orange-border-strong", "battman-orange-bg", "battman-orange-soft-bg", "battman-amber", "battman-amber-wash", "battman-amber-border", "battman-amber-border-soft", "battman-amber-border-light", "battman-amber-border-strong", "battman-amber-bg", "battman-amber-soft-bg", "battman-yellow", "battman-yellow-wash", "battman-yellow-border", "battman-yellow-border-soft", "battman-yellow-border-light", "battman-yellow-border-strong", "battman-yellow-bg", "battman-yellow-soft-bg", "battman-green", "battman-green-wash", "battman-green-border", "battman-green-border-soft", "battman-green-border-light", "battman-green-border-strong", "battman-green-bg", "battman-green-soft-bg", "battman-blue", "battman-blue-wash", "battman-blue-border", "battman-blue-border-soft", "battman-blue-border-light", "battman-blue-border-strong", "battman-blue-bg", "battman-blue-soft-bg", "battman-purple", "battman-purple-wash", "battman-purple-border", "battman-purple-border-soft", "battman-purple-border-light", "battman-purple-border-strong", "battman-purple-bg", "battman-purple-soft-bg", "battman-darkpurple", "battman-darkpurple-wash", "battman-darkpurple-border", "battman-darkpurple-border-soft", "battman-darkpurple-border-light", "battman-darkpurple-border-strong", "battman-darkpurple-bg", "battman-darkpurple-soft-bg", "battman-teal", "battman-teal-wash", "battman-teal-border", "battman-teal-border-soft", "battman-teal-border-light", "battman-teal-border-strong", "battman-teal-bg", "battman-teal-soft-bg", "battman-pink", "battman-pink-wash", "battman-pink-border", "battman-pink-border-soft", "battman-pink-border-light", "battman-pink-border-strong", "battman-pink-bg", "battman-pink-soft-bg", "battman-sky", "battman-sky-wash", "battman-sky-border", "battman-sky-border-soft", "battman-sky-border-light", "battman-sky-border-strong", "battman-sky-bg", "battman-sky-soft-bg", "battman-text-bright", "battman-text-muted", "battman-text-dim", "battman-surface-card", "battman-surface-popup", "battman-border-neutral", "battman-border-neutral-soft"];
+    // The studio's own colours come from the view's Battman theme (no fallbacks: missing ones are named).
+    function syncStudioTheme(){
+      return missingThemeVars(card, STUDIO_VARS.filter(function(k){ return k!=="battman-font"; }).map(function(k){ return "--"+k; }));
+    }
+
+    /* ───────────────────────── HA bridge ───────────────────────── */
+    function getHass(){ return card.hass || null; }
+    var _toastT=null;
+    function setStatus(msg,kind){
+      var t=$("toast"); if(!t)return;
+      t.textContent=msg; t.className="toast show"+(kind?" "+kind:"");
+      if(_toastT)clearTimeout(_toastT);
+      _toastT=setTimeout(function(){t.className="toast"+(kind?" "+kind:"");},kind==="err"?3600:2000);
+    }
+
+    /* ───────────────────────── load themes ───────────────────────── */
+    var allThemes={};
+    var PREFIX="Battman ";                 // reserved namespace prefix (display-stripped)
+    function isBattman(n){return /^battman /i.test(n);}      // case-insensitive namespace match
+    function strip(n){return n.replace(/^battman /i,"");}     // display without the prefix
+    // the theme the studio opens on when it has none remembered (and HA's active theme isn't a Battman one)
+    var ENTRY_THEME="Battman Neon Drift";
+    function fetchThemes(cb){
+      var hass=getHass();
+      if(!hass||!hass.connection){setStatus("not connected","err");return;}
+      hass.connection.sendMessagePromise({type:"frontend/get_themes"}).then(function(res){
+        allThemes=(res&&res.themes)||{};
+        var sel=$("themeSel");
+        sel.innerHTML="";
+        // Only Battman-family themes; show the name WITHOUT the prefix.
+        var fam=Object.keys(allThemes).filter(isBattman).sort();
+        fam.forEach(function(n){
+          var o=document.createElement("option");o.value=n;o.textContent=strip(n);
+          sel.appendChild(o);
+        });
+        // Default: last theme we were editing (survives the reload Make Active triggers)
+        //   → Battman Neon Drift → HA's active theme → first Battman.
+        var last=null; try{last=localStorage.getItem("battman.studioTheme");}catch(e){}
+        var entry=ENTRY_THEME;
+        var active=hass.themes&&hass.themes.theme;
+        var pick=(last&&allThemes[last])?last
+                :(entry&&allThemes[entry])?entry
+                :(active&&isBattman(active))?active
+                :(fam[0]||null);
+        if(pick)sel.value=pick;
+        setStatus("connected","ok");
+        if(cb)cb(pick);
+      }).catch(function(e){setStatus("get_themes failed","err");});
+    }
+    function loadTheme(name){
+      var t=allThemes[name]; if(!t){setStatus("Theme not found","err");return;}
+      themeName=name;
+      try{localStorage.setItem("battman.studioTheme",name);}catch(e){}   // remember across reloads
+      vars={}; order=[];
+      Object.keys(t).forEach(function(k){
+        var v=t[k];
+        if(typeof v==="object"){return;}        // skip card-mod-theme nested objects etc
+        vars[k]=String(v); order.push(k);
+      });
+      captureAlphaProfile();
+      // font state
+      var fontOn=vars["battman-font"]!==undefined;
+      $("fontOn").checked=fontOn;
+      setFontFields(stripQuotes(vars["battman-font"]||"IM Fell English, Georgia, serif"));
+      // fx
+      parseFx();
+      renderAll();
+      ensureOption(name);
+      dirty=false;
+      $("pvname").textContent="· tap a mode to preview its active + FX state";
+      setStatus("loaded","ok");
+    }
+    function stripQuotes(s){return String(s).replace(/^["']|["']$/g,"");}
+    // Curated Google Fonts: [family, category, weights]. Weights are exact so the
+    // css2 URL never 400s: "a..b" = variable range, "400;700" = static list.
+    // All 89 URLs verified against fonts.googleapis.com 2026-10-03.
+    var FONT_LIST=[["Roboto","sans","100..900"],["Open Sans","sans","300..800"],["Google Sans","sans","400..700"],["Inter","sans","100..900"],["Montserrat","sans","100..900"],["Poppins","sans","100;200;300;400;500;600;700;800;900"],["Lato","sans","100;300;400;700;900"],["Roboto Condensed","sans","100..900"],["Arimo","sans","400..700"],["Oswald","sans","200..700"],["DM Sans","sans","100..1000"],["Raleway","sans","100..900"],["Nunito","sans","200..1000"],["Nunito Sans","sans","200..1000"],["Rubik","sans","300..900"],["Manrope","sans","200..800"],["Ubuntu","sans","300;400;500;700"],["Outfit","sans","100..900"],["Kanit","sans","100;200;300;400;500;600;700;800;900"],["Work Sans","sans","100..900"],["Plus Jakarta Sans","sans","200..800"],["Figtree","sans","300..900"],["Quicksand","sans","300..700"],["Mulish","sans","200..1000"],["PT Sans","sans","400;700"],["Archivo","sans","100..900"],["Barlow","sans","100;200;300;400;500;600;700;800;900"],["Source Sans 3","sans","200..900"],["Playfair Display","serif","400..900"],["Roboto Slab","serif","100..900"],["Merriweather","serif","300..900"],["Lora","serif","400..700"],["Libre Baskerville","serif","400..700"],["Cormorant Garamond","serif","300..700"],["PT Serif","serif","400;700"],["EB Garamond","serif","400..800"],["Fraunces","serif","100..900"],["Bitter","serif","100..900"],["Source Serif 4","serif","200..900"],["Newsreader","serif","200..800"],["Cinzel","serif","400..900"],["Crimson Text","serif","400;600;700"],["Arvo","serif","400;700"],["Domine","serif","400..700"],["Lobster Two","display","400;700"],["Comfortaa","display","300..700"],["Baloo 2","display","400..800"],["Oleo Script","display","400;700"],["Oxanium","display","200..800"],["Rowdies","display","300;400;700"],["Passion One","display","400;700;900"],["Gabarito","display","400..900"],["Tektur","display","400..900"],["Cinzel Decorative","display","400;700;900"],["Goldman","display","400;700"],["Balsamiq Sans","display","400;700"],["Comic Relief","display","400;700"],["Averia Serif Libre","display","300;400;700"],["Skranji","display","400;700"],["Lemonada","display","300..700"],["Dancing Script","hand","400..700"],["Caveat","hand","400..700"],["Kalam","hand","300;400;700"],["Amatic SC","hand","400;700"],["Comic Neue","hand","300;400;700"],["Tangerine","hand","400;700"],["Merienda","hand","300..900"],["Roboto Mono","mono","100..700"],["JetBrains Mono","mono","100..800"],["Inconsolata","mono","200..900"],["Source Code Pro","mono","200..900"],["IBM Plex Mono","mono","100;200;300;400;500;600;700"],["Geist Mono","mono","100..900"],["Space Mono","mono","400;700"],["Courier Prime","mono","400;700"],["Fira Code","mono","300..700"],["Google Sans Code","mono","300..800"],["IM Fell English","serif","400"],["Doto","sans","100..900"],["Orbitron","sans","400..900"],["Bebas Neue","sans","400"],["Rajdhani","sans","300;400;500;600;700"],["Exo 2","sans","100..900"],["Space Grotesk","sans","300..700"],["Share Tech Mono","mono","400"],["Press Start 2P","display","400"],["Righteous","display","400"],["Bungee","display","400"],["Audiowide","display","400"]];
+    var FONT_CATS=[["all","All"],["sans","Sans"],["serif","Serif"],["display","Display"],["hand","Handwriting"],["mono","Mono"]];
+    var FONT_FALLBACK={sans:["Arial","sans-serif"],serif:["Georgia","serif"],display:["","sans-serif"],hand:["","cursive"],mono:["Courier New","monospace"]};
+    function fontInfo(name){
+      var n=String(name||"").toLowerCase();
+      for(var i=0;i<FONT_LIST.length;i++)if(FONT_LIST[i][0].toLowerCase()===n)return FONT_LIST[i];
+      return null;
+    }
+    function fontHasBold(w){
+      if(w.indexOf("..")>0)return parseInt(w.split("..")[1],10)>=700;
+      return w.split(";").some(function(x){return parseInt(x,10)>=700;});
+    }
+    // auto-build a Google Fonts URL from the first family in the stack
+    // (curated fonts request their real weights so bold isn't faked; others load the default)
+    function autoImport(family){
+      var first=String(family||"").split(",")[0].replace(/['"]/g,"").trim();
+      if(!first)return "";
+      var fi=fontInfo(first);
+      var fam=fi?fi[0]:first;
+      return "https://fonts.googleapis.com/css2?family="+encodeURIComponent(fam).replace(/%20|\s+/g,"+")+(fi?":wght@"+fi[2]:"")+"&display=swap";
+    }
+    /* ── font browser ── */
+    var fontCat="all",_fontSeen={},_fontObs=null;
+    function loadFontSample(name){
+      if(_fontSeen[name])return;_fontSeen[name]=1;
+      var l=document.createElement("link");l.rel="stylesheet";
+      l.href="https://fonts.googleapis.com/css2?family="+encodeURIComponent(name).replace(/%20/g,"+")+"&text="+encodeURIComponent(name)+"&display=swap";
+      document.head.appendChild(l);
+    }
+    function renderFontCats(){
+      var box=$("fontCats");box.innerHTML="";
+      FONT_CATS.forEach(function(c){
+        var b=document.createElement("button");b.type="button";b.className="btn"+(c[0]===fontCat?" sel":"");b.textContent=c[1];
+        b.style.setProperty("--c","var(--battman-blue)");
+        b.addEventListener("click",function(){fontCat=c[0];renderFontCats();renderFontList();});
+        box.appendChild(b);
+      });
+    }
+    function renderFontList(){
+      var box=$("fontList");box.innerHTML="";
+      var q=($("fontSearch").value||"").trim().toLowerCase();
+      var cur=($("fontFamily").value||"").trim().toLowerCase();
+      if(_fontObs)_fontObs.disconnect();
+      _fontObs="IntersectionObserver" in window?new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){loadFontSample(e.target.dataset.font);_fontObs.unobserve(e.target);}});},{root:box,rootMargin:"120px"}):null;
+      var n=0;
+      FONT_LIST.forEach(function(f){
+        if(fontCat!=="all"&&f[1]!==fontCat)return;
+        if(q&&f[0].toLowerCase().indexOf(q)<0)return;
+        n++;
+        var r=document.createElement("div");r.className="frow"+(f[0].toLowerCase()===cur?" sel":"");r.setAttribute("role","option");r.dataset.font=f[0];
+        r.innerHTML='<span class="fn" style="font-family:\''+f[0]+'\',var(--disabled-text-color,sans-serif),sans-serif">'+f[0]+'</span>'+
+          (fontHasBold(f[2])?'':'<span class="fb" title="No bold weight — bold text will be faked">no bold</span>')+
+          '<span class="fc">'+f[1]+'</span>';
+        r.addEventListener("click",function(){pickFont(f[0]);});
+        box.appendChild(r);
+        if(_fontObs)_fontObs.observe(r);else loadFontSample(f[0]);
+      });
+      if(q&&!fontInfo(q)){
+        var raw=$("fontSearch").value.trim();
+        var t=document.createElement("div");t.className="frow try";
+        t.innerHTML='<span class="fn">Try “'+raw.replace(/[<>&"]/g,"")+'” from Google Fonts</span>';
+        t.addEventListener("click",function(){pickFont(raw);});
+        box.appendChild(t);
+      }else if(!n){box.innerHTML='<div class="frow try"><span class="fn">No fonts in this category</span></div>';}
+    }
+    function pickFont(name){
+      var fi=fontInfo(name);
+      $("fontFamily").value=fi?fi[0]:name;
+      if(fi){var fb=FONT_FALLBACK[fi[1]]||["","sans-serif"];$("fontFallback").value=fb[0];$("fontGeneric").value=fb[1];}
+      $("fontOn").checked=true;
+      touch();applyPreviewVars();buildYaml();renderFontList();
+    }
+    // Font is 3 fields (primary / fallback / generic) assembled into one stack
+    var GENERICS=["sans-serif","serif","monospace","system-ui","ui-serif","ui-sans-serif","cursive","fantasy"];
+    function fontStack(){
+      var p=($("fontFamily").value||"").trim();
+      var f=($("fontFallback").value||"").trim();
+      var g=($("fontGeneric").value||"").trim();
+      return [p,f,g].filter(function(x){return x;}).join(", ");
+    }
+    function setFontFields(stack){
+      var parts=String(stack).split(",").map(function(x){return x.replace(/['"]/g,"").trim();}).filter(function(x){return x;});
+      var gen="";
+      if(parts.length && GENERICS.indexOf(parts[parts.length-1].toLowerCase())>=0){gen=parts.pop().toLowerCase();}
+      $("fontFamily").value=parts.shift()||"";
+      $("fontFallback").value=parts.join(", ");
+      $("fontGeneric").value=gen;
+      var fp=$("fontPick");if(fp&&!fp.hidden)renderFontList();
+    }
+
+    /* ───────────────────────── FX ───────────────────────── */
+    // namespaces map 1:1 to the Power-view buttons (see _FX Example reference)
+    var FX_NS=["enable","curtail","buy","sell","selfconsume","sellsolar","drain","houseparty","hooover"];
+    var FX_NICE={enable:"Active",curtail:"Curtail",buy:"Buy",sell:"Sell",selfconsume:"Self Consume",sellsolar:"Sell Solar",drain:"Drain",houseparty:"House Party",hooover:"HOOOOVER"};
+    var RAINBOW_CHASE="conic-gradient(var(--battman-red),var(--battman-orange),var(--battman-amber),var(--battman-yellow),var(--battman-green),var(--battman-teal),var(--battman-sky),var(--battman-blue),var(--battman-purple),var(--battman-darkpurple),var(--battman-pink),var(--battman-darkred),var(--battman-red))";
+    function hueChase(h){return "conic-gradient(var(--battman-"+h+"),var(--battman-"+h+"-border-soft) 35%,var(--battman-"+h+"-border-soft) 65%,var(--battman-"+h+"))";}
+    function parseFx(){
+      fx={};
+      FX_NS.forEach(function(ns){
+        var disp=vars["fx-"+ns+"-chase-display"];
+        var grad=String(vars["fx-"+ns+"-chase-gradient"]||"");
+        var glowName=String(vars["fx-"+ns+"-glow-name"]||"").replace(/^["']|["']$/g,"");
+        var glowCol=String(vars["fx-"+ns+"-glow-color"]||"");
+        // chase colour: rainbow, or the first hue in a single-hue gradient
+        var chase="rainbow";
+        if(grad && grad.replace(/\s/g,"")!==RAINBOW_CHASE.replace(/\s/g,"")){
+          var m=grad.match(/var\(--battman-([a-z]+)\)/i); if(m)chase=m[1];
+        }
+        // glow: none / rainbow / a hue (mono)
+        var glow="none";
+        if(glowName==="fx-glow-rainbow")glow="rainbow";
+        else if(glowName==="fx-glow-mono"){var gm=glowCol.match(/var\(--battman-([a-z]+)\)/i);glow=gm?gm[1]:"yellow";}
+        fx[ns]={on:disp==="block",duration:(vars["fx-"+ns+"-chase-duration"]||"2.5s").replace(/^["']|["']$/g,""),chase:chase,glow:glow};
+      });
+    }
+    function writeFx(ns){
+      var f=fx[ns];
+      ["chase-display","chase-gradient","chase-duration","ring-width","border","glow-name","glow-color","glow-duration"].forEach(function(k){delete vars["fx-"+ns+"-"+k];});
+      if(!f.on)return;
+      vars["fx-"+ns+"-chase-display"]="block";
+      vars["fx-"+ns+"-chase-gradient"]=(f.chase==="rainbow")?RAINBOW_CHASE:hueChase(f.chase);
+      vars["fx-"+ns+"-chase-duration"]=f.duration||"2.5s";
+      vars["fx-"+ns+"-border"]="none";
+      if(f.glow==="rainbow"){vars["fx-"+ns+"-glow-name"]="fx-glow-rainbow";vars["fx-"+ns+"-glow-duration"]="3s";}
+      else if(f.glow!=="none"){vars["fx-"+ns+"-glow-name"]="fx-glow-mono";vars["fx-"+ns+"-glow-color"]="var(--battman-"+f.glow+")";vars["fx-"+ns+"-glow-duration"]="3s";}
+    }
+    function hueOpts(sel,extra){
+      var out=(extra||[]).map(function(e){return '<option value="'+e[0]+'"'+(e[0]===sel?" selected":"")+'>'+e[1]+'</option>';});
+      HUES.forEach(function(h){out.push('<option value="'+h+'"'+(h===sel?" selected":"")+'>'+h+'</option>');});
+      return out.join("");
+    }
+    function renderFx(){
+      var body=$("fxbody");body.innerHTML="";
+      var intro=document.createElement("div");intro.className="note";intro.style.marginBottom="6px";
+      intro.innerHTML="Per-button chase ring + glow. Tap a mode in the preview to see its effect. Colours follow the theme palette.";
+      body.appendChild(intro);
+      FX_NS.forEach(function(ns){
+        var f=fx[ns];
+        var row=document.createElement("div");row.className="fxrow"+(f.on?"":" off");
+        row.innerHTML=
+          '<label class="switch"><input type="checkbox" '+(f.on?"checked":"")+'><span class="sl"></span></label>'+
+          '<span class="fxname">'+FX_NICE[ns]+'</span>'+
+          '<span class="fxctl">'+
+            '<span class="k">Chase</span><select class="fx-chase">'+hueOpts(f.chase,[["rainbow","Rainbow"]])+'</select>'+
+            '<span class="k">Glow</span><select class="fx-glow">'+hueOpts(f.glow,[["none","None"],["rainbow","Rainbow"]])+'</select>'+
+            '<span class="k">Speed</span><input type="text" class="fx-dur" value="'+f.duration+'">'+
+          '</span>';
+        var cb=row.querySelector('input[type=checkbox]');
+        var chaseSel=row.querySelector('.fx-chase');
+        var glowSel=row.querySelector('.fx-glow');
+        var durIn=row.querySelector('.fx-dur');
+        function commit(){writeFx(ns);row.className="fxrow"+(f.on?"":" off");touch();applyPreviewVars();buildYaml();}
+        cb.addEventListener("change",function(){f.on=cb.checked;commit();});
+        chaseSel.addEventListener("change",function(){f.chase=chaseSel.value;commit();});
+        glowSel.addEventListener("change",function(){f.glow=glowSel.value;commit();});
+        durIn.addEventListener("input",function(){f.duration=durIn.value;commit();});
+        body.appendChild(row);
+      });
+    }
+
+    /* ───────────────────────── render: controls ───────────────────────── */
+    function hexOf(key){
+      var v=vars[key]||"";
+      var h=hexToRgb(v); if(h)return rgbToHex(h.r,h.g,h.b);
+      var rg=parseRgba(v); if(rg)return rgbToHex(rg.r,rg.g,rg.b);
+      return "#888888";
+    }
+    // shade strips shown under each hue (read the actual edited derived values)
+    var STRIP_SUF=["-bg","-soft-bg","-border-soft","-border","-border-strong"];
+    function paintStrips(el,h){
+      var is=el.querySelectorAll(".derived i");
+      for(var k=0;k<is.length;k++){ is[k].style.background=vars["battman-"+h+STRIP_SUF[k]]||"transparent"; }
+    }
+    function renderHues(){
+      var box=$("hues");box.innerHTML="";
+      HUES.forEach(function(h){
+        var key="battman-"+h;
+        var hx=hexOf(key);
+        var el=document.createElement("div");el.className="sw";
+        el.innerHTML=
+          '<span class="chip" style="background:'+hx+'"><input type="color" value="'+hx+'"></span>'+
+          '<div class="meta"><div class="nm">'+h+'</div>'+
+          '<input class="hex" type="text" value="'+hx+'" spellcheck="false">'+
+          '<div class="derived">'+STRIP_SUF.map(function(s){return '<i></i>';}).join("")+'</div></div>';
+        var col=el.querySelector('input[type=color]');
+        var tx=el.querySelector('input.hex');
+        var chip=el.querySelector('.chip');
+        paintStrips(el,h);        // fill shade strips from the (edited) derived values
+        function apply(val){
+          var rgb=hexToRgb(val); if(!rgb)return;
+          var norm=rgbToHex(rgb.r,rgb.g,rgb.b);
+          vars[key]=norm; regenHue(h);
+          chip.style.background=norm; col.value=norm; tx.value=norm;
+          paintStrips(el,h);
+          touch(); applyPreviewVars(); buildYaml();
+        }
+        col.addEventListener("input",function(){apply(col.value);});
+        tx.addEventListener("change",function(){apply(tx.value);});
+        box.appendChild(el);
+      });
+    }
+    function renderNeutrals(){
+      var box=$("neutrals");box.innerHTML="";
+      NEUTRALS.forEach(function(n){
+        var hx=hexOf(n.key);
+        var el=document.createElement("div");el.className="sw";
+        el.innerHTML=
+          '<span class="chip" style="background:'+hx+'"><input type="color" value="'+hx+'"></span>'+
+          '<div class="meta"><div class="nm">'+n.nm+'</div>'+
+          '<input class="hex" type="text" value="'+hx+'" spellcheck="false"></div>';
+        var col=el.querySelector('input[type=color]');
+        var tx=el.querySelector('input.hex');
+        var chip=el.querySelector('.chip');
+        function apply(val){
+          var rgb=hexToRgb(val); if(!rgb)return;
+          var norm=rgbToHex(rgb.r,rgb.g,rgb.b);
+          vars[n.key]=norm; chip.style.background=norm;col.value=norm;tx.value=norm;
+          touch(); applyPreviewVars(); buildYaml();
+        }
+        col.addEventListener("input",function(){apply(col.value);});
+        tx.addEventListener("change",function(){apply(tx.value);});
+        box.appendChild(el);
+      });
+    }
+    /* ───────────────────────── preview ───────────────────────── */
+    function applyPreviewVars(){
+      var pv=$("preview");
+      // set every battman-*, fx-*, and the two roles onto #preview so var() refs
+      // resolve to the EDITED theme (independent of the active/chrome theme)
+      Object.keys(vars).forEach(function(k){
+        if(k.indexOf("battman-")===0||k.indexOf("fx-")===0||k==="primary-color"||k==="accent-color"){
+          pv.style.setProperty("--"+k,vars[k]);
+        }
+      });
+      // font
+      var on=$("fontOn").checked;
+      var fam=fontStack()||"inherit";
+      pv.style.setProperty("--battman-font",on?fam:"inherit");
+      ensurePreviewFont(on?autoImport(fam):"");
+      renderDockRows();
+      renderModeButtons();
+      renderHero();
+    }
+    var _fontLink=null;
+    function ensurePreviewFont(url){
+      if(!url){if(_fontLink){_fontLink.remove();_fontLink=null;}return;}
+      if(_fontLink&&_fontLink.getAttribute("href")===url)return;
+      if(_fontLink)_fontLink.remove();
+      _fontLink=document.createElement("link");_fontLink.rel="stylesheet";_fontLink.href=url;
+      document.head.appendChild(_fontLink);
+    }
+    function renderModeButtons(){
+      var box=$("pvModes");box.innerHTML="";
+      PV_MODES.forEach(function(m,i){
+        var active=(i===activeModeIdx);
+        var b=document.createElement("div");b.className="mbtn"+(active?" active":"");
+        b.style.setProperty("--mhue","var(--battman-"+m.hue+")");
+        if(active){
+          b.style.background="var(--battman-"+m.hue+"-soft-bg)";
+          b.style.setProperty("--fx-fill-soft","var(--battman-"+m.hue+"-soft-bg)");
+          // FX harness — wire the active button's generic fx vars to this mode's namespace
+          b.style.setProperty("--fx-ring","var(--fx-"+m.ns+"-chase-display, none)");
+          b.style.setProperty("--fx-chase-gradient","var(--fx-"+m.ns+"-chase-gradient, none)");
+          b.style.setProperty("--fx-chase-duration","var(--fx-"+m.ns+"-chase-duration, 0s)");
+          b.style.setProperty("--fx-ring-width","var(--fx-"+m.ns+"-ring-width, 2px)");
+          b.style.setProperty("--fx-glow-name","var(--fx-"+m.ns+"-glow-name, none)");
+          b.style.setProperty("--fx-glow-duration","var(--fx-"+m.ns+"-glow-duration, 0s)");
+          b.style.setProperty("--fx-glow-color","var(--fx-"+m.ns+"-glow-color, transparent)");  // mono glow colour (rainbow has its own)
+          b.style.setProperty("--fx-border","var(--fx-"+m.ns+"-border, 1px solid var(--battman-"+m.hue+"-border-strong))");
+        }
+        b.innerHTML='<span class="nm">'+m.t+'</span><span class="st">'+(active?"ON":"OFF")+'</span>';
+        b.addEventListener("click",function(){activeModeIdx=i;renderModeButtons();});
+        box.appendChild(b);
+      });
+    }
+    function renderDockRows(){
+      var box=$("pvDock");box.className="dock";box.innerHTML="";
+      var L=window.BattmanLib;
+      if(L&&L.renderRow){
+        var variables={battman:{overrides:BM_OVERRIDES,soc_entity:"sensor._soc",capacity_entity:"sensor._cap"}};
+        var states={"sensor._soc":{state:String(MOCK_CUR_SOC)},"sensor._cap":{state:"40.3"}};
+        var entity={attributes:MOCK_ATTR};
+        BM_OVERRIDES.forEach(function(o){
+          var wrap=document.createElement("div");
+          try{wrap.innerHTML=L.renderRow(variables,states,entity,o.id);}catch(e){wrap.textContent="";}
+          if(wrap.firstChild)box.appendChild(wrap.firstChild);
+        });
+        return;
+      }
+      // fallback (library not loaded): simple labelled rows
+      box.className="dock dockfallback";
+      BM_OVERRIDES.forEach(function(o){
+        var el=document.createElement("div");el.className="orow";
+        el.style.color="var(--battman-"+o.color.replace(/^.*battman-|\).*$/g)+")";
+        el.innerHTML='<b>'+o.row_label.replace("<br>"," ")+'</b>';
+        box.appendChild(el);
+      });
+    }
+    // Amber BUY / FIT colour logic — the real card_mod thresholds (return HUE name,
+    // so each box gets matching text + soft-bg + border, exactly like the dock).
+    function buyHue(p){ // p in $/kWh
+      if(p<0)return"purple";
+      if(p<=0.08)return"green";
+      if(p<=0.25)return"yellow";
+      return"darkred";
+    }
+    function fitHue(p){
+      if(p<0)return"darkred";
+      if(p<0.05)return"orange";
+      if(p<0.15)return"yellow";
+      if(p<0.25)return"green";
+      return"purple";
+    }
+    function pad(n){return(n<10?"0":"")+n;}
+    // representative forecast prices ($/kWh) chosen to span the palette
+    var SELL_FC=[0.03,0.12,0.20,0.30], SELL_NOW=0.03;     // orange / yellow / green / purple
+    var BUY_FC =[-0.01,0.06,0.18,0.35], BUY_NOW=0.122;    // purple / green / yellow / darkred
+    function miniSpark(){
+      return '<svg width="54" height="16" viewBox="0 0 54 16" class="spark">'
+        +'<polyline fill="none" stroke="var(--battman-text-dim)" stroke-width="1.5" '
+        +'points="0,11 10,9 20,10 30,6 40,8 54,5"/></svg>';
+    }
+    function fcBoxes(arr,hueFn,t0){
+      var arrows=["↓","→","↑","↓"];
+      return arr.map(function(p,i){
+        var hue=hueFn(p), mins=t0+5*(i+1), h=Math.floor(mins/60)%24, m=mins%60;
+        return '<div class="fbox" style="--fc:var(--battman-'+hue+');--fbg:var(--battman-'+hue+'-soft-bg);--fbd:var(--battman-'+hue+'-border-soft)">'
+          +'<div class="t"><span>'+pad(h)+':'+pad(m)+'</span><span class="arw">'+arrows[i%4]+'</span></div>'
+          +'<div class="p">'+(p*100).toFixed(1)+'c</div></div>';
+      }).join("");
+    }
+    function renderHero(){
+      var card=$("heroCard"); if(!card)return;
+      var now=new Date();
+      var block=Math.floor((now.getHours()*60+now.getMinutes())/5)*5; // current 5-min block (mins since midnight)
+      var hh=pad(Math.floor(block/60)%24), mm=pad(block%60);
+      var left=300-((now.getMinutes()%5)*60+now.getSeconds());
+      var cd=Math.floor(left/60)+":"+pad(left%60);
+      function sec(cls,lab,nowP,hueFn,fc,withCd){
+        var hue=hueFn(nowP);
+        return '<div class="herosec '+cls+'">'
+          +'<div class="herohd">'
+            +'<span class="lab">'+lab+' '+hh+':'+mm+'</span>'
+            +'<span class="big" style="color:var(--battman-'+hue+')">'+(nowP*100).toFixed(1)+'c</span>'
+            +(withCd?'<span class="cdwrap"><span class="k">LEFT</span><span class="cd" id="pvCd">'+cd+'</span></span>':'')
+            +miniSpark()
+          +'</div>'
+          +'<div class="herogrid">'+fcBoxes(fc,hueFn,block)+'</div>'
+        +'</div>';
+      }
+      card.innerHTML=
+        sec("sell","SELL",SELL_NOW,fitHue,SELL_FC,true)
+       +sec("buy","BUY",BUY_NOW,buyHue,BUY_FC,false);
+    }
+    // live countdown in the SELL header
+    setInterval(function(){
+      var el=$("pvCd");if(!el)return;
+      var now=new Date();var s=(now.getMinutes()%5)*60+now.getSeconds();var left=300-s;
+      el.textContent=Math.floor(left/60)+":"+pad(left%60);
+    },1000);
+    // load the real dock library so renderRow is pixel-exact
+    function loadBattmanLib(cb){
+      if(window.BattmanLib){cb&&cb();return;}
+      var s=document.createElement("script");s.src="/battmanfiles/battman-lib.js";
+      s.onload=function(){cb&&cb();};s.onerror=function(){cb&&cb();};
+      document.head.appendChild(s);
+    }
+
+    /* ───────────────────────── harmonic ───────────────────────── */
+    var SCHEMES=[
+      {id:"mono",nm:"Monochrome",span:0},
+      {id:"analogous",nm:"Analogous",span:90},
+      {id:"triad",nm:"Triadic",span:240},
+      {id:"tetrad",nm:"Tetradic",span:270},
+      {id:"comp",nm:"Complementary",span:180},
+      {id:"rainbow",nm:"Rainbow",span:330}
+    ];
+    var harmScheme="analogous";
+    function renderSchemes(){
+      var box=$("schemes");box.innerHTML="";
+      SCHEMES.forEach(function(s){
+        var b=document.createElement("button");b.className="btn"+(s.id===harmScheme?" sel":"");
+        b.textContent=s.nm;
+        b.addEventListener("click",function(){harmScheme=s.id;renderSchemes();updateHarmPrev();});
+        box.appendChild(b);
+      });
+    }
+    function harmColors(){
+      var seed=$("seed").value;
+      var rgb=hexToRgb(seed)||{r:196,g:69,b:105};
+      var hsl=rgbToHsl(rgb.r,rgb.g,rgb.b);
+      var span=(SCHEMES.filter(function(s){return s.id===harmScheme;})[0]||{}).span;
+      var out=[];
+      for(var i=0;i<12;i++){
+        var frac=(12===1)?0:i/11;
+        var off=span*(frac-0.5);
+        // keep each slot's own S/L so brightness structure survives
+        var slotHex=hexOf("battman-"+HUES[i]);
+        var sr=hexToRgb(slotHex);var sh=sr?rgbToHsl(sr.r,sr.g,sr.b):{s:hsl.s,l:hsl.l};
+        var nrgb=hslToRgb(hsl.h+off,sh.s,sh.l);
+        out.push(rgbToHex(nrgb.r,nrgb.g,nrgb.b));
+      }
+      return out;
+    }
+    function updateHarmPrev(){
+      var box=$("harmPrev");box.innerHTML="";
+      harmColors().forEach(function(c){var i=document.createElement("i");i.style.background=c;box.appendChild(i);});
+    }
+    function applyHarm(){
+      var cols=harmColors();
+      HUES.forEach(function(h,i){vars["battman-"+h]=cols[i];regenHue(h);});
+      renderHues();touch();applyPreviewVars();buildYaml();
+      setStatus("Applied harmonic palette","ok");
+    }
+
+    /* ───────────────────────── YAML export / import ───────────────────────── */
+    function q(v){
+      // quote like the shipped themes
+      return '"'+String(v).replace(/^["']|["']$/g,"")+'"';
+    }
+    // enforce the reserved namespace on anything we export
+    function withPrefix(n){ n=String(n||"").trim(); return /^battman /i.test(n)?n:("Battman "+(n||"Theme")); }
+    // minimal parser for the flat Battman theme format (key: "value" + | block scalars)
+    function parseThemeYaml(text){
+      var lines=String(text).replace(/\r/g,"").split("\n"), name=null, v={}, i=0;
+      for(;i<lines.length;i++){
+        var ln=lines[i];
+        if(!ln.trim()||/^\s*#/.test(ln))continue;
+        if(/^\S/.test(ln)){ var m=ln.match(/^(?:"([^"]+)"|'([^']+)'|([^:]+)):\s*$/); if(m){name=(m[1]||m[2]||m[3]).trim();i++;} break; }
+      }
+      if(!name)return null;
+      for(;i<lines.length;i++){
+        var l=lines[i];
+        if(!l.trim()||/^\s*#/.test(l))continue;
+        if(/^\S/.test(l))break;                                  // dedent to col 0 → done
+        var mm=l.match(/^(\s+)([A-Za-z0-9_\-+@.]+):\s*(.*)$/); if(!mm)continue;
+        var key=mm[2], val=mm[3];
+        if(val==="|"||val===">"){
+          var base=mm[1].length, buf=[], j=i+1;
+          for(;j<lines.length;j++){
+            var bl=lines[j];
+            if(!bl.trim()){buf.push("");continue;}
+            if(bl.match(/^(\s*)/)[1].length>base){buf.push(bl.slice(base+2));}else break;
+          }
+          v[key]=buf.join("\n").replace(/\n+$/,""); i=j-1;
+        } else {
+          val=val.trim();
+          if(val[0]==='"'||val[0]==="'"){ var qc=val[0], e=val.indexOf(qc,1); val=(e>0)?val.slice(1,e):val.slice(1); }
+          else { var hi=val.indexOf(" #"); if(hi>=0)val=val.slice(0,hi); val=val.trim(); }
+          v[key]=val;
+        }
+      }
+      return {name:name, vars:v};
+    }
+    function importYaml(text){
+      var p=parseThemeYaml(text);
+      if(!p||!Object.keys(p.vars).length){setStatus("couldn't parse that YAML","err");return;}
+      vars={}; order=[];
+      Object.keys(p.vars).forEach(function(k){vars[k]=String(p.vars[k]);order.push(k);});
+      themeName=withPrefix(p.name);
+      captureAlphaProfile(); applyChromeVars();
+      $("fontOn").checked = vars["battman-font"]!==undefined;
+      setFontFields(stripQuotes(vars["battman-font"]||"IM Fell English, Georgia, serif"));
+      parseFx(); renderAll();
+      ensureOption(themeName);   // becomes the selected option so Export/Copy default to it
+      dirty=false; $("pvname").textContent="· imported “"+strip(themeName)+"”";
+      setStatus("imported “"+strip(themeName)+"”","ok");
+    }
+    function buildYaml(){
+      var L=[];
+      L.push('"'+withPrefix(themeName).replace(/"/g,"")+'":');
+      L.push('  mode: '+q(vars["mode"]||"dark"));
+      // font block
+      var fontOn=$("fontOn").checked;
+      var fam=fontStack()||"IM Fell English, Georgia, serif";
+      var imp=autoImport(fam)||"https://fonts.googleapis.com/css2?family=Inter&display=swap";
+      L.push('  # ── THEME FONT ── '+(fontOn?"enabled":"disabled (commented scaffold)"));
+      var fpre=fontOn?"  ":"  # ";
+      L.push(fpre+'battman-font: '+q(fam));
+      L.push(fpre+'card-mod-theme: '+q(themeName));
+      L.push(fpre+'card-mod-root: |');
+      L.push(fpre+"  @import url('"+imp+"');");
+      L.push(fpre+'  html { font-family: var(--battman-font) !important; }');
+      L.push(fpre+'  ha-card, .card-content, .primary, .secondary, .name, .state, .value, .label,');
+      L.push(fpre+'  .toolbar, .main-title, .title, hui-view-header, ha-top-app-bar-fixed {');
+      L.push(fpre+'    font-family: var(--battman-font) !important;');
+      L.push(fpre+'  }');
+      L.push(fpre+'  ha-dialog, ha-dialog *, browser-mod-popup, browser-mod-popup * { font-family: var(--battman-font) !important; }');
+      L.push(fpre+'primary-font-family: "var(--battman-font)"');
+      FONT_CASCADE.forEach(function(k){L.push(fpre+k+': "var(--primary-font-family)"');});
+      // roles
+      L.push('');
+      ROLES.forEach(function(r){if(vars[r.key]!==undefined)L.push('  '+r.key+': '+q(vars[r.key]));});
+      // hues + derived
+      HUES.forEach(function(h){
+        L.push('');
+        L.push('  # ── '+h.charAt(0).toUpperCase()+h.slice(1)+' ──');
+        L.push('  battman-'+h+': '+q(vars["battman-"+h]));
+        DERIVED.forEach(function(d){L.push('  battman-'+h+d.suf+': '+q(vars["battman-"+h+d.suf]));});
+        L.push('  battman-'+h+'-bg: '+q(vars["battman-"+h+"-bg"]));
+      });
+      // neutrals
+      L.push('');L.push('  # ── Text / Surfaces / Structural ──');
+      ["battman-text-bright","battman-text-muted","battman-text-dim","battman-surface-card","battman-surface-popup","battman-border-neutral"].forEach(function(k){
+        if(vars[k]!==undefined)L.push('  '+k+': '+q(vars[k]));
+      });
+      if(vars["battman-border-neutral-soft"]!==undefined)L.push('  battman-border-neutral-soft: '+q(vars["battman-border-neutral-soft"]));
+      // fx (preserve verbatim keys present)
+      var fxKeys=order.filter(function(k){return k.indexOf("fx-")===0;});
+      // include any fx keys we toggled that may not be in order
+      Object.keys(vars).forEach(function(k){if(k.indexOf("fx-")===0&&fxKeys.indexOf(k)<0)fxKeys.push(k);});
+      if(fxKeys.length){
+        L.push('');L.push('  # ── Button FX ──');
+        fxKeys.forEach(function(k){L.push('  '+k+': '+q(vars[k]));});
+      }
+      L.push('');
+      var out=L.join("\n");
+      var ta=$("yaml");if(ta&&root.activeElement!==ta)ta.value=out;  // don't clobber a paste
+      return out;
+    }
+
+    /* ───────────────────────── actions ───────────────────────── */
+    // add/select a dropdown option for the current working theme (even if unsaved)
+    function ensureOption(name){
+      var sel=$("themeSel"), opt=null;
+      for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===name){opt=sel.options[i];break;}}
+      if(!opt){opt=document.createElement("option");opt.value=name;sel.appendChild(opt);}
+      opt.textContent=strip(name)+(allThemes[name]?"":" (unsaved)");
+      sel.value=name;
+    }
+    // ask for the theme name (defaults to current); cancel/blocked keeps the current name
+    function promptName(){
+      var def=strip(themeName), n=null;
+      try{ n=prompt("Theme name — the key HA uses (“Battman ” is added automatically):", def); }catch(e){ n=null; }
+      if(n===null)n=def;
+      n=n.trim(); themeName=withPrefix(n||def);
+      ensureOption(themeName); buildYaml();
+      return themeName;
+    }
+    function doExport(){
+      promptName();
+      var y=buildYaml();
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(y).then(function(){setStatus("copied “"+strip(themeName)+"”","ok");},function(){setStatus("copy blocked — use the YAML box","err");});
+      }else{setStatus("clipboard unavailable — use Export","err");}
+      var det=$("yaml");if(det){var d=det.closest("details");if(d)d.open=true;}
+      dirty=false; $("pvname").textContent="· copied “"+strip(themeName)+"”";
+    }
+    // Save to HA: Battman (running inside HA) writes the theme into
+    // themes/battman/custom/<name>.yaml and reloads themes. Admin only; names of
+    // themes Battman ships are refused.
+    function doSaveToHA(){
+      var hass=getHass(); if(!hass){setStatus("not connected","err");return;}
+      promptName();
+      var y=buildYaml();
+      function post(overwrite){
+        return hass.callApi("POST","battman/themes",{name:themeName,yaml:y,overwrite:!!overwrite})
+          .then(function(j){return {status:200,body:j};},function(e){
+            if(e&&e.status_code)return {status:e.status_code,body:e.body||{}};
+            throw e;
+          });
+      }
+      post(false).then(function(res){
+        if(res.status===409 && res.body.exists){
+          if(!confirm("You already have a theme called “"+strip(themeName)+"”.\nReplace it with this version?")){setStatus("not saved","err");return null;}
+          return post(true);
+        }
+        return res;
+      }).then(function(res){
+        if(!res)return;
+        if(res.status===200){
+          dirty=false; $("pvname").textContent="· saved “"+strip(themeName)+"”";
+          setStatus("saved “"+strip(themeName)+"” \u2014 themes reloaded","ok");
+          setTimeout(function(){fetchThemes(function(){var sel=$("themeSel");if(allThemes[themeName])sel.value=themeName;});},700);
+        } else {
+          setStatus((res.body&&res.body.message)||("save failed (HTTP "+res.status+")"),"err");
+        }
+      }).catch(function(e){setStatus("save failed: "+(e&&e.message||e),"err");});
+    }
+    function doDownload(){
+      promptName();
+      var y=buildYaml();
+      var safe=withPrefix(themeName).replace(/[^A-Za-z0-9 _-]/g,"").trim()||"Battman Theme";
+      var blob=new Blob([y],{type:"text/yaml"});
+      var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=safe+".yaml";
+      document.body.appendChild(a);a.click();a.remove();
+      dirty=false; $("pvname").textContent="· exported “"+strip(themeName)+"”";
+      setStatus("exported "+safe+".yaml","ok");
+    }
+    function doPaste(){
+      if(navigator.clipboard&&navigator.clipboard.readText){
+        navigator.clipboard.readText().then(function(t){ if(t&&t.trim()){importYaml(t);}else{pasteFallback();} },function(){pasteFallback();});
+      }else{pasteFallback();}
+    }
+    function pasteFallback(){
+      var ta=$("yaml"); var d=ta.closest("details"); if(d)d.open=true;
+      ta.value=""; ta.focus();
+      setStatus("paste your theme YAML into the box, then Load from box","err");
+    }
+    // Apply the selected theme to EVERY view of the current dashboard — the same
+    // plumbing the Settings-page switcher uses (per-view theme:, not frontend.set_theme,
+    // which this dashboard's hardcoded view themes would override anyway).
+    // Battman keeps the dashboard theme's name in the parameters sensor (dashboardTheme):
+    // the mode colours sensor (Live Activity bar, theme: battman cards) reads it there.
+    // Done here every time Make Active is used.
+    function saveThemeName(hass,name){
+      hass.callApi("GET","battman/entities").then(function(j){
+        var ev=(j.entities||{}).parameters_update_event;
+        if(!ev)throw new Error("entity map has no parameters_update_event");
+        return hass.connection.sendMessagePromise({type:"fire_event",event_type:ev,event_data:{action:"SetAttribute",dashboardTheme:name}});
+      }).catch(function(e){setStatus("theme name not saved in Battman: "+e.message,"err");});
+    }
+    function doMakeActive(){
+      var hass=getHass();if(!hass){setStatus("not connected","err");return;}
+      var name=$("themeSel").value;
+      if(!name){setStatus("no theme selected","err");return;}
+      try{localStorage.setItem("battman.studioTheme",name);}catch(e){}   // so the reload re-opens this theme
+      var urlPath="";
+      try{urlPath=window.location.pathname.split("/").filter(Boolean)[0];}catch(e){}
+      if(!urlPath){setStatus("can't detect dashboard","err");return;}
+      saveThemeName(hass,name);
+      // The save alone doesn't re-render the open dashboard, so ask the parent's
+      // lovelace panel to re-fetch its config (instant); full reload only as fallback.
+      function reloadParent(){
+        setStatus("applied","ok");
+        function f(r,d){ if(!r||d>6)return null; var e=r.querySelector&&r.querySelector("ha-panel-lovelace"); if(e)return e;
+          var a=r.querySelectorAll?r.querySelectorAll("*"):[]; for(var i=0;i<a.length;i++){ if(a[i].shadowRoot){ var x=f(a[i].shadowRoot,d+1); if(x)return x; } } return null; }
+        try{
+          var p=f(document,0);
+          if(p&&typeof p._fetchConfig==="function"){ Promise.resolve(p._fetchConfig(false)).catch(function(){window.location.reload();}); return; }
+          window.location.reload();
+        }catch(e){window.location.reload();}
+      }
+      // rewrite every view's theme, then save.
+      hass.connection.sendMessagePromise({type:"lovelace/config",url_path:urlPath}).then(function(cfg){
+        (cfg.views||[]).forEach(function(v){v.theme=name;});
+        return hass.connection.sendMessagePromise({type:"lovelace/config/save",url_path:urlPath,config:cfg});
+      }).then(reloadParent,function(){setStatus("apply failed","err");});
+    }
+    function doReload(){
+      var hass=getHass();if(!hass){setStatus("No HA context","err");return;}
+      hass.callService("frontend","reload_themes",{}).then(function(){
+        setStatus("Themes reloaded — refreshing list…","ok");
+        setTimeout(function(){fetchThemes();},600);
+      },function(){setStatus("reload_themes failed","err");});
+    }
+
+    /* ───────────────────── state card demo ───────────────────── */
+    // Renders the REAL State card: its button-card JS and fx CSS come from Battman's State
+    // card and run against a mocked HOOOOVER scenario (the card's own SC hook). Colours/fx
+    // resolve from the edited vars on #preview, so theme edits show live with no re-render.
+    // Its icons are drawn as inline SVG (the card's HTML is put in as text, not run by button-card).
+    var CHILL_DEMO={
+      flags:{sellReason:[false,0,"No Sell"],buyReason:[true,9,"HOOOOVER"],needSun:false,needPower:false},
+      v:{sellPrice:.15,sellAbove:30,sellPriceLow:.15,sellPricePreferred:.1,buyPrice:.09,buyBelow:25,buyPriceHigh:.3},
+      live:{fit:-3,buy:-2,soc:45,mode:"Charge Solar Off",byUser:false,peak:false,reset:null,ruleTo:null}
+    };
+    var MDI_PATHS={"menu-up": "M7,15L12,10L17,15H7Z", "menu-down": "M7,10L12,15L17,10H7Z", "timer-outline": "M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z", "emoticon-cool-outline": "M19,10C19,11.38 16.88,12.5 15.5,12.5C14.12,12.5 12.75,11.38 12.75,10H11.25C11.25,11.38 9.88,12.5 8.5,12.5C7.12,12.5 5,11.38 5,10H4.25C4.09,10.64 4,11.31 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12C20,11.31 19.91,10.64 19.75,10H19M12,4C9.04,4 6.45,5.61 5.07,8H18.93C17.55,5.61 14.96,4 12,4M22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12M12,17.23C10.25,17.23 8.71,16.5 7.81,15.42L9.23,14C9.68,14.72 10.75,15.23 12,15.23C13.25,15.23 14.32,14.72 14.77,14L16.19,15.42C15.29,16.5 13.75,17.23 12,17.23Z", "weather-cloudy-alert": "M6,19A5,5 0 0,1 1,14A5,5 0 0,1 6,9C7,6.65 9.3,5 12,5C15.43,5 18.24,7.66 18.5,11.03L19,11A4,4 0 0,1 23,15A4,4 0 0,1 19,19H6M19,13H17V12A5,5 0 0,0 12,7C9.5,7 7.45,8.82 7.06,11.19C6.73,11.07 6.37,11 6,11A3,3 0 0,0 3,14A3,3 0 0,0 6,17H19A2,2 0 0,0 21,15A2,2 0 0,0 19,13M13,12H11V8H13V12M13,16H11V14H13", "kettle-alert": "M9.5 3C4.8 3 1 5.7 1 9C1 10.2 1.5 11.3 2.4 12.3C1.5 13.5 1 15 1 16.5V20C1 21.1 1.9 22 3 22H16C17.1 22 18 21.1 18 20V16.5C18 15.3 17.7 14.1 17 13L19 11L16 8L13.9 10.1C12.6 9.4 11.1 9 9.5 9C7.7 9 5.9 9.5 4.6 10.4C4.2 10 4 9.5 4 9C4 7.2 6.5 5.8 9.5 5.8C10.9 5.8 12.3 6.1 13.3 6.7L15.3 4.7C13.8 3.6 11.7 3 9.5 3M9.5 11C9.8 11 10.2 11 10.5 11.1C7.4 11.6 5 14.2 5 17.5V20H3V17.5C3 13.9 5.9 11 9.5 11M21 13V7H23V13H21M21 17V15H23V17H21Z"};
+    function svgIcons(html){
+      return html.replace(/<ha-icon icon="mdi:([a-z-]+)" style="([^"]*)"><\/ha-icon>/g,function(m,n,st){
+        var d=MDI_PATHS[n]; if(!d)return "";
+        return '<svg viewBox="0 0 24 24" style="'+st+'fill:currentColor"><path d="'+d+'"/></svg>';
+      });
+    }
+    function findChillCard(cfg){
+      var hit=null;
+      (function walk(o){
+        if(hit||!o||typeof o!=="object")return;
+        if(o.type==="custom:button-card"&&o.custom_fields&&typeof o.custom_fields.content==="string"&&o.custom_fields.content.indexOf("Normal Curve, Chill.")>=0){hit=o;return;}
+        for(var k in o)walk(o[k]);
+      })(cfg.views&&cfg.views[0]);
+      return hit;
+    }
+    function loadChillCard(){
+      var box=$("pvChill"),hass=getHass();
+      function fail(msg){box.innerHTML='<div class="note">'+msg+'</div>';}
+      if(!hass){fail("State card preview needs Home Assistant.");return;}
+      // the State card is a Battman card (custom:battman-state): its config comes from Battman
+      hass.callApi("GET","battman/cards/state").then(function(stateCard){
+        var c=findChillCard({views:[stateCard.config]});
+        if(!c){fail("The Battman State card (battman-state) isn't the state card the studio knows.");return;}
+        var css=(c.extra_styles||"").replace(/ha-card\s*\{[^}]*\}/g,"");
+        var tag=$("chillFx"); if(!tag){tag=document.createElement("style");tag.id="chillFx";root.appendChild(tag);}
+        tag.textContent=css;
+        // the demo runs on mocked values (CHILL_DEMO), not live sensors, so the card's own
+        // missing-sensor check is left out here
+        var js=c.custom_fields.content.trim().replace(/^\[\[\[/,"").replace(/\]\]\]$/,"")
+          .replace(/^const _gone = .*\n^if \(_gone\.length\) return .*\n/m,"").replace("const SC = null;","const SC = window.__CHILL_SC;");
+        window.__CHILL_SC=CHILL_DEMO;
+        var html=new Function("states","entity","hass","variables","user",js)({},{},{states:{}},{},{});
+        box.innerHTML='<div style="padding-bottom:4px">'+svgIcons(html)+'</div>';
+      }).catch(function(e){fail("State card preview failed: "+(e&&e.message||e));});
+    }
+
+    /* ───────────────────────── wire-up ───────────────────────── */
+    function renderAll(){
+      renderHues();renderNeutrals();renderFx();
+      applyPreviewVars();buildYaml();updateHarmPrev();
+    }
+    function init(){
+      var problem=syncStudioTheme();
+      if(problem){
+        card.problem(problem);
+        return;
+      }
+      renderSchemes();
+      $("themeSel").addEventListener("change",function(){
+        var name=this.value;
+        if(name===themeName)return;              // already current
+        if(!allThemes[name]){this.value=themeName;return;}   // an unsaved working entry — nothing to load
+        if(dirty && !confirm("You have unsaved edits to “"+strip(themeName)+"”.\nDiscard them and load “"+strip(name)+"”?")){
+          this.value=themeName;   // revert selection
+          return;
+        }
+        loadTheme(name);          // auto-load on pick
+      });
+      $("btnActive").addEventListener("click",doMakeActive);
+      $("btnSave").addEventListener("click",doSaveToHA);
+      $("btnReload").addEventListener("click",doReload);
+      $("btnExport").addEventListener("click",doExport);
+      $("btnDownload").addEventListener("click",doDownload);
+      $("btnPaste").addEventListener("click",doPaste);
+      // import (upload a .yaml)
+      $("btnImport").addEventListener("click",function(){$("fileImport").click();});
+      $("fileImport").addEventListener("change",function(e){
+        var f=e.target.files&&e.target.files[0]; if(!f)return;
+        var r=new FileReader(); r.onload=function(){importYaml(String(r.result));e.target.value="";}; r.readAsText(f);
+      });
+      // YAML box: copy + load-from-box (paste import)
+      $("btnCopyBox").addEventListener("click",function(){
+        var ta=$("yaml");
+        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(ta.value).then(function(){setStatus("copied","ok");},function(){ta.select();});}
+        else{ta.select();}
+      });
+      $("btnLoadBox").addEventListener("click",function(){
+        importYaml($("yaml").value);
+      });
+      // font controls (URL is auto-derived from the family; no field to manage)
+      $("fontOn").addEventListener("change",function(){touch();applyPreviewVars();buildYaml();});
+      ["fontFamily","fontFallback"].forEach(function(id){$(id).addEventListener("input",function(){touch();applyPreviewVars();buildYaml();});});
+      $("fontFamily").addEventListener("change",renderFontList);
+      $("fontSearch").addEventListener("input",renderFontList);
+      // font browser is collapsed behind the Browse button; samples only load once it's opened
+      $("btnFontBrowse").addEventListener("click",function(){
+        var p=$("fontPick"),open=p.hidden;
+        p.hidden=!open;this.textContent=open?"Done":"Browse";this.setAttribute("aria-expanded",open?"true":"false");
+        this.classList.toggle("sel",open);
+        if(open){renderFontCats();renderFontList();var s=$("fontSearch");s.focus({preventScroll:true});}
+      });
+      $("fontGeneric").addEventListener("change",function(){touch();applyPreviewVars();buildYaml();});
+      // harmonic
+      var seed=$("seed"),seedHex=$("seedHex");
+      seed.addEventListener("input",function(){seedHex.value=seed.value;updateHarmPrev();});
+      seedHex.addEventListener("change",function(){var h=hexToRgb(seedHex.value);if(h){seed.value=rgbToHex(h.r,h.g,h.b);updateHarmPrev();}});
+      $("btnApplyHarm").addEventListener("click",applyHarm);
+
+      // pull the real dock library; re-render rows pixel-exact once it lands
+      loadBattmanLib(function(){ if(window.BattmanLib&&window.BattmanLib.renderRow) renderDockRows(); });
+      loadChillCard();
+
+      // connect — retry until the parent hass object is ready
+      var tries=0;
+      (function tryConnect(){
+        var hass=getHass();
+        if(hass&&hass.connection){fetchThemes(function(pick){if(pick)loadTheme(pick);});return;}
+        if(tries++<40){setTimeout(tryConnect,250);return;}
+        setStatus("No HA context (open inside a dashboard)","err");
+      })();
+    }
+    init();
+    return { themeChanged: function(){ var p=syncStudioTheme(); if(p)card.problem(p); } };
+  }
+}
+battmanDefine("battman-theme-studio", BattmanThemeStudioCard);
+battmanPicker("battman-theme-studio", "Battman Theme studio",
+  "Edit Battman themes with a live preview, then save them to Home Assistant or make one active.", "battman-theme-studio");
