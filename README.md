@@ -4,7 +4,7 @@ Home battery automation for Home Assistant.
 
 Battman controls a Sigenergy battery from Amber prices and a Solcast solar forecast. It ships its
 engine (as Home Assistant blueprints and packages you can open and trace), a dashboard (Power,
-Curvy, Pricy, Finances, Settings, Log, Theme), its cards, pages and themes. It started as
+Curvy, Pricy, Finances, Settings, Log, Theme), its cards and themes. It started as
 [Smiggles](https://github.com/biggls73/Smiggles) and can take over from it (see below).
 
 ## Install (HACS)
@@ -65,7 +65,7 @@ To fix a period's buy and sell totals, use **Correct Totals** on the Billing car
 popup and asks before changing anything.
 
 What updates with Battman releases: every **Battman card** on it (`custom:battman-<id>`,
-including Curvy, Pricy, Log, the Theme studio and the Finances cards) and the pages they show. What doesn't:
+including Curvy, Pricy, Log, the Theme studio and the Finances cards). What doesn't:
 the views themselves (which cards are on them, and their layout). Battman is moving
 everything into cards so less and less of it is fixed.
 
@@ -76,22 +76,16 @@ everything into cards so less and less of it is fixed.
 - **Theme:** pick one under **Settings → Dashboard options**, or use **Make Active** in
   the Theme view (they do the same thing).
 
-## Pages
+## Cards
 
-Battman serves its pages and images from `/battmanfiles/` (`curvy.html`, `pricy.html`,
-`images/…`), for example:
+Curvy, Pricy, the Log, Cost chart, Cost compare, Settings and the Theme studio are cards that
+draw themselves (`custom:battman-curvy` and so on): add them to any view like any card, no frame
+needed. The rest are Battman's card files (see [docs/cards.md](docs/cards.md)). Battman serves
+their scripts and images from `/battmanfiles/`.
 
-```yaml
-type: iframe
-url: /battmanfiles/curvy.html
-```
-
-The Log, Cost chart, Cost compare, Settings and Theme studio are cards that draw themselves
-(`custom:battman-log` and so on): add them like any card, no frame needed.
-
-Pages and cards find their entities through Battman's **entity map** (Battman name →
-entity in your HA) and take their colours from a **Battman theme**. If an entity
-or theme colour is missing, the page or card shows an error saying exactly what.
+Cards find their entities through Battman's **entity map** (Battman name → entity in your HA)
+and take their colours from a **Battman theme**. If an entity or theme colour is missing, the
+card shows an error saying exactly what.
 
 ## Theme mode colours sensor
 

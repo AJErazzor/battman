@@ -1,7 +1,8 @@
 # Battman cards
 
 Battman cards are dashboard cards you can put on any view, on any dashboard, and
-that update with Battman releases. Each one is a plain YAML card file.
+that update with Battman releases. Most are plain YAML card files; the ones that draw themselves
+(Log, Curvy, Pricy, Cost chart, Cost compare, Settings, Theme studio, House, Image) are scripts.
 
 ## Using one
 
@@ -54,8 +55,8 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain), control centre (presets, scenes, Net Target), override timer | button-card, card-mod, browser_mod |
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
-| `battman-curvy` | The SOC curve editor (Battman's Curvy page in a frame for now). Size it by dragging in a sections view; it fills a panel view | nothing |
-| `battman-pricy` | The price curve editor (Battman's Pricy page in a frame for now). Sized like Curvy | nothing |
+| `battman-curvy` | The SOC curve editor (see [Battman Curvy](#battman-curvy)). Draws itself; no options | nothing |
+| `battman-pricy` | The price curve editor (see [Battman Pricy](#battman-pricy)). Draws itself; no options | nothing |
 | `battman-settings` | Every Battman setting on one card; drag sections between two columns (order kept per device). Each change is checked: values Battman won't accept are refused, and it says if a change didn't take. Draws itself; no options | nothing |
 | `battman-log` | The engine log, mode timeline and charts (see [Battman Log](#battman-log)) | nothing |
 | `battman-theme-studio` | The Theme studio: edit a Battman theme with a live preview (including the real State card), save it to HA or make it the dashboard's theme. Draws itself; no options | nothing |
@@ -158,6 +159,25 @@ options. It looks and works as the page did:
 - **Order**: drag any block by its grip; the order is kept per device.
 - **Live**: when the engine logs a run the log reloads, and on a quick range the window moves on to
   now (your filters stay). The charts also refresh every minute.
+
+## Battman Curvy
+
+`custom:battman-curvy` is the SOC curve editor: the battery charge the engine aims for at each hour,
+for each month (or season), on four curves: Sell, Sell High Consumption, Buy and Buy High
+Consumption. Edit the hour boxes, or tap a point on the chart to jump to its box. Actual SOC
+(yesterday, an average, or dates you pick) and today's SOC are drawn over it, with each hour's
+mode, prices and solar in the hour details. **Save** sends the curves to Battman and checks they
+took. Presets, copy / paste / export / import a period, Factory Defaults and Match Actual work on
+the period you're editing. It has no options.
+
+## Battman Pricy
+
+`custom:battman-pricy` is the price curve editor: the sell and buy prices the engine works to at
+each hour, for each month (or season), on the same four curves. Each curve has two lines (for Sell:
+Preferred and Low), edited in two panels; with **Linked** on, changing Preferred also moves Low at
+any hour where they were equal. **Set All** sets every hour at once. Today's Amber prices (actual so
+far, then the forecast) are drawn over it; if Amber has no prices for today, the overlay is empty
+and a note says so. Save, presets and the period tools work as in Curvy. It has no options.
 
 ## Battman Cost chart
 

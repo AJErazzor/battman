@@ -51,6 +51,6 @@ def test_first_on_the_power_view() -> None:
 
 
 def test_curvy_copies_the_curves_it_loads() -> None:
-    page = (ROOT / "www/curvy.html").read_text()
+    page = (ROOT / "www/battman-curvy.js").read_text()
     assert "data[month] = { sell: [...c.sell], sell_high: [...c.sell_high], buy: [...c.buy], buy_high: [...c.buy_high] };" in page
     assert "data[month] = { sell: c.sell," not in page

@@ -10,7 +10,7 @@ const http = require("http");
   const www = process.argv[2];
   const page = `<!doctype html><html><body>
 <script>window.loadCardHelpers = async () => ({ createCardElement: () => document.createElement("div") });</script>
-<script type="module" src="/battmanfiles/battman-cards.js?v=0.19.1&cards=state,log,limits,cost-compare,cost-chart,settings,theme-studio"></script>
+<script type="module" src="/battmanfiles/battman-cards.js?v=0.19.1&cards=state,log,limits,cost-compare,cost-chart,settings,theme-studio,curvy,pricy"></script>
 </body></html>`;
   const server = http.createServer((req, res) => {
     const u = req.url.split("?")[0];
@@ -23,7 +23,7 @@ const http = require("http");
   const browser = await chromium.launch({ executablePath: process.env.CHROME });
   const p = await browser.newPage();
   await p.goto(`http://127.0.0.1:${server.address().port}/index.html`);
-  const REAL = ["log", "cost-compare", "cost-chart", "settings", "theme-studio"];
+  const REAL = ["log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy"];
   await p.waitForFunction((real) => customElements.get("battman-state") && real.every((c) => customElements.get("battman-" + c)),
                           REAL, { timeout: 10000 });
   const out = await p.evaluate((real) => ({
