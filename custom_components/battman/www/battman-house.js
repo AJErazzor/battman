@@ -53,7 +53,7 @@ const HOUSE_ITEMS = [
   { key: "pv3", title: "PV string (bottom)", label: "PV3", ent: { entity: "pv:3" }, need: ["entity"], at: [24.6, 2.5, 25.3] },
   { key: "solar", title: "Solar power", label: "SOLAR", ent: { entity: "map:pv_power" }, need: ["entity"], at: [5.6, 44.3, 25.3] },
   { key: "solar_today", title: "Solar today", ent: { entity: "map:solar_today" }, need: ["entity"], at: [14.3, 44.3, 35.4] },
-  { key: "countdown", title: "Price countdown", label: "LEFT", at: [3, 60, 20] },
+  { key: "countdown", title: "Price countdown", label: "LEFT", at: [0, 60, 20] },
   { key: "sell", title: "Sell price (feed-in)", label: "FIT", ent: { entity: "map:feed_in_price" }, need: ["entity"], at: [0, 74, 25] },
   { key: "buy", title: "Buy price", label: "BUY", ent: { entity: "map:buy_price" }, need: ["entity"], at: [7.8, 74, 25] },
   { key: "home", title: "Home power", label: "HOME", ent: { entity: "map:home_power" }, need: ["entity"], at: [32.2, 80.5, 19] },
@@ -76,12 +76,14 @@ const HOUSE_ENT_LABELS = {
 };
 const HOUSE_TOP_KEYS = ["type", "theme", "grid_options", "view_layout", "visibility", ...HOUSE_ITEMS.map((i) => i.key)];
 
-// The static lines, and the moving ones: [top %, left %, width %, angle].
+// The static lines, and the moving ones: [top %, left %, width %, angle]. A static line with
+// centred: true has its middle (not its left edge) at left %.
 const HOUSE_STATIC = [
   { at: [35.6, 78.7], w: "1px", h: "17.8%", muted: true },
   { at: [8.9, 45.6], w: "1px", h: "14%", muted: true },
   { at: [66.7, 33], w: "2px", h: "26.7%", muted: true },
-  { at: [73.3, 78], w: "2px", h: "20.3%", muted: false },
+  // the grid line: down from where the gateway-to-grid line ends (58% + 21% x cos 20° = 77.73%)
+  { at: [73.3, 77.73], w: "2px", h: "20.3%", muted: false, centred: true },
 ];
 const HOUSE_FLOWS = {
   pv_sig_01: [22.2, 34.2, 30.9, 90],
@@ -228,7 +230,7 @@ class BattmanHouseCard extends HTMLElement {
     }
     if (s.lines.show) {
       for (const b of HOUSE_STATIC) {
-        html += `<div class="bar" style="top:${b.at[0]}%;left:${b.at[1]}%;width:${b.w};height:${b.h};background:${b.muted ? "var(--battman-text-muted, var(--secondary-text-color))" : "rgba(255,255,255,0.35)"}"></div>`;
+        html += `<div class="bar" style="top:${b.at[0]}%;left:${b.at[1]}%;${b.centred ? "transform:translateX(-50%);" : ""}width:${b.w};height:${b.h};background:${b.muted ? "var(--battman-text-muted, var(--secondary-text-color))" : "rgba(255,255,255,0.35)"}"></div>`;
       }
       for (const [k, f] of Object.entries(HOUSE_FLOWS)) {
         html += `<div class="ln" data-flow="${k}" style="top:${f[0]}%;left:${f[1]}%;width:${f[2]}%;transform:rotate(${f[3]}deg)"></div>`;
@@ -305,7 +307,8 @@ class BattmanHouseCard extends HTMLElement {
         return two(v === null ? dash : `${houseRound(v * 100, 1)}c`, st.label, "", "muted", c);
       }
       case "countdown":
-        return `<div style="display:flex;align-items:baseline;justify-content:flex-end;gap:4px;line-height:1">
+        // same top and line height as the sell price next to it, so the time sits on the price's line
+        return `<div style="display:flex;align-items:baseline;justify-content:flex-end;gap:4px">
           <span class="s muted" style="text-transform:uppercase">${esc(st.label)}</span>
           <span class="p" style="color:var(--battman-text-bright,var(--primary-text-color));text-shadow:0 1px 2px rgba(0,0,0,.6)"><battman-countdown></battman-countdown></span></div>`;
       case "solar":

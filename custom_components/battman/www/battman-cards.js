@@ -332,8 +332,17 @@ window.customCards = window.customCards || [];
 const pickerEntries = new Map();
 const cardClasses = new Map();   // tag -> class, made once (registered again if HA swaps its registry)
 
+// Battman cards that draw themselves (their own script, not a card file). A page still holding an
+// older list of card files (open since before an update) may name one of them: load its script
+// instead of making a card-file card under its name.
+const OWN_SCRIPT_CARDS = { log: "battman-log.js" };
+
 function defineCard(id, name, description) {
   const tag = `battman-${id}`;
+  if (OWN_SCRIPT_CARDS[id]) {
+    if (!customElements.get(tag)) import(`/battmanfiles/${OWN_SCRIPT_CARDS[id]}`);
+    return;
+  }
   if (!cardClasses.has(tag)) {
     const cls = class extends BattmanCard {
       static cardId = id;
