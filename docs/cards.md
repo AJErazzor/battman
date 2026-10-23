@@ -57,7 +57,7 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-curvy` | The SOC curve editor (Battman's Curvy page in a frame for now). Size it by dragging in a sections view; it fills a panel view | nothing |
 | `battman-pricy` | The price curve editor (Battman's Pricy page in a frame for now). Sized like Curvy | nothing |
 | `battman-settings` | Every Battman setting on one page; drag sections between two columns (order kept per device). Each change is checked: values Battman won't accept are refused, and it says if a change didn't take | nothing |
-| `battman-log` | The engine log page (in a frame for now). Sized like Curvy | nothing |
+| `battman-log` | The engine log, mode timeline and charts (see [Battman Log](#battman-log)) | nothing |
 | `battman-theme-studio` | The Theme studio (in a frame for now). Sized like Curvy | nothing |
 | `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export (Battman's cost chart page in a frame) | card-mod |
 | `battman-cost-compare` | This period against earlier ones (Battman's cost compare page in a frame) | card-mod |
@@ -143,6 +143,21 @@ dark:                 # in dark mode: the same. On a narrow screen in dark mode,
   image on a page can't send one. Don't put anything private in that folder.
 - **Problems** show on the card: an image that isn't there (named), a setting it doesn't know, or
   `fill` with no height to fill. Never a blank space or a different image.
+
+## Battman Log
+
+`custom:battman-log` is the engine log with the mode timeline and the price, power, grid, battery and
+solar charts over the same window. It used to be the Log page in a frame; it's now a card that
+draws itself, so it grows to fit (no size to set) and takes the view's theme directly. It has no
+options. It looks and works as the page did:
+
+- **Filter Log**: quick ranges (5m to 24h), the ‹ › pager, and From / To.
+- **Log**: collapsed to start; tick modes on or off, or Changes Only.
+- **Mode**: tap the timeline for the mode, price and battery at that point, and to limit the log to
+  that 5-minute block; drag to scrub (the charts show the same point).
+- **Order**: drag any block by its grip; the order is kept per device.
+- **Live**: when the engine logs a run the log reloads, and on a quick range the window moves on to
+  now (your filters stay). The charts also refresh every minute.
 
 ## Battman House
 

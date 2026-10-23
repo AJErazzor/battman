@@ -73,12 +73,12 @@ Only these:
    month at 8pm on the last day of the month. Turn
    `automation.battman_engine_copy_curves_to_next_month` off if you don't want that.
 4. **The log** is written by Battman (no shell commands): `time|message` as before, but with the
-   message's line breaks kept as `\n`; same 4032-line weekly trim (Sundays 03:00). The Log page reads it through `/api/battman/log`.
+   message's line breaks kept as `\n`; same 4032-line weekly trim (Sundays 03:00). The Log card reads it through `/api/battman/log`.
 5. **The log text has headings instead of emoji** (v0.17.1): `Run:`, `Mode:`, `Prices:`, `Battery:`,
    `SOC Limits:`, `Solar:`, `Actions:`, `Sell Forecasts:`, `Buy Forecasts:`, `Version:`, `Debug:`;
    the price-spike 💰 markers are `(Spike 1)` / `(Spike 2)`, `(Bad! ⛅)` is `(Bad!)`. The exact list is
    `tools/smiggles_log_text.py`; the tests apply it to Smiggles' original too and compare the logs.
-   The Engine log popup and the Log page draw the log with one renderer (`www/battman-enginelog.js`),
+   The Engine log popup and the Log card draw the log with one renderer (`www/battman-enginelog.js`),
    which also reads Smiggles' emoji lines (the ones copied in at migration).
 6. **Grid power and load average** are unavailable (not 0) when what they're made from is missing.
 7. **The load average is Battman's own** (v0.19.0): a Statistics sensor of home power with the

@@ -19,7 +19,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
-LOG = Path(__file__).parents[1] / "custom_components/battman/www/log.html"
+LOG = Path(__file__).parents[1] / "custom_components/battman/www/battman-log.js"
 IMP, EXP = "sensor.sigen_plant_grid_import_power", "sensor.sigen_plant_grid_export_power"
 HOME = "sensor.sigen_plant_consumed_power"
 CASES = [("2.345", "0"), ("0.04", "0.01"), ("0", "3.217"), ("1.5", "1.5"), ("0.06", "0.02"), ("0.02", "0.06"), ("0", "0")]
@@ -136,7 +136,7 @@ async def test_map_and_views(hass: HomeAssistant, hass_client) -> None:
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs node")
-def test_log_page_grid_from_import_export() -> None:
+def test_log_card_grid_from_import_export() -> None:
     html = LOG.read_text()
     a = html.index("  function gridSeries(imp, exp) {")
     b = html.index("\n  }\n", a) + 4

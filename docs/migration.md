@@ -50,10 +50,10 @@ Check (refresh the browser first):
 
 7. `binary_sensor.battman_in_charge` on; Smiggles automations all off; Smiggles enable off.
 8. Battman dashboard: mode, overrides, odometers and curves show what Smiggles had.
-9. Engine log popup / Log page: Smiggles' history, then a new Battman run line.
+9. Engine log popup / Log card: Smiggles' history, then a new Battman run line.
 10. Change something live: set an override (or a scene) and watch the mode change and the Sigen
     EMS mode follow; flip no export and watch the export limit go to 0 and back (18.2).
-11. Leave it a few hours: each 5-minute price change runs the engine (Log page).
+11. Leave it a few hours: each 5-minute price change runs the engine (Log card).
 
 If anything's wrong: `Battman: Hand back to Smiggles`, confirm on (Smiggles is back as it was).
 If that's not enough: restore the backup.
