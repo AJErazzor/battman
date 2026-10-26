@@ -32,7 +32,7 @@ blueprint:
     watch:
       name: Push when these change
       default:
-        - [[map:battery_soc]]
+        - sensor.sigen_plant_battery_state_of_charge
         - [[map:feed_in_price]]
         - [[map:buy_price]]
         - [[map:mode]]

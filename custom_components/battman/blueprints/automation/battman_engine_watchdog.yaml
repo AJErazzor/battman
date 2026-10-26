@@ -143,7 +143,7 @@ variables:
   sellSensor: sensor.battman_sell_total
   parametersSensor: sensor.battman_parameters
   lastRunSensor: sensor.battman_run
-  batterySOCSensor: [[map:battery_soc]]
+  batterySOCSensor: sensor.sigen_plant_battery_state_of_charge
   fitSensor: [[map:feed_in_price]]
   enable: input_boolean.battman_enable
   noexport: input_boolean.battman_no_export

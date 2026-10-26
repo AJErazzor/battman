@@ -24,9 +24,9 @@ actions:
     milliseconds: 0
 - variables:
     mode: '{{ states(''input_select.battman_mode'')  }}'
-    max_charge_kw: '{{ (states(''[[map:rated_charging_power]]'') | float)  }}'
+    max_charge_kw: '{{ (states(''sensor.sigen_plant_ess_rated_charging_power'') | float)  }}'
     min_charge_kw: 0.1
-    max_discharge_kw: '{{(states(''[[map:rated_discharging_power]]'') | float)}}'
+    max_discharge_kw: '{{(states(''sensor.sigen_plant_ess_rated_discharging_power'') | float)}}'
     min_discharge_kw: 0
     max_pv_kw: 20
     min_pv_kw: 0
@@ -41,7 +41,7 @@ actions:
       data:
         option: Maximum Self Consumption
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Self Consume Map to Maximum Self Consumption
     - action: number.set_value
       metadata: {}
@@ -49,7 +49,7 @@ actions:
         value: '{{ max_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -57,7 +57,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check self consume conditions
   - conditions:
@@ -69,7 +69,7 @@ actions:
       data:
         option: Maximum Self Consumption
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Drain Map to Maximum Self Consumption Min PV
     - action: number.set_value
       metadata: {}
@@ -77,7 +77,7 @@ actions:
         value: '{{ max_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -85,7 +85,7 @@ actions:
         value: '{{ min_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Set PV Min Charge Limit
     alias: Check self consume conditions
   - conditions:
@@ -97,7 +97,7 @@ actions:
       data:
         option: Command Charging (Grid First)
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Float Solar Off Map to Command Charging (Grid First) Min Charge
     - action: number.set_value
       metadata: {}
@@ -105,7 +105,7 @@ actions:
         value: '{{ min_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Set ESS Max Charge Limit to min
     - action: number.set_value
       metadata: {}
@@ -113,7 +113,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check float no solar conditions
   - conditions:
@@ -125,7 +125,7 @@ actions:
       data:
         option: Command Discharging (PV First)
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Discharge Map to Command Discharging (PV First)
     - action: number.set_value
       metadata: {}
@@ -133,7 +133,7 @@ actions:
         value: '{{ max_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -141,7 +141,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check discharge conditions
   - conditions:
@@ -153,7 +153,7 @@ actions:
       data:
         option: Command Charging (PV First)
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Charge Map To Command Charging (PV First)
     - action: number.set_value
       metadata: {}
@@ -161,7 +161,7 @@ actions:
         value: '{{ max_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -169,7 +169,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check charge conditions
   - conditions:
@@ -181,7 +181,7 @@ actions:
       data:
         option: Command Charging (PV First)
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Solar Soak Map to Command Charging (PV First)
     - action: number.set_value
       metadata: {}
@@ -189,7 +189,7 @@ actions:
         value: '{{ max_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -197,7 +197,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check solar soak charge conditions
   - conditions:
@@ -209,7 +209,7 @@ actions:
       data:
         option: Command Charging (Grid First)
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Charge Solar Off Map To Command Charging (Grid First)
     - action: number.set_value
       metadata: {}
@@ -217,7 +217,7 @@ actions:
         value: '{{ max_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -225,7 +225,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check charge no solar conditions
   - conditions:
@@ -237,7 +237,7 @@ actions:
       data:
         option: Maximum Self Consumption
       target:
-        entity_id: [[map:ems_control_mode]]
+        entity_id: select.sigen_plant_remote_ems_control_mode
       alias: Float Map To Maximum Self Consumption Min Charge
     - action: number.set_value
       metadata: {}
@@ -245,7 +245,7 @@ actions:
         value: '{{ min_charge_kw }}'
       target:
         entity_id:
-        - [[map:max_charge_limit]]
+        - number.sigen_plant_ess_max_charging_limit
       alias: Reset ESS Max Charge Limit
     - action: number.set_value
       metadata: {}
@@ -253,7 +253,7 @@ actions:
         value: '{{ max_pv_kw }}'
       target:
         entity_id:
-        - [[map:pv_max_limit]]
+        - number.sigen_plant_pv_max_power_limit
       alias: Reset PV Max Charge Limit
     alias: Check Float conditions
   default:
@@ -262,7 +262,7 @@ actions:
     data:
       option: Maximum Self Consumption
     target:
-      entity_id: [[map:ems_control_mode]]
+      entity_id: select.sigen_plant_remote_ems_control_mode
     alias: Maximum Self Consumption
   - action: number.set_value
     metadata: {}
@@ -270,6 +270,6 @@ actions:
       value: '{{ max_charge_kw }}'
     target:
       entity_id:
-      - [[map:max_charge_limit]]
+      - number.sigen_plant_ess_max_charging_limit
     alias: Reset ESS Max Charge Limit
 mode: single

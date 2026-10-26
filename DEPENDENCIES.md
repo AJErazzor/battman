@@ -24,15 +24,16 @@ Other integrations Battman's cards read (through the entity map):
 
 | Integration | Used for | If it's missing |
 |---|---|---|
-| Sigenergy (Sigenergy-Local-Modbus) | Battery SOC, power, grid, solar (Log, Finances, Curvy) | The card shows which entity is missing |
+| Sigenergy (Sigenergy-Local-Modbus), **v1.1.0 or newer** | The engine reads and sets the Sigen by name (`select.sigen_plant_remote_ems_control_mode`, the PV / charging / export limits, battery SOC and capacity, grid status, the battery's rated powers); the cost totals use its total import / export energy; battery power, solar, grid and house figures on the cards | A Repair names any Sigen entity Battman uses that's missing or disabled, and another says if the integration is older than v1.1.0 (the first with every name Battman uses). An install that predates v1.1.0 may keep older entity names after updating: rename them to the names the Repair gives |
 | Amber | Current prices (all price views, price grid, State); price forecasts (Pricy overlay, price grid, forecast table, State projection) | Prices: error. Forecasts: Pricy shows a note and works without the forecast part of the overlay |
 | HA Companion app | Live Activity blueprints (the phone it shows on) | Only needed if you use the Live Activity |
 | Solcast (Solcast PV Forecast) | Solar forecast, by name: `sensor.solcast_pv_forecast_forecast_today` (Curvy overlay and badge; State projection), `sensor.solcast_pv_forecast_forecast_tomorrow` (State projection), `sensor.solcast_pv_forecast_forecast_remaining_today` (the engine's high-consumption check; Gauges) | A Repair names any that's missing or disabled. Curvy and the State popup show a note; Gauges show — |
 | OpenNEM | Region generation and demand (its region sensor, e.g. `sensor.opennem_sa`, found by Battman): Battman's NEM sensors and the NEM mix card | The NEM sensors are unknown and say no OpenNEM region was found; the NEM mix card names them |
 
-The Sigenergy integration ships some sensors **disabled**: enable **Sigen PV Power**
-(Curvy's actual-solar overlay), and **PV Power** and **Third-Party PV Power** if you
-have a third-party solar inverter (Log card). Settings → Entities → search → Enable.
+The Sigenergy integration ships some sensors **disabled**: enable **Available Max Active
+Power** (Overrides card; Battman's Repair names it until you do), **Sigen PV Power** (Curvy's
+actual-solar overlay), and **PV Power** and **Third-Party PV Power** if you have a third-party
+solar inverter (Log card). Settings → Entities → search → Enable.
 
 Battman's own pieces that other parts rely on:
 
