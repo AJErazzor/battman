@@ -9,7 +9,6 @@ from pathlib import Path
 
 import yaml
 
-from custom_components.battman.const import ENTITY_MAP_DEFAULTS
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 JS = (ROOT / "www/battman-house.js").read_text()
@@ -30,9 +29,9 @@ def test_pictures_ship_with_battman() -> None:
     assert not re.search(r'image: "/local/', JS)               # no one's own files as defaults
 
 
-def test_map_defaults_exist() -> None:
-    keys = set(re.findall(r'\w+: "map:(\w+)"', JS))
-    assert keys and keys <= set(ENTITY_MAP_DEFAULTS), keys - set(ENTITY_MAP_DEFAULTS)
+def test_no_map_defaults() -> None:
+    """v0.25.0: every default is an entity by name (Sigen's and Amber's); the card no longer loads the map."""
+    assert not re.findall(r'\w+: "map:(\w+)"', JS) and "battman/entities" not in JS
 
 
 def test_every_item_can_be_turned_off_and_devices_have_text_and_suffix() -> None:

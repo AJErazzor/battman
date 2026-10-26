@@ -19,10 +19,10 @@ sequence:
 - variables:
     sensors:
       power:
-        general_price: [[map:buy_price]]
-        general_forecast: [[map:buy_forecast]]
-        feed_in_price: [[map:feed_in_price]]
-        feed_in_forecast: [[map:feed_in_forecast]]
+        general_price: sensor.amber_5min_current_general_price
+        general_forecast: sensor.amber_billing_interval_forecasts_general_price
+        feed_in_price: sensor.amber_5min_current_feed_in_price
+        feed_in_forecast: sensor.amber_billing_interval_forecasts_feed_in_price
   alias: Configure sensor entities
 - variables:
     sellSOCProrate: true

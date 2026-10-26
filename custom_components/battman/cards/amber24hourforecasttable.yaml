@@ -21,13 +21,13 @@ cards:
     show_name: false
     show_state: false
     triggers_update:
-      - '[[map:feed_in_forecast]]'
-      - '[[map:buy_forecast]]'
+      - 'sensor.amber_billing_interval_forecasts_feed_in_price'
+      - 'sensor.amber_billing_interval_forecasts_general_price'
     custom_fields:
       card: |
         [[[
-          const E_SELL = '[[map:feed_in_forecast]]';
-          const E_BUY  = '[[map:buy_forecast]]';
+          const E_SELL = 'sensor.amber_billing_interval_forecasts_feed_in_price';
+          const E_BUY  = 'sensor.amber_billing_interval_forecasts_general_price';
           const sell = states[E_SELL]?.attributes?.Forecasts || [];
           const buy  = states[E_BUY]?.attributes?.Forecasts || [];
           if (!sell.length || !buy.length)

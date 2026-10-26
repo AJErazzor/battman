@@ -83,8 +83,8 @@ draw themselves (`custom:battman-curvy` and so on): add them to any view like an
 needed. The rest are Battman's card files (see [docs/cards.md](docs/cards.md)). Battman serves
 their scripts and images from `/battmanfiles/`.
 
-Cards use Sigen's and Solcast's entities by name, and find Amber's and Battman's own through
-Battman's **entity map** (Battman name → entity in your HA). They take their colours from a **Battman theme**. If an entity or theme colour is missing, the
+Cards use Sigen's, Amber's and Solcast's entities by name, and find Battman's engine entities
+through Battman's **entity map** (Battman name → entity in your HA). They take their colours from a **Battman theme**. If an entity or theme colour is missing, the
 card shows an error saying exactly what.
 
 ## Theme mode colours sensor
@@ -145,13 +145,14 @@ for it (from its own blueprints) and keeps them updated; you pick the phone and 
 it follows on the Battman dashboard, **Settings → Live Activity**. See
 [docs/live-activity.md](docs/live-activity.md).
 
-## Entity map (Configure)
+## Entity map
 
-Battman names (`buy_total`, `buy_price`, …) point at entities in your HA. Amber's prices can be
-changed: Settings → Devices & services → Battman → **Configure**. Only the entries you change are
-stored, so new defaults in later releases still reach the rest. Sigen's and Solcast's entities, and
-Battman's own grid power and load average sensors, aren't on the map: Battman uses them by name, and
-a Repair names any Sigen or Solcast entity that's missing (see [DEPENDENCIES.md](DEPENDENCIES.md)).
+The map holds Battman's engine entities (`buy_total`, `parameters`, `mode`, …): until you migrate
+from Smiggles they point at Smiggles' entities, after at Battman's. Other integrations' entities
+(Sigen, Amber, Solcast) and Battman's own grid power and load average sensors aren't on it: Battman
+uses them by name, and a Repair names any Sigen, Amber or Solcast entity that's missing (see
+[DEPENDENCIES.md](DEPENDENCIES.md)). Battman's **Configure** screen only has the OpenNEM region,
+when OpenNEM has several.
 
 ## Dependencies
 

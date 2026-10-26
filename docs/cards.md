@@ -84,13 +84,13 @@ cards:
   - type: custom:button-card
     entity: number.sigen_plant_grid_export_limitation
   - type: custom:button-card
-    entity: '[[map:buy_price]]'
+    entity: '[[map:parameters]]'
     ...
 ```
 
-Sigen's and Solcast's entities are written by name. `[[map:name]]` is an entry in Battman's entity
-map (Amber's prices and Battman's own entities; Amber's can be changed under Battman → Configure).
-Quote it when it's a whole value, as above. HA's own `{{ … }}` templates are left alone.
+Sigen's, Amber's and Solcast's entities are written by name. `[[map:name]]` is one of Battman's
+engine entities from its entity map (Smiggles' before you migrate, Battman's after). Quote it when
+it's a whole value, as above. HA's own `{{ … }}` templates are left alone.
 
 ## Trying out changes on your own HA
 
@@ -214,7 +214,7 @@ your themes; **Make Active** makes it the dashboard's theme. It has no options.
 itself (no button-card, mushroom or card-mod). It's the first card on the Power view.
 
 Every item has a **Show** switch and its own entity, all set in the card's editor. Leave them
-alone and the card uses Sigen's entities by name and Amber's prices from Battman's entity map.
+alone and the card uses Sigen's and Amber's entities by name.
 The outside temperature, the battery temperature and the three devices have no default: they're drawn once you pick their
 entity. An item whose entity doesn't exist isn't drawn. The three devices (the "PC" rows) also
 take your own text and what goes after the value (e.g. `W`). The pictures are Battman's;

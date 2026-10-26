@@ -246,9 +246,9 @@ async def test_power_view_section3(hass: HomeAssistant, hass_client) -> None:
 # ── OpenNEM's region sensor, found by Battman (v0.22.1) ─────────────────────
 
 async def test_opennem_found_without_configure(hass: HomeAssistant) -> None:
-    from custom_components.battman.const import OTHER_MAP_DEFAULTS
+    from custom_components.battman.const import ENTITY_MAP_DEFAULTS
 
-    assert "opennem" not in OTHER_MAP_DEFAULTS                       # not on the Configure screen any more
+    assert "opennem" not in ENTITY_MAP_DEFAULTS                      # not on the Configure screen any more
     _opennem(hass, "sa", {**GEN, "wind": 640})
     hass.states.async_set("sensor.opennem_sa_wind", "640", {})      # OpenNEM-looking, but not OpenNEM's: ignored
     await _setup(hass)

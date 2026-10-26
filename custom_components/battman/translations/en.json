@@ -191,13 +191,9 @@
   "options": {
     "step": {
       "init": {
-        "title": "Battman entity map",
-        "description": "Which entity Amber's prices come from. Sigen's and Solcast's entities and Battman's own sensors are used by name, and the NEM sensors find their OpenNEM region themselves, so they aren't here. Battman's engine entities aren't here either: they follow whichever engine is in charge. Leave an entry as it is to keep Battman's default.",
+        "title": "Battman",
+        "description": "Nothing to set here: Battman uses Sigen's, Amber's and Solcast's entities by name, and its NEM sensors find their OpenNEM region themselves. If OpenNEM has several regions, pick the one for the NEM sensors below. Saving also clears choices made here by older versions of Battman.",
         "data": {
-          "buy_price": "Buy price (current)",
-          "feed_in_price": "Feed-in price (current)",
-          "buy_forecast": "Buy price forecast",
-          "feed_in_forecast": "Feed-in price forecast",
           "opennem": "OpenNEM region (several found: pick the one for the NEM sensors)"
         }
       }

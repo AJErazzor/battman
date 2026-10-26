@@ -3,9 +3,9 @@
 // lines that move when power flows. Battman's copy of the Smiggles house card, drawn by itself
 // (no button-card, mushroom or card-mod needed).
 //
-// Every item has its own settings, all optional. The defaults are Sigen's entities by name and
-// Amber's prices from Battman's entity map; the outside temperature, the battery temperature and the
-// three devices have no default: they're drawn once you pick their entity.
+// Every item has its own settings, all optional. The defaults are Sigen's and Amber's entities by
+// name; the outside temperature, the battery temperature and the three devices have no default:
+// they're drawn once you pick their entity.
 //
 //   type: custom:battman-house
 //   buy:     { show: true, entity: sensor.amber_5min_current_general_price }
@@ -18,7 +18,6 @@
 // (www/images/house*.webp); point house / battery_unit / gateway at your own to change them.
 // ---------------------------------------------------------------------------------------------
 
-const HOUSE_MAP_URL = "battman/entities";
 
 // Register a custom element so HA finds it (as in battman-cards.js: HA may swap its element
 // registry while it starts, so register again in the new one if that happens after us).
@@ -39,8 +38,7 @@ function battmanDefine(tag, cls) {
   })();
 }
 
-// The items, in the editor's order. ent: { field: default } where a default "map:x" is entry x of
-// Battman's entity map; any other default is the entity itself. need: the fields that must
+// The items, in the editor's order. ent: { field: default entity } ("" = none). need: the fields that must
 // exist for the item to be drawn.
 // at: [top %, left %, width %] on the card (the Smiggles card's places).
 const HOUSE_ITEMS = [
@@ -54,8 +52,8 @@ const HOUSE_ITEMS = [
   { key: "solar", title: "Solar power", label: "SOLAR", ent: { entity: "sensor.sigen_plant_pv_power" }, need: ["entity"], at: [5.6, 44.3, 25.3] },
   { key: "solar_today", title: "Solar today", ent: { entity: "sensor.sigen_plant_daily_pv_energy" }, need: ["entity"], at: [14.3, 44.3, 35.4] },
   { key: "countdown", title: "Price countdown", label: "LEFT", at: [0, 60, 20] },
-  { key: "sell", title: "Sell price (feed-in)", label: "FIT", ent: { entity: "map:feed_in_price" }, need: ["entity"], at: [0, 74, 25] },
-  { key: "buy", title: "Buy price", label: "BUY", ent: { entity: "map:buy_price" }, need: ["entity"], at: [7.8, 74, 25] },
+  { key: "sell", title: "Sell price (feed-in)", label: "FIT", ent: { entity: "sensor.amber_5min_current_feed_in_price" }, need: ["entity"], at: [0, 74, 25] },
+  { key: "buy", title: "Buy price", label: "BUY", ent: { entity: "sensor.amber_5min_current_general_price" }, need: ["entity"], at: [7.8, 74, 25] },
   { key: "home", title: "Home power", label: "HOME", ent: { entity: "sensor.sigen_plant_consumed_power" }, need: ["entity"], at: [32.2, 80.5, 19] },
   { key: "home_today", title: "Home today", ent: { entity: "sensor.sigen_plant_daily_load_consumption" }, need: ["entity"], at: [40.7, 80.5, 19] },
   { key: "pc1", title: "Device 1", label: "Device 1", suffix: "W", ent: { entity: "" }, need: ["entity"], at: [60, 2.5, 25.3] },
@@ -94,26 +92,13 @@ const HOUSE_FLOWS = {
   gw_grid_02: [67.1, 58, 21, 20],
 };
 
-// Battman's entity map, once per page load.
-let houseMap = null;
-function houseFetchMap(hass) {
-  if (!houseMap) {
-    houseMap = hass.callApi("GET", HOUSE_MAP_URL).then((r) => r.entities || {});
-    houseMap.catch(() => { houseMap = null; });
-  }
-  return houseMap;
-}
-
-// One item's defaults, with map entries filled in.
-function houseDefaults(item, map) {
+// One item's defaults.
+function houseDefaults(item) {
   const out = { show: true };
   if (item.image) out.image = item.image;
   if (item.label !== undefined) out.label = item.label;
   if (item.suffix !== undefined) out.suffix = item.suffix;
-  for (const [f, d] of Object.entries(item.ent || {})) {
-    if (d.startsWith("map:")) out[f] = map[d.slice(4)] || "";
-    else out[f] = d;
-  }
+  for (const [f, d] of Object.entries(item.ent || {})) out[f] = d;
   return out;
 }
 
@@ -124,7 +109,7 @@ function houseConfigProblem(c) {
     const v = c[item.key];
     if (v === undefined) continue;
     if (!v || typeof v !== "object" || Array.isArray(v)) return `${item.key} must be a set of settings (show, entity, ...).`;
-    const allowed = Object.keys(houseDefaults(item, {}));
+    const allowed = Object.keys(houseDefaults(item));
     const bad = Object.keys(v).filter((k) => !allowed.includes(k));
     if (bad.length) return `${item.key}: unknown setting${bad.length > 1 ? "s" : ""} ${bad.join(", ")} (use ${allowed.join(", ")}).`;
     if ("show" in v && typeof v.show !== "boolean") return `${item.key}: show must be true or false.`;
@@ -191,30 +176,18 @@ class BattmanHouseCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (!this._map && !this._mapProblem) {
-      houseFetchMap(hass).then(
-        (m) => { this._map = m; this._draw(); },
-        (e) => { this._mapProblem = (e && e.body && e.body.message) || (e && e.message) || String(e); this._draw(); }
-      );
-    }
     this._draw();
   }
 
   // Each item's settings in force: its defaults, then the card's.
   _settings() {
     const out = {};
-    for (const item of HOUSE_ITEMS) out[item.key] = { ...houseDefaults(item, this._map), ...(this._config[item.key] || {}) };
+    for (const item of HOUSE_ITEMS) out[item.key] = { ...houseDefaults(item), ...(this._config[item.key] || {}) };
     return out;
   }
 
   _draw() {
     if (!this._config || !this._hass) return;
-    if (this._mapProblem) {
-      this.shadowRoot.innerHTML = `<ha-card><div style="padding:12px 16px;font-size:13px;color:var(--error-color,#db4437)"><b>Battman card problem</b><br><span></span></div></ha-card>`;
-      this.shadowRoot.querySelector("span").textContent = `Couldn't load Battman's entity map: ${this._mapProblem}`;
-      return;
-    }
-    if (!this._map) return;
     if (!this._built) this._build();
     this._update();
   }
@@ -427,7 +400,7 @@ class BattmanHouseEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (!this._map) houseFetchMap(hass).then((m) => { this._map = m; this._render(); }, () => {});
+    if (!this._form) this._render();
     if (this._form) this._form.hass = hass;
   }
 
@@ -445,7 +418,7 @@ class BattmanHouseEditor extends HTMLElement {
   }
 
   _render() {
-    if (!this._hass || !this._config || !this._map) return;
+    if (!this._hass || !this._config) return;
     if (!this._form) {
       this.innerHTML = `<p style="color:var(--secondary-text-color);font-size:13px;margin:0 0 12px">Each item can be
         turned off, or pointed at your own entity. An item whose entity doesn't exist isn't shown.</p><div class="form"></div>`;
@@ -467,17 +440,17 @@ class BattmanHouseEditor extends HTMLElement {
 
   _toForm(config) {
     const data = {};
-    for (const item of HOUSE_ITEMS) data[item.key] = { ...houseDefaults(item, this._map), ...(config[item.key] || {}) };
+    for (const item of HOUSE_ITEMS) data[item.key] = { ...houseDefaults(item), ...(config[item.key] || {}) };
     return data;
   }
 
-  // Only what differs from the defaults goes in the YAML (so map changes still follow through).
+  // Only what differs from the defaults goes in the YAML (so new defaults in a release still follow through).
   _fromForm(data) {
     const out = {};
     for (const [k, v] of Object.entries(this._config)) if (!HOUSE_BY_KEY[k]) out[k] = v;
     out.type = "custom:battman-house";
     for (const item of HOUSE_ITEMS) {
-      const d = houseDefaults(item, this._map);
+      const d = houseDefaults(item);
       const diff = {};
       for (const [k, v] of Object.entries(data[item.key] || {})) {
         const val = v === undefined || v === null ? (k === "show" ? false : "") : v;

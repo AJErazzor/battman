@@ -25,7 +25,7 @@ template:
         ##################################################################
         state: >
           {% if this.attributes.provider == 'Amber' %}
-             {{ states('[[map:buy_price]]') | float }}
+             {{ states('sensor.amber_5min_current_general_price') | float }}
           {% elif this.attributes.provider == 'Retail' %}
             {% set hour = now().hour %}
             {% set tariff = this.attributes.get('tariff') %}
@@ -178,7 +178,7 @@ template:
         ##################################################################
         state: >
           {% if this.attributes.provider == 'Amber' %}
-             {{ states('[[map:feed_in_price]]') | float }}
+             {{ states('sensor.amber_5min_current_feed_in_price') | float }}
           {% elif this.attributes.provider == 'Retail' %}
             {% set hour = now().hour %}
             {% set tariff = this.attributes.get('tariff') %}

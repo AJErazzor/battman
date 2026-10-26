@@ -44,7 +44,7 @@ template:
           {% macro calc_delta() %}
             {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
             {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-            {% set price = states('[[map:buy_price]]') | float(0) %}
+            {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
             {{ (energy - last) * 1000 * price }}
           {% endmacro %}
           
@@ -75,7 +75,7 @@ template:
             {% if trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('price', 0) }}
             {% else %}
-              {{ states('[[map:buy_price]]') | float(0) }}
+              {{ states('sensor.amber_5min_current_general_price') | float(0) }}
             {% endif %} 
             
           ##################################################################
@@ -101,7 +101,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:buy_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -118,7 +118,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:buy_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -200,7 +200,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:buy_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -240,7 +240,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:buy_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -415,7 +415,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:buy_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_general_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -471,7 +471,7 @@ template:
           {% macro calc_delta() %}
             {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
             {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-            {% set price = states('[[map:feed_in_price]]') | float(0) %}
+            {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
             {{ (energy - last) * 1000 * price }}
           {% endmacro %}
 
@@ -502,7 +502,7 @@ template:
             {% if trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('price', 0) }}
             {% else %}
-              {{ states('[[map:feed_in_price]]') | float(0) }}
+              {{ states('sensor.amber_5min_current_feed_in_price') | float(0) }}
             {% endif %} 
             
           ##################################################################
@@ -528,7 +528,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:feed_in_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -545,7 +545,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:feed_in_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -627,7 +627,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:feed_in_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -667,7 +667,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:feed_in_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 
@@ -814,7 +814,7 @@ template:
             {% macro calc_delta() %}
               {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
               {% set last = this.attributes.get('last_energy', energy) | float(0) %}
-              {% set price = states('[[map:feed_in_price]]') | float(0) %}
+              {% set price = states('sensor.amber_5min_current_feed_in_price') | float(0) %}
               {{ (energy - last) * 1000 * price }}
             {% endmacro %}
 

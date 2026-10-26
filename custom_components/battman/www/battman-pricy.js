@@ -14,7 +14,7 @@
 // missing is shown on the card, never made up. The chart uses Chart.js, shipped with Battman.
 // ---------------------------------------------------------------------------------------------
 
-import { BATTMAN_SENSORS, BattmanCardBase, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { AMBER, BATTMAN_SENSORS, BattmanCardBase, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 import { NOT_SAVED, debugBox, hourLabel, presetMenus, pressFeedback, savedIn, showNote as noteIn, wireHandlers } from "./battman-curve-editor.js";
 
 const CSS = `
@@ -647,11 +647,10 @@ function pricyRun(card, root) {
   }
 
   // ───────────── Battman: entity map + startup checks (no fallbacks) ─────────────
-  let M = null;                 // Battman entity map plus BATTMAN_SENSORS (by name)
+  let M = null;                 // Battman entity map plus AMBER and BATTMAN_SENSORS (by name)
   let CURVE_GAPS = [];
   let OPTIONAL_MISSING = [];
-  const NEEDS = ['price_curves', 'price_curves_factory', 'price_curves_update_event', 'control_script', 'buy_price', 'feed_in_price',
-                 'buy_forecast', 'feed_in_forecast', 'high_consumption'];
+  const NEEDS = ['price_curves', 'price_curves_factory', 'price_curves_update_event', 'control_script', 'high_consumption'];
   const NEED_ENTITIES = ['price_curves', 'control_script', 'buy_price', 'feed_in_price', 'load_30m_avg', 'high_consumption'];
   // shown if missing, but the editor still works without them (they only add the forecast overlay)
   const OPTIONAL_ENTITIES = { buy_forecast: 'buy price forecast', feed_in_forecast: 'feed-in price forecast' };
@@ -660,7 +659,7 @@ function pricyRun(card, root) {
 
   // what stops the editor from starting, or null
   async function startupProblem() {
-    try { M = { ...await battmanMap(card.hass, NEEDS), ...BATTMAN_SENSORS }; } catch (e) { return e.message; }
+    try { M = { ...await battmanMap(card.hass, NEEDS), ...AMBER, ...BATTMAN_SENSORS }; } catch (e) { return e.message; }
     const problem = missingThemeVars(card, THEME_VARS) || missingEntities(card.hass, M, NEED_ENTITIES);
     if (problem) return problem;
     const h = card.hass;

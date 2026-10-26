@@ -20,12 +20,12 @@ turn on a custom font.
 The Log, Curvy, Pricy, Cost chart, Cost compare, Settings and Theme studio cards draw themselves.
 None of them need extra cards.
 
-Other integrations Battman reads (Amber through the entity map, the rest by name):
+Other integrations Battman reads (all by name):
 
 | Integration | Used for | If it's missing |
 |---|---|---|
 | Sigenergy (Sigenergy-Local-Modbus), **v1.1.0 or newer** | The engine reads and sets the Sigen by name (`select.sigen_plant_remote_ems_control_mode`, the PV / charging / export limits, battery SOC and capacity, grid status, the battery's rated powers); the cost totals use its total import / export energy; battery power, solar, grid and house figures on the cards | A Repair names any Sigen entity Battman uses that's missing or disabled, and another says if the integration is older than v1.1.0 (the first with every name Battman uses). An install that predates v1.1.0 may keep older entity names after updating: rename them to the names the Repair gives |
-| Amber | Current prices (all price views, price grid, State); price forecasts (Pricy overlay, price grid, forecast table, State projection) | Prices: error. Forecasts: Pricy shows a note and works without the forecast part of the overlay |
+| Amber, through **amber2mqtt** (MQTT) | By name: `sensor.amber_5min_current_general_price` and `sensor.amber_5min_current_feed_in_price` (the prices now, with `start_time`, `end_time` and `estimate`), `sensor.amber_billing_interval_forecasts_general_price` and `sensor.amber_billing_interval_forecasts_feed_in_price` (a `Forecasts` list of slots with `start_time`, `end_time`, `duration` and `per_kwh`). The engine decides on them; the price views, price grid, State, Pricy and the forecast table show them | A Repair names any that's missing or disabled. Prices: the cards say which is missing. Forecasts: Pricy shows a note and works without the forecast part of the overlay |
 | HA Companion app | Live Activity blueprints (the phone it shows on) | Only needed if you use the Live Activity |
 | Solcast (Solcast PV Forecast) | Solar forecast, by name: `sensor.solcast_pv_forecast_forecast_today` (Curvy overlay and badge; State projection), `sensor.solcast_pv_forecast_forecast_tomorrow` (State projection), `sensor.solcast_pv_forecast_forecast_remaining_today` (the engine's high-consumption check; Gauges) | A Repair names any that's missing or disabled. The engine skips its sun check (and says so in its log) rather than reading 0 kWh; Curvy and the State popup show a note; Gauges show — |
 | OpenNEM | Region generation and demand (its region sensor, e.g. `sensor.opennem_sa`, found by Battman): Battman's NEM sensors and the NEM mix card | The NEM sensors are unknown and say no OpenNEM region was found; the NEM mix card names them |
@@ -37,7 +37,7 @@ solar inverter (Log card). Settings → Entities → search → Enable.
 
 Battman's own pieces that other parts rely on:
 
-- **Entity map** (`/api/battman/entities`): every Battman page. Change it under Configure.
+- **Entity map** (`/api/battman/entities`): every Battman page (Battman's engine entities, Smiggles' before you migrate).
 - **Packages** (`homeassistant: packages: !include_dir_named packages` in configuration.yaml): Battman's
   engine sensors and helpers in `packages/battman/`. Without it, a Repair names what's missing.
 - **Themes** (`frontend: themes: !include_dir_merge_named themes` in configuration.yaml): Battman's

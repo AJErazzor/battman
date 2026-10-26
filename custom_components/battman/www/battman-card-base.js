@@ -76,6 +76,14 @@ export const SIGEN = {
   grid_export_today: "sensor.sigen_plant_daily_grid_export_energy",
 };
 
+// Amber's prices and forecasts (amber2mqtt, through MQTT), named directly.
+export const AMBER = {
+  buy_price: "sensor.amber_5min_current_general_price",
+  feed_in_price: "sensor.amber_5min_current_feed_in_price",
+  buy_forecast: "sensor.amber_billing_interval_forecasts_general_price",
+  feed_in_forecast: "sensor.amber_billing_interval_forecasts_feed_in_price",
+};
+
 // Battman's own sensors from its packages (packages/battman/battman_sensors.yaml), named directly.
 export const BATTMAN_SENSORS = {
   grid_power: "sensor.battman_grid_power",
@@ -98,7 +106,7 @@ export async function battmanMap(hass, needs) {
 }
 
 // "Entity not found: name → entity, …", or null when every named entity exists. map holds
-// Battman's entity map plus SIGEN / BATTMAN_SENSORS.
+// Battman's entity map plus SIGEN / AMBER / BATTMAN_SENSORS.
 export function missingEntities(hass, map, keys) {
   const bad = keys.filter((k) => !hass.states[map[k]]).map((k) => k + " → " + map[k]);
   return bad.length ? "Entity not found: " + bad.join(", ") : null;

@@ -19,7 +19,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.battman import required_entities as R
-from custom_components.battman.const import ENTITY_MAP_DEFAULTS, OTHER_MAP_DEFAULTS
+from custom_components.battman.const import ENTITY_MAP_DEFAULTS
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 DOMAIN = "battman"
@@ -40,8 +40,6 @@ async def _setup(hass, options=None):
 
 
 def test_map_has_only_amber_and_battmans_own() -> None:
-    # v0.23.1: Battman's grid power and load average sensors came off too
-    assert set(OTHER_MAP_DEFAULTS) == {"buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast"}
     assert not [v for v in ENTITY_MAP_DEFAULTS.values() if "sigen" in v]
     assert not GONE & set(ENTITY_MAP_DEFAULTS)
 
@@ -104,20 +102,19 @@ async def test_configure_choices_from_before(hass: HomeAssistant) -> None:
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "map_choice_ignored")
     assert issue.translation_placeholders["choices"] == (
         "- inverter_soc: you picked `sensor.my_inv_soc`; Battman no longer uses this\n"
-        "- pv_power: you picked `sensor.my_pv`; Battman now uses `sensor.sigen_plant_pv_power`")
-    # Configure only offers the map entries; saving it keeps the Amber choice and drops the rest
+        "- pv_power: you picked `sensor.my_pv`; Battman now uses `sensor.sigen_plant_pv_power`\n"
+        "- buy_price: you picked `sensor.my_buy`; Battman now uses `sensor.amber_5min_current_general_price`")
+    # saving Configure drops them all (v0.25.0: Amber came off the map too)
     flow = await hass.config_entries.options.async_init(entry.entry_id)
-    fields = {k.schema: k.default() for k in flow["data_schema"].schema}
-    assert set(fields) == set(OTHER_MAP_DEFAULTS) and fields["buy_price"] == "sensor.my_buy"
-    await hass.config_entries.options.async_configure(flow["flow_id"], fields)
+    await hass.config_entries.options.async_configure(flow["flow_id"], {})
     await hass.async_block_till_done()
-    assert entry.options == {"buy_price": "sensor.my_buy"}
+    assert entry.options == {}
     assert ir.async_get(hass).async_get_issue(DOMAIN, "map_choice_ignored") is None
 
 
 def test_configure_text() -> None:
     en = json.loads((ROOT / "translations/en.json").read_text())
     data = en["options"]["step"]["init"]["data"]
-    assert set(data) == set(OTHER_MAP_DEFAULTS) | {"opennem"}
+    assert set(data) == {"opennem"}
     assert "error" not in en["options"]                                  # the PV pattern check is gone
     assert "{marker}" not in en["options"]["step"]["init"]["description"]

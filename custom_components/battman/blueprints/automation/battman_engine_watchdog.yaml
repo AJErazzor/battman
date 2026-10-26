@@ -144,7 +144,7 @@ variables:
   parametersSensor: sensor.battman_parameters
   lastRunSensor: sensor.battman_run
   batterySOCSensor: sensor.sigen_plant_battery_state_of_charge
-  fitSensor: [[map:feed_in_price]]
+  fitSensor: sensor.amber_5min_current_feed_in_price
   enable: input_boolean.battman_enable
   noexport: input_boolean.battman_no_export
   mode: input_select.battman_mode

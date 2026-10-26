@@ -27,19 +27,26 @@ needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node")
 TZ = "Australia/Adelaide"
 
 
+def _name(key: str) -> str:
+    """An entity's name: Battman's engine entities from the entity map, the rest by name (v0.25.0)."""
+    from custom_components.battman import required_entities as R
+
+    return ENTITY_MAP_DEFAULTS.get(key) or R.NAMED[key]
+
+
 def _state_card_rules_js() -> str:
     """The State card's rule functions (ruleOf / ruleAt / sellPriceAt), map markers filled in."""
     text = (ROOT / "cards/state.yaml").read_text()
     a, b = text.index("        const finList ="), text.index("        const isPeak = ms =>")
-    return re.sub(r"\[\[map:(\w+)\]\]", lambda m: ENTITY_MAP_DEFAULTS[m.group(1)], text[a:b])
+    return re.sub(r"\[\[map:(\w+)\]\]", lambda m: _name(m.group(1)), text[a:b])
 
 
 def _card(states: dict, run: dict, cases: list[dict]) -> list[dict]:
     """Run the card's rule maths in node for each case {ms, loSell, curveSell}."""
     js = ("const states = " + json.dumps(states) + ";\n"
           "const attr = " + json.dumps(run) + ";\nconst a = k => parseFloat(attr[k]) || 0;\n"
-          f"const par = states['{ENTITY_MAP_DEFAULTS['parameters']}']?.attributes || {{}};\n"
-          f"const gen = states['{ENTITY_MAP_DEFAULTS['buy_forecast']}']?.attributes?.Forecasts || [];\n"
+          f"const par = states['{_name('parameters')}']?.attributes || {{}};\n"
+          f"const gen = states['{_name('buy_forecast')}']?.attributes?.Forecasts || [];\n"
           + _state_card_rules_js()
           + "\nconst out = " + json.dumps(cases) + ".map(c => ({buy: ruleAt('buy', c.ms), sell: ruleAt('sell', c.ms),"
             " price: sellPriceAt(c.ms, {loSell: c.loSell}, c.curveSell)}));\n"
@@ -65,7 +72,7 @@ async def test_card_rules_match_the_engine(hass: HomeAssistant, freezer) -> None
 
     await _start_totals(hass)                       # Battman in charge, its totals running
     await hass.services.async_call("automation", "turn_off", {"entity_id": "all"}, blocking=True)
-    names = {k: ENTITY_MAP_DEFAULTS[k] for k in ("buy_rules", "sell_rules", "parameters", "buy_forecast",
+    names = {k: _name(k) for k in ("buy_rules", "sell_rules", "parameters", "buy_forecast",
                                                   "feed_in_forecast", "buy_total", "sell_total", "run")}
     rnd = random.Random(2310)
     checked, used = 0, {"sell": 0, "buy": 0, "raised": 0, "last_chance": 0}
@@ -132,8 +139,8 @@ def test_slots_without_duration_count_for_nothing() -> None:
            "per_kwh": -0.2 - i / 100} for i in range(4)]
     rules = [{"hour": h, "isActive": True, "hours_ahead": 2, "grouping_minutes": 30, "roundTo": 0, "roundtype": "floor",
               "offset": 0, "allowLastChance": False} for h in range(24)]
-    st = lambda withd: {ENTITY_MAP_DEFAULTS["sell_rules"]: {"state": "True", "attributes": {"rules": rules}},
-                        ENTITY_MAP_DEFAULTS["feed_in_forecast"]: {"state": "0", "attributes": {
+    st = lambda withd: {_name("sell_rules"): {"state": "True", "attributes": {"rules": rules}},
+                        _name("feed_in_forecast"): {"state": "0", "attributes": {
                             "Forecasts": [{**f, "duration": 30} if withd else f for f in fc]}}}
     case = [{"ms": ms, "loSell": 5, "curveSell": 10}]
     assert _card(st(False), {}, case)[0]["sell"] == 0
@@ -188,13 +195,11 @@ def test_no_server_popups_left() -> None:
 
 def test_battmans_own_sensors_by_name() -> None:
     from custom_components.battman import required_entities as R
-    from custom_components.battman.const import OTHER_MAP_DEFAULTS
 
     base = (ROOT / "www/battman-card-base.js").read_text()
     s = base.index("export const BATTMAN_SENSORS")
     own = dict(re.findall(r'^  (\w+): "([^"]+)",$', base[s:base.index("};", s)], re.M))
     assert own == {"grid_power": "sensor.battman_grid_power", "load_30m_avg": "sensor.battman_load_30m_avg"}
-    assert set(OTHER_MAP_DEFAULTS) == {"buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast"}
     for k, v in own.items():
         assert R.NAMED[k] == v and k not in ENTITY_MAP_DEFAULTS, k
     for f in [*ROOT.glob("cards/*.yaml"), *ROOT.glob("views/*.yaml"), *ROOT.glob("www/*.js")]:
@@ -204,8 +209,6 @@ def test_battmans_own_sensors_by_name() -> None:
             assert "...BATTMAN_SENSORS" in text and re.search(r"import \{[^}]*\bBATTMAN_SENSORS\b", text), f.name
         for k in own:
             assert f"'{k}'" not in text.split("const NEEDS")[1].split(";")[0] if "const NEEDS" in text else True, (f.name, k)
-    en = json.loads((ROOT / "translations/en.json").read_text())["options"]["step"]["init"]["data"]
-    assert set(en) == {"buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast", "opennem"}
 
 
 # ── Solcast missing: no made-up 0 ────────────────────────────────────────────────────────

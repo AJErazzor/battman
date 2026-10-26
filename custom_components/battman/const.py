@@ -83,16 +83,6 @@ MIGRATED = "migrated_from_smiggles"
 # Config entry data: True while Battman's engine controls the battery (binary_sensor.battman_in_charge).
 IN_CHARGE = "engine_in_charge"
 
-# Amber's entities: the only other integration's that stay on the map. You can change them on the
-# Configure screen. Sigen's and Solcast's entities, and Battman's own grid power and load average
-# sensors, are named directly where they're used.
-OTHER_MAP_DEFAULTS: dict[str, str] = {
-    "buy_price": "sensor.amber_5min_current_general_price",
-    "feed_in_price": "sensor.amber_5min_current_feed_in_price",
-    "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
-    "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
-}
-
 # Battman's own curve sensors, whichever engine is in charge: Curvy and Pricy read the factory
 # curves from their `factory` attribute (Smiggles' curve sensors don't have one).
 FACTORY_MAP: dict[str, str] = {
@@ -100,8 +90,10 @@ FACTORY_MAP: dict[str, str] = {
     "price_curves_factory": "sensor.battman_price_curves",
 }
 
-# Every map entry with its Battman default.
-ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **FACTORY_MAP, **OTHER_MAP_DEFAULTS}
+# Every map entry with its Battman default. Only Battman's engine entities are on the map (they follow
+# whichever engine is in charge); other integrations' entities (Sigen, Amber, Solcast) and Battman's
+# own grid power and load average sensors are named directly where they're used.
+ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **FACTORY_MAP}
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.
 THEMES_URL = "/api/battman/themes"

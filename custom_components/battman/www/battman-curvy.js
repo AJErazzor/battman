@@ -13,7 +13,7 @@
 // missing is shown on the card, never made up. The chart uses Chart.js, shipped with Battman.
 // ---------------------------------------------------------------------------------------------
 
-import { BATTMAN_SENSORS, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { AMBER, BATTMAN_SENSORS, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 import { NOT_SAVED, debugBox, hourLabel, presetMenus, pressFeedback, savedIn, showNote as noteIn, wireHandlers } from "./battman-curve-editor.js";
 
 const CSS = `
@@ -699,12 +699,12 @@ function curvyRun(card, root) {
   const $ = (id) => root.getElementById(id);
   const getHass = () => card.hass;
   // ───────────── Battman: entity map + startup checks (no fallbacks) ─────────────
-  let M = null;                 // Battman entity map plus SIGEN and BATTMAN_SENSORS (by name)
+  let M = null;                 // Battman entity map plus SIGEN, AMBER and BATTMAN_SENSORS (by name)
   let CURVE_GAPS = [];
   let OPTIONAL_MISSING = [];
   let FACTORY = null;           // the factory curves: soc_curves_factory's `factory` attribute
   const NEEDS = ['soc_curves', 'soc_curves_factory', 'soc_curves_update_event', 'control_script', 'mode',
-                 'buy_price', 'feed_in_price', 'high_consumption'];
+                 'high_consumption'];
   const NEED_ENTITIES = ['soc_curves', 'control_script', 'battery_soc', 'mode', 'buy_price', 'feed_in_price',
                          'load_30m_avg', 'high_consumption'];
   const SOLCAST_TODAY = 'sensor.solcast_pv_forecast_forecast_today';   // Solcast's forecast today (by name; a Repair says if it's missing)
@@ -715,7 +715,7 @@ function curvyRun(card, root) {
 
   // what stops the editor from starting, or null
   async function startupProblem() {
-    try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN, ...BATTMAN_SENSORS }; } catch (e) { return e.message; }
+    try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN, ...AMBER, ...BATTMAN_SENSORS }; } catch (e) { return e.message; }
     const problem = missingThemeVars(card, THEME_VARS) || missingEntities(card.hass, M, NEED_ENTITIES);
     if (problem) return problem;
     const h = card.hass;

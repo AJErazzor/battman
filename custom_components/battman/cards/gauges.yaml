@@ -79,8 +79,8 @@ cards:
           columns: 6
           rows: auto
         secondary: >-
-          {% set fit = states('[[map:feed_in_price]]') | float(none) %}{% set buy =
-          states('[[map:buy_price]]') | float(none) %}{{ '—' if fit is none else
+          {% set fit = states('sensor.amber_5min_current_feed_in_price') | float(none) %}{% set buy =
+          states('sensor.amber_5min_current_general_price') | float(none) %}{{ '—' if fit is none else
           '$%.2f' | format(fit) }} {% if is_state('[[map:estimated_price]]', 'on')
           %}Est{%else%}⠀⠀⠀Act⠀⠀⠀{% endif %} {{ '—' if buy is none else '$%.2f' |
           format(buy) }}

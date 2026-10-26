@@ -40,7 +40,7 @@ blueprint:
           unit_of_measurement: h
     feed_in_price:
       name: Feed-in price ($/kWh)
-      default: [[map:feed_in_price]]
+      default: sensor.amber_5min_current_feed_in_price
       selector:
         entity:
           domain: sensor

@@ -16,24 +16,24 @@ cards:
   show_name: false
   show_state: false
   triggers_update:
-  - '[[map:buy_price]]'
-  - '[[map:feed_in_price]]'
-  - '[[map:feed_in_forecast]]'
-  - '[[map:buy_forecast]]'
+  - 'sensor.amber_5min_current_general_price'
+  - 'sensor.amber_5min_current_feed_in_price'
+  - 'sensor.amber_billing_interval_forecasts_feed_in_price'
+  - 'sensor.amber_billing_interval_forecasts_general_price'
   - '[[map:estimated_price]]'
   custom_fields:
     card: |-
       [[[
       // Battman: a sensor this card needs is missing -> say which, never draw made-up values.
-      const _gone = ['[[map:buy_price]]', '[[map:feed_in_price]]', '[[map:buy_forecast]]', '[[map:feed_in_forecast]]', '[[map:estimated_price]]'].filter(e => !states[e]);
+      const _gone = ['sensor.amber_5min_current_general_price', 'sensor.amber_5min_current_feed_in_price', 'sensor.amber_billing_interval_forecasts_general_price', 'sensor.amber_billing_interval_forecasts_feed_in_price', '[[map:estimated_price]]'].filter(e => !states[e]);
       if (_gone.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Price grid: missing ' + _gone.join(', ') + '</div>';
-      const _note = [['[[map:feed_in_forecast]]', 'SELL'], ['[[map:buy_forecast]]', 'BUY']].filter(x => !(states[x[0]].attributes?.Forecasts || []).length).map(x => 'No ' + x[1] + ' forecast from ' + x[0]).join(' · ');
+      const _note = [['sensor.amber_billing_interval_forecasts_feed_in_price', 'SELL'], ['sensor.amber_billing_interval_forecasts_general_price', 'BUY']].filter(x => !(states[x[0]].attributes?.Forecasts || []).length).map(x => 'No ' + x[1] + ' forecast from ' + x[0]).join(' · ');
       return (_note ? '<div style="padding:4px 2px 6px;font-size:11px;font-weight:700;line-height:1.4;color:var(--battman-darkred)">' + _note + '</div>' : '') + (() => {
       const buyForecastEntity =
-        states['[[map:buy_forecast]]'];
+        states['sensor.amber_billing_interval_forecasts_general_price'];
 
       const sellForecastEntity =
-        states['[[map:feed_in_forecast]]'];
+        states['sensor.amber_billing_interval_forecasts_feed_in_price'];
 
       const buyForecasts =
         buyForecastEntity?.attributes?.Forecasts || [];
@@ -76,9 +76,9 @@ cards:
                       return { bg: 'var(--battman-purple-soft-bg)', accent: 'var(--battman-purple)', bar: 'var(--battman-purple)', border: 'var(--battman-purple-border)' };
       };
 
-      const buyNow = states['[[map:buy_price]]'];
+      const buyNow = states['sensor.amber_5min_current_general_price'];
 
-      const sellNow = states['[[map:feed_in_price]]'];
+      const sellNow = states['sensor.amber_5min_current_feed_in_price'];
 
 
       const buyPeriods = buyForecasts.slice(0, 8).map(f => ({

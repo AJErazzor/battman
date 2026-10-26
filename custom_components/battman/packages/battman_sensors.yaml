@@ -46,16 +46,16 @@ template:
       - name: "Battman estimated price"
         unique_id: battman_estimated_price
         availability: >
-          {{ as_timestamp(state_attr('[[map:feed_in_price]]', 'start_time'), none) is not none
-             and as_timestamp(state_attr('[[map:feed_in_price]]', 'end_time'), none) is not none }}
+          {{ as_timestamp(state_attr('sensor.amber_5min_current_feed_in_price', 'start_time'), none) is not none
+             and as_timestamp(state_attr('sensor.amber_5min_current_feed_in_price', 'end_time'), none) is not none }}
         state: >
           {% set now_ts = as_timestamp(utcnow()) %}
-          {% set start_ts = as_timestamp(state_attr('[[map:feed_in_price]]', 'start_time'), none) %}
-          {% set end_ts = as_timestamp(state_attr('[[map:feed_in_price]]', 'end_time'), none) %}
+          {% set start_ts = as_timestamp(state_attr('sensor.amber_5min_current_feed_in_price', 'start_time'), none) %}
+          {% set end_ts = as_timestamp(state_attr('sensor.amber_5min_current_feed_in_price', 'end_time'), none) %}
           {% if start_ts is none or end_ts is none %}
             {{ none }}
           {% elif start_ts <= now_ts <= end_ts %}
-            {{ state_attr('[[map:feed_in_price]]', 'estimate') }}
+            {{ state_attr('sensor.amber_5min_current_feed_in_price', 'estimate') }}
           {% else %}
             {{ true }}
           {% endif %}
