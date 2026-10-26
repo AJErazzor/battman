@@ -70,10 +70,7 @@ sequence:
     currentSOCkwh: '{{ (currentSOC / 100) * batterykwh | round(2) }}'
   alias: Battery State
 - variables:
-    pvRemaining10kwh: '{{state_attr(''[[map:solcast_remaining_today]]'',''estimate10'') | float(0) }}'
-    pvRemainingkwh: '{{ state_attr(''[[map:solcast_remaining_today]]'',''estimate'') | float(0) }}'
-    pvNext1hr: '{{ state_attr(''[[map:solcast_next_hour]]'',''estimate'') | float(0) }}'
-    pvNext1hr10: '{{ state_attr(''[[map:solcast_next_hour]]'',''estimate10'') | float(0) }}'
+    pvRemaining10kwh: '{{state_attr(''sensor.solcast_pv_forecast_forecast_remaining_today'',''estimate10'') | float(0) }}'
     pvRemainingNotGood: '{{ (batterykwh-currentSOCkwh - pvRemaining10kwh) > remainingPVGapAllowedkwh }}'
   alias: PV Forcast
 - variables:

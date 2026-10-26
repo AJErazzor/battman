@@ -252,7 +252,7 @@ tap_action:
         // Battman: the projection needs real numbers (the original assumed 40.3 kWh / 0% / 0 kW).
         const _na = [['[[map:rated_energy_capacity]]', 'battery capacity'], ['[[map:battery_soc]]', 'battery SOC'], ['[[map:battery_power]]', 'battery power']].filter(x => !isFinite(parseFloat(states[x[0]].state)));
         if (_na.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Next hours: ' + _na.map(x => x[1] + ' (' + x[0] + ')').join(', ') + ' unavailable, so there is no projection right now.</div>';
-        const _note = ['[[map:solcast_today]]', '[[map:solcast_tomorrow]]'].filter(e => !states[e]).length ? 'No solar forecast (' + ['[[map:solcast_today]]', '[[map:solcast_tomorrow]]'].filter(e => !states[e]).join(', ') + ' missing): this projection assumes no solar.' : '';
+        const _note = ['sensor.solcast_pv_forecast_forecast_today', 'sensor.solcast_pv_forecast_forecast_tomorrow'].filter(e => !states[e]).length ? 'No solar forecast (' + ['sensor.solcast_pv_forecast_forecast_today', 'sensor.solcast_pv_forecast_forecast_tomorrow'].filter(e => !states[e]).join(', ') + ' missing): this projection assumes no solar.' : '';
         return (_note ? '<div style="padding:4px 2px 6px;font-size:11px;font-weight:700;line-height:1.4;color:var(--battman-darkred)">' + _note + '</div>' : '') + (() => {
         // Chill card popup — "Next N hours" event list (lifted from the Curve & Cost look-ahead v1.3.x; chart + ladder left out)
         const CLR_SELL = 'var(--battman-green)', CLR_BUY = 'var(--battman-yellow)', CLR_INACTIVE = 'var(--primary-text-color)';
@@ -333,8 +333,8 @@ tap_action:
         (states['[[map:feed_in_forecast]]']?.attributes?.Forecasts || [])
           .forEach(f => { finBy[f.start_time] = f.per_kwh; });
         const pvF = [].concat(
-          states['[[map:solcast_today]]']?.attributes?.detailedForecast || [],
-          states['[[map:solcast_tomorrow]]']?.attributes?.detailedForecast || []
+          states['sensor.solcast_pv_forecast_forecast_today']?.attributes?.detailedForecast || [],
+          states['sensor.solcast_pv_forecast_forecast_tomorrow']?.attributes?.detailedForecast || []
         ).map(p => ({s:new Date(p.period_start).getTime(), kw:parseFloat(p.pv_estimate)||0}));
         const pvAt = ms => { for (const p of pvF) if (ms>=p.s && ms<p.s+1800000) return p.kw; return 0; };
 

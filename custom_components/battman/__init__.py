@@ -22,6 +22,7 @@ from . import (
     engine_log,
     migrate,
     package_files,
+    required_entities,
     themes,
     uninstall,
     update_check,
@@ -118,6 +119,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await blueprint_install.async_install(hass)
 
     await dependencies.async_check(hass)
+    required_entities.async_start(hass, entry)
 
     if not entry.data.get(DASHBOARD_DONE):
         await async_create_dashboard_and_report(hass, notify=False)

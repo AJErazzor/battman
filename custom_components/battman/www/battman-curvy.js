@@ -704,11 +704,12 @@ function curvyRun(card, root) {
   let OPTIONAL_MISSING = [];
   let FACTORY = null;           // the factory curves: soc_curves_factory's `factory` attribute
   const NEEDS = ['soc_curves', 'soc_curves_factory', 'soc_curves_update_event', 'control_script', 'battery_soc', 'mode',
-                 'buy_price', 'feed_in_price', 'load_30m_avg', 'high_consumption', 'sigen_pv_power', 'solcast_today'];
+                 'buy_price', 'feed_in_price', 'load_30m_avg', 'high_consumption', 'sigen_pv_power'];
   const NEED_ENTITIES = ['soc_curves', 'control_script', 'battery_soc', 'mode', 'buy_price', 'feed_in_price',
                          'load_30m_avg', 'high_consumption'];
+  const SOLCAST_TODAY = 'sensor.solcast_pv_forecast_forecast_today';   // Solcast's forecast today (by name; a Repair says if it's missing)
   // shown if missing, but the editor still works without them (they only add overlays)
-  const OPTIONAL_ENTITIES = { sigen_pv_power: 'actual solar overlay', solcast_today: 'solar forecast' };
+  const OPTIONAL_ENTITIES = { sigen_pv_power: 'actual solar overlay' };
   const THEME_VARS = ['--battman-amber', '--battman-amber-border-strong', '--battman-amber-soft-bg', '--battman-blue', '--battman-blue-border-strong', '--battman-blue-soft-bg', '--battman-border-neutral', '--battman-green', '--battman-green-border-strong', '--battman-green-soft-bg', '--battman-orange', '--battman-purple', '--battman-purple-soft-bg', '--battman-red', '--battman-red-soft-bg', '--battman-surface-card', '--battman-surface-popup', '--battman-teal', '--battman-teal-soft-bg', '--battman-text-bright', '--battman-text-dim', '--battman-text-muted', '--battman-yellow'];
   let Chart = null;             // Chart.js (shipped with Battman), loaded at start
 
@@ -724,6 +725,7 @@ function curvyRun(card, root) {
       return 'No factory curves: ' + M.soc_curves_factory + ' has no factory attribute (are Battman\'s packages loaded? see Repairs).';
     OPTIONAL_MISSING = Object.keys(OPTIONAL_ENTITIES).filter(k => !h.states[M[k]])
       .map(k => 'No ' + OPTIONAL_ENTITIES[k] + ': ' + k + ' → ' + M[k] + ' not found');
+    if (!h.states[SOLCAST_TODAY]) OPTIONAL_MISSING.push('No solar forecast: ' + SOLCAST_TODAY + ' not found');
     try { Chart = await loadChartJs(); } catch (e) { return 'Chart library unavailable: ' + e.message; }
     return null;
   }
@@ -824,7 +826,7 @@ function curvyRun(card, root) {
   function loadSolarForecastHourly() {
     solarFcst = {};
     const hass = getHass();
-    const st = hass.states[M.solcast_today];
+    const st = hass.states[SOLCAST_TODAY];
     const arr = st?.attributes?.detailedForecast || st?.attributes?.detailedHourly;
     if (!arr) return;
     const today = new Date().toDateString();
@@ -1693,7 +1695,7 @@ function curvyRun(card, root) {
     if (!badge) return;
     const hass = getHass();
     try {
-      const state = hass.states[M.solcast_today];
+      const state = hass.states[SOLCAST_TODAY];
       if (!state) return;
       let totalKwh = null;
       if (state.attributes?.detailedForecast) {
