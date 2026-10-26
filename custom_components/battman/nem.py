@@ -5,6 +5,8 @@ an attribute. Battman finds it itself: an OpenNEM entity carrying those attribut
 One found: that's used. Several (more than one region): you pick one on Battman's
 Configure screen, and a Repair asks you to until you do. None: the NEM sensors are
 unknown and their `problem` attribute says so (OpenNEM is optional, so no Repair).
+The NEM sensors only exist while the OpenNEM integration is installed, and aren't on the
+Battman device (they're OpenNEM's figures, not Battman's settings or controls).
 It looks again whenever an OpenNEM entity is added, removed or changes, so switching
 OpenNEM to another region is followed without a restart. Dashboard cards like power-pie-card can only read entity states, so
 Battman re-exposes them as sensors (MW), plus where the power goes:
@@ -23,16 +25,16 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import SIGNAL_CONFIG_ENTRY_CHANGED, ConfigEntry, ConfigEntryChange
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, UnitOfPower
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import DOMAIN
-from .entity import device_info
 
 OPENNEM = "opennem"            # the OpenNEM integration's domain
 OPTION = "opennem"             # Configure: the region you picked (only asked when there are several)
@@ -201,9 +203,12 @@ class BattmanNemSensor(SensorEntity):
         self._attr_translation_key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_icon = GENERATION[key][1] if key in GENERATION else DEMAND[key]
-        self._attr_device_info = device_info(entry)
+        # not on the Battman device: they're OpenNEM's figures, not Battman settings or controls
 
     async def async_added_to_hass(self) -> None:
+        reg = er.async_get(self.hass)
+        if (e := reg.async_get(self.entity_id)) is not None and e.device_id is not None:
+            reg.async_update_entity(self.entity_id, device_id=None)   # on the device before v0.26.0
         self.async_on_remove(async_dispatcher_connect(self.hass, SIGNAL, self._refresh))
         self._refresh()
 
@@ -226,7 +231,46 @@ class BattmanNemSensor(SensorEntity):
             self.async_write_ha_state()
 
 
-def entities(hass: HomeAssistant, entry: ConfigEntry) -> list[BattmanNemSensor]:
-    source = NemSource(hass, entry)
-    source.start()
-    return [BattmanNemSensor(entry, source, k) for k in ALL_KEYS]
+def _installed(hass: HomeAssistant) -> bool:
+    return bool(hass.config_entries.async_entries(OPENNEM))
+
+
+@callback
+def async_setup(hass: HomeAssistant, entry: ConfigEntry, add: AddEntitiesCallback) -> None:
+    """Battman's NEM sensors, only while the OpenNEM integration is installed: made when it's
+    added, removed (with their registry entries) when it's removed."""
+    made: dict[str, NemSource | None] = {"source": None}
+
+    @callback
+    def _make() -> None:
+        if made["source"] is not None:
+            return
+        source = made["source"] = NemSource(hass, entry)
+        source.start()
+        add([BattmanNemSensor(entry, source, k) for k in ALL_KEYS])
+
+    @callback
+    def _remove() -> None:
+        if made["source"] is not None:
+            made["source"].stop()
+            made["source"] = None
+        reg = er.async_get(hass)
+        for k in ALL_KEYS:
+            if entity_id := reg.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{k}"):
+                reg.async_remove(entity_id)
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_CHOOSE)
+
+    @callback
+    def _changed(change: ConfigEntryChange, changed: ConfigEntry) -> None:
+        if changed.domain != OPENNEM:
+            return
+        if change is ConfigEntryChange.ADDED:
+            _make()
+        elif change is ConfigEntryChange.REMOVED and not _installed(hass):
+            _remove()
+
+    entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CONFIG_ENTRY_CHANGED, _changed))
+    if _installed(hass):
+        _make()
+    else:
+        _remove()

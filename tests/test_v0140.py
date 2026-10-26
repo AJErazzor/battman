@@ -46,6 +46,9 @@ def _opennem(hass, region: str, attrs: dict | None = GEN, state: str = "ok") -> 
 
 
 async def _setup(hass, hass_client=None):
+    # the OpenNEM integration is installed (v0.26.0: Battman's NEM sensors only exist then)
+    if not hass.config_entries.async_entries("opennem"):
+        MockConfigEntry(domain="opennem", title="OpenNEM").add_to_hass(hass)
     assert await async_setup_component(hass, "lovelace", {})
     entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
     entry.add_to_hass(hass)

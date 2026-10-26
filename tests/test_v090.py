@@ -42,9 +42,6 @@ def _auto(name, **inputs):
 
 async def test_switch_and_install(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
-    assert hass.states.get(SW).state == "off"
-    await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
-    assert hass.states.get(SW).state == "on"
     adir = Path(hass.config.path("blueprints/automation/battman"))
     sdir = Path(hass.config.path("blueprints/script/battman"))
     assert {"battman_live_activity_follow.yaml", "battman_live_activity_on_off.yaml",

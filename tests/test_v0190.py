@@ -112,7 +112,12 @@ async def _run_engine(hass, entry) -> str:
     return hass.states.get("sensor.battman_engine_log").attributes["message"]
 
 
-async def test_engine_says_when_the_load_average_is_missing(hass: HomeAssistant) -> None:
+async def test_engine_says_when_the_load_average_is_missing(hass: HomeAssistant, freezer) -> None:
+    # 8pm: outside the solar sponge hours, whose sun check can also put the engine on the high curve
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    await hass.config.async_set_time_zone("Australia/Adelaide")
+    freezer.move_to(datetime(2026, 10, 21, 20, 0, 10, tzinfo=ZoneInfo("Australia/Adelaide")))
     entry, _rec = await H.start(hass, smiggles=False)
     hass.states.async_set(H.LOAD_AVG, "unavailable")
     msg = await _run_engine(hass, entry)
@@ -242,7 +247,7 @@ def test_house_card_defaults_are_battmans() -> None:
 def test_tidy_ups() -> None:
     assert not (ROOT / "strings.json").exists()
     assert json.loads((ROOT / "manifest.json").read_text())["iot_class"] == "calculated"
-    for name in ("button.py", "sensor.py", "switch.py"):
+    for name in ("button.py", "binary_sensor.py"):          # v0.26.0: what's left on the Battman device
         text = (ROOT / name).read_text()
         assert "DeviceInfo(" not in text and "device_info(entry)" in text, name
 

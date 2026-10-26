@@ -597,3 +597,68 @@ window.BattmanLib.fireChecked = function (el, eventType, data, check, okText) {
     });
   }, function (e) { return done(false, 'Not saved: ' + ((e && e.message) || e)); });
 };
+
+// ---------------------------------------------------------------------------------------------
+// Battman: the dashboard theme's mode colours, for sensor.battman_theme_mode_colours (a template
+// sensor in Battman's packages: the iPhone Live Activity bar reads it, and theme: battman cards
+// read its theme name). Templates can't see HA's themes, so the browser works the colours out
+// and saves them, with the theme's name, in the parameters sensor (dashboardThemeColours).
+// Whenever a Battman page is open it keeps them in step with the picked theme (dashboardTheme):
+// a theme picked or changed (Settings, Make Active), or one Battman updated.
+window.BattmanLib.MODE_HUES = ['green', 'yellow', 'blue', 'orange', 'red', 'purple', 'teal', 'amber'];
+
+// A theme colour as #rrggbb, following var(--other) inside the theme. Throws an Error saying why not.
+window.BattmanLib.themeHex = function (theme, key, depth) {
+  depth = depth || 0;
+  if (depth > 5) throw new Error(key + ': var() chain too deep');
+  if (!(key in theme)) throw new Error(key + ' not in theme');
+  var raw = String(theme[key]).trim(), m;
+  if ((m = raw.match(/^var\(\s*--([a-z0-9-]+)\s*(?:,.*)?\)$/))) return window.BattmanLib.themeHex(theme, m[1], depth + 1);
+  if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(raw)) {
+    var h = raw.slice(1);
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+    return '#' + h.slice(0, 6);
+  }
+  if ((m = raw.match(/^rgba?\(([^)]+)\)$/))) {
+    var rgb = m[1].replace(/\//g, ',').split(',').slice(0, 3).map(function (p) { return Math.round(parseFloat(p)); });
+    if (rgb.length === 3 && rgb.every(function (v) { return isFinite(v) && v >= 0 && v <= 255; }))
+      return '#' + rgb.map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join('');
+  }
+  throw new Error(key + " is '" + raw + "', not a colour Battman can read");
+};
+
+// What's saved for a theme: {theme, green, …, amber}, or {theme, problem}.
+window.BattmanLib.themeModeColours = function (themes, name) {
+  var theme = themes && themes[name];
+  if (!theme) return { theme: name, problem: "Theme '" + name + "' isn't loaded in Home Assistant" };
+  var out = { theme: name }, bad = [];
+  window.BattmanLib.MODE_HUES.forEach(function (hue) {
+    try { out[hue] = window.BattmanLib.themeHex(theme, 'battman-' + hue); } catch (e) { bad.push(e.message); }
+  });
+  return bad.length ? { theme: name, problem: bad.join('; ') } : out;
+};
+
+// Keep the saved colours in step: checked when a page opens and every 15 seconds after. Only
+// while Battman is in charge (its settings change only then) and for a user who may fire events.
+// Battman's own settings sensor, whichever engine is in charge: it only changes while Battman is.
+(function keepThemeColours() {
+  var PARAMS = 'sensor.battman_parameters', EVENT = 'battman_parameters_update', busy = false, sent = '';
+  function check() {
+    var ha = document.querySelector('home-assistant'), hass = ha && ha.hass;
+    if (!hass || !hass.themes || busy) return;
+    var inCharge = hass.states['binary_sensor.battman_in_charge'];
+    if (!inCharge || inCharge.state !== 'on' || (hass.user && !hass.user.is_admin)) return;
+    var p = hass.states[PARAMS], name = p && String(p.attributes.dashboardTheme || '').trim();
+    if (!name) return;
+    var want = window.BattmanLib.themeModeColours(hass.themes.themes, name), key = JSON.stringify(want);
+    if (key === JSON.stringify(p.attributes.dashboardThemeColours || null) || key === sent) return;
+    sent = key;
+    busy = true;
+    hass.callWS({ type: 'fire_event', event_type: EVENT, event_data: { action: 'SetAttribute', dashboardThemeColours: want } })
+      .catch(function () { sent = ''; })
+      .then(function () { busy = false; });
+  }
+  [setTimeout(check, 3000), setInterval(check, 15000)].forEach(function (id) {
+    if (id && id.unref) id.unref();      // (only outside a browser, e.g. tests: don't keep node running)
+  });
+})();

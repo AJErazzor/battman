@@ -861,6 +861,118 @@ template:
               {{ this.attributes.dashboardTheme | default('', true) }}
             {% endif %}
 
+          # the picked theme's mode colours, worked out and saved by the browser (battman-lib.js:
+          # templates can't see HA's themes): {theme, green, …, amber} or {theme, problem}.
+          # sensor.battman_theme_mode_colours reads them.
+          dashboardThemeColours: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.dashboardThemeColours is mapping
+               and trigger.event.data.dashboardThemeColours.theme is defined %}
+              {{ trigger.event.data.dashboardThemeColours }}
+            {% else %}
+              {{ this.attributes.dashboardThemeColours
+                 if this.attributes.dashboardThemeColours is defined
+                 else none }}
+            {% endif %}
+
+          ##################################################################
+          # Battman addition: the Live Activity (Settings → Live Activity).
+          # liveActivity is switch.battman_live_activity's state (a template
+          # switch in battman_sensors.yaml); the rest are its settings: the
+          # phone (a notify service, or Off), the entity to follow and its
+          # on / off states, how long it has to be off, and the feed-in spike
+          # alert ($/kWh).
+          ##################################################################
+          liveActivity: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivity is defined %}
+              {{ trigger.event.data.liveActivity | bool }}
+            {% else %}
+              {{ this.attributes.liveActivity
+                 if this.attributes.liveActivity is defined
+                 else false }}
+            {% endif %}
+
+          liveActivityPhone: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivityPhone is defined %}
+              {{ (trigger.event.data.liveActivityPhone or 'Off') | string | trim }}
+            {% else %}
+              {{ this.attributes.liveActivityPhone
+                 if this.attributes.liveActivityPhone is defined
+                 else 'Off' }}
+            {% endif %}
+
+          liveActivityFollow: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivityFollow is defined %}
+              {{ (trigger.event.data.liveActivityFollow or '') | string | trim }}
+            {% else %}
+              {{ this.attributes.liveActivityFollow
+                 if this.attributes.liveActivityFollow is defined
+                 else '' }}
+            {% endif %}
+
+          liveActivityFollowOn: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivityFollowOn is defined %}
+              {{ trigger.event.data.liveActivityFollowOn | string | trim }}
+            {% else %}
+              {{ this.attributes.liveActivityFollowOn
+                 if this.attributes.liveActivityFollowOn is defined
+                 else 'ON' }}
+            {% endif %}
+
+          liveActivityFollowOff: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivityFollowOff is defined %}
+              {{ trigger.event.data.liveActivityFollowOff | string | trim }}
+            {% else %}
+              {{ this.attributes.liveActivityFollowOff
+                 if this.attributes.liveActivityFollowOff is defined
+                 else 'OFF' }}
+            {% endif %}
+
+          liveActivityFollowDelay: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivityFollowDelay is defined
+               and trigger.event.data.liveActivityFollowDelay | int(-1) >= 0
+               and trigger.event.data.liveActivityFollowDelay | int(-1) <= 60 %}
+              {{ trigger.event.data.liveActivityFollowDelay | int }}
+            {% else %}
+              {{ this.attributes.liveActivityFollowDelay
+                 if this.attributes.liveActivityFollowDelay is defined
+                 else 2 }}
+            {% endif %}
+
+          liveActivitySpikeAlert: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivitySpikeAlert is defined
+               and trigger.event.data.liveActivitySpikeAlert | float(-1) >= 0
+               and trigger.event.data.liveActivitySpikeAlert | float(-1) <= 20 %}
+              {{ trigger.event.data.liveActivitySpikeAlert | float }}
+            {% else %}
+              {{ this.attributes.liveActivitySpikeAlert
+                 if this.attributes.liveActivitySpikeAlert is defined
+                 else 0.3 }}
+            {% endif %}
+
           pinnedOverrides: >
             {% if trigger is defined
                and trigger.platform == 'event'

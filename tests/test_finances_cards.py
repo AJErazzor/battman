@@ -155,8 +155,11 @@ def test_one_list_of_mode_colours() -> None:
     bp = yaml.load((ROOT / "blueprints/script/battman_live_activity_push.yaml").read_text(), Loader=_BlueprintLoader)
     assert bp["blueprint"]["input"]["look"]["input"]["mode_hues"]["default"] == hue
     # the colours sensor covers every colour the list uses, and every shipped theme has them
-    from custom_components.battman.sensor import MODE_HUES
-
+    # (the colours: battman-lib.js MODE_HUES since v0.26.0; the template sensor shows the same eight)
+    lib = (ROOT / "www/battman-lib.js").read_text()
+    MODE_HUES = re.search(r"MODE_HUES = \[([^\]]+)\]", lib).group(1).replace("'", "").replace(" ", "").split(",")
+    sensors = (ROOT / "packages/battman_sensors.yaml").read_text()
+    assert all(f"'{h}': c.{h}" in sensors for h in MODE_HUES)
     assert set(hue.values()) <= set(MODE_HUES)
     for f in (ROOT / "themes").glob("*.yaml"):
         theme = next(iter(yaml.safe_load(f.read_text()).values()))

@@ -20,79 +20,47 @@
       }
     },
     "sensor": {
-      "theme_mode_colours": {
-        "name": "Theme mode colours"
-      },
       "nem_wind": {
-        "name": "NEM wind"
+        "name": "Battman NEM wind"
       },
       "nem_rooftop_solar": {
-        "name": "NEM rooftop solar"
+        "name": "Battman NEM rooftop solar"
       },
       "nem_utility_solar": {
-        "name": "NEM utility solar"
+        "name": "Battman NEM utility solar"
       },
       "nem_imports": {
-        "name": "NEM imports"
+        "name": "Battman NEM imports"
       },
       "nem_battery": {
-        "name": "NEM battery"
+        "name": "Battman NEM battery"
       },
       "nem_gas_ccgt": {
-        "name": "NEM gas CCGT"
+        "name": "Battman NEM gas CCGT"
       },
       "nem_gas_ocgt": {
-        "name": "NEM gas OCGT"
+        "name": "Battman NEM gas OCGT"
       },
       "nem_distillate": {
-        "name": "NEM distillate"
+        "name": "Battman NEM distillate"
       },
       "nem_gas_steam": {
-        "name": "NEM gas steam"
+        "name": "Battman NEM gas steam"
       },
       "nem_gas_recip": {
-        "name": "NEM gas recip"
+        "name": "Battman NEM gas recip"
       },
       "nem_exports": {
-        "name": "NEM exports"
+        "name": "Battman NEM exports"
       },
       "nem_battery_charging": {
-        "name": "NEM battery charging"
+        "name": "Battman NEM battery charging"
       },
       "nem_total_supply": {
-        "name": "NEM total supply"
+        "name": "Battman NEM total supply"
       },
       "nem_consumers": {
-        "name": "NEM consumers"
-      }
-    },
-    "switch": {
-      "live_activity": {
-        "name": "Live Activity"
-      }
-    },
-    "select": {
-      "live_activity_phone": {
-        "name": "Live Activity phone"
-      }
-    },
-    "text": {
-      "live_activity_follow": {
-        "name": "Live Activity follow"
-      },
-      "live_activity_follow_on": {
-        "name": "Live Activity follow on"
-      },
-      "live_activity_follow_off": {
-        "name": "Live Activity follow off"
-      }
-    },
-    "number": {
-      "live_activity_follow_delay": {
-        "name": "Live Activity follow delay"
-      },
-      "live_activity_spike_alert": {
-        "name": "Live Activity spike alert"
+        "name": "Battman NEM consumers"
       }
     },
     "binary_sensor": {
