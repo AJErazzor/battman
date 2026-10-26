@@ -24,9 +24,9 @@ PARAMS = ["buyProrateSOCOffset", "buyHighSOCOffset", "sellProrateSOCOffset", "se
 RULE_ITEMS = ["isActive", "allowLastChance", "hours_ahead", "grouping_minutes", "roundTo", "roundtype", "offset"]
 TRACKING = ["buy_trackingA_CutOffKwh", "buy_trackingA_CutOffcKwh", "buy_trackingA_Offset",
             "buy_trackingA_AllowLastChance", "buy_trackingA_ResetHour"]
-LIVE_ACTIVITY = ["switch.battman_live_activity", "select.battman_live_activity_phone", "text.battman_live_activity_follow",
-                 "text.battman_live_activity_follow_on", "text.battman_live_activity_follow_off",
-                 "number.battman_live_activity_follow_delay", "number.battman_live_activity_spike_alert"]
+# the Live Activity: its switch and its settings (parameters attributes since v0.26.0)
+LIVE_ACTIVITY = ["switch.battman_live_activity", "sensor.battman_parameters", "liveActivityPhone", "liveActivityFollow",
+                 "liveActivityFollowOn", "liveActivityFollowOff", "liveActivityFollowDelay", "liveActivitySpikeAlert"]
 
 
 def test_every_old_setting_is_on_the_page() -> None:

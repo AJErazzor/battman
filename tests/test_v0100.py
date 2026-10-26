@@ -1,5 +1,6 @@
-import pytest
-"""v0.10.0: Live Activity settings entities; Battman creates its automations/script; end to end."""
+"""v0.10.0: Battman creates the Live Activity automations/script; end to end.
+v0.26.0: its settings are attributes of sensor.battman_parameters and its switch is a template
+switch (Battman's packages): set like every other Battman setting, while Battman is in charge."""
 
 import asyncio
 from datetime import timedelta
@@ -12,11 +13,11 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")   # its totals / mode are Smiggles'
+from custom_components.battman.const import IN_CHARGE
 
 DOMAIN = "battman"
 SW = "switch.battman_live_activity"
-PHONE = "select.battman_live_activity_phone"
+PARAMS = "sensor.battman_parameters"
 IDS = ["automation.battman_live_activity_on_off", "automation.battman_live_activity_updates",
        "automation.battman_live_activity_follow", "script.battman_live_activity_push"]
 
@@ -29,23 +30,38 @@ async def _settle(hass):
 def _write_config(hass, include=True):
     cfg = Path(hass.config.config_dir)
     (cfg / "configuration.yaml").write_text(
-        "automation: !include automations.yaml\nscript: !include scripts.yaml\n" if include else "")
+        "homeassistant:\n  packages: !include_dir_named packages\n"
+        + ("automation: !include automations.yaml\nscript: !include scripts.yaml\n" if include else ""))
     (cfg / "automations.yaml").write_text("[]\n")
     (cfg / "scripts.yaml").write_text("{}\n")
 
 
-async def _setup(hass, include=True):
+async def _setup(hass, include=True, in_charge=True):
     _write_config(hass, include)
     config = await conf_util.async_hass_config_yaml(hass)
     assert await async_setup_component(hass, "homeassistant", {})
     assert await async_setup_component(hass, "lovelace", {})
     assert await async_setup_component(hass, "automation", config)
     assert await async_setup_component(hass, "script", config)
-    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
+    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={IN_CHARGE: in_charge})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    # Battman is in charge, but these tests are about the Live Activity: its engine stays still
+    engine = [s.entity_id for s in hass.states.async_all("automation") if s.entity_id.startswith("automation.battman_engine")]
+    if engine:
+        await hass.services.async_call("automation", "turn_off", {"entity_id": engine}, blocking=True)
     return entry
+
+
+async def _set(hass, **settings):
+    """Change Live Activity settings the way the Settings card does."""
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", **settings})
+    await _settle(hass)          # not block_till_done: it would wait out the automations' delays
+
+
+def _la(hass, key):
+    return hass.states.get(PARAMS).attributes[key]
 
 
 def _phone(hass):
@@ -88,25 +104,36 @@ async def test_not_loaded_repair(hass: HomeAssistant) -> None:
     assert issue is not None and "battman_live_activity_push" in issue.translation_placeholders["missing"]
 
 
-async def test_settings_entities(hass: HomeAssistant) -> None:
+async def test_settings(hass: HomeAssistant) -> None:
     await _setup(hass)
-    assert hass.states.get(PHONE).state == "Off"
-    assert hass.states.get("text.battman_live_activity_follow").state == ""
-    assert hass.states.get("text.battman_live_activity_follow_on").state == "ON"
-    assert hass.states.get("text.battman_live_activity_follow_off").state == "OFF"
-    assert float(hass.states.get("number.battman_live_activity_follow_delay").state) == 2
-    assert float(hass.states.get("number.battman_live_activity_spike_alert").state) == 0.3
-    _phone(hass)
-    await hass.async_block_till_done()
-    assert "test_phone" in hass.states.get(PHONE).attributes["options"]   # follows HA's notify services
-    await hass.services.async_call("select", "select_option", {"entity_id": PHONE, "option": "test_phone"}, blocking=True)
-    hass.services.async_remove("notify", "test_phone")
-    await hass.async_block_till_done()
-    st = hass.states.get(PHONE)
-    assert st.state == "test_phone" and st.attributes["problem"] == "notify.test_phone not found"  # flagged, not switched
-    await hass.services.async_call("text", "set_value",
-                                   {"entity_id": "text.battman_live_activity_follow", "value": "sensor.nope"}, blocking=True)
-    assert hass.states.get("text.battman_live_activity_follow").attributes["problem"] == "sensor.nope not found"
+    # the defaults (as the old setting entities had), and none of those entities any more
+    assert (_la(hass, "liveActivity"), _la(hass, "liveActivityPhone"), _la(hass, "liveActivityFollow"),
+            _la(hass, "liveActivityFollowOn"), _la(hass, "liveActivityFollowOff"),
+            _la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert")) == (False, "Off", "", "ON", "OFF", 2, 0.3)
+    assert hass.states.get(SW).state == "off"
+    for gone in ("select.battman_live_activity_phone", "text.battman_live_activity_follow",
+                 "number.battman_live_activity_spike_alert"):
+        assert hass.states.get(gone) is None, gone
+    # the switch is the liveActivity setting, both ways
+    await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
+    await _settle(hass)
+    assert _la(hass, "liveActivity") is True and hass.states.get(SW).state == "on"
+    await _set(hass, liveActivity=False)
+    assert hass.states.get(SW).state == "off"
+    # out-of-range numbers are ignored, as for every Battman setting
+    await _set(hass, liveActivityFollowDelay=99, liveActivitySpikeAlert=-1)
+    assert (_la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert")) == (2, 0.3)
+    await _set(hass, liveActivityFollowDelay=5, liveActivitySpikeAlert=0.45, liveActivityPhone="test_phone")
+    assert (_la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert"), _la(hass, "liveActivityPhone")) == \
+           (5, 0.45, "test_phone")
+
+
+async def test_only_while_in_charge(hass: HomeAssistant) -> None:
+    """Like all Battman settings: ignored until Battman is in charge (the switch springs back)."""
+    await _setup(hass, in_charge=False)
+    await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
+    await _settle(hass)
+    assert hass.states.get(SW).state == "off" and _la(hass, "liveActivity") is False
 
 
 async def _states(hass, mode="Charge"):
@@ -114,23 +141,24 @@ async def _states(hass, mode="Charge"):
     s("sensor.sigen_plant_battery_state_of_charge", "61.6")
     s("sensor.amber_5min_current_feed_in_price", "0.0512")
     s("sensor.amber_5min_current_general_price", "0.2349")
-    s("input_select.solarsystemcontrolmode", mode)
-    s("sensor.solarsystemcontrolselltotal", "1", {"day": 1.20})
-    s("sensor.solarsystemcontrolbuytotal", "1", {"day": 2.45})
-    s("sensor.solarsystemcontrolparameters", "ok", {"dailyNetworkCharge": 0.60})
+    await hass.services.async_call("input_select", "select_option",
+                                   {"entity_id": "input_select.battman_mode", "option": mode}, blocking=True)
+    s("sensor.battman_sell_total", "1", {"day": 1.20})
+    s("sensor.battman_buy_total", "1", {"day": 2.45})
+    await _set(hass, dailyNetworkCharge=0.60)
 
 
 async def test_end_to_end(hass: HomeAssistant, freezer) -> None:
     await _setup(hass)
     await _states(hass)
     calls = _phone(hass)
-    await hass.async_block_till_done()
+    await _settle(hass)
 
     await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
     await _settle(hass)
     assert calls == []                                          # phone is Off: nothing sent
     await hass.services.async_call("switch", "turn_off", {"entity_id": SW}, blocking=True)
-    await hass.services.async_call("select", "select_option", {"entity_id": PHONE, "option": "test_phone"}, blocking=True)
+    await _set(hass, liveActivityPhone="test_phone")
 
     await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
     await _settle(hass)
@@ -140,8 +168,7 @@ async def test_end_to_end(hass: HomeAssistant, freezer) -> None:
     assert d["progress_bar_color"] == "#8E8E93"                 # no dashboard theme picked: grey
 
     n = len(calls)                                              # spike: read from the Battman setting
-    await hass.services.async_call("number", "set_value",
-                                   {"entity_id": "number.battman_live_activity_spike_alert", "value": 0.10}, blocking=True)
+    await _set(hass, liveActivitySpikeAlert=0.10)
     hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.15")
     await _settle(hass)
     spikes = [c for c in calls[n:] if c.get("title", "").startswith("⚡")]
@@ -158,8 +185,7 @@ async def test_end_to_end(hass: HomeAssistant, freezer) -> None:
 async def test_follow_settings(hass: HomeAssistant, freezer) -> None:
     await _setup(hass)
     hass.states.async_set("sensor.ignition", "OFF")
-    await hass.services.async_call("text", "set_value",
-                                   {"entity_id": "text.battman_live_activity_follow", "value": "sensor.ignition"}, blocking=True)
+    await _set(hass, liveActivityFollow="sensor.ignition")
     await _settle(hass)
     assert hass.states.get(SW).state == "off"
     hass.states.async_set("sensor.ignition", "ON")
@@ -181,8 +207,7 @@ async def test_follow_settings(hass: HomeAssistant, freezer) -> None:
     async_fire_time_changed(hass)
     await _settle(hass)
     assert hass.states.get(SW).state == "off"
-    await hass.services.async_call("text", "set_value",         # other states, from the settings
-                                   {"entity_id": "text.battman_live_activity_follow_on", "value": "Driving"}, blocking=True)
+    await _set(hass, liveActivityFollowOn="Driving")            # other states, from the settings
     hass.states.async_set("sensor.ignition", "ON")
     await _settle(hass)
     assert hass.states.get(SW).state == "off"

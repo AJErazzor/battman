@@ -16,32 +16,13 @@ blueprint:
   homeassistant:
     min_version: "2024.10.0"
   input:
-    follow_setting:
-      name: Entity to follow (setting)
-      default: text.battman_live_activity_follow
+    settings:
+      name: Battman settings
+      description: The sensor holding Battman's settings (its Live Activity ones among them).
+      default: sensor.battman_parameters
       selector:
         entity:
-          domain: text
-    on_setting:
-      name: "'On' state (setting)"
-      default: text.battman_live_activity_follow_on
-      selector:
-        entity:
-          domain: text
-    off_setting:
-      name: "'Off' state (setting)"
-      default: text.battman_live_activity_follow_off
-      selector:
-        entity:
-          domain: text
-    delay_setting:
-      name: Off after, minutes (setting)
-      default: number.battman_live_activity_follow_delay
-      selector:
-        entity:
-          domain:
-            - number
-            - input_number
+          domain: sensor
     live_switch:
       name: On/off switch
       default: switch.battman_live_activity
@@ -54,23 +35,20 @@ blueprint:
 mode: restart
 
 trigger_variables:
-  follow_setting: !input follow_setting
-  on_setting: !input on_setting
-  off_setting: !input off_setting
-  delay_setting: !input delay_setting
+  settings: !input settings
 
 triggers:
   - trigger: template
     value_template: >-
-      {% set e = states(follow_setting) | trim %}
-      {{ e not in ['', 'unknown', 'unavailable'] and states(e) == states(on_setting) }}
+      {% set e = (state_attr(settings, 'liveActivityFollow') or '') | trim %}
+      {{ e != '' and states(e) == state_attr(settings, 'liveActivityFollowOn') }}
     id: "on"
   - trigger: template
     value_template: >-
-      {% set e = states(follow_setting) | trim %}
-      {{ e not in ['', 'unknown', 'unavailable'] and states(e) == states(off_setting) }}
+      {% set e = (state_attr(settings, 'liveActivityFollow') or '') | trim %}
+      {{ e != '' and states(e) == state_attr(settings, 'liveActivityFollowOff') }}
     for:
-      minutes: "{{ states(delay_setting) | int }}"
+      minutes: "{{ state_attr(settings, 'liveActivityFollowDelay') | int }}"
     id: "off"
 
 conditions:

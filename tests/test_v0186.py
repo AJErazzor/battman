@@ -30,13 +30,14 @@ async def _set_theme(hass: HomeAssistant, name: str) -> None:
 
 
 async def test_theme_name_in_parameters_drives_the_colours(hass: HomeAssistant) -> None:
-    from homeassistant.components.frontend import DATA_THEMES
-
+    """v0.26.0: the browser saves the picked theme's colours (dashboardThemeColours, see
+    test_v0260 for the browser side); the template sensor shows them for the picked theme only."""
     from custom_components.battman.const import IN_CHARGE
+
+    from .test_v0260 import lib_colours
 
     entry, _rec = await H.start(hass, smiggles=False)
     hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
-    hass.data[DATA_THEMES] = {"Battman Nord": NORD}
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute"})
     await hass.async_block_till_done()
 
@@ -54,24 +55,30 @@ async def test_theme_name_in_parameters_drives_the_colours(hass: HomeAssistant) 
 
     await _set_theme(hass, "Battman Nord")
     assert hass.states.get(PARAMS).attributes["dashboardTheme"] == "Battman Nord"
+    st = hass.states.get(SENSOR)                             # picked, colours not saved yet: says so
+    assert st.state == "unknown" and "haven't been saved yet" in st.attributes["problem"]
+    saved = lib_colours({"Battman Nord": NORD}, "Battman Nord")   # what an open Battman page saves
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "dashboardThemeColours": saved})
+    await _settle(hass)
     st = hass.states.get(SENSOR)
     assert json.loads(st.state) == {k[8:]: v for k, v in NORD.items()}
-    assert st.attributes["theme"] == "Battman Nord" and "problem" not in st.attributes
+    assert list(json.loads(st.state)) == ["green", "yellow", "blue", "orange", "red", "purple", "teal", "amber"]
+    assert st.attributes["theme"] == "Battman Nord" and st.attributes["green"] == "#a3be8c" and st.attributes["problem"] is None
 
-    # another setting changing, or a section's Reset to defaults, leaves the theme alone
+    # another setting changing, or a section's Reset to defaults, leaves the theme and colours alone
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "billInflation": 3})
     hass.bus.async_fire("battman_parameters_update", {"action": "SetDefaults", "defaults": {}})
-    await hass.async_block_till_done()
-    assert hass.states.get(PARAMS).attributes["dashboardTheme"] == "Battman Nord"
-
-    # editing the theme's colours (same name) reaches the sensor on the themes reload
-    hass.data[DATA_THEMES] = {"Battman Nord": {**NORD, "battman-green": "#000001"}}
-    hass.bus.async_fire("themes_updated")
     await _settle(hass)
-    assert json.loads(hass.states.get(SENSOR).state)["green"] == "#000001"
+    assert hass.states.get(PARAMS).attributes["dashboardTheme"] == "Battman Nord"
+    assert json.loads(hass.states.get(SENSOR).state)["green"] == "#a3be8c"
 
-    # a theme that isn't loaded: unknown, named
+    # another theme picked: the old colours aren't shown for it
     await _set_theme(hass, "Battman Gone")
+    st = hass.states.get(SENSOR)
+    assert st.state == "unknown" and "haven't been saved yet" in st.attributes["problem"]
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute",
+                        "dashboardThemeColours": lib_colours({}, "Battman Gone")})
+    await _settle(hass)
     st = hass.states.get(SENSOR)
     assert st.state == "unknown" and "'Battman Gone' isn't loaded" in st.attributes["problem"]
 
@@ -83,5 +90,4 @@ def test_both_theme_pickers_save_the_name() -> None:
     make_active = studio[studio.index("function doMakeActive(){"):]
     assert "saveThemeName(hass,name);" in make_active[:make_active.index("function reloadParent")]
     assert "dashboardTheme:name" in studio and "parameters_update_event" in studio
-    sensor = (ROOT / "sensor.py").read_text()
-    assert "lovelace" not in sensor
+    assert "dashboardTheme" not in (ROOT / "sensor.py").read_text()      # a template sensor now

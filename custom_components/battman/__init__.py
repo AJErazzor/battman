@@ -20,6 +20,7 @@ from . import (
     dependencies,
     engine,
     engine_log,
+    live_activity,
     migrate,
     package_files,
     required_entities,
@@ -44,7 +45,7 @@ from .services import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["binary_sensor", "button", "number", "select", "sensor", "switch", "text"]
+PLATFORMS: list[str] = ["binary_sensor", "button", "sensor"]
 
 # Set in the config entry once the install-time dashboard has been made, so it
 # only ever happens once. After that, use the button or battman.create_dashboard.
@@ -125,6 +126,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await async_create_dashboard_and_report(hass, notify=False)
         hass.config_entries.async_update_entry(entry, data={**entry.data, DASHBOARD_DONE: True})
 
+    # the Live Activity settings moved into the parameters sensor (v0.26.0): carry them over
+    live_activity.async_carry_over(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Battman's template sensors: packages/battman/*.yaml, written and reloaded once HA is up

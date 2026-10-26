@@ -39,6 +39,67 @@ template:
           {% else %}0{% endif %}
 
 
+  # The Battman dashboard theme's eight mode colours as #rrggbb (Battman addition): phones can't
+  # read CSS, so the iPhone Live Activity bar reads this, and "theme: battman" cards read its theme
+  # name. The browser saves the colours in the parameters sensor (dashboardThemeColours) whenever a
+  # Battman page is open: templates can't see HA's themes. No fallbacks: until the colours for the
+  # picked theme are saved (or if they can't be read), it's unknown and `problem` says why.
+  - sensor:
+      - name: Battman theme mode colours
+        unique_id: battman_theme_mode_colours
+        icon: mdi:palette
+        state: >-
+          {% set name = (state_attr('sensor.battman_parameters', 'dashboardTheme') or '') | trim %}
+          {% set c = state_attr('sensor.battman_parameters', 'dashboardThemeColours') %}
+          {% if name and c is mapping and c.theme == name and c.problem is not defined %}
+            {{ {'green': c.green, 'yellow': c.yellow, 'blue': c.blue, 'orange': c.orange, 'red': c.red,
+                'purple': c.purple, 'teal': c.teal, 'amber': c.amber} | to_json }}
+          {% else %}{{ none }}{% endif %}
+        attributes:
+          theme: >-
+            {{ (state_attr('sensor.battman_parameters', 'dashboardTheme') or '') | trim or none }}
+          green: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('green') }}"
+          yellow: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('yellow') }}"
+          blue: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('blue') }}"
+          orange: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('orange') }}"
+          red: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('red') }}"
+          purple: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('purple') }}"
+          teal: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('teal') }}"
+          amber: "{{ (state_attr('sensor.battman_parameters', 'dashboardThemeColours') or {}).get('amber') }}"
+          problem: >-
+            {% set p = 'sensor.battman_parameters' %}
+            {% set name = (state_attr(p, 'dashboardTheme') or '') | trim %}
+            {% set c = state_attr(p, 'dashboardThemeColours') %}
+            {% if states(p) in ['unknown', 'unavailable'] and state_attr(p, 'dashboardTheme') is none %}
+              {{ p }} doesn't exist (it holds the dashboard theme)
+            {% elif not name %}No dashboard theme picked (Settings → Dashboard theme, or Make Active in the Theme studio)
+            {% elif c is not mapping or c.theme != name %}The colours of {{ name }} haven't been saved yet: open a Battman page (it saves them)
+            {% elif c.problem is defined %}{{ c.problem }}
+            {% else %}{{ none }}{% endif %}
+
+  # The Live Activity on/off switch (Battman addition). Its state is the parameters sensor's
+  # liveActivity setting; turning it on or off sets that, like every other Battman setting (so
+  # it only changes while Battman is in charge). Anything can flip it: you, the dashboard, or
+  # the Live Activity automations (follow an entity, the keep-alive restart).
+  - switch:
+      - name: Battman Live Activity
+        unique_id: battman_live_activity
+        icon: mdi:cellphone-information
+        availability: >-
+          {{ state_attr('sensor.battman_parameters', 'liveActivity') is not none }}
+        state: >-
+          {{ state_attr('sensor.battman_parameters', 'liveActivity') == true }}
+        turn_on:
+          - event: battman_parameters_update
+            event_data:
+              action: SetAttribute
+              liveActivity: true
+        turn_off:
+          - event: battman_parameters_update
+            event_data:
+              action: SetAttribute
+              liveActivity: false
+
   # ── ported from packages/solarsystemcontrolmodule.yaml v1.0.14 ──
   - binary_sensor:
       # Unavailable (not an error every update) when the feed-in price has no start / end time,

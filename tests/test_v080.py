@@ -40,11 +40,13 @@ async def test_settings_view(hass: HomeAssistant, hass_client) -> None:
 
 
 async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
-    """The theme name comes from the parameters sensor (Smiggles' here: it's in charge)."""
-    from homeassistant.components.frontend import DATA_THEMES
+    """The theme and its saved colours come from Battman's own parameters sensor (v0.26.0: named
+    directly, whichever engine is in charge, so Migrate doesn't rewrite Battman's packages)."""
+    from .test_v0260 import lib_colours
 
+    (Path(hass.config.config_dir) / "configuration.yaml").write_text("homeassistant:\n  packages: !include_dir_named packages\n")
     await _setup(hass)
-    hass.data[DATA_THEMES] = {
+    themes = {
         "Battman Nord": NORD,
         "Battman HA": {**{f"battman-{k}": "var(--x-%s)" % k for k in ("green", "yellow", "blue", "orange", "red", "teal", "amber")},
                        "battman-purple": "var(--primary-color)",
@@ -52,7 +54,8 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
     }
 
     async def _pick(theme=None):
-        hass.states.async_set(SMIGGLES_PARAMS, "on", {"dashboardTheme": theme} if theme else {})
+        attrs = {"dashboardTheme": theme, "dashboardThemeColours": lib_colours(themes, theme)} if theme else {}
+        hass.states.async_set("sensor.battman_parameters", "on", attrs)   # as the settings sensor would hold them
         await hass.async_block_till_done()
 
     # no theme picked yet -> unknown, and says why
@@ -73,20 +76,6 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
 
     await _pick("Battman Gone")
     assert "isn't loaded" in hass.states.get(SENSOR).attributes["problem"]
-
-
-def test_to_hex() -> None:
-    from custom_components.battman.sensor import to_hex
-
-    t = {"a": "#ABC", "b": "#11223344", "c": "rgba(255, 0, 16, 0.5)", "d": "var(--a)", "e": "red", "f": "var(--f)"}
-    assert to_hex(t, "a") == "#AABBCC" and to_hex(t, "b") == "#112233"
-    assert to_hex(t, "c") == "#ff0010" and to_hex(t, "d") == "#AABBCC"
-    for bad in ("e", "f", "zz"):
-        try:
-            to_hex(t, bad)
-        except ValueError:
-            continue
-        raise AssertionError(bad)
 
 
 def test_brand_icon() -> None:

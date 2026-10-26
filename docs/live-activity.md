@@ -16,17 +16,21 @@ Nothing to build by hand. On first start Battman creates, from its own blueprint
 | `automation.battman_live_activity_updates` | Push when SOC / prices / mode change, at most every 2 min, plus a trailing push |
 | `automation.battman_live_activity_follow` | Flip the switch from another entity (e.g. a car's ignition), if you set one |
 
-They read their settings from Battman entities, which you set on the Battman
-dashboard under **Settings → Live Activity**:
+They read their settings from Battman's settings sensor (`sensor.battman_parameters`), like every
+other Battman setting. You set them on the Battman dashboard under **Settings → Live Activity**:
 
-| Setting | Entity | Default |
+| Setting | Where | Default |
 |---|---|---|
-| On/off | `switch.battman_live_activity` | off |
-| Phone | `select.battman_live_activity_phone` (HA's notify services, or Off) | **Off** |
-| Follow entity | `text.battman_live_activity_follow` (blank = don't follow) | blank |
-| On / off states | `text.battman_live_activity_follow_on` / `_follow_off` | `ON` / `OFF` |
-| Off after | `number.battman_live_activity_follow_delay` (minutes) | 2 |
-| Feed-in spike alert | `number.battman_live_activity_spike_alert` ($/kWh) | 0.30 |
+| On/off | `switch.battman_live_activity` (a template switch: its state is `liveActivity`) | off |
+| Phone | `liveActivityPhone` (one of HA's notify services, or Off) | **Off** |
+| Follow entity | `liveActivityFollow` (blank = don't follow) | blank |
+| On / off states | `liveActivityFollowOn` / `liveActivityFollowOff` | `ON` / `OFF` |
+| Off after | `liveActivityFollowDelay` (minutes, 0–60) | 2 |
+| Feed-in spike alert | `liveActivitySpikeAlert` ($/kWh, 0–20) | 0.30 |
+
+Like all Battman settings they only change while Battman is in charge of the battery (after
+Migrate); before that the switch springs back off. Before v0.26.0 these were separate Battman
+entities; updating carries their values over.
 
 With the phone on **Off** nothing is sent, so a new install is harmless until you pick one.
 

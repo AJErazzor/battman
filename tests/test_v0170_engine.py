@@ -108,7 +108,12 @@ def _fire(hass, key: str, data: dict) -> None:
 # - alertNotifyTarget: with nothing chosen, Battman's is '' (alerts off, v0.18.10); Smiggles'
 #   default was A.J.'s own phone
 # - factory: the curve sensors' factory curves (v0.19.0); Smiggles' never had them
-BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh", "alertNotifyTarget", "factory"}
+# - liveActivity*, dashboardThemeColours: the Live Activity settings and the theme's saved colours
+#   (v0.26.0), Battman additions
+BATTMAN_ONLY_ATTRS = {"dashboardTheme", "trackingA_Cost", "trackingA_kwh", "alertNotifyTarget", "factory",
+                      "liveActivity", "liveActivityPhone", "liveActivityFollow", "liveActivityFollowOn",
+                      "liveActivityFollowOff", "liveActivityFollowDelay", "liveActivitySpikeAlert",
+                      "dashboardThemeColours"}
 
 
 def _same_tracking(message: str) -> str:

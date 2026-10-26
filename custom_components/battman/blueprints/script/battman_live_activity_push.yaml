@@ -13,20 +13,20 @@ blueprint:
 
 
     The phone is chosen on the Battman dashboard (Settings → Live Activity), stored in
-    select.battman_live_activity_phone. "Off" sends nothing. Battman creates a script
+    Battman's settings (sensor.battman_parameters, liveActivityPhone). "Off" sends nothing. Battman creates a script
     from this blueprint for you (script.battman_live_activity_push).
     Installed and updated by the Battman integration.
   domain: script
   homeassistant:
     min_version: "2024.10.0"
   input:
-    phone_setting:
-      name: Phone setting
-      description: The Battman setting that says which notify service (phone) to send to, or Off.
-      default: select.battman_live_activity_phone
+    settings:
+      name: Battman settings
+      description: The sensor holding Battman's settings (its Live Activity ones among them).
+      default: sensor.battman_parameters
       selector:
         entity:
-          domain: select
+          domain: sensor
     entities:
       name: Battery and prices
       input:
@@ -147,7 +147,7 @@ max: 10
 
 sequence:
   - variables:
-      phone_setting: !input phone_setting
+      settings: !input settings
   - variables:
       soc_e: !input battery_soc
       fit_e: !input feed_in_price
@@ -161,7 +161,7 @@ sequence:
       mode_hues: !input mode_hues
       tag: !input tag
       url: !input url
-      phone: "{{ states(phone_setting) }}"
+      phone: "{{ state_attr(settings, 'liveActivityPhone') or '' }}"
   # Off: nothing to send. No phone setting at all is a fault: stop with an error.
   - if:
       - condition: template

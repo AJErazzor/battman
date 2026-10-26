@@ -103,12 +103,12 @@ def remove_files(dst: Path) -> list[str]:
 
 def entities(files: dict[str, str]) -> list[tuple[str, str, str]]:
     """(domain, platform, unique_id) of every entity the files define with a unique ID:
-    template sensors / binary sensors, and sensors from a YAML platform (e.g. statistics)."""
+    template sensors / binary sensors / switches, and sensors from a YAML platform (e.g. statistics)."""
     out = []
     for text in files.values():
         data = yaml.safe_load(text) or {}
         for block in data.get("template", []):
-            for domain in ("sensor", "binary_sensor"):
+            for domain in ("sensor", "binary_sensor", "switch"):
                 for ent in block.get(domain, []) or []:
                     if "unique_id" in ent:
                         out.append((domain, "template", ent["unique_id"]))

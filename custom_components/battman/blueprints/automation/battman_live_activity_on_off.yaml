@@ -44,18 +44,20 @@ blueprint:
       selector:
         entity:
           domain: sensor
-    spike_above:
-      name: Feed-in spike alert above
-      description: The Battman setting (number, $/kWh) to compare the feed-in price with.
-      default: number.battman_live_activity_spike_alert
+    settings:
+      name: Battman settings
+      description: The sensor holding Battman's settings (its Live Activity ones among them).
+      default: sensor.battman_parameters
       selector:
         entity:
-          domain:
-            - number
-            - input_number
+          domain: sensor
 
 mode: queued
 max: 10
+
+trigger_variables:
+  feed_in_price: !input feed_in_price
+  settings: !input settings
 
 triggers:
   - trigger: state
@@ -72,9 +74,12 @@ triggers:
     for:
       hours: !input keep_alive_hours
     id: keep_alive
-  - trigger: numeric_state
-    entity_id: !input feed_in_price
-    above: !input spike_above
+  # the feed-in price goes above the spike alert setting (liveActivitySpikeAlert, $/kWh); an
+  # unavailable price or a missing setting is no spike
+  - trigger: template
+    value_template: >-
+      {% set limit = state_attr(settings, 'liveActivitySpikeAlert') %}
+      {{ has_value(feed_in_price) and limit is number and states(feed_in_price) | float > limit }}
     id: spike
 
 actions:

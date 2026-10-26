@@ -141,10 +141,12 @@ class BattmanSettingsCard extends BattmanCardBase {
       needyCurve: ['needyTriggerPVGap', 'needyTriggerConsumption'], watchdog: ['watchdogScriptNotRunLimit', 'watchdogScriptDisabledLimit'],
       billing: ['dailyNetworkCharge', 'billDayOfMonth'],
     };
-    const LA = { sw: 'switch.battman_live_activity', phone: 'select.battman_live_activity_phone',
-                 follow: 'text.battman_live_activity_follow', on: 'text.battman_live_activity_follow_on',
-                 off: 'text.battman_live_activity_follow_off', delay: 'number.battman_live_activity_follow_delay',
-                 spike: 'number.battman_live_activity_spike_alert' };
+    // the Live Activity: its switch, and its settings on Battman's own parameters sensor (named
+    // directly: they're Battman's whichever engine is in charge)
+    const LA = { sw: 'switch.battman_live_activity', params: 'sensor.battman_parameters',
+                 event: 'battman_parameters_update', inCharge: 'binary_sensor.battman_in_charge' };
+    const LA_RANGE = { liveActivityFollowDelay: [true, 0, 60], liveActivitySpikeAlert: [false, 0, 20] };   // parseNum: [whole number, min, max]
+    const NOT_PHONES = ['send_message', 'persistent_notification'];   // notify services that aren't a device
     const LA_MADE = ['script.battman_live_activity_push', 'automation.battman_live_activity_on_off',
                      'automation.battman_live_activity_updates', 'automation.battman_live_activity_follow'];
     const HOURS = ['12am','1am','2am','3am','4am','5am','6am','7am','8am','9am','10am','11am',
@@ -227,6 +229,10 @@ class BattmanSettingsCard extends BattmanCardBase {
       return false;
     }
     const fire = (key, data) => getHass().callWS({ type: 'fire_event', event_type: M[key], event_data: data });
+    // a Live Activity setting: Battman's own parameters sensor, whichever engine is in charge
+    const laAttr = (key) => ((st(LA.params) || {}).attributes || {})[key];
+    const setLA = (el, key, value, check, what) => apply(el, () => getHass().callWS({ type: 'fire_event', event_type: LA.event,
+      event_data: { action: 'SetAttribute', [key]: value } }), check, what);
     const near = (a, b) => Math.abs(Number(a) - Number(b)) < 1e-6;
     function parseNum(text, range) {
       const t = String(text).trim();
@@ -360,29 +366,34 @@ class BattmanSettingsCard extends BattmanCardBase {
 
     function liveActivitySection() {
       const h = getHass();
-      const gone = Object.values(LA).filter((id) => !h.states[id]);
-      if (gone.length) return note('Battman setting not found: ' + esc(gone.join(', ')) + '. Is Battman set up?', true);
-      const S = (id) => h.states[id];
-      const prob = (id) => S(id).attributes.problem ? '⚠ ' + S(id).attributes.problem : '';
-      const ph = S(LA.phone);
-      const phoneOpts = (ph.attributes.options || []).map((o) => '<option value="' + esc(o) + '"' + (o === ph.state ? ' selected' : '') + '>'
-        + esc(o === 'Off' ? '— Off —' : prettyNotify(h, o) + (o === ph.state && ph.attributes.problem ? ' (not found)' : '')) + '</option>').join('');
-      const txt = (id, w) => '<div class="field ' + (w ? 'wide' : '') + '"><input data-la-text="' + id + '" value="' + esc(S(id).state) + '"></div>';
-      const num = (id, unit) => '<div class="field"><input inputmode="decimal" data-la-num="' + id + '" value="' + esc(S(id).state) + '"><span class="sfx">' + unit + '</span></div>';
-      const f = (S(LA.follow).state || '').trim(), fe = f ? h.states[f] : null;
+      const gone = [LA.sw, LA.params].filter((id) => !h.states[id]);
+      if (gone.length) return note('Battman setting not found: ' + esc(gone.join(', ')) + ". Is Battman set up (and its packages loaded)?", true);
+      const A = h.states[LA.params].attributes;
+      const phone = A.liveActivityPhone || 'Off';
+      const phones = Object.keys((h.services && h.services.notify) || {}).filter((s) => NOT_PHONES.indexOf(s) < 0).sort();
+      const lost = phone !== 'Off' && phones.indexOf(phone) < 0;
+      const phoneOpts = ['Off'].concat(phones, lost ? [phone] : []).map((o) => '<option value="' + esc(o) + '"' + (o === phone ? ' selected' : '') + '>'
+        + esc(o === 'Off' ? '— Off —' : prettyNotify(h, o) + (o === phone && lost ? ' (not found)' : '')) + '</option>').join('');
+      const txt = (key, w) => '<div class="field ' + (w ? 'wide' : '') + '"><input data-la-text="' + key + '" value="' + esc(A[key] == null ? '' : A[key]) + '"></div>';
+      const num = (key, unit) => '<div class="field"><input inputmode="decimal" data-la-num="' + key + '" value="' + esc(A[key] == null ? '' : A[key]) + '"><span class="sfx">' + unit + '</span></div>';
+      const f = String(A.liveActivityFollow || '').trim(), fe = f ? h.states[f] : null;
       const followNow = !f ? 'Blank: not following anything (use the switch)' : fe ? 'Now: ' + esc((fe.attributes && fe.attributes.friendly_name) || f) + ' is ' + esc(fe.state) : '';
       const notMade = LA_MADE.filter((id) => !h.states[id]);
+      const charge = h.states[LA.inCharge] && h.states[LA.inCharge].state === 'on'
+        ? '' : note("These change once Battman is in charge of the battery (after Migrate): like all Battman's settings, they're ignored until then.", true);
       return note("Your battery on your phone's lock screen. Pick a phone, then switch it on, or let it follow something like your car's ignition.")
+        + charge
         + '<div class="rows">'
-        + row('Live Activity', 'On shows it, off clears it', swHtml('data-la-switch', S(LA.sw).state === 'on'))
-        + row('Phone', 'Which notify service gets it (Off sends nothing)', '<select class="wide" data-la-select="' + LA.phone + '">' + phoneOpts + '</select>', prob(LA.phone))
+        + row('Live Activity', 'On shows it, off clears it', swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
+        + row('Phone', 'Which notify service gets it (Off sends nothing)', '<select class="wide" data-la-select="liveActivityPhone">' + phoneOpts + '</select>',
+              lost ? '⚠ notify.' + esc(phone) + ' not found' : '')
         + '<div class="subdiv">Follow an entity</div>'
-        + row('Entity', followNow, txt(LA.follow, true), prob(LA.follow))
-        + row('On when it becomes', '', txt(LA.on))
-        + row('Off when it becomes', '…and has stayed that way for the time below', txt(LA.off))
-        + row('Off after', "So a quick stop doesn't restart it", num(LA.delay, 'min'))
+        + row('Entity', followNow, txt('liveActivityFollow', true), f && !fe ? '⚠ ' + esc(f) + ' not found' : '')
+        + row('On when it becomes', '', txt('liveActivityFollowOn'))
+        + row('Off when it becomes', '…and has stayed that way for the time below', txt('liveActivityFollowOff'))
+        + row('Off after', "So a quick stop doesn't restart it", num('liveActivityFollowDelay', 'min'))
         + '<div class="subdiv">Alerts</div>'
-        + row('Feed-in spike alert', 'Push with a sound when feed-in rises above this', num(LA.spike, '$/kWh'))
+        + row('Feed-in spike alert', 'Push with a sound when feed-in rises above this', num('liveActivitySpikeAlert', '$/kWh'))
         + '<div class="subdiv">Automations</div>'
         + row("Battman's automations", notMade.length ? '<span style="color:var(--battman-red)">Not found: ' + esc(notMade.join(', ')) + '</span>' : 'The script and 3 automations Battman made are all there',
               '<button class="rst" data-la-create>Create missing</button>')
@@ -477,7 +488,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       protection: { title: 'Sell price protection', deps: ['buy_total'], render: protectionSection },
       provider:   { title: 'Power provider', deps: ['power_provider_buy', 'power_provider_sell'], render: providerSection },
       alert:      { title: 'Amber buy alert', deps: ['parameters'], render: alertSection, services: true },
-      liveActivity: { title: 'Live Activity', deps: [], extra: () => Object.values(LA).concat(LA_MADE), render: liveActivitySection, services: true },
+      liveActivity: { title: 'Live Activity', deps: [], extra: () => [LA.sw, LA.params, LA.inCharge].concat(LA_MADE), render: liveActivitySection, services: true },
       dashboard:  { title: 'Dashboard options', deps: ['parameters'], render: dashboardSection, themes: true },
       defaults:   { title: 'Reset defaults', deps: ['parameters'], render: defaultsSection },
     };
@@ -619,17 +630,17 @@ class BattmanSettingsCard extends BattmanCardBase {
                      () => near(((attrs('power_provider_' + side).tariff || [])[h] || {})[item], n.v), item);
       }
       if (t.dataset.laText) {
-        const id = t.dataset.laText, v = t.value.trim();
-        return apply(t, () => getHass().callService('text', 'set_value', { entity_id: id, value: v }), () => st(id).state === v, 'the setting');
+        const key = t.dataset.laText, v = t.value.trim();
+        return setLA(t, key, v, () => String(laAttr(key) == null ? '' : laAttr(key)) === v, 'the setting');
       }
       if (t.dataset.laNum) {
-        const id = t.dataset.laNum, s = st(id), a = s.attributes;
-        const n = parseNum(t.value, [0, a.min, a.max]); if (n.err) return say(t, n.err, 'bad');
-        return apply(t, () => getHass().callService('number', 'set_value', { entity_id: id, value: n.v }), () => near(st(id).state, n.v), 'the setting');
+        const key = t.dataset.laNum, n = parseNum(t.value, LA_RANGE[key]); if (n.err) return say(t, n.err, 'bad');
+        t.value = n.v;
+        return setLA(t, key, n.v, () => near(laAttr(key), n.v), 'the setting');
       }
       if (t.dataset.laSelect) {
-        const id = t.dataset.laSelect, v = t.value;
-        return apply(t, () => getHass().callService('select', 'select_option', { entity_id: id, option: v }), () => st(id).state === v, 'the phone');
+        const key = t.dataset.laSelect, v = t.value;
+        return setLA(t, key, v, () => laAttr(key) === v, 'the phone');
       }
       if ('laSwitch' in t.dataset) {
         const on = t.checked;
