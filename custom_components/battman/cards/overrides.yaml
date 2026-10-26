@@ -24,7 +24,7 @@ cards:
       params_entity: '[[map:parameters]]'
       soc_entity: 'sensor.sigen_plant_battery_state_of_charge'
       timer_entity: '[[map:override_timer]]'
-      forecast_entity: '[[map:buy_forecast]]'
+      forecast_entity: 'sensor.amber_billing_interval_forecasts_general_price'
       charge_kw_entity: 'sensor.sigen_plant_available_max_active_power'
       capacity_entity: 'sensor.sigen_plant_rated_energy_capacity'
       price_field: advanced_price_predicted
@@ -395,7 +395,7 @@ cards:
       params_entity: '[[map:parameters]]'
       soc_entity: 'sensor.sigen_plant_battery_state_of_charge'
       timer_entity: '[[map:override_timer]]'
-      forecast_entity: '[[map:buy_forecast]]'
+      forecast_entity: 'sensor.amber_billing_interval_forecasts_general_price'
       charge_kw_entity: 'sensor.sigen_plant_available_max_active_power'
       capacity_entity: 'sensor.sigen_plant_rated_energy_capacity'
       price_field: advanced_price_predicted
@@ -970,7 +970,7 @@ cards:
   - '[[map:parameters]]'
   - '[[map:run]]'
   - '[[map:mode]]'
-  - '[[map:buy_price]]'
+  - 'sensor.amber_5min_current_general_price'
   show_icon: false
   show_name: false
   show_state: false
@@ -1002,7 +1002,7 @@ cards:
         // Plughole banner (sandpit). Pulses only while it is actually beating House Party (draining at a negative buy price).
         var a = entity.attributes;
         var mode = (states['[[map:mode]]'] || {}).state;
-        var buy = parseFloat((states['[[map:buy_price]]'] || {}).state) * 100;
+        var buy = parseFloat((states['sensor.amber_5min_current_general_price'] || {}).state) * 100;
         var ovr = parseFloat(a.buyOverridePrice) || 0, floor = parseFloat(a.drainBatterySOC) || 0;
         var live = mode === 'Drain' && isFinite(buy) && buy < 0;
         var c1 = function (v) { var r = Math.round(v * 10) / 10; return (r % 1 ? r.toFixed(1) : r.toFixed(0)) + 'c'; };
@@ -1291,7 +1291,7 @@ cards:
             params_entity: '[[map:parameters]]'
             soc_entity: 'sensor.sigen_plant_battery_state_of_charge'
             timer_entity: '[[map:override_timer]]'
-            forecast_entity: '[[map:buy_forecast]]'
+            forecast_entity: 'sensor.amber_billing_interval_forecasts_general_price'
             charge_kw_entity: 'sensor.sigen_plant_available_max_active_power'
             capacity_entity: 'sensor.sigen_plant_rated_energy_capacity'
             price_field: advanced_price_predicted

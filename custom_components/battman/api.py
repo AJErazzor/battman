@@ -23,7 +23,6 @@ from .const import (
     IMAGE_URL,
     IMAGES_URL,
     MIGRATED,
-    OTHER_MAP_DEFAULTS,
     SMIGGLES_NAMES,
     SMIGGLES_PROBE,
     THEMES_URL,
@@ -45,15 +44,9 @@ def smiggles_in_charge(hass: HomeAssistant) -> bool:
 
 
 def entity_map(hass: HomeAssistant) -> dict[str, str]:
-    """The entity map: Battman's defaults, with your Configure-screen choices on top.
-
-    Engine entries (ENGINE_MAP) point at whichever engine is in charge: Smiggles'
-    entities until you migrate (if Smiggles is installed), Battman's after.
-    """
+    """The entity map: Battman's engine entries, pointing at whichever engine is in charge:
+    Smiggles' entities until you migrate (if Smiggles is installed), Battman's after."""
     emap = dict(ENTITY_MAP_DEFAULTS)
-    entries = hass.config_entries.async_entries(DOMAIN)
-    if entries:
-        emap.update({k: v for k, v in entries[0].options.items() if k in OTHER_MAP_DEFAULTS and v})
     if smiggles_in_charge(hass):
         emap.update(SMIGGLES_NAMES)
     return emap

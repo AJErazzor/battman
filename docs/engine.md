@@ -32,8 +32,8 @@ off, and Battman's engine does nothing at all: no runs, no Sigen actions, no sen
 
 The entity map follows the engine in charge. Before you migrate, the engine entries (settings,
 odometers, mode, curves, rules, events) point at Smiggles' entities, so the cards work on Smiggles.
-After you migrate they point at Battman's. Amber's entries are on the Configure screen as before;
-Sigen and Solcast are used by name, and OpenNEM's region sensor is found automatically.
+After you migrate they point at Battman's. Sigen, Amber and Solcast are used by name, and OpenNEM's
+region sensor is found automatically.
 
 ## Names
 
@@ -56,8 +56,8 @@ Sigen and Solcast are used by name, and OpenNEM's region sensor is found automat
 | script.solarsystemcontrol, script.ssc_apply_scene | script.battman_engine, script.battman_apply_scene |
 | events solarsystemcontrolparametersupdate, …runupdate, …buyrulesattribute, …sellrulesattribute, …totalattribute, …powerproviderupdate, solar_system_control_*_curves_update, SolarSystemControlDebugLog | battman_parameters_update, battman_run_update, battman_buy_rules_update, battman_sell_rules_update, battman_totals_update, battman_power_provider_update, battman_*_curves_update, battman_engine_log |
 
-Amber's entities come from the entity map, so another install can point them elsewhere.
-Sigen's and Solcast's are named directly, in the engine and on the cards (e.g. `select.sigen_plant_remote_ems_control_mode`,
+Sigen's, Amber's (amber2mqtt) and Solcast's entities are named directly, in the engine and on the
+cards (e.g. `select.sigen_plant_remote_ems_control_mode`, `sensor.amber_5min_current_general_price`,
 `sensor.solcast_pv_forecast_forecast_remaining_today`); at startup Battman checks each one it
 uses is there, and a Repair names any that isn't. Sigen needs its integration at v1.1.0 or newer.
 If Solcast's remaining-today figure has no value, the engine skips its "enough sun left?" check (it

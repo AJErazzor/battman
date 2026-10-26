@@ -47,9 +47,9 @@ def _solcast_lines(issue) -> str:
 
 
 def test_solcast_named_directly() -> None:
-    from custom_components.battman.const import OTHER_MAP_DEFAULTS
+    from custom_components.battman.const import ENTITY_MAP_DEFAULTS
 
-    assert not [k for k in OTHER_MAP_DEFAULTS if "solcast" in k]
+    assert not [k for k in ENTITY_MAP_DEFAULTS if "solcast" in k]
     for f in ("blueprints/script/battman_engine.yaml", "cards/state.yaml", "cards/gauges.yaml", "www/battman-curvy.js",
               "translations/en.json"):
         assert not re.search(r"\[\[map:solcast|M\.solcast|['\"]solcast_(today|tomorrow|remaining|next)", (ROOT / f).read_text()), f

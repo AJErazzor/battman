@@ -1,4 +1,4 @@
-"""Config flow for Battman, plus the Configure screen for the entity map."""
+"""Config flow for Battman, plus its Configure screen (the OpenNEM region, when there are several)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResu
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from .const import DOMAIN, OTHER_MAP_DEFAULTS
+from .const import DOMAIN
 from .nem import OPTION as OPENNEM_OPTION, find_regions
 
 
@@ -36,16 +36,13 @@ class BattmanConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class BattmanOptionsFlow(OptionsFlow):
-    """Configure: which entity each Battman name points at."""
+    """Configure: the OpenNEM region when OpenNEM has several. Saving keeps only what's on the
+    screen, so choices from older versions (the entity map) are dropped."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        current = {**OTHER_MAP_DEFAULTS, **{k: v for k, v in self.config_entry.options.items() if v}}
+        current = {k: v for k, v in self.config_entry.options.items() if v}
         if user_input is not None:
-            # store only what differs from Battman's defaults; a default changing
-            # in a future release then still reaches you
-            return self.async_create_entry(
-                data={k: v for k, v in user_input.items() if v and v != OTHER_MAP_DEFAULTS.get(k)}
-            )
+            return self.async_create_entry(data={k: v for k, v in user_input.items() if v})
         return self.async_show_form(
             step_id="init", data_schema=self._schema(current, find_regions(self.hass)),
         )
@@ -53,10 +50,6 @@ class BattmanOptionsFlow(OptionsFlow):
     @staticmethod
     def _schema(values: dict[str, Any], regions: list[str]) -> vol.Schema:
         fields: dict[Any, Any] = {}
-        for key in OTHER_MAP_DEFAULTS:
-            fields[vol.Required(key, default=values.get(key, OTHER_MAP_DEFAULTS[key]))] = (
-                selector.EntitySelector(selector.EntitySelectorConfig())
-            )
         # OpenNEM: Battman finds its region sensor itself; only with several regions is there a choice
         if len(regions) > 1:
             chosen = values.get(OPENNEM_OPTION)

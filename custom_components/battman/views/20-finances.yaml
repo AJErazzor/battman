@@ -33,14 +33,14 @@ badges:
   show_name: true
   show_state: true
   show_icon: true
-  entity: '{{buy_price}}'
+  entity: sensor.amber_5min_current_general_price
   name: Buy
   show_entity_picture: false
 - type: entity
   show_name: true
   show_state: true
   show_icon: true
-  entity: '{{feed_in_price}}'
+  entity: sensor.amber_5min_current_feed_in_price
   name: FIT
 theme: Battman Coffee
 path: finances

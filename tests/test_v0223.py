@@ -17,7 +17,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.battman import required_entities as R
-from custom_components.battman.const import OTHER_MAP_DEFAULTS
+from custom_components.battman.const import ENTITY_MAP_DEFAULTS
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 DOMAIN = "battman"
@@ -60,7 +60,7 @@ def test_every_named_entity_is_checked() -> None:
             assert entity.startswith("sensor.battman_"), k
             continue
         assert entity in R.REQUIRED or k in optional, k
-        assert k not in OTHER_MAP_DEFAULTS, k             # v0.23.0: off the map
+        assert k not in ENTITY_MAP_DEFAULTS, k            # v0.23.0: off the map
 
 
 async def test_missing_sigen_entities_named(hass: HomeAssistant) -> None:
@@ -103,14 +103,14 @@ async def test_sigen_version_check(hass: HomeAssistant) -> None:
 
 
 async def test_configure_choices_no_longer_used(hass: HomeAssistant) -> None:
-    # a Solcast choice from before v0.22.2 and a Sigen one; a choice for something still mapped is fine
+    # a Solcast choice from before v0.22.2 and a Sigen one; one that's the entity Battman uses is fine
     entry = await _setup(hass, options={"solcast_today": "sensor.my_solar", "battery_soc": "sensor.my_soc",
-                                        "buy_price": "sensor.my_price"})
+                                        "buy_price": "sensor.amber_5min_current_general_price"})
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "map_choice_ignored")
     assert issue.translation_placeholders["choices"] == (
         "- solcast_today: you picked `sensor.my_solar`; Battman now uses `sensor.solcast_pv_forecast_forecast_today`\n"
         "- battery_soc: you picked `sensor.my_soc`; Battman now uses `sensor.sigen_plant_battery_state_of_charge`")
-    hass.config_entries.async_update_entry(entry, options={"buy_price": "sensor.my_price"})
+    hass.config_entries.async_update_entry(entry, options={"buy_price": "sensor.amber_5min_current_general_price"})
     await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, "map_choice_ignored") is None
 

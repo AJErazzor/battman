@@ -92,23 +92,17 @@ async def test_configure_screen(hass: HomeAssistant, hass_client) -> None:
     entry = await _setup(hass)
     flow = await hass.config_entries.options.async_init(entry.entry_id)
     assert flow["type"] is FlowResultType.FORM
-    defaults = {k.schema: k.default() for k in flow["data_schema"].schema}
-    assert defaults["buy_price"] == "sensor.amber_5min_current_general_price"
-    assert "buy_total" not in defaults          # engine entries follow the engine in charge, not Configure
-
-    assert not [k for k in defaults if k != "opennem" and k not in (  # v0.23.0: Amber and Battman's own only
-        "buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast")], defaults
-    done = await hass.config_entries.options.async_configure(
-        flow["flow_id"], {**defaults, "buy_price": "sensor.my_buy"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.options == {"buy_price": "sensor.my_buy"}  # only changes
+    # v0.25.0: nothing on it but the OpenNEM region (only with several regions): Sigen, Amber and
+    # Solcast by name, the engine entries follow the engine in charge
+    assert list(flow["data_schema"].schema) == []
+    done = await hass.config_entries.options.async_configure(flow["flow_id"], {})
+    assert done["type"] is FlowResultType.CREATE_ENTRY and entry.options == {}
     await hass.async_block_till_done()
 
     client = await hass_client()
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
-    assert emap["buy_price"] == "sensor.my_buy" and emap["sell_total"] == "sensor.solarsystemcontrolselltotal"
-    dash = json.dumps(await built(hass))
-    assert "sensor.my_buy" in dash and "sensor.amber_5min_current_general_price" not in dash
+    assert "buy_price" not in emap and emap["sell_total"] == "sensor.solarsystemcontrolselltotal"
+    assert "sensor.amber_5min_current_general_price" in json.dumps(await built(hass))
 
 
 async def test_restart_prompt(hass: HomeAssistant) -> None:

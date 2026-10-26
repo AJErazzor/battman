@@ -1,4 +1,5 @@
-"""Check the other integrations Battman uses by name are there, and new enough.
+"""Check the other integrations' entities Battman uses by name (Sigen, Amber, Solcast) are there,
+and new enough.
 
 Battman's engine, packages and cards name these entities directly (no entity map), so if
 one is missing (integration not installed, entity disabled or renamed) a Repair names it.
@@ -53,6 +54,10 @@ NAMED: dict[str, str] = {
     "home_today": "sensor.sigen_plant_daily_load_consumption",
     "grid_import_today": "sensor.sigen_plant_daily_grid_import_energy",
     "grid_export_today": "sensor.sigen_plant_daily_grid_export_energy",
+    "buy_price": "sensor.amber_5min_current_general_price",
+    "feed_in_price": "sensor.amber_5min_current_feed_in_price",
+    "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
+    "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
     # Battman's own sensors (its packages)
     "grid_power": "sensor.battman_grid_power",
     "load_30m_avg": "sensor.battman_load_30m_avg",
@@ -63,6 +68,7 @@ NAMED: dict[str, str] = {
 DROPPED: set[str] = {"inverter_soc", "battery_temperature"}
 
 SIGEN = "Sigenergy (Sigenergy-Local-Modbus)"
+AMBER = "Amber (amber2mqtt, through MQTT)"
 
 # integration domain -> (its name, the oldest version with every entity name Battman uses)
 MIN_VERSIONS: dict[str, tuple[str, str]] = {
@@ -74,6 +80,11 @@ REQUIRED: dict[str, tuple[str, str]] = {
     "sensor.solcast_pv_forecast_forecast_today": ("solar forecast today", "Solcast PV Forecast"),
     "sensor.solcast_pv_forecast_forecast_tomorrow": ("solar forecast tomorrow", "Solcast PV Forecast"),
     "sensor.solcast_pv_forecast_forecast_remaining_today": ("solar still to come today", "Solcast PV Forecast"),
+    # Amber: the prices and forecasts the engine decides on
+    "sensor.amber_5min_current_general_price": ("the buy price now", AMBER),
+    "sensor.amber_5min_current_feed_in_price": ("the feed-in price now", AMBER),
+    "sensor.amber_billing_interval_forecasts_general_price": ("the buy price forecast", AMBER),
+    "sensor.amber_billing_interval_forecasts_feed_in_price": ("the feed-in price forecast", AMBER),
     # Sigen: the engine and its automations (they control the battery)
     "select.sigen_plant_remote_ems_control_mode": ("the inverter's mode, set by the engine", SIGEN),
     "number.sigen_plant_pv_max_power_limit": ("the PV limit, set by the engine", SIGEN),

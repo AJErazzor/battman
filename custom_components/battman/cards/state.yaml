@@ -17,8 +17,8 @@ show_name: false
 show_state: false
 triggers_update:
 - '[[map:run]]'
-- '[[map:feed_in_price]]'
-- '[[map:buy_price]]'
+- 'sensor.amber_5min_current_feed_in_price'
+- 'sensor.amber_5min_current_general_price'
 - 'sensor.sigen_plant_battery_state_of_charge'
 - '[[map:mode]]'
 - '[[map:parameters]]'
@@ -66,8 +66,8 @@ custom_fields:
 
     const now = new Date(), nm = now.getHours() * 60 + now.getMinutes();
     const L = SC && SC.live ? SC.live : {
-      fit:  parseFloat(states['[[map:feed_in_price]]']?.state) * 100,
-      buy:  parseFloat(states['[[map:buy_price]]']?.state) * 100,
+      fit:  parseFloat(states['sensor.amber_5min_current_feed_in_price']?.state) * 100,
+      buy:  parseFloat(states['sensor.amber_5min_current_general_price']?.state) * 100,
       soc:  parseFloat(states['sensor.sigen_plant_battery_state_of_charge']?.state),
       mode: states['[[map:mode]]']?.state || '',
       peak: nm >= 17 * 60 && nm < 21 * 60 };
@@ -247,7 +247,7 @@ tap_action:
       content: |-
         [[[
         // Battman: a sensor this card needs is missing -> say which, never draw made-up values.
-        const _gone = ['[[map:run]]', '[[map:parameters]]', '[[map:soc_curves]]', '[[map:price_curves]]', 'sensor.sigen_plant_rated_energy_capacity', 'sensor.sigen_plant_battery_power', 'sensor.sigen_plant_battery_state_of_charge', '[[map:buy_forecast]]', '[[map:feed_in_forecast]]', '[[map:buy_rules]]', '[[map:override_timer]]'].filter(e => !states[e]);
+        const _gone = ['[[map:run]]', '[[map:parameters]]', '[[map:soc_curves]]', '[[map:price_curves]]', 'sensor.sigen_plant_rated_energy_capacity', 'sensor.sigen_plant_battery_power', 'sensor.sigen_plant_battery_state_of_charge', 'sensor.amber_billing_interval_forecasts_general_price', 'sensor.amber_billing_interval_forecasts_feed_in_price', '[[map:buy_rules]]', '[[map:override_timer]]'].filter(e => !states[e]);
         if (_gone.length) return '<div style="padding:12px 14px;font-size:12px;font-weight:700;line-height:1.5;color:var(--battman-darkred);background:var(--battman-surface-card);border-radius:8px">Next hours: missing ' + _gone.join(', ') + '</div>';
         // Battman: the projection needs real numbers (the original assumed 40.3 kWh / 0% / 0 kW).
         const _na = [['sensor.sigen_plant_rated_energy_capacity', 'battery capacity'], ['sensor.sigen_plant_battery_state_of_charge', 'battery SOC'], ['sensor.sigen_plant_battery_power', 'battery power']].filter(x => !isFinite(parseFloat(states[x[0]].state)));
@@ -328,9 +328,9 @@ tap_action:
         }
 
         // ── forecasts ──
-        const gen = states['[[map:buy_forecast]]']?.attributes?.Forecasts || [];
+        const gen = states['sensor.amber_billing_interval_forecasts_general_price']?.attributes?.Forecasts || [];
         const finBy = {};
-        (states['[[map:feed_in_forecast]]']?.attributes?.Forecasts || [])
+        (states['sensor.amber_billing_interval_forecasts_feed_in_price']?.attributes?.Forecasts || [])
           .forEach(f => { finBy[f.start_time] = f.per_kwh; });
         const pvF = [].concat(
           states['sensor.solcast_pv_forecast_forecast_today']?.attributes?.detailedForecast || [],
@@ -342,7 +342,7 @@ tap_action:
         // A rule looks hours_ahead hours into Amber's forecast in grouping_minutes blocks: buy takes the
         // cheapest block, sell the best (feed-in per_kwh is negative: the engine turns it round). Each
         // forecast slot counts as duration/5 five-minute steps, as in the engine (no duration: none).
-        const finList = states['[[map:feed_in_forecast]]']?.attributes?.Forecasts || [];
+        const finList = states['sensor.amber_billing_interval_forecasts_feed_in_price']?.attributes?.Forecasts || [];
         const RULES = {buy: states['[[map:buy_rules]]'], sell: states['[[map:sell_rules]]']};
         function ruleOf(kind, ms){   // that hour's rule, if the side's rules are on and it looks ahead
           const s = RULES[kind];

@@ -38,13 +38,13 @@ blueprint:
               domain: sensor
         feed_in_price:
           name: Feed-in price ($/kWh)
-          default: [[map:feed_in_price]]
+          default: sensor.amber_5min_current_feed_in_price
           selector:
             entity:
               domain: sensor
         buy_price:
           name: Buy price ($/kWh)
-          default: [[map:buy_price]]
+          default: sensor.amber_5min_current_general_price
           selector:
             entity:
               domain: sensor
