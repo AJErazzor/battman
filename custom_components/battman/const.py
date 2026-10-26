@@ -123,11 +123,6 @@ OTHER_MAP_DEFAULTS: dict[str, str] = {
     "rated_energy_capacity": "sensor.sigen_plant_rated_energy_capacity",
     "available_max_power": "sensor.sigen_plant_available_max_active_power",
     "inverter_soc": "sensor.sigen_inverter_battery_state_of_charge",
-    # Solcast
-    "solcast_today": "sensor.solcast_pv_forecast_forecast_today",
-    "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
-    "solcast_remaining_today": "sensor.solcast_pv_forecast_forecast_remaining_today",
-    "solcast_next_hour": "sensor.solcast_pv_forecast_forecast_next_hour",
 }
 
 # Battman's own curve sensors, whichever engine is in charge: Curvy and Pricy read the factory

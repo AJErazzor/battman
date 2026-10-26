@@ -56,10 +56,11 @@ OpenNEM) are on the Configure screen as before.
 | script.solarsystemcontrol, script.ssc_apply_scene | script.battman_engine, script.battman_apply_scene |
 | events solarsystemcontrolparametersupdate, …runupdate, …buyrulesattribute, …sellrulesattribute, …totalattribute, …powerproviderupdate, solar_system_control_*_curves_update, SolarSystemControlDebugLog | battman_parameters_update, battman_run_update, battman_buy_rules_update, battman_sell_rules_update, battman_totals_update, battman_power_provider_update, battman_*_curves_update, battman_engine_log |
 
-Sigen, Amber and Solcast entities come from the entity map, so another install can point them
-elsewhere. New map entries for the engine: `ems_control_mode`, `rated_charging_power`,
-`rated_discharging_power`, `inverter_rated_power`, `grid_connection_status`,
-`total_imported_energy`, `total_exported_energy`, `solcast_next_hour`.
+Sigen and Amber entities come from the entity map, so another install can point them
+elsewhere. Solcast's are named directly (`sensor.solcast_pv_forecast_forecast_remaining_today`
+for the engine); a Repair says if one is missing. New map entries for the engine:
+`ems_control_mode`, `rated_charging_power`, `rated_discharging_power`, `inverter_rated_power`,
+`grid_connection_status`, `total_imported_energy`, `total_exported_energy`.
 
 ## What's different from Smiggles
 

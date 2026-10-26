@@ -32,7 +32,7 @@ cards:
         secondary: >-
           {% set soc = states('[[map:inverter_soc]]') | float(none) %}{% set cap =
           states('[[map:rated_energy_capacity]]') | float(none) %}{% set rem =
-          state_attr('[[map:solcast_remaining_today]]', 'estimate10') | float(none)
+          state_attr('sensor.solcast_pv_forecast_forecast_remaining_today', 'estimate10') | float(none)
           %}{{ '—' if soc is none or cap is none else ((soc / 100) * cap) | round(1) }}
           kWh (+{{ '—' if rem is none else rem | round | round(1) }}kWh)
         gauge_type: half

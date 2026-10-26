@@ -132,6 +132,10 @@
     }
   },
   "issues": {
+    "missing_entities": {
+      "title": "Battman can't find entities it uses",
+      "description": "Battman uses these entities by name, and they aren't available:\n\n{missing}\n\nInstall or enable the integration named, or enable the entity under Settings → Entities. If it exists under a different name, rename it to the name above. Until then, what uses it shows a note or a blank (never a made-up value)."
+    },
     "opennem_choose": {
       "title": "Pick your OpenNEM region",
       "description": "Battman found several OpenNEM region sensors ({regions}) and doesn't know which one its NEM sensors should read. Pick one under Settings → Devices & services → Battman → Configure. Until then the NEM sensors are unavailable."
@@ -215,10 +219,6 @@
           "rated_energy_capacity": "Battery rated capacity (kWh)",
           "available_max_power": "Available max active power",
           "inverter_soc": "Inverter battery state of charge (%)",
-          "solcast_today": "Solcast forecast today",
-          "solcast_tomorrow": "Solcast forecast tomorrow",
-          "solcast_remaining_today": "Solcast forecast remaining today",
-          "solcast_next_hour": "Solcast forecast next hour",
           "opennem": "OpenNEM region (several found: pick the one for the NEM sensors)"
         }
       }
