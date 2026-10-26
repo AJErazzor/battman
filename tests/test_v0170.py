@@ -73,17 +73,21 @@ async def test_load_30m_avg_is_the_mean_of_home_power(hass: HomeAssistant) -> No
     assert reg.async_get_entity_id("sensor", "statistics", "battman_load_30m_avg") == "sensor.battman_load_30m_avg"
 
 
-async def test_follows_the_map(hass: HomeAssistant) -> None:
+async def test_uses_sigen_by_name(hass: HomeAssistant) -> None:
+    """v0.22.3: the load average reads Sigen's house load by name. A different sensor picked on
+    Configure no longer applies, and a Repair says so (it used to follow the map)."""
     entry = await _setup(hass)
-    hass.states.async_set("sensor.my_power", "2.5", {"unit_of_measurement": "kW"})
+    text = (Path(hass.config.config_dir) / "packages/battman/battman_sensors.yaml").read_text()
+    assert "sensor.sigen_plant_consumed_power" in text and "[[map:" not in text
     hass.config_entries.async_update_entry(entry, options={"home_power": "sensor.my_power"})
     await hass.async_block_till_done()
-    for v in ("3.5", "4.5"):
-        hass.states.async_set("sensor.my_power", v, {"unit_of_measurement": "kW"})
-        await hass.async_block_till_done()
-    assert float(hass.states.get("sensor.battman_load_30m_avg").state) == 4.0
-    text = (Path(hass.config.config_dir) / "packages/battman/battman_sensors.yaml").read_text()
-    assert "sensor.my_power" in text and "[[map:" not in text
+    assert "sensor.my_power" not in (Path(hass.config.config_dir) / "packages/battman/battman_sensors.yaml").read_text()
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "map_choice_ignored")
+    assert issue.translation_placeholders["choices"] == (
+        "- home_power: you picked `sensor.my_power`; Battman now uses `sensor.sigen_plant_consumed_power`")
+    hass.config_entries.async_update_entry(entry, options={})
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "map_choice_ignored") is None
 
 
 async def test_package_file_and_unique_ids(hass: HomeAssistant) -> None:

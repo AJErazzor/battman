@@ -30,7 +30,7 @@ template:
             {% set hour = now().hour %}
             {% set tariff = this.attributes.get('tariff') %}
             {% if tariff[hour].limit > 0 %}
-                {% set energy = states('[[map:total_imported_energy]]') | float(0) %}
+                {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
                 {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
                 {% set thisPeriod = (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) | float(0) %}
                 {% if tariff[hour].limit >= thisPeriod   %}
@@ -145,7 +145,7 @@ template:
             {% if trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('lastEnergy', 0) | float(0) }}
             {% else %}
-              {{ states('[[map:total_imported_energy]]') | float(0) }}
+              {{ states('sensor.sigen_plant_total_imported_energy') | float(0) }}
             {% endif %}   
             
           ##################################################################
@@ -156,7 +156,7 @@ template:
               {{ this.attributes.get('thisEnergyPeriod', 0) | float(0) }}
             {% else %}
                 {% set hour = now().hour %}
-                {% set energy = states('[[map:total_imported_energy]]') | float(0) %}
+                {% set energy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
                 {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
                 {% set tariff = this.attributes.get('tariff') %}
                 {% if tariff and tariff[hour].limit > 0   %}
@@ -183,7 +183,7 @@ template:
             {% set hour = now().hour %}
             {% set tariff = this.attributes.get('tariff') %}
             {% if tariff[hour].limit > 0 %}
-                {% set energy = states('[[map:total_exported_energy]]') | float(0) %}
+                {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
                 {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
                 {% set thisPeriod = (this.attributes.get('thisEnergyPeriod') | float(0)) + ((energy - last) * 1000) | float(0) %}
                 {% if tariff[hour].limit >= thisPeriod   %}
@@ -295,7 +295,7 @@ template:
             {% if trigger is defined and trigger.platform == 'event' %}
               {{ this.attributes.get('lastEnergy', 0) | float(0) }}
             {% else %}
-              {{ states('[[map:total_exported_energy]]') | float(0) }}
+              {{ states('sensor.sigen_plant_total_exported_energy') | float(0) }}
             {% endif %}   
             
             
@@ -307,7 +307,7 @@ template:
               {{ this.attributes.get('thisEnergyPeriod', 0) | float(0) }}
             {% else %}
                 {% set hour = now().hour %}
-                {% set energy = states('[[map:total_exported_energy]]') | float(0) %}
+                {% set energy = states('sensor.sigen_plant_total_exported_energy') | float(0) %}
                 {% set last = this.attributes.get('lastEnergy', 0) | float(0) %}
                 {% set tariff = this.attributes.get('tariff') %}
                 {% if tariff and tariff[hour].limit > 0   %}

@@ -115,7 +115,6 @@ OTHER_MAP_DEFAULTS: dict[str, str] = {
     "max_charge_limit": "number.sigen_plant_ess_max_charging_limit",
     "rated_charging_power": "sensor.sigen_plant_ess_rated_charging_power",
     "rated_discharging_power": "sensor.sigen_plant_ess_rated_discharging_power",
-    "inverter_rated_power": "sensor.sigen_inverter_rated_active_power",
     "grid_connection_status": "sensor.sigen_plant_grid_connection_status",
     "total_imported_energy": "sensor.sigen_plant_total_imported_energy",
     "total_exported_energy": "sensor.sigen_plant_total_exported_energy",

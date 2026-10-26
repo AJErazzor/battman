@@ -39,6 +39,13 @@ def _solcast(hass, entity_id: str, disabled: bool = False) -> None:
         disabled_by=er.RegistryEntryDisabler.USER if disabled else None)
 
 
+def _solcast_lines(issue) -> str:
+    """The Solcast lines of the missing-entities Repair (other integrations' lines aside)."""
+    if issue is None:
+        return ""
+    return "\n".join(l for l in issue.translation_placeholders["missing"].split("\n") if "solcast" in l)
+
+
 def test_solcast_named_directly() -> None:
     from custom_components.battman.const import OTHER_MAP_DEFAULTS
 
@@ -65,7 +72,7 @@ async def test_repair_names_missing_solcast_sensors(hass: HomeAssistant) -> None
     await _setup(hass)
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities")
     assert issue is not None
-    text = issue.translation_placeholders["missing"]
+    text = _solcast_lines(issue)
     for e in (TODAY, TOMORROW, REMAIN):
         assert f"`{e}`" in text and "from Solcast PV Forecast): not found" in text, e
     # Solcast installed: two found, one disabled -> only that one is named
@@ -73,16 +80,16 @@ async def test_repair_names_missing_solcast_sensors(hass: HomeAssistant) -> None
     _solcast(hass, TOMORROW)
     _solcast(hass, REMAIN, disabled=True)
     await hass.async_block_till_done()
-    text = ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities").translation_placeholders["missing"]
+    text = _solcast_lines(ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities"))
     assert text == f"- `{REMAIN}` (solar still to come today, from Solcast PV Forecast): disabled"
-    # enabled -> Repair gone
+    # enabled -> no Solcast line left
     er.async_get(hass).async_update_entity(REMAIN, disabled_by=None)
     await hass.async_block_till_done()
-    assert ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities") is None
+    assert _solcast_lines(ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities")) == ""
 
 
 async def test_no_repair_when_solcast_is_there(hass: HomeAssistant) -> None:
     for e in (TODAY, TOMORROW, REMAIN):
         _solcast(hass, e)
     await _setup(hass)
-    assert ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities") is None
+    assert _solcast_lines(ir.async_get(hass).async_get_issue(DOMAIN, "missing_entities")) == ""

@@ -62,11 +62,10 @@ sequence:
       {{not tariffImportPeak and not tariffImportSolarSponge}}
   alias: Tariff Times
 - variables:
-    gridStatus: '{{ states(''[[map:grid_connection_status]]'') }}'
-    currentSOC: '{{ states(''[[map:battery_soc]]'') | float(0) }}'
+    gridStatus: '{{ states(''sensor.sigen_plant_grid_connection_status'') }}'
+    currentSOC: '{{ states(''sensor.sigen_plant_battery_state_of_charge'') | float(0) }}'
     currentMode: '{{ states(''input_select.battman_mode'') }}'
-    inverterRatedPower: '{{states(''[[map:inverter_rated_power]]'') | float(0) | round(0)}}'
-    batterykwh: '{{states(''[[map:rated_energy_capacity]]'') | float(0) | round(0)}}'
+    batterykwh: '{{states(''sensor.sigen_plant_rated_energy_capacity'') | float(0) | round(0)}}'
     currentSOCkwh: '{{ (currentSOC / 100) * batterykwh | round(2) }}'
   alias: Battery State
 - variables:

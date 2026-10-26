@@ -32,7 +32,7 @@ blueprint:
       input:
         battery_soc:
           name: Battery state of charge
-          default: [[map:battery_soc]]
+          default: sensor.sigen_plant_battery_state_of_charge
           selector:
             entity:
               domain: sensor

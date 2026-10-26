@@ -11,7 +11,7 @@ blueprint:
 triggers:
 - trigger: numeric_state
   entity_id:
-  - [[map:grid_export_limit]]
+  - number.sigen_plant_grid_export_limitation
   above: 0
 conditions:
 - condition: state
@@ -27,7 +27,7 @@ actions:
   data:
     value: 0
   target:
-    entity_id: [[map:grid_export_limit]]
+    entity_id: number.sigen_plant_grid_export_limitation
   alias: Set export limit to 0
   enabled: true
 - action: persistent_notification.create

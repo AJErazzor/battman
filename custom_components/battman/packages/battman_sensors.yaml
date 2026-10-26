@@ -13,7 +13,7 @@ sensor:
   - platform: statistics
     name: Battman load 30m avg
     unique_id: battman_load_30m_avg
-    entity_id: [[map:home_power]]
+    entity_id: sensor.sigen_plant_consumed_power
     state_characteristic: mean
     max_age:
       minutes: 30
@@ -30,10 +30,10 @@ template:
         state_class: measurement
         icon: mdi:transmission-tower
         availability: >-
-          {{ has_value('[[map:grid_import_power]]') and has_value('[[map:grid_export_power]]') }}
+          {{ has_value('sensor.sigen_plant_grid_import_power') and has_value('sensor.sigen_plant_grid_export_power') }}
         state: >-
-          {% set s1 = states('[[map:grid_import_power]]') | float %}
-          {% set s2 = states('[[map:grid_export_power]]') | float %}
+          {% set s1 = states('sensor.sigen_plant_grid_import_power') | float %}
+          {% set s2 = states('sensor.sigen_plant_grid_export_power') | float %}
           {% if s1 > 0.05 and s1 >= s2 %}{{ s1 | round(2) }}
           {% elif s2 > 0.05 and s2 > s1 %}{{ -1 * s2 | round(2) }}
           {% else %}0{% endif %}

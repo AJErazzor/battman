@@ -132,6 +132,14 @@
     }
   },
   "issues": {
+    "map_choice_ignored": {
+      "title": "Battman no longer uses some of your Configure choices",
+      "description": "Battman now uses these entities by name, so what you picked for them on its Configure screen no longer applies:\n\n{choices}\n\nIf the entity Battman now uses is right, clear your choice: open Battman → Configure and set it back to that entity (if it's no longer listed there, just save). If your entity has a different name, rename it to the one Battman uses (Settings → Entities). This notice goes once nothing is left to clear."
+    },
+    "integration_too_old": {
+      "title": "An integration Battman uses needs updating",
+      "description": "Battman uses entity names that only exist from these versions on:\n\n{old}\n\nUpdate it in HACS, then restart Home Assistant. (If its entities were created by an older version, they may still have older names: Battman's missing-entities Repair names any it can't find.)"
+    },
     "missing_entities": {
       "title": "Battman can't find entities it uses",
       "description": "Battman uses these entities by name, and they aren't available:\n\n{missing}\n\nInstall or enable the integration named, or enable the entity under Settings → Entities. If it exists under a different name, rename it to the name above. Until then, what uses it shows a note or a blank (never a made-up value)."
@@ -211,7 +219,6 @@
           "max_charge_limit": "Max charging limit (number)",
           "rated_charging_power": "Battery rated charging power",
           "rated_discharging_power": "Battery rated discharging power",
-          "inverter_rated_power": "Inverter rated active power",
           "grid_connection_status": "Grid connection status (on/off grid)",
           "total_imported_energy": "Total grid import energy (kWh, lifetime)",
           "total_exported_energy": "Total grid export energy (kWh, lifetime)",
