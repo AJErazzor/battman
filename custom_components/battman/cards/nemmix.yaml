@@ -6,7 +6,7 @@
 # config/battman/cards/nemmix.yaml and edit that copy.
 #
 # Reads Battman's own NEM sensors (sensor.battman_nem_*), which Battman makes from the
-# OpenNEM sensor in the entity map ([[map:opennem]]). If any of them has no value, a
+# OpenNEM integration's region sensor (it finds it itself). If any of them has no value, a
 # line above the pies names them (the pies themselves are drawn by power-pie-card).
 type: vertical-stack
 cards:
