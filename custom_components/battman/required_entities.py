@@ -53,6 +53,9 @@ NAMED: dict[str, str] = {
     "home_today": "sensor.sigen_plant_daily_load_consumption",
     "grid_import_today": "sensor.sigen_plant_daily_grid_import_energy",
     "grid_export_today": "sensor.sigen_plant_daily_grid_export_energy",
+    # Battman's own sensors (its packages)
+    "grid_power": "sensor.battman_grid_power",
+    "load_30m_avg": "sensor.battman_load_30m_avg",
 }
 
 # Entity map entries Battman no longer has (a Configure choice for one of these is just ignored):

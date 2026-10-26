@@ -131,8 +131,7 @@ async def test_map_and_views(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     client = await hass_client()
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
-    assert emap["grid_power"] == "sensor.battman_grid_power"
-    assert emap["load_30m_avg"] == "sensor.battman_load_30m_avg"
+    assert "grid_power" not in emap and "load_30m_avg" not in emap      # v0.23.1: named directly
     # Battman's grid power sensor feeds the Gauges card (the History view that also used it is gone)
     gauges = await (await client.get("/api/battman/cards/gauges")).json()
     text = json.dumps(gauges["config"])

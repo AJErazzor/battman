@@ -17,7 +17,7 @@
 // The charts use Chart.js, shipped with Battman (/battmanfiles/vendor/).
 // ---------------------------------------------------------------------------------------------
 
-import { BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { BATTMAN_SENSORS, BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 
 const LOG_EVENT = "battman_engine_log";
 
@@ -269,12 +269,12 @@ function battmanLogRun(card, root) {
   let changesOnly = false;
 
   const HISTORY_HOURS = 5;
-  // Entity IDs: Battman's own and Amber's from Battman's entity map (GET /api/battman/entities),
-  // Sigen's by name (SIGEN). Panels are built once the map has loaded.
-  const NEEDS = ['mode', 'buy_price', 'feed_in_price', 'load_30m_avg'];
+  // Entity IDs: Battman's engine entities and Amber's from Battman's entity map (GET
+  // /api/battman/entities), Sigen's and Battman's own sensors by name (SIGEN, BATTMAN_SENSORS). Panels are built once the map has loaded.
+  const NEEDS = ['mode', 'buy_price', 'feed_in_price'];
   // must exist in HA (pv_string is a pattern, third_party_pv is optional hardware)
-  const NEED_ENTITIES = NEEDS.concat(['pv_power', 'home_power', 'battery_power', 'grid_import_power', 'grid_export_power', 'battery_soc']);
-  let M = {};                 // the entity map plus SIGEN
+  const NEED_ENTITIES = NEEDS.concat(['load_30m_avg', 'pv_power', 'home_power', 'battery_power', 'grid_import_power', 'grid_export_power', 'battery_soc']);
+  let M = {};                 // the entity map plus SIGEN and BATTMAN_SENSORS
   let MODE_ENTITY = null;
   const GRID_ID = '__battman_grid';   // the grid panel's series, worked out in gridSeries()
   let PANELS = [];
@@ -1148,7 +1148,7 @@ function battmanLogRun(card, root) {
 
   (async function start() {
     try {
-      M = { ...await battmanMap(haObj(), NEEDS), ...SIGEN };
+      M = { ...await battmanMap(haObj(), NEEDS), ...SIGEN, ...BATTMAN_SENSORS };
     } catch (e) { showFatal(e.message); return; }
     const problem = missingThemeVars(card, THEME_VARS) || missingEntities(haObj(), M, NEED_ENTITIES);
     if (problem) { showFatal(problem); return; }

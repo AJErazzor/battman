@@ -40,8 +40,8 @@ async def _setup(hass, options=None):
 
 
 def test_map_has_only_amber_and_battmans_own() -> None:
-    assert set(OTHER_MAP_DEFAULTS) == {"buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast",
-                                       "grid_power", "load_30m_avg"}
+    # v0.23.1: Battman's grid power and load average sensors came off too
+    assert set(OTHER_MAP_DEFAULTS) == {"buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast"}
     assert not [v for v in ENTITY_MAP_DEFAULTS.values() if "sigen" in v]
     assert not GONE & set(ENTITY_MAP_DEFAULTS)
 
@@ -65,7 +65,7 @@ def test_one_sigen_list_for_the_js_cards() -> None:
         used = set(re.findall(r"\bM\.(\w+)", text)) & set(SIGEN)
         if used:
             assert re.search(r"import \{[^}]*\bSIGEN\b", text), f.name
-            assert "...SIGEN }" in text, f.name                 # the map plus SIGEN
+            assert "...SIGEN" in text, f.name                   # the map plus SIGEN
     house = (ROOT / "www/battman-house.js").read_text()
     defaults = set(re.findall(r'"(sensor\.sigen_[a-z0-9_]+)"', house))
     pv = re.compile(SIGEN["pv_string"].replace("{n}", r"\d+"))

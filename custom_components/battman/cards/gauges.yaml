@@ -59,7 +59,7 @@ cards:
   - type: horizontal-stack
     cards:
       - type: custom:modern-circular-gauge
-        entity: '[[map:grid_power]]'
+        entity: 'sensor.battman_grid_power'
         name: Grid
         min: -15
         max: 15
@@ -102,7 +102,7 @@ cards:
           columns: 6
           rows: auto
         secondary: >-
-          {% set avg = states('[[map:load_30m_avg]]') | float(none) %}Avg 30m {{ '—'
+          {% set avg = states('sensor.battman_load_30m_avg') | float(none) %}Avg 30m {{ '—'
           if avg is none else avg | round(2) }} kW{% if state_attr('[[map:run]]',
           'needPower') | bool(false) %} ⚡{% endif %}
         gauge_type: half

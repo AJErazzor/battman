@@ -175,7 +175,7 @@ def set_world(hass: HomeAssistant, world: dict) -> None:
             st = start_ + timedelta(minutes=30 * i)
             v = round(base * (0.5 + rnd.random() * 1.5), 4)
             out.append({"start_time": st.isoformat(), "end_time": (st + timedelta(minutes=30)).isoformat(),
-                        "per_kwh": round(sign * v, 4), "spot_per_kwh": v, "estimate": True})
+                        "duration": 30, "per_kwh": round(sign * v, 4), "spot_per_kwh": v, "estimate": True})
         return out
 
     hass.states.async_set("sensor.amber_billing_interval_forecasts_general_price", str(buy),

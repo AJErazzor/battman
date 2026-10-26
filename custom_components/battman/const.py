@@ -83,16 +83,14 @@ MIGRATED = "migrated_from_smiggles"
 # Config entry data: True while Battman's engine controls the battery (binary_sensor.battman_in_charge).
 IN_CHARGE = "engine_in_charge"
 
-# Other integrations' entities that stay on the map (Amber's prices), and Battman's own grid power
-# and load average sensors (packages/battman/battman_sensors.yaml). You can change them on the
-# Configure screen. Sigen's and Solcast's entities are named directly where they're used.
+# Amber's entities: the only other integration's that stay on the map. You can change them on the
+# Configure screen. Sigen's and Solcast's entities, and Battman's own grid power and load average
+# sensors, are named directly where they're used.
 OTHER_MAP_DEFAULTS: dict[str, str] = {
     "buy_price": "sensor.amber_5min_current_general_price",
     "feed_in_price": "sensor.amber_5min_current_feed_in_price",
     "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
     "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
-    "grid_power": "sensor.battman_grid_power",
-    "load_30m_avg": "sensor.battman_load_30m_avg",
 }
 
 # Battman's own curve sensors, whichever engine is in charge: Curvy and Pricy read the factory
