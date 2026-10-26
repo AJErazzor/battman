@@ -28,7 +28,7 @@ Other integrations Battman's cards read (through the entity map):
 | Amber | Current prices (all price views, price grid, State); price forecasts (Pricy overlay, price grid, forecast table, State projection) | Prices: error. Forecasts: Pricy shows a note and works without the forecast part of the overlay |
 | HA Companion app | Live Activity blueprints (the phone it shows on) | Only needed if you use the Live Activity |
 | Solcast | Solar forecast (Curvy overlay and badge; State projection; Gauges' remaining-today 10% figure) | Curvy and the State popup show a note and work without it; Gauges show — |
-| OpenNEM | Region generation and demand (`opennem` in the map, e.g. `sensor.opennem_sa`): Battman's NEM sensors and the NEM mix card | The NEM sensors are unavailable and the NEM mix card names them |
+| OpenNEM | Region generation and demand (its region sensor, e.g. `sensor.opennem_sa`, found by Battman): Battman's NEM sensors and the NEM mix card | The NEM sensors are unknown and say no OpenNEM region was found; the NEM mix card names them |
 
 The Sigenergy integration ships some sensors **disabled**: enable **Sigen PV Power**
 (Curvy's actual-solar overlay), and **PV Power** and **Third-Party PV Power** if you

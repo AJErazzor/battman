@@ -1,7 +1,12 @@
-"""NEM generation and demand sensors, from the OpenNEM sensor in the entity map.
+"""NEM generation and demand sensors, from the OpenNEM integration's region sensor.
 
 OpenNEM's region sensor (e.g. sensor.opennem_sa) holds each generation source as
-an attribute. Dashboard cards like power-pie-card can only read entity states, so
+an attribute. Battman finds it itself: an OpenNEM entity carrying those attributes.
+One found: that's used. Several (more than one region): you pick one on Battman's
+Configure screen, and a Repair asks you to until you do. None: the NEM sensors are
+unknown and their `problem` attribute says so (OpenNEM is optional, so no Repair).
+It looks again whenever an OpenNEM entity is added, removed or changes, so switching
+OpenNEM to another region is followed without a restart. Dashboard cards like power-pie-card can only read entity states, so
 Battman re-exposes them as sensors (MW), plus where the power goes:
 
     exports, battery charging   OpenNEM reports these negative: shown as positive
@@ -21,12 +26,18 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, Sen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, UnitOfPower
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.event import async_track_state_change_event
 
+from .const import DOMAIN
 from .entity import device_info
 
-MAP_KEY = "opennem"
+OPENNEM = "opennem"            # the OpenNEM integration's domain
+OPTION = "opennem"             # Configure: the region you picked (only asked when there are several)
+REGION_ATTR = "solar_rooftop"  # an OpenNEM entity with this attribute is a region sensor
+ISSUE_CHOOSE = "opennem_choose"
 SIGNAL = "battman_nem_update"
 
 # sensor key -> (OpenNEM attribute, icon)
@@ -84,47 +95,94 @@ def compute(state: Any) -> tuple[bool, dict[str, float | None], list[str]]:
     return True, out, missing
 
 
+def find_regions(hass: HomeAssistant) -> list[str]:
+    """The OpenNEM integration's region sensors: its entities that carry the generation figures."""
+    found = []
+    for entry in er.async_get(hass).entities.values():
+        if entry.platform != OPENNEM:
+            continue
+        state = hass.states.get(entry.entity_id)
+        if state is not None and REGION_ATTR in state.attributes:
+            found.append(entry.entity_id)
+    return sorted(found)
+
+
+def _opennem_ids(hass: HomeAssistant) -> list[str]:
+    return [e.entity_id for e in er.async_get(hass).entities.values() if e.platform == OPENNEM]
+
+
 class NemSource:
-    """Follows the mapped OpenNEM sensor and tells the NEM sensors when it changes."""
+    """Finds OpenNEM's region sensor, follows it, and tells the NEM sensors when anything changes."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
         self.entry = entry
-        self._unsub = None
         self.entity_id: str | None = None
-
-    def _mapped(self) -> str:
-        from .api import entity_map  # noqa: PLC0415
-
-        return entity_map(self.hass)[MAP_KEY]
+        self.problem: str | None = None     # why there's no region sensor to read
+        self._unsub_states = None
+        self._watched: list[str] = []
 
     @callback
     def start(self) -> None:
-        self._follow()
+        self._watch()
+        self.entry.async_on_unload(self.hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, self._registry_changed))
         self.entry.async_on_unload(self.entry.add_update_listener(self._options_changed))
         self.entry.async_on_unload(self.stop)
+        self._recheck()
 
     async def _options_changed(self, _hass: HomeAssistant, _entry: ConfigEntry) -> None:
-        if self._mapped() != self.entity_id:
-            self._follow()
-            async_dispatcher_send(self.hass, SIGNAL)
+        self._recheck()
 
     @callback
-    def _follow(self) -> None:
+    def _registry_changed(self, _event: Event) -> None:
+        self._watch()
+        self._recheck()
+
+    @callback
+    def _watch(self) -> None:
+        """Follow the state of every OpenNEM entity (a region sensor's figures, or one appearing)."""
+        ids = _opennem_ids(self.hass)
+        if ids == self._watched and self._unsub_states:
+            return
         self.stop()
-        self.entity_id = self._mapped()
+        self._watched = ids
+        if ids:
+            self._unsub_states = async_track_state_change_event(self.hass, ids, self._state_changed)
 
-        @callback
-        def _changed(_event: Event) -> None:
-            async_dispatcher_send(self.hass, SIGNAL)
+    @callback
+    def _state_changed(self, _event: Event) -> None:
+        self._recheck()
 
-        self._unsub = async_track_state_change_event(self.hass, [self.entity_id], _changed)
+    @callback
+    def _recheck(self) -> None:
+        found = find_regions(self.hass)
+        chosen = self.entry.options.get(OPTION)
+        entity, problem = None, None
+        if chosen in found:
+            entity = chosen
+        elif len(found) == 1:
+            entity = found[0]
+        elif not found and self.entity_id in self._watched:
+            entity = self.entity_id          # the region sensor we read is still there, just unavailable for now
+        elif not found:
+            problem = "No OpenNEM region sensor found (is the OpenNEM integration set up?)"
+        else:
+            problem = f"Several OpenNEM regions ({', '.join(found)}): pick one under Battman → Configure"
+        if len(found) > 1 and chosen not in found:
+            ir.async_create_issue(
+                self.hass, DOMAIN, ISSUE_CHOOSE, is_fixable=False, severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_CHOOSE, translation_placeholders={"regions": ", ".join(found)},
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, ISSUE_CHOOSE)
+        self.entity_id, self.problem = entity, problem
+        async_dispatcher_send(self.hass, SIGNAL)
 
     @callback
     def stop(self) -> None:
-        if self._unsub:
-            self._unsub()
-            self._unsub = None
+        if self._unsub_states:
+            self._unsub_states()
+            self._unsub_states = None
 
     def read(self) -> tuple[bool, dict[str, float | None], list[str]]:
         return compute(self.hass.states.get(self.entity_id) if self.entity_id else None)
@@ -152,10 +210,14 @@ class BattmanNemSensor(SensorEntity):
     @callback
     def _refresh(self) -> None:
         available, values, missing = self._source.read()
-        self._attr_available = available
+        # no region sensor to read (none found, or several to choose from): unknown, saying why
+        # (HA drops an unavailable sensor's attributes, so the reason would be lost)
+        self._attr_available = available or bool(self._source.problem)
         self._attr_native_value = values[self._key]
         attrs: dict[str, Any] = {"source": self._source.entity_id}
-        if not available:
+        if self._source.problem:
+            attrs["problem"] = self._source.problem
+        elif not available:
             attrs["problem"] = f"{self._source.entity_id} is missing or unavailable"
         elif values[self._key] is None:
             attrs["problem"] = f"{self._source.entity_id} has no value for: {', '.join(missing)}"

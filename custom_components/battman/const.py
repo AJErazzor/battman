@@ -128,8 +128,6 @@ OTHER_MAP_DEFAULTS: dict[str, str] = {
     "solcast_tomorrow": "sensor.solcast_pv_forecast_forecast_tomorrow",
     "solcast_remaining_today": "sensor.solcast_pv_forecast_forecast_remaining_today",
     "solcast_next_hour": "sensor.solcast_pv_forecast_forecast_next_hour",
-    # OpenNEM region sensor: Battman's NEM sensors (sensor.battman_nem_*) read its attributes
-    "opennem": "sensor.opennem_sa",
 }
 
 # Battman's own curve sensors, whichever engine is in charge: Curvy and Pricy read the factory

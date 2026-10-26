@@ -11,6 +11,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import DOMAIN, MAP_TEXT_ENTRIES, OTHER_MAP_DEFAULTS
+from .nem import OPTION as OPENNEM_OPTION, find_regions
 
 
 # HA text treats {...} as a placeholder, so the PV pattern's {n} is passed in
@@ -50,7 +51,7 @@ class BattmanOptionsFlow(OptionsFlow):
             if errors:
                 return self.async_show_form(
                     step_id="init",
-                    data_schema=self._schema(user_input),
+                    data_schema=self._schema(user_input, find_regions(self.hass)),
                     errors=errors,
                     description_placeholders=PLACEHOLDERS,
                 )
@@ -60,11 +61,12 @@ class BattmanOptionsFlow(OptionsFlow):
                 data={k: v for k, v in user_input.items() if v and v != OTHER_MAP_DEFAULTS.get(k)}
             )
         return self.async_show_form(
-            step_id="init", data_schema=self._schema(current), description_placeholders=PLACEHOLDERS
+            step_id="init", data_schema=self._schema(current, find_regions(self.hass)),
+            description_placeholders=PLACEHOLDERS,
         )
 
     @staticmethod
-    def _schema(values: dict[str, Any]) -> vol.Schema:
+    def _schema(values: dict[str, Any], regions: list[str]) -> vol.Schema:
         fields: dict[Any, Any] = {}
         for key in OTHER_MAP_DEFAULTS:
             sel = (
@@ -73,4 +75,10 @@ class BattmanOptionsFlow(OptionsFlow):
                 else selector.EntitySelector(selector.EntitySelectorConfig())
             )
             fields[vol.Required(key, default=values.get(key, OTHER_MAP_DEFAULTS[key]))] = sel
+        # OpenNEM: Battman finds its region sensor itself; only with several regions is there a choice
+        if len(regions) > 1:
+            chosen = values.get(OPENNEM_OPTION)
+            fields[vol.Required(OPENNEM_OPTION, default=chosen if chosen in regions else vol.UNDEFINED)] = (
+                selector.SelectSelector(selector.SelectSelectorConfig(options=regions))
+            )
         return vol.Schema(fields)

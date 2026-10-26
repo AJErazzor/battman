@@ -122,8 +122,11 @@ a Repair says so.
 
 `sensor.battman_nem_*` (MW): the region's generation by source (wind, rooftop and utility
 solar, imports, battery, gas CCGT / OCGT / steam / recip, distillate) and where it goes
-(exports, battery charging, total supply, consumers), made from the OpenNEM sensor picked
-as `opennem` under Configure. A source OpenNEM doesn't report is unknown, never 0.
+(exports, battery charging, total supply, consumers), made from the OpenNEM integration's
+region sensor (e.g. `sensor.opennem_sa`). Battman finds it itself, and follows it if you switch
+OpenNEM to another region; only if OpenNEM has several regions does Configure ask which one
+(a Repair says so). Their `source` attribute names the sensor they read. A source OpenNEM
+doesn't report is unknown, never 0.
 
 ## Battman cards
 

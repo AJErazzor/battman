@@ -38,6 +38,13 @@ KEYS = {"wind": "wind", "rooftop_solar": "solar_rooftop", "utility_solar": "sola
         "gas_steam": "gas_steam", "gas_recip": "gas_recip"}
 
 
+def _opennem(hass, region: str, attrs: dict | None = GEN, state: str = "ok") -> str:
+    """A region sensor of the OpenNEM integration (registered as OpenNEM's, as the real one is)."""
+    ent = er.async_get(hass).async_get_or_create("sensor", "opennem", region, suggested_object_id=f"opennem_{region}")
+    hass.states.async_set(ent.entity_id, state, attrs or {})
+    return ent.entity_id
+
+
 async def _setup(hass, hass_client=None):
     assert await async_setup_component(hass, "lovelace", {})
     entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
@@ -60,7 +67,7 @@ def _render(hass, tpl):
 # ── NEM sensors ──────────────────────────────────────────────────────────────
 
 async def test_nem_sensors_match_templates(hass: HomeAssistant) -> None:
-    hass.states.async_set("sensor.opennem_sa", "ok", GEN)
+    _opennem(hass, "sa")
     await _setup(hass)
     orig = _orig_templates()
     # the original templates, rendered on the same OpenNEM state, in order (later ones read earlier ones)
@@ -93,8 +100,8 @@ async def test_nem_sensors_match_templates(hass: HomeAssistant) -> None:
 async def test_nem_sensors_missing(hass: HomeAssistant) -> None:
     attrs = dict(GEN)
     del attrs["gas_recip"]
-    hass.states.async_set("sensor.opennem_sa", "ok", attrs)
-    entry = await _setup(hass)
+    _opennem(hass, "sa", attrs)
+    await _setup(hass)
     recip = hass.states.get("sensor.battman_nem_gas_recip")
     assert recip.state == "unknown" and "gas_recip" in recip.attributes["problem"]      # not 0
     assert hass.states.get("sensor.battman_nem_total_supply").state == "unknown"
@@ -102,17 +109,14 @@ async def test_nem_sensors_missing(hass: HomeAssistant) -> None:
     assert hass.states.get("sensor.battman_nem_wind").state == "812.4"
     assert hass.states.get("sensor.battman_nem_exports").state == "455.12"
 
+    # OpenNEM unavailable for a while: still its sensor, unavailable, and says so
     hass.states.async_set("sensor.opennem_sa", "unavailable", {})
     await hass.async_block_till_done()
     for k in ("wind", "exports", "consumers"):
-        assert hass.states.get(f"sensor.battman_nem_{k}").state == "unavailable"
-
-    # a different OpenNEM sensor picked under Configure -> followed from then on
-    hass.states.async_set("sensor.opennem_vic", "ok", {**GEN, "wind": 1500})
-    hass.config_entries.async_update_entry(entry, options={"opennem": "sensor.opennem_vic"})
+        assert hass.states.get(f"sensor.battman_nem_{k}").state == "unavailable", k
+    hass.states.async_set("sensor.opennem_sa", "ok", {**GEN, "wind": 700})
     await hass.async_block_till_done()
-    assert hass.states.get("sensor.battman_nem_wind").state == "1500.0"
-    assert hass.states.get("sensor.battman_nem_wind").attributes["source"] == "sensor.opennem_vic"
+    assert hass.states.get("sensor.battman_nem_wind").state == "700.0"
 
 
 async def test_nem_entity_ids(hass: HomeAssistant) -> None:
@@ -234,3 +238,78 @@ async def test_power_view_section3(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     power = (await built(hass))["views"][0]
     assert [c["type"] for c in power["sections"][2]["cards"]] == ["custom:battman-gauges", "custom:battman-nemmix"]
+
+
+# ── OpenNEM's region sensor, found by Battman (v0.22.1) ─────────────────────
+
+async def test_opennem_found_without_configure(hass: HomeAssistant) -> None:
+    from custom_components.battman.const import OTHER_MAP_DEFAULTS
+
+    assert "opennem" not in OTHER_MAP_DEFAULTS                       # not on the Configure screen any more
+    _opennem(hass, "sa", {**GEN, "wind": 640})
+    hass.states.async_set("sensor.opennem_sa_wind", "640", {})      # OpenNEM-looking, but not OpenNEM's: ignored
+    await _setup(hass)
+    wind = hass.states.get("sensor.battman_nem_wind")
+    assert wind.state == "640.0" and wind.attributes["source"] == "sensor.opennem_sa" and "problem" not in wind.attributes
+
+
+async def test_opennem_none(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    await _setup(hass)
+    wind = hass.states.get("sensor.battman_nem_wind")
+    assert wind.state == "unknown" and wind.attributes["source"] is None
+    assert wind.attributes["problem"] == "No OpenNEM region sensor found (is the OpenNEM integration set up?)"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "opennem_choose") is None   # optional: no Repair
+    # OpenNEM set up later: found and followed, no restart
+    _opennem(hass, "sa", {**GEN, "wind": 300})
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.battman_nem_wind").state == "300.0"
+
+
+async def test_opennem_switched_to_another_region(hass: HomeAssistant) -> None:
+    _opennem(hass, "sa")
+    await _setup(hass)
+    assert hass.states.get("sensor.battman_nem_wind").attributes["source"] == "sensor.opennem_sa"
+    # OpenNEM switched to VIC: the SA sensor goes, a VIC one comes
+    er.async_get(hass).async_remove("sensor.opennem_sa")
+    hass.states.async_remove("sensor.opennem_sa")
+    _opennem(hass, "vic", {**GEN, "wind": 1500})
+    await hass.async_block_till_done()
+    wind = hass.states.get("sensor.battman_nem_wind")
+    assert wind.state == "1500.0" and wind.attributes["source"] == "sensor.opennem_vic"
+    # ...or the SA sensor lingers, unavailable with no figures: still VIC
+    _opennem(hass, "sa", {}, state="unavailable")
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.battman_nem_wind").attributes["source"] == "sensor.opennem_vic"
+
+
+async def test_opennem_several_regions(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    _opennem(hass, "sa", {**GEN, "wind": 100})
+    _opennem(hass, "vic", {**GEN, "wind": 200})
+    entry = await _setup(hass)
+    wind = hass.states.get("sensor.battman_nem_wind")
+    assert wind.state == "unknown"
+    assert wind.attributes["problem"] == ("Several OpenNEM regions (sensor.opennem_sa, sensor.opennem_vic): "
+                                          "pick one under Battman → Configure")
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "opennem_choose")
+    assert issue is not None and issue.translation_placeholders == {"regions": "sensor.opennem_sa, sensor.opennem_vic"}
+    # Configure offers just the two regions
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    field = next(k for k in flow["data_schema"].schema if k == "opennem")
+    sel = flow["data_schema"].schema[field]
+    assert sel.config["options"] == ["sensor.opennem_sa", "sensor.opennem_vic"]
+    # pick VIC -> followed, Repair gone
+    hass.config_entries.async_update_entry(entry, options={"opennem": "sensor.opennem_vic"})
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.battman_nem_wind").state == "200.0"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "opennem_choose") is None
+
+
+async def test_configure_has_no_opennem_field_with_one_region(hass: HomeAssistant) -> None:
+    _opennem(hass, "sa")
+    entry = await _setup(hass)
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    assert "opennem" not in [str(k) for k in flow["data_schema"].schema]
