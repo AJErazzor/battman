@@ -60,6 +60,8 @@ Amber's entities come from the entity map, so another install can point them els
 Sigen's and Solcast's are named directly, in the engine and on the cards (e.g. `select.sigen_plant_remote_ems_control_mode`,
 `sensor.solcast_pv_forecast_forecast_remaining_today`); at startup Battman checks each one it
 uses is there, and a Repair names any that isn't. Sigen needs its integration at v1.1.0 or newer.
+If Solcast's remaining-today figure has no value, the engine skips its "enough sun left?" check (it
+used to read it as 0 kWh, which could set off the No Sun panic) and its log says so.
 Removed as unused: the inverter rated power (`inverterRatedPower`), next-hour solar.
 
 ## What's different from Smiggles

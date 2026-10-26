@@ -421,42 +421,6 @@ var cfg = variables.battman.overrides.filter(function(o){return o.id===ov_id;})[
        + '<div style=\'background:var(--battman-surface-popup);padding:12px;border-radius:10px;font-family:var(--battman-font);\'></div>';
 };
 
-window.BattmanLib.isVisible = function(bmc, states, entity, ov_id){
-  try{
-    var cfg = bmc.overrides.filter(function(o){return o.id===ov_id;})[0];
-    if(!cfg) return false;
-    var a = entity.attributes;
-    var on = (parseFloat(a[cfg.attr_soc])||0)>0 || (parseFloat(a[cfg.attr_price])||0)>0 || (cfg.allow_negative && (parseFloat(a[cfg.attr_price])||0)<0);
-    var pins = a.pinnedOverrides || [];
-    return on || pins.indexOf(ov_id)>=0;
-  }catch(e){ return true; }
-};
-
-window.BattmanLib.renderDock = function(variables, states, entity){
-  try{ window.BattmanLib.CFG = variables.battman; }catch(e){}
-  var bmc = variables.battman;
-  var html = '<div style="display:flex;flex-direction:column;gap:2px;">';
-  (bmc.overrides||[]).forEach(function(o){
-    if(window.BattmanLib.isVisible(bmc, states, entity, o.id)){
-      html += '<div style="cursor:pointer" onclick="window.BattmanLib.openPopup(\''+o.id+'\',\'tap\')">'
-            + window.BattmanLib.renderRow(variables, states, entity, o.id)
-            + '</div>';
-    }
-  });
-  html += '</div>';
-  return html;
-};
-
-window.BattmanLib.openPopup = function(ov_id, type){
-  try{
-    var ha = document.querySelector('home-assistant'); var hass = ha.hass;
-    var states = hass.states; var cfg = window.BattmanLib.CFG; var entity = states[cfg.params_entity];
-    var variables = {battman: cfg};
-    var content = window.BattmanLib.buildPopup(variables, states, entity, ov_id);
-    hass.callService('browser_mod','popup',{content: content, title: ' ', style: '--mdc-dialog-min-width:320px;--mdc-dialog-max-width:340px;'});
-  }catch(e){ try{console.error('BattmanLib.openPopup',e);}catch(_){} }
-};
-
 // ---------------------------------------------------------------------------------------------
 // Battman: mode colours. The one list every Battman piece uses for the battery modes (the Log
 // page's timeline, the Live Activity bar via sensor.battman_theme_mode_colours). The five
@@ -502,10 +466,15 @@ window.BattmanLib.popupStyle = function (el, width) {
     + window.BattmanLib.themeStyle(el);
 };
 
+// The popup opens on the device that was tapped, through browser_mod's own action (as the Overrides
+// card's popups do), so it works on a phone that isn't registered as a browser_mod browser.
 window.BattmanLib.correctTotals = function (btn, ids) {
-  var hass = document.querySelector('home-assistant').hass;
   window.BattmanLib._totals = ids;
-  hass.callService('browser_mod', 'popup', {
+  if (!window.browser_mod) {
+    window.BattmanLib.toast(btn, "Correct totals needs browser_mod, which isn't loaded on this device.");
+    return;
+  }
+  window.BattmanLib.localPopup({
     title: 'Correct totals',
     style: window.BattmanLib.popupStyle(btn, 'min(94vw,420px)'),
     content: {
@@ -520,6 +489,12 @@ window.BattmanLib.correctTotals = function (btn, ids) {
       custom_fields: { body: '[[[ return window.BattmanLib.totalsForm(states); ]]]' },
     },
   });
+};
+
+// A browser_mod popup on this device only (browser_mod's own frontend runs it, as it does for
+// button-card's fire-dom-event), not a service call that goes to every registered browser.
+window.BattmanLib.localPopup = function (data) {
+  window.browser_mod.service('popup', data);
 };
 
 window.BattmanLib.totalsForm = function (states) {

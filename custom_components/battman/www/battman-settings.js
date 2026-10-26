@@ -190,6 +190,10 @@ class BattmanSettingsCard extends BattmanCardBase {
       m.className = 'msg ' + cls; m.textContent = text;
       const f = el.closest('.field'); if (f) { f.classList.toggle('saved', cls === 'ok'); f.classList.toggle('err', cls === 'bad'); }
     }
+    // the selector for "this control" in a redrawn section (its tag and data attributes)
+    function sameControl(el) {
+      return '[data-sec] ' + el.tagName.toLowerCase() + Object.entries(el.dataset).map(([k, v]) => '[data-' + k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()) + '="' + CSS.escape(v) + '"]').join('');
+    }
     function say(el, text, cls) {
       const key = ctlKey(el);
       MSGS[key] = { text: text, cls: cls, at: Date.now() };
@@ -197,7 +201,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       if (cls === 'ok') setTimeout(() => {
         if (MSGS[key] && MSGS[key].text === text) {
           delete MSGS[key];
-          const cur = root.querySelector('[data-sec] ' + el.tagName.toLowerCase() + Object.entries(el.dataset).map(([k, v]) => '[data-' + k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()) + '="' + CSS.escape(v) + '"]').join(''));
+          const cur = root.querySelector(sameControl(el));
           const t = cur || el; const host = msgHost(t); const m = host && host.querySelector(':scope > .msg');
           if (m && m.textContent === text) { m.textContent = ''; m.className = 'msg'; }
           const f = t.closest('.field'); if (f) f.classList.remove('saved');
@@ -509,8 +513,26 @@ class BattmanSettingsCard extends BattmanCardBase {
       if (!force && el.contains(root.activeElement)) return;           // never redraw over what you're typing
       if (!force && el.querySelector('.msg.busy')) return;                  // or while a save is being checked
       sig[id] = s;
+      // Redrawing replaces the control you just pressed (an hour arrow, a tab). iOS then loses its
+      // place and jumps the page back to the top, so every scroll position and the pressed control
+      // are kept across the redraw.
+      const pressed = el.contains(root.activeElement) ? sameControl(root.activeElement) : null;
+      const scrolled = scrollPositions();
       try { el.innerHTML = SECTIONS[id].render(); reapplyMessages(el); }
       catch (e) { el.innerHTML = note('This section couldn\'t be drawn: ' + esc(e.message), true); }
+      const again = pressed && root.querySelector(pressed);
+      if (again) again.focus({ preventScroll: true });
+      const restore = () => scrolled.forEach(([n, y]) => { if (n.scrollTop !== y) n.scrollTop = y; });
+      restore();
+      requestAnimationFrame(restore);
+    }
+    // every scrolled element from this card up to the page (through HA's shadow roots), and the page
+    function scrollPositions() {
+      const out = [];
+      for (let n = root.host; n; n = n.parentNode || n.host) if (n.scrollTop > 0) out.push([n, n.scrollTop]);
+      const page = document.scrollingElement;
+      if (page && page.scrollTop > 0 && !out.some(([n]) => n === page)) out.push([page, page.scrollTop]);
+      return out;
     }
     function build() {
       const order = loadOrder();

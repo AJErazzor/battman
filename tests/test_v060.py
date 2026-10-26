@@ -97,7 +97,7 @@ async def test_configure_screen(hass: HomeAssistant, hass_client) -> None:
     assert "buy_total" not in defaults          # engine entries follow the engine in charge, not Configure
 
     assert not [k for k in defaults if k != "opennem" and k not in (  # v0.23.0: Amber and Battman's own only
-        "buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast", "grid_power", "load_30m_avg")], defaults
+        "buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast")], defaults
     done = await hass.config_entries.options.async_configure(
         flow["flow_id"], {**defaults, "buy_price": "sensor.my_buy"})
     assert done["type"] is FlowResultType.CREATE_ENTRY

@@ -233,6 +233,8 @@ async def test_net_target_without_totals(hass: HomeAssistant, hass_client) -> No
     assert "$NaN" not in out and "NaN" not in out and "—" in out
 
 
-def test_lib_open_popup_fixed() -> None:
+def test_lib_open_popup_gone() -> None:
+    """The library's openPopup (with its renaming slip fixed in v0.16.0) was never used; v0.23.1
+    removed it, with renderDock and isVisible (test_v0231)."""
     js = (WWW / "battman-lib.js").read_text()
-    assert "var variables = {battman: cfg};" in js and "{bmc: cfg}" not in js
+    assert "openPopup" not in js and "{bmc: cfg}" not in js

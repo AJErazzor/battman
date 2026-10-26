@@ -54,7 +54,11 @@ def test_every_named_entity_is_checked() -> None:
         named |= set(re.findall(r"(?:sensor|select|number)\.(?:sigen|solcast)_[a-z0-9_]+", f.read_text()))
     assert named and named <= set(R.REQUIRED), named - set(R.REQUIRED)
     optional = {"sigen_pv_power", "third_party_pv", "pv_string"}   # overlays / optional hardware (v0.23.0)
+    own = {"grid_power", "load_30m_avg"}                            # Battman's own sensors (v0.23.1)
     for k, entity in R.NAMED.items():
+        if k in own:
+            assert entity.startswith("sensor.battman_"), k
+            continue
         assert entity in R.REQUIRED or k in optional, k
         assert k not in OTHER_MAP_DEFAULTS, k             # v0.23.0: off the map
 

@@ -147,11 +147,11 @@ it follows on the Battman dashboard, **Settings → Live Activity**. See
 
 ## Entity map (Configure)
 
-Battman names (`buy_total`, `buy_price`, …) point at entities in your HA. Amber's prices and
-Battman's grid power and load average sensors can be changed: Settings → Devices & services →
-Battman → **Configure**. Only the entries you change are stored, so new defaults in later releases
-still reach the rest. Sigen's and Solcast's entities aren't on the map: Battman uses them by name,
-and a Repair names any that's missing (see [DEPENDENCIES.md](DEPENDENCIES.md)).
+Battman names (`buy_total`, `buy_price`, …) point at entities in your HA. Amber's prices can be
+changed: Settings → Devices & services → Battman → **Configure**. Only the entries you change are
+stored, so new defaults in later releases still reach the rest. Sigen's and Solcast's entities, and
+Battman's own grid power and load average sensors, aren't on the map: Battman uses them by name, and
+a Repair names any Sigen or Solcast entity that's missing (see [DEPENDENCIES.md](DEPENDENCIES.md)).
 
 ## Dependencies
 

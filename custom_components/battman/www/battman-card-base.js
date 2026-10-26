@@ -76,6 +76,12 @@ export const SIGEN = {
   grid_export_today: "sensor.sigen_plant_daily_grid_export_energy",
 };
 
+// Battman's own sensors from its packages (packages/battman/battman_sensors.yaml), named directly.
+export const BATTMAN_SENSORS = {
+  grid_power: "sensor.battman_grid_power",
+  load_30m_avg: "sensor.battman_load_30m_avg",
+};
+
 // Battman's entity map (Battman name -> entity in this HA), checked for the names a card needs.
 // Throws an Error saying what's wrong.
 export async function battmanMap(hass, needs) {
@@ -92,7 +98,7 @@ export async function battmanMap(hass, needs) {
 }
 
 // "Entity not found: name → entity, …", or null when every named entity exists. map holds
-// Battman's entity map plus SIGEN.
+// Battman's entity map plus SIGEN / BATTMAN_SENSORS.
 export function missingEntities(hass, map, keys) {
   const bad = keys.filter((k) => !hass.states[map[k]]).map((k) => k + " → " + map[k]);
   return bad.length ? "Entity not found: " + bad.join(", ") : null;

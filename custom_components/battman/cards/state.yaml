@@ -338,29 +338,67 @@ tap_action:
         ).map(p => ({s:new Date(p.period_start).getTime(), kw:parseFloat(p.pv_estimate)||0}));
         const pvAt = ms => { for (const p of pvF) if (ms>=p.s && ms<p.s+1800000) return p.kw; return 0; };
 
-        // ── engine buy rules: read from the sensor the engine uses, same maths ──
-        const brS   = states['[[map:buy_rules]]'];
-        const brOn  = String(brS?.state).toLowerCase()==='true';
-        const brAll = brS?.attributes?.rules || [];
-        function buyRuleAt(ms){   // $/kWh, 0 = no rule this hour
-          if (!brOn) return 0;
-          const r = brAll[new Date(ms).getHours()];
-          if (!r || !r.isActive || !(parseInt(r.hours_ahead)>0)) return 0;
+        // ── engine buy / sell rules: read from the sensors the engine uses, same maths ──
+        // A rule looks hours_ahead hours into Amber's forecast in grouping_minutes blocks: buy takes the
+        // cheapest block, sell the best (feed-in per_kwh is negative: the engine turns it round). Each
+        // forecast slot counts as duration/5 five-minute steps, as in the engine (no duration: none).
+        const finList = states['[[map:feed_in_forecast]]']?.attributes?.Forecasts || [];
+        const RULES = {buy: states['[[map:buy_rules]]'], sell: states['[[map:sell_rules]]']};
+        function ruleOf(kind, ms){   // that hour's rule, if the side's rules are on and it looks ahead
+          const s = RULES[kind];
+          if (String(s?.state).toLowerCase()!=='true') return null;
+          const r = (s?.attributes?.rules || [])[new Date(ms).getHours()];
+          return r && r.isActive && parseInt(r.hours_ahead)>0 ? r : null;
+        }
+        function ruleAt(kind, ms){   // $/kWh, 0 = no rule this hour
+          const r = ruleOf(kind, ms);
+          if (!r) return 0;
           const cut = new Date(ms + r.hours_ahead*3600000); cut.setMinutes(0,0,0);
           const per = Math.max(1, Math.floor((parseInt(r.grouping_minutes)||60)/5));
           const s5 = [];
-          for (const f of gen){
+          for (const f of (kind==='buy' ? gen : finList)){
             const st=new Date(f.start_time).getTime(), en=new Date(f.end_time).getTime();
             if (en<=ms) continue; if (st>=cut.getTime()) break;
-            const n=Math.max(1,Math.floor((parseInt(f.duration)||5)/5));
-            for (let i=0;i<n;i++) s5.push(parseFloat(f.per_kwh)||0);
+            const n=Math.floor((parseInt(f.duration)||0)/5);
+            for (let i=0;i<n;i++) s5.push((parseFloat(f.per_kwh)||0)*(kind==='buy'?1:-1));
           }
           if (!s5.length) return 0;
           const avgs=[]; for (let i=0;i<s5.length;i+=per){ const c=s5.slice(i,i+per); avgs.push(c.reduce((x,y)=>x+y,0)/c.length); }
-          let res = Math.min(...avgs) + (parseFloat(r.offset)||0)/100;
-          if (r.roundTo>0){ const k=Math.pow(10,r.roundTo), v=res*k;
-            res = (r.roundtype==='floor' ? Math.floor(v+1e-9) : (r.roundtype==='ceil' ? Math.ceil(v-1e-9) : Math.round(v)))/k; }
+          let res = (kind==='buy' ? Math.min(...avgs) : Math.max(...avgs)) + (parseFloat(r.offset)||0)/100;
+          if (r.roundTo>0) res = roundLikeHA(res, parseInt(r.roundTo), r.roundtype);
           return Math.max(0,res);
+        }
+        // HA's round(n, method), exactly: floor / ceil on value x 10^n (as Python works it out), and
+        // 'common' Python's own rounding (the exact binary value, an exact half to even)
+        function roundLikeHA(x, n, how){
+          const k = Math.pow(10, n);
+          if (how==='floor') return Math.floor(x*k)/k;
+          if (how==='ceil') return Math.ceil(x*k)/k;
+          const s = Math.abs(x).toFixed(100), dot = s.indexOf('.');
+          const keep = s.slice(0, dot+1+n), rest = s.slice(dot+1+n);
+          let up = rest[0] > '5' || (rest[0]==='5' && /[1-9]/.test(rest.slice(1)));
+          if (rest[0]==='5' && !/[1-9]/.test(rest.slice(1))) up = Number(keep.replace('.','').slice(-1)) % 2 === 1;   // a half: to even
+          const v = (Number(keep.replace('.','')) + (up ? 1 : 0)) / k;
+          return x < 0 ? -v : v;
+        }
+        const buyRuleAt = ms => ruleAt('buy', ms);
+        // the engine's sell price: its curve price, never under today's import cost (Protected), and a
+        // sell rule that sees a better price ahead holds out for it ("last chance" lets it drop instead
+        // once today is in the red)
+        const totB = states['[[map:buy_total]]']?.attributes || {}, totS = states['[[map:sell_total]]']?.attributes || {};
+        const todayCost = (parseFloat(totS.day)||0) - (parseFloat(totB.day)||0) - (parseFloat(par.dailyNetworkCharge)||0);
+        const protect = a('sellPriceProtect')*100;   // cents
+        function sellPriceAt(ms, T, curveSell){
+          const calc = Math.max(protect, curveSell);
+          const r = ruleOf('sell', ms), res = ruleAt('sell', ms)*100;
+          let sp = calc, ruled = false;
+          if (r && res!==0 && res > T.loSell){
+            const lastChance = !!r.allowLastChance && todayCost < 0;
+            const lcFloor = lastChance && parseInt(totB.trackingA_AllowLastChance)===1 ? 0 : protect;
+            if (res >= calc){ sp = Math.max(lastChance ? lcFloor : protect, res); ruled = true; }
+            else if (lastChance){ sp = Math.max(lcFloor, T.loSell, res); ruled = true; }
+          }
+          return {sp: Math.max(protect, sp), ruled};
         }
         const isPeak = ms => { const d=new Date(ms), m=d.getHours()*60+d.getMinutes(); return m>=17*60 && m<20*60+59; };
 
@@ -393,7 +431,8 @@ tap_action:
           const peak = isPeak(from);
           // ── decision: faithful port of the engine's sellReason / buyReason priority cascade ──
           // prices in cents (fit = currentSellPrice, buy = currentBuyPrice); each override is zeroed once its own timer resets it
-          const sp = P.sell, bp = buyThr, mS = T.minSell, mB = T.minBuy;
+          const SR = sellPriceAt(from, T, P.sell);
+          const sp = SR.sp, sruled = SR.ruled, bp = buyThr, mS = T.minSell, mB = T.minBuy;
           const vfx = (o,f) => live(o,from) ? o[f] : 0;                 // override value in its live window, else 0 (reset by timer)
           const oSP=vfx(OV.sell,'px'),  oSS=vfx(OV.sell,'soc');
           const oBP=live(OV.buy,from)?OV.buy.px:0, oBS=vfx(OV.buy,'soc');
@@ -453,7 +492,7 @@ tap_action:
           const bOv = act==='buy'  && (code==='buy'||code==='anytime');
           sim.push({st:from,en,act,socIn,soc,kwh,money,fit,buy,
             sellThr: act==='sell'?sThr:(oSP>0?oSP:sp), buyThr: act==='buy'?bThr:(oBP>0?oBP:buyThr),
-            ruled, peak, wait, spike, minSell: act==='sell'?sFloor:mS, minBuy: act==='buy'?bCeil:mB, sOv, bOv, code, drain,
+            ruled, sruled, peak, wait, spike, minSell: act==='sell'?sFloor:mS, minBuy: act==='buy'?bCeil:mB, sOv, bOv, code, drain,
             sLive: live(OV.sell,from) && OV.sell.px>0, bLive: live(OV.buy,from) && OV.buy.px!==0});
         }
         // ── events: collapse runs of the same action ──
@@ -483,7 +522,7 @@ tap_action:
           const cc = (g.act==='sell'&&g.items[0].code==='drain')?'var(--battman-red)':g.act==='sell'?CLR_SELL:(g.act==='buy'?(neg?negMode[1]:CLR_BUY):holdCol);
           const avg=k=>g.items.reduce((p,s)=>p+(s[k]||0),0)/g.items.length;
           const code=g.items[0].code;
-          const sTag = code==='solar'?' (sell solar)':(code==='spike'?' (spike)':(code==='sell'?' (override)':''));
+          const sTag = code==='solar'?' (sell solar)':(code==='spike'?' (spike)':(code==='sell'?' (override)':(g.items.some(s=>s.sruled)?' (sell rule)':'')));
           const bTag = code==='anytime'?' (anytime)':(code==='buy'?' (override)':'');
           const holdS = g.items.some(s=>s.sLive)?' (override)':'', holdB = g.items.some(s=>s.bLive)?' (override)':'';
           let head, sub;
@@ -504,7 +543,7 @@ tap_action:
             else sub = s1>s0 ? `Solar fills the battery.` : `House runs off the battery.`;
             if (g.bpk==='P') sub += `<br><span style='color:var(--battman-yellow);font-weight:700;'>Below the buy line, but no buying in peak (5–9pm)</span>`;
             else if (g.bpk!==null) sub += `<br><span style='color:var(--battman-yellow);font-weight:700;'>Buys if Amber charges ${d1(Math.max(...g.items.map(s=>s.buyThr)))}c or less${g.items.some(s=>s.ruled)?' (buy rule)':holdB}</span>`;
-            if (sp.length) sub += `<br><span style='color:var(--battman-orange);font-weight:700;'>Sells if Amber pays ${d1(Math.min(...sp.map(s=>s.sellThr)))}c or more${holdS}</span>`; }
+            if (sp.length) sub += `<br><span style='color:var(--battman-orange);font-weight:700;'>Sells if Amber pays ${d1(Math.min(...sp.map(s=>s.sellThr)))}c or more${holdS || (sp.some(s=>s.sruled)?' (sell rule)':'')}</span>`; }
           const wash = 'color-mix(in srgb, '+cc+' '+(g.act==='hold'?12:16)+'%, transparent)';
           evHtml+=`<div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:${wash};border:1px solid color-mix(in srgb, ${cc} ${g.act==='hold'?28:40}%, transparent);'>`+
             `<div style='width:4px;border-radius:2px;background:${cc};flex-shrink:0;'></div>`+

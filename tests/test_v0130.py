@@ -305,8 +305,12 @@ async def test_state_matches_smiggles(hass: HomeAssistant) -> None:
     jobs = []
     for scen in range(5):
         st = state_states(scen)
+        # the popup's look-ahead: v0.23.1 added sell rules (Smiggles' card had none), so it's compared
+        # with the sell rules off (test_v0231 checks them against the engine)
+        pop = json.loads(json.dumps(st))
+        pop["sensor.solarsystemcontrolsellrules"]["state"] = "false"
         jobs += [(main_m, st, "sensor.solarsystemcontrolparameters"), (main_o, st, "sensor.solarsystemcontrolparameters"),
-                 (pop_m, st, None), (pop_o, st, None)]
+                 (pop_m, pop, None), (pop_o, pop, None)]
     out = run_js(jobs)
     for i in range(0, len(out), 2):
         assert not out[i].startswith("THROW"), out[i]
