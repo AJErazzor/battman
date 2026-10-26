@@ -83,45 +83,16 @@ MIGRATED = "migrated_from_smiggles"
 # Config entry data: True while Battman's engine controls the battery (binary_sensor.battman_in_charge).
 IN_CHARGE = "engine_in_charge"
 
-# Other integrations' entities: these stay on the map, and you can change them on the
-# Configure screen.
+# Other integrations' entities that stay on the map (Amber's prices), and Battman's own grid power
+# and load average sensors (packages/battman/battman_sensors.yaml). You can change them on the
+# Configure screen. Sigen's and Solcast's entities are named directly where they're used.
 OTHER_MAP_DEFAULTS: dict[str, str] = {
-    "battery_soc": "sensor.sigen_plant_battery_state_of_charge",
     "buy_price": "sensor.amber_5min_current_general_price",
     "feed_in_price": "sensor.amber_5min_current_feed_in_price",
     "buy_forecast": "sensor.amber_billing_interval_forecasts_general_price",
     "feed_in_forecast": "sensor.amber_billing_interval_forecasts_feed_in_price",
-    "grid_export_today": "sensor.sigen_plant_daily_grid_export_energy",
-    "grid_import_today": "sensor.sigen_plant_daily_grid_import_energy",
-    "pv_power": "sensor.sigen_plant_pv_power",
-    "solar_today": "sensor.sigen_plant_daily_pv_energy",
-    "home_today": "sensor.sigen_plant_daily_load_consumption",
-    "battery_temperature": "sensor.sigen_inverter_battery_maximum_temperature",
-    "home_power": "sensor.sigen_plant_consumed_power",
-    "battery_power": "sensor.sigen_plant_battery_power",
-    "third_party_pv": "sensor.sigen_plant_third_party_pv_power",
-    # pattern: {n} = string number 1..12; the Log page shows the ones that exist
-    "pv_string": "sensor.sigen_inverter_pv{n}_power",
-    # Battman's own sensors (packages/battman/battman_sensors.yaml): grid power from the Sigen
-    # import / export power below; the 30-minute load average from home_power
     "grid_power": "sensor.battman_grid_power",
     "load_30m_avg": "sensor.battman_load_30m_avg",
-    "grid_import_power": "sensor.sigen_plant_grid_import_power",
-    "grid_export_power": "sensor.sigen_plant_grid_export_power",
-    # Sigen controls and ratings the engine reads and sets (also the Limits card)
-    "ems_control_mode": "select.sigen_plant_remote_ems_control_mode",
-    "grid_export_limit": "number.sigen_plant_grid_export_limitation",
-    "pv_max_limit": "number.sigen_plant_pv_max_power_limit",
-    "max_charge_limit": "number.sigen_plant_ess_max_charging_limit",
-    "rated_charging_power": "sensor.sigen_plant_ess_rated_charging_power",
-    "rated_discharging_power": "sensor.sigen_plant_ess_rated_discharging_power",
-    "grid_connection_status": "sensor.sigen_plant_grid_connection_status",
-    "total_imported_energy": "sensor.sigen_plant_total_imported_energy",
-    "total_exported_energy": "sensor.sigen_plant_total_exported_energy",
-    "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
-    "rated_energy_capacity": "sensor.sigen_plant_rated_energy_capacity",
-    "available_max_power": "sensor.sigen_plant_available_max_active_power",
-    "inverter_soc": "sensor.sigen_inverter_battery_state_of_charge",
 }
 
 # Battman's own curve sensors, whichever engine is in charge: Curvy and Pricy read the factory
@@ -133,9 +104,6 @@ FACTORY_MAP: dict[str, str] = {
 
 # Every map entry with its Battman default.
 ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **FACTORY_MAP, **OTHER_MAP_DEFAULTS}
-
-# Entries that aren't entities (the Configure screen shows a text box for these).
-MAP_TEXT_ENTRIES = {"pv_string"}
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.
 THEMES_URL = "/api/battman/themes"

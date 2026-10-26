@@ -43,7 +43,21 @@ NAMED: dict[str, str] = {
     "home_power": "sensor.sigen_plant_consumed_power",
     "grid_import_power": "sensor.sigen_plant_grid_import_power",
     "grid_export_power": "sensor.sigen_plant_grid_export_power",
+    "battery_power": "sensor.sigen_plant_battery_power",
+    "available_max_power": "sensor.sigen_plant_available_max_active_power",
+    "pv_power": "sensor.sigen_plant_pv_power",
+    "sigen_pv_power": "sensor.sigen_plant_sigen_pv_power",
+    "third_party_pv": "sensor.sigen_plant_third_party_pv_power",
+    "pv_string": "sensor.sigen_inverter_pv{n}_power",
+    "solar_today": "sensor.sigen_plant_daily_pv_energy",
+    "home_today": "sensor.sigen_plant_daily_load_consumption",
+    "grid_import_today": "sensor.sigen_plant_daily_grid_import_energy",
+    "grid_export_today": "sensor.sigen_plant_daily_grid_export_energy",
 }
+
+# Entity map entries Battman no longer has (a Configure choice for one of these is just ignored):
+# the inverter's own SOC (Battman uses the whole plant's) and the battery temperature.
+DROPPED: set[str] = {"inverter_soc", "battery_temperature"}
 
 SIGEN = "Sigenergy (Sigenergy-Local-Modbus)"
 
@@ -141,13 +155,14 @@ async def async_check_versions(hass: HomeAssistant) -> dict[str, tuple[str, str]
 @callback
 def async_check_choices(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, str]:
     """Raise (or clear) the Repair for Configure choices Battman no longer uses. Returns map name -> your choice."""
-    ignored = {k: v for k, v in entry.options.items() if k in NAMED and v and v != NAMED[k]}
+    ignored = {k: v for k, v in entry.options.items() if v and (k in DROPPED or (k in NAMED and v != NAMED[k]))}
     if ignored:
         ir.async_create_issue(
             hass, DOMAIN, ISSUE_OVERRIDDEN, is_fixable=False, severity=ir.IssueSeverity.WARNING,
             translation_key=ISSUE_OVERRIDDEN,
             translation_placeholders={"choices": "\n".join(
-                f"- {k}: you picked `{v}`; Battman now uses `{NAMED[k]}`" for k, v in ignored.items())},
+                f"- {k}: you picked `{v}`; " + (f"Battman now uses `{NAMED[k]}`" if k in NAMED else "Battman no longer uses this")
+                for k, v in ignored.items())},
         )
     else:
         ir.async_delete_issue(hass, DOMAIN, ISSUE_OVERRIDDEN)

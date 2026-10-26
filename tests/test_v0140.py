@@ -158,7 +158,8 @@ async def test_nemmix_matches_smiggles(hass: HomeAssistant, hass_client) -> None
 # ── gauges card ──────────────────────────────────────────────────────────────
 
 GAUGE_STATES = {
-    "sensor.sigen_inverter_battery_state_of_charge": ("57.5", {}),
+    "sensor.sigen_inverter_battery_state_of_charge": ("57.5", {}),   # what Smiggles' card read
+    "sensor.sigen_plant_battery_state_of_charge": ("57.5", {}),      # what Battman's reads (v0.23.0: plant SOC)
     "sensor.sigen_plant_rated_energy_capacity": ("40.3", {}),
     "sensor.solcast_pv_forecast_forecast_remaining_today": ("20.1", {"estimate10": 14.62}),
     "sensor.sigen_plant_battery_power": ("-2.4", {}),
@@ -197,7 +198,9 @@ async def test_gauges_match_smiggles(hass: HomeAssistant, hass_client) -> None:
                 assert _render(hass, o["secondary"]) == _render(hass, m["secondary"]), o["name"]
                 rest_o = {k: v for k, v in o.items() if k not in ("secondary",)}
                 rest_o = json.loads(json.dumps(rest_o).replace("--smiggles-", "--battman-")
-                                    .replace('"sensor.gridpower"', '"sensor.battman_grid_power"'))   # v0.17.0
+                                    .replace('"sensor.gridpower"', '"sensor.battman_grid_power"')   # v0.17.0
+                                    .replace('"sensor.sigen_inverter_battery_state_of_charge"',
+                                             '"sensor.sigen_plant_battery_state_of_charge"'))       # v0.23.0
                 assert rest_o == {k: v for k, v in m.items() if k != "secondary"}
 
 

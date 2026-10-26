@@ -57,6 +57,25 @@ export function loadChartJs() {
   return chartLoad;
 }
 
+// Sigen's entities, named directly (the Sigenergy-Local-Modbus integration's own names, v1.1.0+).
+// pv_string is a pattern: {n} = string number 1..12. third_party_pv is optional hardware.
+export const SIGEN = {
+  battery_soc: "sensor.sigen_plant_battery_state_of_charge",
+  battery_power: "sensor.sigen_plant_battery_power",
+  rated_energy_capacity: "sensor.sigen_plant_rated_energy_capacity",
+  pv_power: "sensor.sigen_plant_pv_power",
+  sigen_pv_power: "sensor.sigen_plant_sigen_pv_power",
+  third_party_pv: "sensor.sigen_plant_third_party_pv_power",
+  pv_string: "sensor.sigen_inverter_pv{n}_power",
+  home_power: "sensor.sigen_plant_consumed_power",
+  grid_import_power: "sensor.sigen_plant_grid_import_power",
+  grid_export_power: "sensor.sigen_plant_grid_export_power",
+  solar_today: "sensor.sigen_plant_daily_pv_energy",
+  home_today: "sensor.sigen_plant_daily_load_consumption",
+  grid_import_today: "sensor.sigen_plant_daily_grid_import_energy",
+  grid_export_today: "sensor.sigen_plant_daily_grid_export_energy",
+};
+
 // Battman's entity map (Battman name -> entity in this HA), checked for the names a card needs.
 // Throws an Error saying what's wrong.
 export async function battmanMap(hass, needs) {
@@ -72,10 +91,11 @@ export async function battmanMap(hass, needs) {
   return m;
 }
 
-// "Battman entity map: entity not found: …", or null when every named entity exists.
+// "Entity not found: name → entity, …", or null when every named entity exists. map holds
+// Battman's entity map plus SIGEN.
 export function missingEntities(hass, map, keys) {
   const bad = keys.filter((k) => !hass.states[map[k]]).map((k) => k + " → " + map[k]);
-  return bad.length ? "Battman entity map: entity not found: " + bad.join(", ") : null;
+  return bad.length ? "Entity not found: " + bad.join(", ") : null;
 }
 
 // A theme colour as the card sees it (CSS variables reach it from its view's theme).

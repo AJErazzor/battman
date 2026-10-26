@@ -85,10 +85,10 @@ async def test_local_override_and_repair(hass: HomeAssistant, hass_client) -> No
     assert issues.async_get_issue(DOMAIN, "local_cards") is None
     local = Path(hass.config.path("battman/cards"))
     local.mkdir(parents=True)
-    (local / "limits.yaml").write_text("# name: My limits\ntype: markdown\ncontent: '[[map:pv_power]]'\n")
+    (local / "limits.yaml").write_text("# name: My limits\ntype: markdown\ncontent: '[[map:buy_price]]'\n")
     (local / "mine.yaml").write_text("type: markdown\ncontent: '[[map:no_such_thing]]'\n")
     card = await (await client.get("/api/battman/cards/limits")).json()
-    assert card["source"] == "local override" and card["config"] == {"type": "markdown", "content": "sensor.sigen_plant_pv_power"}
+    assert card["source"] == "local override" and card["config"] == {"type": "markdown", "content": "sensor.amber_5min_current_general_price"}
     mine = await (await client.get("/api/battman/cards/mine")).json()
     assert mine["source"] == "local" and mine["missing_map"] == ["no_such_thing"]   # shown on the card, not hidden
     issue = issues.async_get_issue(DOMAIN, "local_cards")

@@ -134,7 +134,7 @@
   "issues": {
     "map_choice_ignored": {
       "title": "Battman no longer uses some of your Configure choices",
-      "description": "Battman now uses these entities by name, so what you picked for them on its Configure screen no longer applies:\n\n{choices}\n\nIf the entity Battman now uses is right, clear your choice: open Battman → Configure and set it back to that entity (if it's no longer listed there, just save). If your entity has a different name, rename it to the one Battman uses (Settings → Entities). This notice goes once nothing is left to clear."
+      "description": "Battman now uses these entities by name (or no longer uses them), so what you picked for them on its Configure screen no longer applies:\n\n{choices}\n\nTo clear this, open Battman → Configure and save: entries that are no longer there are dropped. If your entity has a different name from the one Battman now uses, rename it (Settings → Entities). This notice goes once nothing is left to clear."
     },
     "integration_too_old": {
       "title": "An integration Battman uses needs updating",
@@ -192,46 +192,17 @@
     "step": {
       "init": {
         "title": "Battman entity map",
-        "description": "Which entity (or pattern) each Battman name points at, for the other integrations Battman uses (Sigen, Amber, Solcast, OpenNEM). Battman's engine entities aren't here: they follow whichever engine is in charge. Leave an entry as it is to keep Battman's default. In the solar string pattern, {marker} stands for the string number (1–12).",
+        "description": "Which entity each Battman name points at: Amber's prices, and Battman's own grid power and load average sensors. Sigen's and Solcast's entities are used by name, and the NEM sensors find their OpenNEM region themselves, so they aren't here. Battman's engine entities aren't here either: they follow whichever engine is in charge. Leave an entry as it is to keep Battman's default.",
         "data": {
-          "battery_soc": "Battery state of charge (%)",
           "buy_price": "Buy price (current)",
           "feed_in_price": "Feed-in price (current)",
           "buy_forecast": "Buy price forecast",
           "feed_in_forecast": "Feed-in price forecast",
-          "grid_export_today": "Grid export today (kWh, resets daily)",
-          "grid_import_today": "Grid import today (kWh, resets daily)",
-          "pv_power": "Solar power (total)",
-          "solar_today": "Solar today (kWh, resets daily)",
-          "home_today": "Home use today (kWh, resets daily)",
-          "battery_temperature": "Battery temperature",
-          "home_power": "Home consumption power",
-          "battery_power": "Battery power",
-          "third_party_pv": "Third-party solar power (optional)",
-          "pv_string": "Solar string pattern",
           "grid_power": "Grid power (Battman sensor)",
           "load_30m_avg": "Load, 30-min average (Battman sensor)",
-          "grid_import_power": "Grid import power",
-          "grid_export_power": "Grid export power",
-          "ems_control_mode": "Sigen remote EMS control mode (select)",
-          "grid_export_limit": "Grid export limit (number)",
-          "pv_max_limit": "PV max power limit (number)",
-          "max_charge_limit": "Max charging limit (number)",
-          "rated_charging_power": "Battery rated charging power",
-          "rated_discharging_power": "Battery rated discharging power",
-          "grid_connection_status": "Grid connection status (on/off grid)",
-          "total_imported_energy": "Total grid import energy (kWh, lifetime)",
-          "total_exported_energy": "Total grid export energy (kWh, lifetime)",
-          "sigen_pv_power": "Sigen solar power (Sigen inverter only)",
-          "rated_energy_capacity": "Battery rated capacity (kWh)",
-          "available_max_power": "Available max active power",
-          "inverter_soc": "Inverter battery state of charge (%)",
           "opennem": "OpenNEM region (several found: pick the one for the NEM sensors)"
         }
       }
-    },
-    "error": {
-      "pv_pattern": "The pattern must contain {marker}, e.g. {example}"
     }
   }
 }

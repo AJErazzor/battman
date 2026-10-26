@@ -20,7 +20,7 @@ turn on a custom font.
 The Log, Curvy, Pricy, Cost chart, Cost compare, Settings and Theme studio cards draw themselves.
 None of them need extra cards.
 
-Other integrations Battman's cards read (through the entity map):
+Other integrations Battman reads (Amber through the entity map, the rest by name):
 
 | Integration | Used for | If it's missing |
 |---|---|---|
