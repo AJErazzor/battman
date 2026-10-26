@@ -17,7 +17,7 @@
 // The charts use Chart.js, shipped with Battman (/battmanfiles/vendor/).
 // ---------------------------------------------------------------------------------------------
 
-import { BattmanCardBase, FILES, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 
 const LOG_EVENT = "battman_engine_log";
 
@@ -269,14 +269,12 @@ function battmanLogRun(card, root) {
   let changesOnly = false;
 
   const HISTORY_HOURS = 5;
-  // Entity IDs come from Battman's entity map (GET /api/battman/entities); the card only knows
-  // the Battman names. Panels are built once the map has loaded.
-  const NEEDS = ['mode',
-                 'buy_price', 'feed_in_price', 'pv_power', 'home_power', 'battery_power', 'load_30m_avg',
-                 'grid_import_power', 'grid_export_power', 'battery_soc', 'pv_string', 'third_party_pv'];
+  // Entity IDs: Battman's own and Amber's from Battman's entity map (GET /api/battman/entities),
+  // Sigen's by name (SIGEN). Panels are built once the map has loaded.
+  const NEEDS = ['mode', 'buy_price', 'feed_in_price', 'load_30m_avg'];
   // must exist in HA (pv_string is a pattern, third_party_pv is optional hardware)
-  const NEED_ENTITIES = NEEDS.filter(k => !['pv_string', 'third_party_pv'].includes(k));
-  let M = {};                 // the entity map
+  const NEED_ENTITIES = NEEDS.concat(['pv_power', 'home_power', 'battery_power', 'grid_import_power', 'grid_export_power', 'battery_soc']);
+  let M = {};                 // the entity map plus SIGEN
   let MODE_ENTITY = null;
   const GRID_ID = '__battman_grid';   // the grid panel's series, worked out in gridSeries()
   let PANELS = [];
@@ -303,7 +301,7 @@ function battmanLogRun(card, root) {
       { id: 'soc', title: 'Battery SOC (%)', unit: '%', series: [ { id: M.battery_soc, label: 'SOC', token: '--battman-green' } ] },
     ];
 
-    // Solar per-string panel: however many strings (from the map's pv_string pattern, {n} = 1..12)
+    // Solar per-string panel: however many strings (Sigen's pv_string pattern, {n} = 1..12)
     // are PRESENT and AVAILABLE, plus the plant total and an optional third-party feed.
     const h = haObj();
     const palette = ['--battman-blue', '--battman-green', '--battman-purple', '--battman-teal',
@@ -322,7 +320,7 @@ function battmanLogRun(card, root) {
       const id = M.pv_string.replace('{n}', n);
       if (avail(id)) { series.push({ id: id, label: nameFor(id, 'String ' + n), token: palette[ci % palette.length] }); ci++; }
     }
-    if (M.third_party_pv && avail(M.third_party_pv)) {
+    if (avail(M.third_party_pv)) {
       series.push({ id: M.third_party_pv, label: nameFor(M.third_party_pv, '3rd Party'), token: palette[ci % palette.length] }); ci++;
     }
     PANELS.push({ id: 'solar', title: 'Solar per String (kW)', unit: 'kW', series: series }); // at the bottom
@@ -1150,8 +1148,7 @@ function battmanLogRun(card, root) {
 
   (async function start() {
     try {
-      M = await battmanMap(haObj(), NEEDS.filter(k => k !== 'third_party_pv'));
-      if (M.pv_string.indexOf('{n}') < 0) throw new Error('Battman entity map: pv_string must contain {n} (e.g. sensor.sigen_inverter_pv{n}_power).');
+      M = { ...await battmanMap(haObj(), NEEDS), ...SIGEN };
     } catch (e) { showFatal(e.message); return; }
     const problem = missingThemeVars(card, THEME_VARS) || missingEntities(haObj(), M, NEED_ENTITIES);
     if (problem) { showFatal(problem); return; }

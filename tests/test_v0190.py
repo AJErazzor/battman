@@ -220,16 +220,20 @@ def test_house_card_defaults_are_battmans() -> None:
 
     js = (ROOT / "www/battman-house.js").read_text()
     items = js[js.index("const HOUSE_ITEMS"):js.index("const HOUSE_BY_KEY")]
-    # every default entity is an entity map entry, a PV string of the map's pattern, or nothing
+    # every default entity is an entity map entry, one of Sigen's entities (as the other cards name
+    # them, battman-card-base.js SIGEN, v0.23.0), a PV string of Sigen's pattern, or nothing
+    base = (ROOT / "www/battman-card-base.js").read_text()
+    sigen = dict(re.findall(r'^  (\w+): "([^"]+)",$', base[base.index("export const SIGEN"):], re.M))
     defaults = re.findall(r'(\w+): "([^"]*)"', items[items.index("ent:"):])
     for field, value in defaults:
         if field in ("key", "title", "label", "suffix", "image"):
             continue
-        assert value == "" or value.startswith(("map:", "pv:")), (field, value)
+        assert value == "" or value.startswith("map:") or value in sigen.values() \
+            or re.fullmatch(sigen["pv_string"].replace("{n}", r"\d"), value), (field, value)
     assert set(re.findall(r'"map:(\w+)"', items)) <= set(ENTITY_MAP_DEFAULTS)
-    assert re.findall(r'"pv:(\d)"', items) == ["2", "1", "3"]
+    assert re.findall(r'"sensor.sigen_inverter_pv(\d)_power"', items) == ["2", "1", "3"]
     assert not re.search(r"(?i)athelstone|malachy|noah|hamish|\b(East|North|West)\b", js)
-    assert 'map.pv_string.replace("{n}", d.slice(3))' in js
+    assert '"pv:' not in js and "battery_temperature" not in js
 
 
 # ── B6 ───────────────────────────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@
 # when it's a whole value). To try changes on your own HA, copy this file to
 # config/battman/cards/gauges.yaml and edit that copy.
 #
-# The SOC line works out kWh (inverter SOC x rated capacity) and Solcast's remaining
+# The SOC line works out kWh (plant SOC x rated capacity) and Solcast's remaining
 # 10% estimate itself, from the original sensors. Any value that's unavailable shows
 # — (never 0 or $0.00).
 type: vertical-stack
@@ -14,7 +14,7 @@ cards:
   - type: horizontal-stack
     cards:
       - type: custom:modern-circular-gauge
-        entity: '[[map:inverter_soc]]'
+        entity: 'sensor.sigen_plant_battery_state_of_charge'
         name: SOC
         min: 0
         max: 100
@@ -30,14 +30,14 @@ cards:
           columns: 6
           rows: auto
         secondary: >-
-          {% set soc = states('[[map:inverter_soc]]') | float(none) %}{% set cap =
-          states('[[map:rated_energy_capacity]]') | float(none) %}{% set rem =
+          {% set soc = states('sensor.sigen_plant_battery_state_of_charge') | float(none) %}{% set cap =
+          states('sensor.sigen_plant_rated_energy_capacity') | float(none) %}{% set rem =
           state_attr('sensor.solcast_pv_forecast_forecast_remaining_today', 'estimate10') | float(none)
           %}{{ '—' if soc is none or cap is none else ((soc / 100) * cap) | round(1) }}
           kWh (+{{ '—' if rem is none else rem | round | round(1) }}kWh)
         gauge_type: half
       - type: custom:modern-circular-gauge
-        entity: '[[map:battery_power]]'
+        entity: 'sensor.sigen_plant_battery_power'
         name: In⠀⠀⠀Battery⠀⠀⠀Out
         min: -10
         max: 15
@@ -53,7 +53,7 @@ cards:
           columns: 6
           rows: auto
         secondary: >-
-          {% set pv = states('[[map:pv_power]]') | float(none) %}Current Solar {{ '—'
+          {% set pv = states('sensor.sigen_plant_pv_power') | float(none) %}Current Solar {{ '—'
           if pv is none else pv | round(1) }}kW
         gauge_type: half
   - type: horizontal-stack
@@ -86,7 +86,7 @@ cards:
           format(buy) }}
         gauge_type: half
       - type: custom:modern-circular-gauge
-        entity: '[[map:home_power]]'
+        entity: 'sensor.sigen_plant_consumed_power'
         name: Home
         min: 0
         max: 15

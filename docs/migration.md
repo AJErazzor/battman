@@ -61,7 +61,8 @@ If that's not enough: restore the backup.
 ## Another Smiggles user
 
 Install Battman, restart, check Repairs is empty, take a backup, run the dry run, then Migrate.
-Their Sigen / Amber / Solcast entity names go on Battman's Configure screen first if they differ.
+Their Amber entity names go on Battman's Configure screen first if they differ. Sigen and Solcast
+are used by name: Battman's Repairs name any that's missing (rename yours to the name given).
 
 ## What doesn't move
 

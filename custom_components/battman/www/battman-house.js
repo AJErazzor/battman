@@ -3,9 +3,9 @@
 // lines that move when power flows. Battman's copy of the Smiggles house card, drawn by itself
 // (no button-card, mushroom or card-mod needed).
 //
-// Every item has its own settings, all optional. The defaults come from Battman's entity map (the
-// PV strings from its pv_string pattern); the outside temperature and the three devices have no
-// default: they're drawn once you pick their entity.
+// Every item has its own settings, all optional. The defaults are Sigen's entities by name and
+// Amber's prices from Battman's entity map; the outside temperature, the battery temperature and the
+// three devices have no default: they're drawn once you pick their entity.
 //
 //   type: custom:battman-house
 //   buy:     { show: true, entity: sensor.amber_5min_current_general_price }
@@ -40,7 +40,7 @@ function battmanDefine(tag, cls) {
 }
 
 // The items, in the editor's order. ent: { field: default } where a default "map:x" is entry x of
-// Battman's entity map and "pv:n" is string n of its pv_string pattern. need: the fields that must
+// Battman's entity map; any other default is the entity itself. need: the fields that must
 // exist for the item to be drawn.
 // at: [top %, left %, width %] on the card (the Smiggles card's places).
 const HOUSE_ITEMS = [
@@ -48,25 +48,25 @@ const HOUSE_ITEMS = [
   { key: "battery_unit", title: "Battery picture", image: "/battmanfiles/images/house-battery.webp", at: [1.1, -3.8, 100] },
   { key: "gateway", title: "Gateway picture", image: "/battmanfiles/images/house-gateway.webp", at: [-2.4, 2, 97.7] },
   { key: "temperature", title: "Outside temperature", ent: { entity: "" }, need: ["entity"], at: [0, 2.5, 25.3] },
-  { key: "pv2", title: "PV string (top)", label: "PV2", ent: { entity: "pv:2" }, need: ["entity"], at: [9.0, 2.5, 25.3] },
-  { key: "pv1", title: "PV string (middle)", label: "PV1", ent: { entity: "pv:1" }, need: ["entity"], at: [16.8, 2.5, 25.3] },
-  { key: "pv3", title: "PV string (bottom)", label: "PV3", ent: { entity: "pv:3" }, need: ["entity"], at: [24.6, 2.5, 25.3] },
-  { key: "solar", title: "Solar power", label: "SOLAR", ent: { entity: "map:pv_power" }, need: ["entity"], at: [5.6, 44.3, 25.3] },
-  { key: "solar_today", title: "Solar today", ent: { entity: "map:solar_today" }, need: ["entity"], at: [14.3, 44.3, 35.4] },
+  { key: "pv2", title: "PV string (top)", label: "PV2", ent: { entity: "sensor.sigen_inverter_pv2_power" }, need: ["entity"], at: [9.0, 2.5, 25.3] },
+  { key: "pv1", title: "PV string (middle)", label: "PV1", ent: { entity: "sensor.sigen_inverter_pv1_power" }, need: ["entity"], at: [16.8, 2.5, 25.3] },
+  { key: "pv3", title: "PV string (bottom)", label: "PV3", ent: { entity: "sensor.sigen_inverter_pv3_power" }, need: ["entity"], at: [24.6, 2.5, 25.3] },
+  { key: "solar", title: "Solar power", label: "SOLAR", ent: { entity: "sensor.sigen_plant_pv_power" }, need: ["entity"], at: [5.6, 44.3, 25.3] },
+  { key: "solar_today", title: "Solar today", ent: { entity: "sensor.sigen_plant_daily_pv_energy" }, need: ["entity"], at: [14.3, 44.3, 35.4] },
   { key: "countdown", title: "Price countdown", label: "LEFT", at: [0, 60, 20] },
   { key: "sell", title: "Sell price (feed-in)", label: "FIT", ent: { entity: "map:feed_in_price" }, need: ["entity"], at: [0, 74, 25] },
   { key: "buy", title: "Buy price", label: "BUY", ent: { entity: "map:buy_price" }, need: ["entity"], at: [7.8, 74, 25] },
-  { key: "home", title: "Home power", label: "HOME", ent: { entity: "map:home_power" }, need: ["entity"], at: [32.2, 80.5, 19] },
-  { key: "home_today", title: "Home today", ent: { entity: "map:home_today" }, need: ["entity"], at: [40.7, 80.5, 19] },
+  { key: "home", title: "Home power", label: "HOME", ent: { entity: "sensor.sigen_plant_consumed_power" }, need: ["entity"], at: [32.2, 80.5, 19] },
+  { key: "home_today", title: "Home today", ent: { entity: "sensor.sigen_plant_daily_load_consumption" }, need: ["entity"], at: [40.7, 80.5, 19] },
   { key: "pc1", title: "Device 1", label: "Device 1", suffix: "W", ent: { entity: "" }, need: ["entity"], at: [60, 2.5, 25.3] },
   { key: "pc2", title: "Device 2", label: "Device 2", suffix: "W", ent: { entity: "" }, need: ["entity"], at: [67.8, 2.5, 25.3] },
   { key: "pc3", title: "Device 3", label: "Device 3", suffix: "W", ent: { entity: "" }, need: ["entity"], at: [75.6, 2.5, 25.3] },
-  { key: "battery_temp", title: "Battery temperature", ent: { entity: "map:battery_temperature" }, need: ["entity"], at: [58.9, 27.6, 25.3] },
-  { key: "battery", title: "Battery charge", label: "SOC", ent: { entity: "map:battery_soc", capacity: "map:rated_energy_capacity" }, need: ["entity"], at: [75.6, 32, 46] },
-  { key: "battery_flow", title: "Battery charging / discharging", ent: { entity: "map:battery_power", soc: "map:battery_soc", capacity: "map:rated_energy_capacity" }, need: ["entity"], at: [83.3, 32, 46] },
-  { key: "grid", title: "Grid power", label: "GRID", ent: { import: "map:grid_import_power", export: "map:grid_export_power" }, need: ["import", "export"], at: [75.6, 79.8, 19.5] },
-  { key: "grid_flow", title: "Grid import / export today", ent: { import: "map:grid_import_power", export: "map:grid_export_power", import_today: "map:grid_import_today", export_today: "map:grid_export_today" }, need: ["import", "export"], at: [83.3, 79.8, 19.5] },
-  { key: "lines", title: "Flow lines", ent: { solar: "map:pv_power", home: "map:home_power", battery: "map:battery_power", import: "map:grid_import_power", export: "map:grid_export_power" } },
+  { key: "battery_temp", title: "Battery temperature", ent: { entity: "" }, need: ["entity"], at: [58.9, 27.6, 25.3] },
+  { key: "battery", title: "Battery charge", label: "SOC", ent: { entity: "sensor.sigen_plant_battery_state_of_charge", capacity: "sensor.sigen_plant_rated_energy_capacity" }, need: ["entity"], at: [75.6, 32, 46] },
+  { key: "battery_flow", title: "Battery charging / discharging", ent: { entity: "sensor.sigen_plant_battery_power", soc: "sensor.sigen_plant_battery_state_of_charge", capacity: "sensor.sigen_plant_rated_energy_capacity" }, need: ["entity"], at: [83.3, 32, 46] },
+  { key: "grid", title: "Grid power", label: "GRID", ent: { import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power" }, need: ["import", "export"], at: [75.6, 79.8, 19.5] },
+  { key: "grid_flow", title: "Grid import / export today", ent: { import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power", import_today: "sensor.sigen_plant_daily_grid_import_energy", export_today: "sensor.sigen_plant_daily_grid_export_energy" }, need: ["import", "export"], at: [83.3, 79.8, 19.5] },
+  { key: "lines", title: "Flow lines", ent: { solar: "sensor.sigen_plant_pv_power", home: "sensor.sigen_plant_consumed_power", battery: "sensor.sigen_plant_battery_power", import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power" } },
 ];
 const HOUSE_BY_KEY = Object.fromEntries(HOUSE_ITEMS.map((i) => [i.key, i]));
 const HOUSE_ENT_LABELS = {
@@ -112,7 +112,6 @@ function houseDefaults(item, map) {
   if (item.suffix !== undefined) out.suffix = item.suffix;
   for (const [f, d] of Object.entries(item.ent || {})) {
     if (d.startsWith("map:")) out[f] = map[d.slice(4)] || "";
-    else if (d.startsWith("pv:")) out[f] = map.pv_string ? map.pv_string.replace("{n}", d.slice(3)) : "";
     else out[f] = d;
   }
   return out;

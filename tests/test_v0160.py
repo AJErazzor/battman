@@ -159,6 +159,9 @@ async def test_overrides_structure_matches(hass: HomeAssistant, hass_client) -> 
         assert ns.count(old) == 1
         ns = ns.replace(old, new)
     so["cards"][0]["variables"]["battman"]["net_src"] = ns
+    # v0.23.0: the rows redraw on the whole plant's SOC (Battman's SOC), not the inverter's
+    so = json.loads(json.dumps(so).replace("sensor.sigen_inverter_battery_state_of_charge",
+                                           "sensor.sigen_plant_battery_state_of_charge"))
     def diff(a, b, p=""):
         if isinstance(a, dict) and isinstance(b, dict):
             return [d for k in sorted(set(a) | set(b)) for d in diff(a.get(k), b.get(k), f"{p}/{k}")]

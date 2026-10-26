@@ -83,8 +83,8 @@ draw themselves (`custom:battman-curvy` and so on): add them to any view like an
 needed. The rest are Battman's card files (see [docs/cards.md](docs/cards.md)). Battman serves
 their scripts and images from `/battmanfiles/`.
 
-Cards find their entities through Battman's **entity map** (Battman name → entity in your HA)
-and take their colours from a **Battman theme**. If an entity or theme colour is missing, the
+Cards use Sigen's and Solcast's entities by name, and find Amber's and Battman's own through
+Battman's **entity map** (Battman name → entity in your HA). They take their colours from a **Battman theme**. If an entity or theme colour is missing, the
 card shows an error saying exactly what.
 
 ## Theme mode colours sensor
@@ -111,7 +111,7 @@ ones Curvy's and Pricy's **Factory defaults** buttons load). Your own settings a
 replaced by them.
 
 **30-minute load average.** `sensor.battman_load_30m_avg` is a Statistics sensor Battman makes from
-home power (`home_power` in the entity map): the mean over the last 30 minutes. When it has no
+home power (Sigen's `sensor.sigen_plant_consumed_power`): the mean over the last 30 minutes. When it has no
 value the engine skips its high-consumption check and says so in the engine log.
 
 Battman writes `packages/battman/` on every update (don't edit those files). HA reads that folder
@@ -147,12 +147,11 @@ it follows on the Battman dashboard, **Settings → Live Activity**. See
 
 ## Entity map (Configure)
 
-Battman names (`buy_total`, `battery_soc`, `pv_string`, …) point at entities in
-your HA. The defaults match a Sigenergy + Amber + Solcast setup. To change one
-(say a different inverter): Settings → Devices & services → Battman →
-**Configure**. Only the entries you change are stored, so new defaults in later
-releases still reach the rest. `pv_string` is a pattern: `{n}` is the string
-number (1–12), e.g. `sensor.sigen_inverter_pv{n}_power`.
+Battman names (`buy_total`, `buy_price`, …) point at entities in your HA. Amber's prices and
+Battman's grid power and load average sensors can be changed: Settings → Devices & services →
+Battman → **Configure**. Only the entries you change are stored, so new defaults in later releases
+still reach the rest. Sigen's and Solcast's entities aren't on the map: Battman uses them by name,
+and a Repair names any that's missing (see [DEPENDENCIES.md](DEPENDENCIES.md)).
 
 ## Dependencies
 

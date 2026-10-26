@@ -96,13 +96,12 @@ async def test_configure_screen(hass: HomeAssistant, hass_client) -> None:
     assert defaults["buy_price"] == "sensor.amber_5min_current_general_price"
     assert "buy_total" not in defaults          # engine entries follow the engine in charge, not Configure
 
-    bad = await hass.config_entries.options.async_configure(
-        flow["flow_id"], {**defaults, "pv_string": "sensor.pv_power"})
-    assert bad["errors"] == {"pv_string": "pv_pattern"}
+    assert not [k for k in defaults if k != "opennem" and k not in (  # v0.23.0: Amber and Battman's own only
+        "buy_price", "feed_in_price", "buy_forecast", "feed_in_forecast", "grid_power", "load_30m_avg")], defaults
     done = await hass.config_entries.options.async_configure(
-        bad["flow_id"], {**defaults, "buy_price": "sensor.my_buy", "pv_string": "sensor.inv_pv{n}"})
+        flow["flow_id"], {**defaults, "buy_price": "sensor.my_buy"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.options == {"buy_price": "sensor.my_buy", "pv_string": "sensor.inv_pv{n}"}  # only changes
+    assert entry.options == {"buy_price": "sensor.my_buy"}  # only changes
     await hass.async_block_till_done()
 
     client = await hass_client()
@@ -153,6 +152,5 @@ async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
     assert by_path["curvy"]["cards"][0]["type"] == "custom:battman-curvy" and by_path["curvy"]["theme"] == "Battman Nord"
     assert by_path["pricy"]["cards"][0]["type"] == "custom:battman-pricy" and by_path["pricy"]["title"] == "Pricy"
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
-    assert emap["sigen_pv_power"] == "sensor.sigen_plant_sigen_pv_power"      # Sigen-only, separate from pv_power
-    assert emap["pv_power"] == "sensor.sigen_plant_pv_power"
+    assert "sigen_pv_power" not in emap and "pv_power" not in emap        # v0.23.0: Sigen by name, not on the map
     assert emap["soc_curves_update_event"] == "solar_system_control_soc_curves_update"

@@ -27,7 +27,7 @@ badges:
   show_name: true
   show_state: true
   show_icon: true
-  entity: '{{battery_soc}}'
+  entity: sensor.sigen_plant_battery_state_of_charge
   name: SOC
 - type: entity
   show_name: true

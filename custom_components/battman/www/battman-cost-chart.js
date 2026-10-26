@@ -3,10 +3,11 @@
 // today's sell and buy, this and last bill, and lifetime figures on top. From the cost totals'
 // long-term statistics (battman-cost-data.js). The range you pick is kept per device.
 
-import { BattmanCardBase, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 import { costData, fromDateStr, midnight, money, num, toDateStr } from "./battman-cost-data.js";
 
-const NEEDS = ["buy_total", "sell_total", "network_fee_total", "parameters", "grid_export_today", "grid_import_today"];
+const NEEDS = ["buy_total", "sell_total", "network_fee_total", "parameters"];
+const NEED_ENTITIES = NEEDS.concat(["grid_export_today", "grid_import_today"]);   // the last two: Sigen's, by name
 const THEME_VARS = ["--battman-green", "--battman-amber", "--battman-red"];
 const DAY_PILLS = [5, 10, 14, 20, 30];
 const RANGE_KEY = "battman.costRange";
@@ -263,7 +264,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     function hideMsg() { $("msg").style.display = "none"; $("c").style.display = ""; }
 
     function check() {
-      FATAL = missingThemeVars(card, THEME_VARS) || missingEntities(card.hass, M, NEEDS);
+      FATAL = missingThemeVars(card, THEME_VARS) || missingEntities(card.hass, M, NEED_ENTITIES);
       return FATAL;
     }
 
@@ -322,7 +323,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     }
 
     (async function start() {
-      try { M = await battmanMap(card.hass, NEEDS); } catch (e) { return card.problem(e.message); }
+      try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN }; } catch (e) { return card.problem(e.message); }
       try { Chart = await loadChartJs(); } catch (e) { chartProblem = e.message; }
       data = costData(() => card.hass, { buy: M.buy_total, sell: M.sell_total, fee: M.network_fee_total, param: M.parameters });
       readColors();

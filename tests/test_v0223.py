@@ -34,7 +34,7 @@ async def _setup(hass, options=None):
 
 
 def test_engine_side_names_sigen_directly() -> None:
-    sigen_keys = [k for k, v in OTHER_MAP_DEFAULTS.items() if "sigen" in v]
+    sigen_keys = [k for k, v in R.NAMED.items() if "sigen" in v]
     for f in ENGINE_SIDE:
         text = f.read_text()
         for k in sigen_keys:
@@ -53,10 +53,10 @@ def test_every_named_entity_is_checked() -> None:
     for f in ENGINE_SIDE:
         named |= set(re.findall(r"(?:sensor|select|number)\.(?:sigen|solcast)_[a-z0-9_]+", f.read_text()))
     assert named and named <= set(R.REQUIRED), named - set(R.REQUIRED)
+    optional = {"sigen_pv_power", "third_party_pv", "pv_string"}   # overlays / optional hardware (v0.23.0)
     for k, entity in R.NAMED.items():
-        assert entity in R.REQUIRED, k
-        if k in OTHER_MAP_DEFAULTS:                       # still on the map for the cards until release 2
-            assert OTHER_MAP_DEFAULTS[k] == entity, k
+        assert entity in R.REQUIRED or k in optional, k
+        assert k not in OTHER_MAP_DEFAULTS, k             # v0.23.0: off the map
 
 
 async def test_missing_sigen_entities_named(hass: HomeAssistant) -> None:

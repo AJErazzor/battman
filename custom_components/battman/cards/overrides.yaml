@@ -22,11 +22,11 @@ cards:
   variables:
     battman:
       params_entity: '[[map:parameters]]'
-      soc_entity: '[[map:battery_soc]]'
+      soc_entity: 'sensor.sigen_plant_battery_state_of_charge'
       timer_entity: '[[map:override_timer]]'
       forecast_entity: '[[map:buy_forecast]]'
-      charge_kw_entity: '[[map:available_max_power]]'
-      capacity_entity: '[[map:rated_energy_capacity]]'
+      charge_kw_entity: 'sensor.sigen_plant_available_max_active_power'
+      capacity_entity: 'sensor.sigen_plant_rated_energy_capacity'
       price_field: advanced_price_predicted
       round_step_cents: 1
       safety_min_minutes: 30
@@ -393,11 +393,11 @@ cards:
 - variables:
     battman: &settings
       params_entity: '[[map:parameters]]'
-      soc_entity: '[[map:battery_soc]]'
+      soc_entity: 'sensor.sigen_plant_battery_state_of_charge'
       timer_entity: '[[map:override_timer]]'
       forecast_entity: '[[map:buy_forecast]]'
-      charge_kw_entity: '[[map:available_max_power]]'
-      capacity_entity: '[[map:rated_energy_capacity]]'
+      charge_kw_entity: 'sensor.sigen_plant_available_max_active_power'
+      capacity_entity: 'sensor.sigen_plant_rated_energy_capacity'
       price_field: advanced_price_predicted
       round_step_cents: 1
       safety_min_minutes: 30
@@ -516,7 +516,7 @@ cards:
   entity: '[[map:parameters]]'
   triggers_update:
   - '[[map:parameters]]'
-  - '[[map:inverter_soc]]'
+  - 'sensor.sigen_plant_battery_state_of_charge'
   show_icon: false
   show_name: false
   show_state: false
@@ -628,7 +628,7 @@ cards:
   entity: '[[map:parameters]]'
   triggers_update:
   - '[[map:parameters]]'
-  - '[[map:inverter_soc]]'
+  - 'sensor.sigen_plant_battery_state_of_charge'
   show_icon: false
   show_name: false
   show_state: false
@@ -740,7 +740,7 @@ cards:
   entity: '[[map:parameters]]'
   triggers_update:
   - '[[map:parameters]]'
-  - '[[map:inverter_soc]]'
+  - 'sensor.sigen_plant_battery_state_of_charge'
   show_icon: false
   show_name: false
   show_state: false
@@ -856,7 +856,7 @@ cards:
   entity: '[[map:parameters]]'
   triggers_update:
   - '[[map:parameters]]'
-  - '[[map:inverter_soc]]'
+  - 'sensor.sigen_plant_battery_state_of_charge'
   show_icon: false
   show_name: false
   show_state: false
@@ -1050,7 +1050,7 @@ cards:
   entity: '[[map:parameters]]'
   triggers_update:
   - '[[map:parameters]]'
-  - '[[map:inverter_soc]]'
+  - 'sensor.sigen_plant_battery_state_of_charge'
   show_icon: false
   show_name: false
   show_state: false
@@ -1289,11 +1289,11 @@ cards:
         variables:
           battman:
             params_entity: '[[map:parameters]]'
-            soc_entity: '[[map:battery_soc]]'
+            soc_entity: 'sensor.sigen_plant_battery_state_of_charge'
             timer_entity: '[[map:override_timer]]'
             forecast_entity: '[[map:buy_forecast]]'
-            charge_kw_entity: '[[map:available_max_power]]'
-            capacity_entity: '[[map:rated_energy_capacity]]'
+            charge_kw_entity: 'sensor.sigen_plant_available_max_active_power'
+            capacity_entity: 'sensor.sigen_plant_rated_energy_capacity'
             price_field: advanced_price_predicted
             round_step_cents: 1
             safety_min_minutes: 30

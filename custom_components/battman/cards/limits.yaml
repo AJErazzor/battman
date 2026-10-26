@@ -11,7 +11,7 @@ cards:
   - type: horizontal-stack
     cards:
       - type: custom:button-card
-        entity: '[[map:grid_export_limit]]'
+        entity: 'number.sigen_plant_grid_export_limitation'
         show_icon: false
         show_name: false
         show_state: false
@@ -44,7 +44,7 @@ cards:
               - justify-self: center
               - width: 100%
       - type: custom:button-card
-        entity: '[[map:pv_max_limit]]'
+        entity: 'number.sigen_plant_pv_max_power_limit'
         show_icon: false
         show_name: false
         show_state: false
@@ -77,7 +77,7 @@ cards:
               - justify-self: center
               - width: 100%
       - type: custom:button-card
-        entity: '[[map:max_charge_limit]]'
+        entity: 'number.sigen_plant_ess_max_charging_limit'
         show_icon: false
         show_name: false
         show_state: false
