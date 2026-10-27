@@ -1,25 +1,26 @@
 // Battman Amber forecast chart: custom:battman-amber-forecast-chart. Amber's buy and sell price
 // forecasts for the next 4, 8, 12 or 24 hours: the price, Amber Advanced's prediction and its low /
-// high band, for each side, in c/kWh. Tap a name under the chart to hide or show that line; the range
+// high band, for each side, in c/kWh, each line solid in its own theme colour. Until the first
+// forecast, the Price lines show Amber's current prices. Tap a name under the chart to hide or show that line; the range
 // and the hidden lines are kept per device. From Amber's two forecast sensors (amber2mqtt), named
 // directly (AMBER in battman-card-base.js); the figures are worked out in battman-amber-forecast-data.js.
 
 import { AMBER, BattmanCardBase, battmanDefine, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 import { RANGES_H, SERIES, covering, forecastSeries } from "./battman-amber-forecast-data.js";
 
-const NEED_ENTITIES = ["buy_forecast", "feed_in_forecast"];
-const THEME_VARS = ["--battman-amber", "--battman-green"];
+const NEED_ENTITIES = ["buy_forecast", "feed_in_forecast", "buy_price", "feed_in_price"];
+// each line's theme colour: Buy in the warm colours, Sell in the cool ones
+const LINE_COLOR = {
+  buy: "--battman-amber", buy_predicted: "--battman-orange", buy_low: "--battman-yellow", buy_high: "--battman-red",
+  sell: "--battman-green", sell_predicted: "--battman-teal", sell_low: "--battman-sky", sell_high: "--battman-blue",
+};
+const THEME_VARS = Object.values(LINE_COLOR);
 const SAVE_KEY = "battman.amberForecastChart";
 const DEFAULT_RANGE_H = 8;
 const TICK_H = { 4: 0.5, 8: 1, 12: 2, 24: 3 };   // hours between time labels, per range
 
-// how each kind of line is drawn: Price solid, Predicted dashed, Low / High dotted and fainter
-const STYLE = {
-  per_kwh: { width: 2.5, dash: [], alpha: 1 },
-  predicted: { width: 2, dash: [6, 4], alpha: 1 },
-  low: { width: 1.5, dash: [2, 3], alpha: 0.7 },
-  high: { width: 1.5, dash: [2, 3], alpha: 0.7 },
-};
+// every line solid; Price a little heavier, Low / High a little lighter
+const WIDTH = { per_kwh: 2.5, predicted: 2, low: 1.5, high: 1.5 };
 const kindOf = (sd) => sd.id.endsWith("_predicted") ? "predicted" : sd.id.endsWith("_low") ? "low" : sd.id.endsWith("_high") ? "high" : "per_kwh";
 
 class BattmanAmberForecastChartCard extends BattmanCardBase {
@@ -73,22 +74,11 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
       try { localStorage.setItem(SAVE_KEY, JSON.stringify({ range: rangeH, hidden: [...hidden] })); } catch (e) {}
     }
 
-    // ---- colours: Buy amber, Sell green (as on the Cost chart); fainter for Low / High ----
-    function withAlpha(color, a) {
-      if (a >= 1) return color;
-      const ctx = document.createElement("canvas").getContext("2d");
-      ctx.fillStyle = color;
-      const s = ctx.fillStyle;   // the browser's own form: #rrggbb or rgba(...)
-      if (s[0] === "#") return `rgba(${parseInt(s.slice(1, 3), 16)},${parseInt(s.slice(3, 5), 16)},${parseInt(s.slice(5, 7), 16)},${a})`;
-      const m = s.match(/rgba?\(([^)]+)\)/);
-      if (!m) return color;
-      const p = m[1].split(",").map((x) => x.trim());
-      return `rgba(${p[0]},${p[1]},${p[2]},${a * (p[3] !== undefined ? Number(p[3]) : 1)})`;
-    }
+    // ---- colours: one theme colour per line (LINE_COLOR) ----
     function readColors() {
       const c = (v) => cssVar(card, v);
-      COL = { buy: c("--battman-amber"), sell: c("--battman-green"), grid: c("--divider-color"),
-              muted: c("--secondary-text-color"), text: c("--primary-text-color") };
+      COL = { grid: c("--divider-color"), muted: c("--secondary-text-color"), text: c("--primary-text-color") };
+      for (const id in LINE_COLOR) COL[id] = c(LINE_COLOR[id]);
       const ff = c("--primary-font-family"); if (ff && Chart) Chart.defaults.font.family = ff;
     }
 
@@ -131,12 +121,11 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
 
     function datasets(S) {
       return SERIES.map((sd) => {
-        const st = STYLE[kindOf(sd)];
-        const color = withAlpha(sd.side === "buy" ? COL.buy : COL.sell, st.alpha);
+        const color = COL[sd.id];
         return {
           label: sd.label, sid: sd.id, hidden: hidden.has(sd.id),
           data: S.times.map((t, i) => ({ x: t, y: S.data[sd.id][i] })),
-          borderColor: color, backgroundColor: color, borderWidth: st.width, borderDash: st.dash,
+          borderColor: color, backgroundColor: color, borderWidth: WIDTH[kindOf(sd)],
           pointRadius: 0, pointHoverRadius: 3, stepped: "after", spanGaps: false,
         };
       });
@@ -147,7 +136,9 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
       if (!items.length || !lastSeries) return "";
       const t = items[0].parsed.x;
       const iv = covering(lastSeries.buyIv, t, false) || covering(lastSeries.sellIv, t, false);
-      return iv ? fmtDayHM.format(iv.s) + " – " + fmtHM.format(iv.e) : fmtDayHM.format(t);
+      if (iv) return fmtDayHM.format(iv.s) + " – " + fmtHM.format(iv.e);
+      const first = Math.min(...[lastSeries.buyIv, lastSeries.sellIv].filter((x) => x.length).map((x) => x[0].s));
+      return t < first ? "Now – " + fmtHM.format(first) + " (current price)" : fmtDayHM.format(t);
     }
 
     function render() {
@@ -161,7 +152,8 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
         return showMsg("No Amber forecasts yet (Forecasts is empty on " + AMBER.buy_forecast + " or " + AMBER.feed_in_forecast + ").");
       }
       const now = Date.now(), end = now + rangeH * 3600000;
-      const S = forecastSeries(buyF, sellF, now, end);
+      const cur = (k) => card.hass.states[AMBER[k]].state;
+      const S = forecastSeries(buyF, sellF, now, end, { buy: cur("buy_price"), sell: cur("feed_in_price") });
       lastSeries = S;
       hideMsg();
       const stepMs = TICK_H[rangeH] * 3600000;

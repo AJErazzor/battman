@@ -199,12 +199,14 @@ no options.
 ## Battman Amber forecast chart
 
 `custom:battman-amber-forecast-chart` is Amber's price forecasts as a chart, in c/kWh, from now to 4,
-8, 12 or 24 hours ahead. Each side, Buy (amber) and Sell (green), has four lines: the forecast price
-(solid), Amber Advanced's prediction (dashed) and its low and high (dotted). Sell is shown as what
-you're paid (positive = earning), as the engine works it out, so Sell High is always the upper line.
+8, 12 or 24 hours ahead. Each side has four lines, each solid in its own theme colour (Buy in the
+warm colours, Sell in the cool ones): the forecast price, Amber Advanced's prediction and its low and
+high. Until the first forecast (the interval under way isn't in Amber's forecasts) the price lines
+show Amber's current prices. Sell is shown as what you're paid (positive = earning), as the engine
+works it out, so Sell High is always the upper line.
 Tap a name under the chart to hide or show that line; the range and the hidden lines are kept per
 device. Hover or tap the chart for every shown line's price in that interval. It reads Amber's two
-forecast sensors (amber2mqtt) and says so on the card if one is missing or has no forecasts. It
+forecast sensors and two current-price sensors (amber2mqtt) and says so on the card if one is missing or has no forecasts. It
 refreshes every minute and whenever Amber updates. It has no options.
 
 ## Battman Settings

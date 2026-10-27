@@ -38,16 +38,20 @@ export function amberValue(f, field) {
   return num(f["advanced_price_" + field]);
 }
 
+// Amber's intervals start a second past the boundary (17:30:01 to 18:00:00): on the whole minute, so
+// one interval ends where the next starts and the line has no gap between them.
+const toMinute = (ms) => isNaN(ms) ? ms : Math.floor(ms / 60000) * 60000;
+
 // Forecasts list -> [{ s, e, f }] (ms), in time order. An entry with no usable start is skipped; one with
 // no end_time or duration ends where the next one starts (the last such entry is dropped).
 export function intervals(forecasts) {
   const list = (Array.isArray(forecasts) ? forecasts : [])
-    .map((f) => ({ f, s: Date.parse(f && f.start_time) }))
+    .map((f) => ({ f, s: toMinute(Date.parse(f && f.start_time)) }))
     .filter((x) => !isNaN(x.s))
     .sort((a, b) => a.s - b.s);
   const out = [];
   list.forEach((x, i) => {
-    let e = Date.parse(x.f.end_time);
+    let e = toMinute(Date.parse(x.f.end_time));
     if (isNaN(e) && num(x.f.duration) !== null) e = x.s + num(x.f.duration) * 60000;
     if (isNaN(e) && list[i + 1]) e = list[i + 1].s;
     if (!isNaN(e) && e > x.s) out.push({ s: x.s, e, f: x.f });
@@ -64,7 +68,10 @@ export function covering(iv, t, last) {
 
 // The chart's points over [fromMs, toMs]: every interval edge plus a 5-minute grid, and each series'
 // value (c/kWh) at each, as the interval covering it says. -> { times, data: { id: [..] }, buyIv, sellIv }
-export function forecastSeries(buyForecasts, sellForecasts, fromMs, toMs) {
+// current: { buy, sell } ($/kWh, Sell already positive = earning, as Amber's current-price sensors give
+// them): the Price lines from now until each side's first forecast (the interval under way isn't in
+// the forecasts). Predicted / Low / High have nothing there.
+export function forecastSeries(buyForecasts, sellForecasts, fromMs, toMs, current) {
   const buyIv = intervals(buyForecasts), sellIv = intervals(sellForecasts);
   const set = new Set([fromMs, toMs]);
   for (let t = Math.ceil(fromMs / STEP_MS) * STEP_MS; t < toMs; t += STEP_MS) set.add(t);
@@ -78,7 +85,10 @@ export function forecastSeries(buyForecasts, sellForecasts, fromMs, toMs) {
   const data = {};
   for (const sd of SERIES) {
     const iv = sd.side === "buy" ? buyIv : sellIv;
+    const firstStart = iv.length ? iv[0].s : Infinity;
+    const now = current && sd.field === "per_kwh" ? num(current[sd.side]) : null;
     data[sd.id] = times.map((t, i) => {
+      if (t < firstStart) return now === null ? null : Math.round(now * 100 * 10000) / 10000;
       if (t > lastEnd) return null;
       const x = covering(iv, t, i === times.length - 1 || t === lastEnd);
       const v = x ? amberValue(x.f, sd.field) : null;

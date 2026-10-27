@@ -9,7 +9,8 @@ const http = require("http");
 (async () => {
   const www = process.argv[2];
   const page = `<!doctype html><html><head><style>
-:root{--battman-amber:#fab387;--battman-green:#a6e3a1;--divider-color:#333;--secondary-text-color:#aaa;
+:root{--battman-amber:#fab387;--battman-green:#a6e3a1;--battman-orange:#f9a066;--battman-yellow:#f9e2af;
+--battman-red:#f38ba8;--battman-teal:#94e2d5;--battman-sky:#89dceb;--battman-blue:#89b4fa;--divider-color:#333;--secondary-text-color:#aaa;
 --primary-text-color:#eee;--card-background-color:#1e1e2e;--primary-color:#a6e3a1}
 #wrap{width:800px;height:340px}</style></head><body><div id="wrap"></div>
 <script type="module">
@@ -18,7 +19,14 @@ const f = (i, raw, dur) => ({ start_time: new Date(base + i * 1800000).toISOStri
   per_kwh: raw, advanced_price_low: raw - 0.02, advanced_price_predicted: raw + 0.01, advanced_price_high: raw + 0.03 });
 window.mk = (buy, sell, tz) => ({ config: { time_zone: tz === undefined ? "Australia/Adelaide" : tz }, themes: {}, states: Object.assign({},
   buy === null ? {} : { "sensor.amber_billing_interval_forecasts_general_price": { attributes: { Forecasts: buy } } },
-  sell === null ? {} : { "sensor.amber_billing_interval_forecasts_feed_in_price": { attributes: { Forecasts: sell } } }) });
+  sell === null ? {} : { "sensor.amber_billing_interval_forecasts_feed_in_price": { attributes: { Forecasts: sell } } },
+  { "sensor.amber_5min_current_general_price": { state: "0.31", attributes: {} },
+    "sensor.amber_5min_current_feed_in_price": { state: "0.12", attributes: {} } }) });
+// Amber's own shape: the interval under way isn't in the forecasts, and each starts a second past the boundary
+const g = (i, raw) => ({ start_time: new Date(base + i * 1800000 + 1000).toISOString(), end_time: new Date(base + (i + 1) * 1800000).toISOString(),
+  per_kwh: raw, advanced_price_low: raw - 0.02, advanced_price_predicted: raw + 0.01, advanced_price_high: raw + 0.03 });
+window.BUY2 = Array.from({ length: 60 }, (_, i) => g(i + 1, 0.25 + (i % 2) * 0.1));
+window.SELL2 = Array.from({ length: 60 }, (_, i) => g(i + 1, -0.10));
 window.BUY = Array.from({ length: 60 }, (_, i) => f(i, 0.25));
 window.SELL = Array.from({ length: 60 }, (_, i) => f(i, -0.10));
 await import("/battmanfiles/battman-amber-forecast-chart.js");
@@ -89,6 +97,18 @@ window.el = el;
   await p.evaluate(() => { el.hass = mk(BUY, SELL); });
   await p.waitForTimeout(100);
   out.back = (await chartInfo()).msg;
+  // Amber's own shape: current price until the first forecast, then no gaps; every line solid, its own colour
+  await p.evaluate(() => { el.hass = mk(BUY2, SELL2); });
+  await p.waitForTimeout(100);
+  out.amberShape = await p.evaluate(() => {
+    const c = Chart.getChart(el.shadowRoot.getElementById("c"));
+    const ds = c.data.datasets;
+    const firstFc = Date.parse(BUY2[0].start_time) - 1000;
+    const gaps = (d) => d.data.filter((pt) => pt.x >= firstFc && pt.y === null).length;
+    return { firstBuy: ds[0].data[0].y, firstSell: ds[4].data[0].y, firstPredicted: ds[1].data[0].y,
+      gaps: ds.map(gaps), dashed: ds.filter((d) => d.borderDash && d.borderDash.length).length,
+      colours: new Set(ds.map((d) => d.borderColor)).size };
+  });
   out.picker = await p.evaluate(() => window.customCards.filter((c) => c.type === "battman-amber-forecast-chart").map((c) => ({ name: c.name, preview: c.preview })));
   out.errors = errors;
   console.log(JSON.stringify(out));
