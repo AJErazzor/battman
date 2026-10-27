@@ -62,6 +62,7 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-theme-studio` | The Theme studio: edit a Battman theme with a live preview (including the real State card), save it to HA or make it the dashboard's theme. Draws itself; no options | nothing |
 | `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export, over N days, a bill cycle or From / To (the range is kept per device; it starts on 5 days on a narrow card, 10 on a wide one). Draws itself; no options | nothing |
 | `battman-cost-compare` | This bill cycle against the last: the running net cost day by day, and how far ahead or behind you are. Draws itself; no options | nothing |
+| `battman-amber-forecast-chart` | Amber's buy and sell price forecasts (price, predicted, low and high) for the next 4, 8, 12 or 24 hours; tap a name to hide a line (see [Battman Amber forecast chart](#battman-amber-forecast-chart)). Draws itself; no options | nothing |
 | `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
 | `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
 | `battman-house` | The house picture with live prices, solar, PV strings, home, grid, battery, temperature and three of your own devices, with moving flow lines (see [Battman House](#battman-house)) | nothing |
@@ -194,6 +195,17 @@ device. A "bank it" day is rebuilt from that day's hourly figures. It has no opt
 `custom:battman-cost-compare` is this bill cycle against the last: the running net cost day by day
 from your bill day, with how far ahead or behind you are today. It refreshes every minute. It has
 no options.
+
+## Battman Amber forecast chart
+
+`custom:battman-amber-forecast-chart` is Amber's price forecasts as a chart, in c/kWh, from now to 4,
+8, 12 or 24 hours ahead. Each side, Buy (amber) and Sell (green), has four lines: the forecast price
+(solid), Amber Advanced's prediction (dashed) and its low and high (dotted). Sell is shown as what
+you're paid (positive = earning), as the engine works it out, so Sell High is always the upper line.
+Tap a name under the chart to hide or show that line; the range and the hidden lines are kept per
+device. Hover or tap the chart for every shown line's price in that interval. It reads Amber's two
+forecast sensors (amber2mqtt) and says so on the card if one is missing or has no forecasts. It
+refreshes every minute and whenever Amber updates. It has no options.
 
 ## Battman Settings
 
