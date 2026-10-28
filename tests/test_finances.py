@@ -57,7 +57,8 @@ async def test_static_files_served(hass: HomeAssistant, hass_client_no_auth) -> 
                  "/battmanfiles/images/price-curve-editor-line.webp",
                  "/battmanfiles/images/battman-wrench.webp", "/battmanfiles/images/settings-line.webp", "/battmanfiles/battman-lib.js",
                  "/battmanfiles/images/battman-toilet-mirror.webp", "/battmanfiles/images/logs-line.webp",
-                 "/battmanfiles/images/battman-coins.webp", "/battmanfiles/battman-cards.js"):
+                 "/battmanfiles/images/battman-coins.webp", "/battmanfiles/battman-cards.js",
+                 "/battmanfiles/images/battman-painter.webp", "/battmanfiles/images/theme-studio-line.webp"):
         r = await client.get(path)
         assert r.status == 200, path
 

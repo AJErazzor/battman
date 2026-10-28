@@ -47,9 +47,9 @@ a{color:inherit}
 
 /* ── Header / toolbar ── */
 .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.hd h1{font-size:19px;font-weight:800;letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:9px}
-.hd .dot{width:11px;height:11px;border-radius:50%;background:var(--primary-color,#c44569);box-shadow:0 0 10px var(--primary-color,#c44569)}
-.spacer{flex:1}
+.hd h1{margin:0;display:flex;align-items:center;gap:10px;flex:0 1 auto;min-width:0}
+.hd .who{height:44px;width:auto;flex:none}
+.hd .word{width:357px;max-width:100%;min-width:0;height:auto;flex:0 1 auto}
 /* transient toast (replaces the persistent status pill) */
 .toast{
   position:fixed;left:50%;bottom:16px;z-index:50;
@@ -288,8 +288,7 @@ textarea#yaml{
 `;
   static html = `<ha-card><div class="studio"><div class="container">
   <div class="hd">
-    <h1><span class="dot"></span>Theme Studio</h1>
-    <span class="spacer"></span>
+    <h1><img class="who" src="${FILES}/images/battman-painter.webp" alt="Battman"><img class="word" src="${FILES}/images/theme-studio-line.webp" alt="Theme Studio"></h1>
   </div>
 
   <div class="toolbar">
