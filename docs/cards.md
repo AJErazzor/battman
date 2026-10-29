@@ -63,6 +63,7 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export, over N days, a bill cycle or From / To (the range is kept per device; it starts on 5 days on a narrow card, 10 on a wide one). Draws itself; no options | nothing |
 | `battman-cost-compare` | This bill cycle against the last: the running net cost day by day, and how far ahead or behind you are. Draws itself; no options | nothing |
 | `battman-amber-forecast-chart` | Amber's buy and sell price forecasts (price, predicted, low and high) for the next 4, 8, 12 or 24 hours; tap a name to hide a line (see [Battman Amber forecast chart](#battman-amber-forecast-chart)). Draws itself; no options | nothing |
+| `battman-solar-card` | Live power, today's generation and Solcast's forecast for one or two inverters, as Now / Forecast pills, two stacked tables, or either alone (see [Battman Solar](#battman-solar)) | nothing |
 | `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
 | `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
 | `battman-house` | The house picture with live prices, solar, PV strings, home, grid, battery, temperature and three of your own devices, with moving flow lines (see [Battman House](#battman-house)) | nothing |
@@ -208,6 +209,29 @@ Tap a name under the chart to hide or show that line; the range and the hidden l
 device. Hover or tap the chart for every shown line's price in that interval. It reads Amber's two
 forecast sensors and two current-price sensors (amber2mqtt) and says so on the card if one is missing or has no forecasts. It
 refreshes every minute and whenever Amber updates. It has no options.
+
+## Battman Solar
+
+`custom:battman-solar-card` shows up to two inverters (Inverter 1 is for a third-party inverter such as a
+Fronius, Inverter 2 is your Sigenergy): live power, today's generation and Solcast's forecast. An
+inverter whose power sensor doesn't exist isn't drawn, so a one-inverter home just works.
+
+- `view`: `toggle` (default; Now / Forecast pills), `both` (the two tables stacked), `now` or `forecast`.
+  `default_view` picks the pill selected first.
+- The **10%** pill (shown unless `show_10: false`) chooses which Solcast figure is the big one: 10% (the
+  pessimistic case, the default) or the estimate. Tap it to switch; it then reads **Est** and is lit.
+  The other figure stays beside it in small text, tagged "est" or "10%". `forecast_basis: p10 | est` sets
+  the default. It applies to every figure on the card, in every layout, and is kept per device.
+- Now: total kW, today's kWh, what's left today (Solcast's remaining-today forecast) and a progress bar
+  of the day done. Forecast: today and tomorrow per inverter, as bars. Tap a row for its sensor.
+- Each inverter (`symo`, `sig`) takes `show`, `label`, `power`, `today` and `site`. `site` is the
+  Solcast site id (the part after `estimate_` in the sensor's attributes, for example
+  `fc06_f7f8_d429_86e2`); leave it blank for a single inverter and the whole forecast is used. With two
+  inverters a blank site shows a dash. W and Wh sensors are converted to kW and kWh.
+- `forecast_remaining`, `forecast_today` and `forecast_tomorrow` name the Solcast sensors.
+  `no_export_entity` (an orange "No export" flag while it's on) and `soft_limit_entity` (a red
+  "Soft limit" flag) are optional; leave either empty to hide it.
+- `show_total`, `show_10` and `show_progress` turn the Total row, the 10% figures and the progress bars on or off.
 
 ## Battman Settings
 

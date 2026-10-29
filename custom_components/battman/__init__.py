@@ -85,8 +85,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # The Battman House card (custom:battman-house): the house picture with live numbers on it.
     frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-house.js?v={integration.version}")
     # The Battman cards that draw themselves (www/battman-card-base.js is what they share): Log,
-    # Cost compare, Cost chart, Settings, Theme studio, Curvy, Pricy, Amber forecast chart.
-    for name in ("log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy", "amber-forecast-chart"):
+    # Cost compare, Cost chart, Settings, Theme studio, Curvy, Pricy, Amber forecast chart, Solar.
+    for name in ("log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy", "amber-forecast-chart", "solar-card"):
         frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-{name}.js?v={integration.version}")
     # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
     # start are passed along so the cards exist before any dashboard draws them.
