@@ -59,8 +59,8 @@
   battman-darkred-bg: "var(--card-background-color)"
   battman-darkred-soft-bg: "transparent"
 
-  # ── Orange (→ var(--warning-color)) ──
-  battman-orange: "var(--warning-color)"
+  # ── Orange (→ var(--color-41), HA's own palette, so it differs from yellow) ──
+  battman-orange: "var(--color-41)"
   battman-orange-wash: "transparent"
   battman-orange-border: "var(--divider-color)"
   battman-orange-border-soft: "var(--divider-color)"
@@ -109,8 +109,8 @@
   battman-blue-bg: "var(--card-background-color)"
   battman-blue-soft-bg: "transparent"
 
-  # ── Purple (→ var(--primary-color)) ──
-  battman-purple: "var(--primary-color)"
+  # ── Purple (→ var(--color-5), HA's own palette) ──
+  battman-purple: "var(--color-5)"
   battman-purple-wash: "transparent"
   battman-purple-border: "var(--divider-color)"
   battman-purple-border-soft: "var(--divider-color)"
@@ -129,8 +129,8 @@
   battman-darkpurple-bg: "var(--card-background-color)"
   battman-darkpurple-soft-bg: "transparent"
 
-  # ── Teal (→ var(--info-color); HA has no teal -> info-color) ──
-  battman-teal: "var(--info-color)"
+  # ── Teal (→ var(--color-4), HA's own palette; HA has no teal var) ──
+  battman-teal: "var(--color-4)"
   battman-teal-wash: "transparent"
   battman-teal-border: "var(--divider-color)"
   battman-teal-border-soft: "var(--divider-color)"
@@ -139,8 +139,8 @@
   battman-teal-bg: "var(--card-background-color)"
   battman-teal-soft-bg: "transparent"
 
-  # ── Pink (→ var(--accent-color); HA has no pink -> accent-color) ──
-  battman-pink: "var(--accent-color)"
+  # ── Pink (→ var(--color-6), HA's own palette; HA has no pink var) ──
+  battman-pink: "var(--color-6)"
   battman-pink-wash: "transparent"
   battman-pink-border: "var(--divider-color)"
   battman-pink-border-soft: "var(--divider-color)"
