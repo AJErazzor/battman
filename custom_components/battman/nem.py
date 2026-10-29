@@ -4,11 +4,13 @@ OpenNEM's region sensor (e.g. sensor.opennem_sa) holds each generation source as
 an attribute. Battman finds it itself: an OpenNEM entity carrying those attributes.
 One found: that's used. Several (more than one region): you pick one on Battman's
 Configure screen, and a Repair asks you to until you do. None: the NEM sensors are
-unknown and their `problem` attribute says so (OpenNEM is optional, so no Repair).
+unknown and their `problem` attribute says so.
 The NEM sensors only exist while the OpenNEM integration is installed, and aren't on the
 Battman device (they're OpenNEM's figures, not Battman's settings or controls).
 It looks again whenever an OpenNEM entity is added, removed or changes, so switching
-OpenNEM to another region is followed without a restart. Dashboard cards like power-pie-card can only read entity states, so
+OpenNEM to another region is followed without a restart.
+OpenNEM not installed: a Repair says the NEM mix card needs it (v0.28.0). It's optional, so
+the Repair can be ignored, and stays ignored until OpenNEM is installed. Dashboard cards like power-pie-card can only read entity states, so
 Battman re-exposes them as sensors (MW), plus where the power goes:
 
     exports, battery charging   OpenNEM reports these negative: shown as positive
@@ -40,6 +42,7 @@ OPENNEM = "opennem"            # the OpenNEM integration's domain
 OPTION = "opennem"             # Configure: the region you picked (only asked when there are several)
 REGION_ATTR = "solar_rooftop"  # an OpenNEM entity with this attribute is a region sensor
 ISSUE_CHOOSE = "opennem_choose"
+ISSUE_MISSING = "opennem_missing"   # OpenNEM isn't installed: the NEM mix card has nothing to show
 SIGNAL = "battman_nem_update"
 
 # sensor key -> (OpenNEM attribute, icon)
@@ -245,6 +248,7 @@ def async_setup(hass: HomeAssistant, entry: ConfigEntry, add: AddEntitiesCallbac
     def _make() -> None:
         if made["source"] is not None:
             return
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_MISSING)
         source = made["source"] = NemSource(hass, entry)
         source.start()
         add([BattmanNemSensor(entry, source, k) for k in ALL_KEYS])
@@ -259,6 +263,11 @@ def async_setup(hass: HomeAssistant, entry: ConfigEntry, add: AddEntitiesCallbac
             if entity_id := reg.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{k}"):
                 reg.async_remove(entity_id)
         ir.async_delete_issue(hass, DOMAIN, ISSUE_CHOOSE)
+        # optional, so ignorable: re-raising it each startup keeps an ignored one ignored
+        ir.async_create_issue(
+            hass, DOMAIN, ISSUE_MISSING, is_fixable=False, severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_MISSING,
+        )
 
     @callback
     def _changed(change: ConfigEntryChange, changed: ConfigEntry) -> None:
