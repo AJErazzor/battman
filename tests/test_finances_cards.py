@@ -143,31 +143,45 @@ async def test_finances_is_battman_cards(hass: HomeAssistant, hass_client) -> No
 
 def test_one_list_of_mode_colours() -> None:
     hue = js("window.BattmanLib.MODE_HUE")
-    assert hue == {"Self Consume": "blue", "Charge": "yellow", "Discharge": "green", "Float": "orange", "Drain": "red",
-                   "Charge Solar Off": "purple", "Float Solar Off": "teal", "Solar Soak": "amber"}
+    assert hue == {"Self Consume": "blue", "Charge": "yellow", "Discharge": "green", "Float": "orange", "Drain": "red"}
+    assert js("window.BattmanLib.PARTY_MODES") == ["Charge Solar Off", "Float Solar Off", "Solar Soak"]
     # the Power view's Battery mode buttons: the five everyday modes are the source
     card = (ROOT / "cards/batterymode.yaml").read_text()
-    for mode in ("Self Consume", "Charge", "Discharge", "Float", "Drain"):
+    for mode in hue:
         block = card[card.index(f"option: {mode}\n"):]
         colour = re.search(r"battman-([a-z]+)-border-strong", block).group(1)
         assert colour == hue[mode], (mode, colour)
-    # the Live Activity's default is the same list
+    # the Live Activity follows the theme's list (its own input only overrides)
     bp = yaml.load((ROOT / "blueprints/script/battman_live_activity_push.yaml").read_text(), Loader=_BlueprintLoader)
-    assert bp["blueprint"]["input"]["look"]["input"]["mode_hues"]["default"] == hue
-    # the colours sensor covers every colour the list uses, and every shipped theme has them
-    # (the colours: battman-lib.js MODE_HUES since v0.26.0; the template sensor shows the same eight)
-    lib = (ROOT / "www/battman-lib.js").read_text()
-    MODE_HUES = re.search(r"MODE_HUES = \[([^\]]+)\]", lib).group(1).replace("'", "").replace(" ", "").split(",")
-    sensors = (ROOT / "packages/battman_sensors.yaml").read_text()
-    assert all(f"'{h}': c.{h}" in sensors for h in MODE_HUES)
-    assert set(hue.values()) <= set(MODE_HUES)
+    assert bp["blueprint"]["input"]["look"]["input"]["mode_hues"]["default"] == {}
+    # every shipped theme has the whole palette, and all eight modes come out clearly different
+    palette = js("window.BattmanLib.PALETTE")
+    themes = {}
     for f in (ROOT / "themes").glob("*.yaml"):
         theme = next(iter(yaml.safe_load(f.read_text()).values()))
-        for h in MODE_HUES:
+        for h in palette:
             assert f"battman-{h}" in theme, (f.name, h)
+        themes[f.stem] = theme
+    out = js(f"""Object.fromEntries(Object.keys({json.dumps(themes)}).map(n => {{
+      const r = window.BattmanLib.themeModeColours({json.dumps(themes)}, n);
+      if (r.problem) return [n, r.problem];
+      const L = window.BattmanLib, c = Object.values(r.modes).map(L.hexLab);
+      let min = 1e9;
+      for (let i = 0; i < c.length; i++) for (let j = i + 1; j < c.length; j++)
+        min = Math.min(min, Math.hypot(c[i][0] - c[j][0], c[i][1] - c[j][1], c[i][2] - c[j][2]));
+      return [n, {{min, hues: r.hues}}];
+    }}))""")
+    for name, r in out.items():
+        if name == "Battman HA":
+            continue       # borrows HA's own colours (var(--info-color) …): only a browser can read them
+        assert isinstance(r, dict), (name, r)
+        assert {k: r["hues"][k] for k in hue} == hue, name                    # everyday modes never move
+        assert r["min"] > 12, (name, r)                                       # all eight look different
+    # e.g. Springfield: Charge Solar Off is no longer the near-blue purple next to Self Consume
+    assert out["Battman Springfield"]["hues"]["Charge Solar Off"] != "purple"
     # the Log card takes its colours from the list (no colours of its own)
     log = (ROOT / "www/battman-log.js").read_text()
-    assert "BattmanLib.MODE_HUE" in log and "'Self Consume':    '--battman-blue'" not in log
+    assert "L.modeHues(" in log and "'Self Consume':    '--battman-blue'" not in log
 
 
 class _BlueprintLoader(yaml.SafeLoader):

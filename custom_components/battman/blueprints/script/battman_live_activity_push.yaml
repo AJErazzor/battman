@@ -102,19 +102,12 @@ blueprint:
           selector:
             object: {}
         mode_hues:
-          name: Theme colour for each battery mode
+          name: Colour override for a battery mode
           description: >-
-            green, yellow, blue, orange, red, purple, teal or amber. The default is Battman's one
-            list (the Power view's Battery mode buttons; MODE_HUE in battman-lib.js).
-          default:
-            Self Consume: blue
-            Charge: yellow
-            Discharge: green
-            Float: orange
-            Drain: red
-            Charge Solar Off: purple
-            Float Solar Off: teal
-            Solar Soak: amber
+            Leave empty to use the dashboard theme's mode colours (Battman's one list: the Power
+            view's Battery mode buttons, and for the three party modes the theme's most different
+            other colours). To override one, give the mode a colour, e.g. Charge Solar Off: "#ff00ff".
+          default: {}
           selector:
             object: {}
         tag:
@@ -202,8 +195,8 @@ sequence:
           colour: >-
             {% set raw = states(colours_e) %}
             {% set pal = raw | from_json if raw[:1] == '{' else {} %}
-            {% set hue = mode_hues.get(bmode) %}
-            {{ pal[hue] if hue and hue in pal else '#8E8E93' }}
+            {% set own = (mode_hues or {}).get(bmode) | string %}
+            {{ own if own is match('^#[0-9a-fA-F]{6}$') else pal.get(bmode, '#8E8E93') }}
           payload: >-
             {% set d = {
               'tag': tag, 'live_update': true, 'silent': not (alert | default(false)),

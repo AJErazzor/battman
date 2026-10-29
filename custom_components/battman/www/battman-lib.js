@@ -422,19 +422,90 @@ var cfg = variables.battman.overrides.filter(function(o){return o.id===ov_id;})[
 };
 
 // ---------------------------------------------------------------------------------------------
-// Battman: mode colours. The one list every Battman piece uses for the battery modes (the Log
-// page's timeline, the Live Activity bar via sensor.battman_theme_mode_colours). The five
-// everyday modes are the Power view's Battery mode buttons; the three party modes (rainbow on
-// those buttons) each get their own colour so a timeline never mixes them up.
+// Battman: mode colours. The one place every Battman piece gets the battery modes' colours from
+// (the Log page's timeline, the Live Activity bar via sensor.battman_theme_mode_colours).
+// The five everyday modes are fixed: the Power view's Battery mode buttons. The three party
+// modes (rainbow on those buttons) get the theme's other palette colours that are furthest from
+// everything else, worked out per theme, so in every theme all eight are clearly different
+// (no colour lines in the themes: their 12 palette colours are enough).
 window.BattmanLib.MODE_HUE = {
   'Self Consume':     'blue',
   'Charge':           'yellow',
   'Discharge':        'green',
   'Float':            'orange',
   'Drain':            'red',
-  'Charge Solar Off': 'purple',
-  'Float Solar Off':  'teal',
-  'Solar Soak':       'amber',
+};
+window.BattmanLib.PARTY_MODES = ['Charge Solar Off', 'Float Solar Off', 'Solar Soak'];
+window.BattmanLib.MODES = Object.keys(window.BattmanLib.MODE_HUE).concat(window.BattmanLib.PARTY_MODES);
+// every theme's palette (battman-<hue>)
+window.BattmanLib.PALETTE = ['red', 'darkred', 'orange', 'amber', 'yellow', 'green', 'teal', 'sky',
+                             'blue', 'purple', 'darkpurple', 'pink'];
+
+// '#rrggbb' -> CIELAB, for "how different do these two colours look"
+window.BattmanLib.hexLab = function (hex) {
+  var h = String(hex).replace('#', '');
+  var c = [0, 2, 4].map(function (i) {
+    var u = parseInt(h.substr(i, 2), 16) / 255;
+    return u > 0.04045 ? Math.pow((u + 0.055) / 1.055, 2.4) : u / 12.92;
+  });
+  var f = function (t) { return t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; };
+  var x = f((c[0] * 0.4124 + c[1] * 0.3576 + c[2] * 0.1805) / 0.95047);
+  var y = f(c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722);
+  var z = f((c[0] * 0.0193 + c[1] * 0.1192 + c[2] * 0.9505) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+};
+
+// {hue: '#rrggbb'} for the theme's palette -> {mode: hue} for all eight modes. Tries every
+// choice of party-mode colours and keeps the one whose two closest colours are furthest apart
+// (then the biggest total spread; then palette order), so the same theme always gives the same
+// answer. Throws if a palette colour it needs is missing (no made-up colours).
+window.BattmanLib.modeHues = function (hexByHue) {
+  var L = window.BattmanLib, fixed = L.MODE_HUE, lab = {};
+  L.PALETTE.forEach(function (h) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(String(hexByHue[h] || ''))) throw new Error('battman-' + h + ' is missing from the theme');
+    lab[h] = L.hexLab(hexByHue[h]);
+  });
+  var used = Object.keys(fixed).map(function (m) { return fixed[m]; });
+  var free = L.PALETTE.filter(function (h) { return used.indexOf(h) < 0; });
+  var dist = function (a, b) { var A = lab[a], B = lab[b]; return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); };
+  var best = null;
+  free.forEach(function (a) { free.forEach(function (b) { free.forEach(function (c) {
+    if (a === b || b === c || a === c) return;
+    var hues = used.concat([a, b, c]), min = Infinity, sum = 0;
+    for (var i = 0; i < hues.length; i++) for (var j = i + 1; j < hues.length; j++) {
+      var d = dist(hues[i], hues[j]); sum += d; if (d < min) min = d;
+    }
+    if (!best || min > best.min + 1e-9 || (Math.abs(min - best.min) <= 1e-9 && sum > best.sum + 1e-9)) best = { min: min, sum: sum, pick: [a, b, c] };
+  }); }); });
+  var out = {};
+  Object.keys(fixed).forEach(function (m) { out[m] = fixed[m]; });
+  L.PARTY_MODES.forEach(function (m, i) { out[m] = best.pick[i]; });
+  return out;
+};
+
+// Any CSS colour (as getComputedStyle gives it) -> '#rrggbb', or '' if it isn't one.
+window.BattmanLib.cssHex = function (value) {
+  var v = String(value || '').trim(), m;
+  if ((m = v.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/))) {
+    var h = m[1];
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+    return '#' + h.slice(0, 6).toLowerCase();
+  }
+  if (v && typeof document !== 'undefined' && document.createElement) {   // named colours etc.: let the browser say
+    var el = document.createElement('span');
+    el.style.color = v;
+    if (el.style.color && document.body) {
+      document.body.appendChild(el);
+      v = getComputedStyle(el).color;
+      el.remove();
+    }
+  }
+  if ((m = v.match(/^rgba?\(([^)]+)\)$/))) {
+    var rgb = m[1].replace(/\//g, ',').split(',').slice(0, 3).map(function (p) { return Math.round(parseFloat(p)); });
+    if (rgb.length === 3 && rgb.every(function (n) { return isFinite(n) && n >= 0 && n <= 255; }))
+      return '#' + rgb.map(function (n) { return ('0' + n.toString(16)).slice(-2); }).join('');
+  }
+  return '';
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -599,13 +670,12 @@ window.BattmanLib.fireChecked = function (el, eventType, data, check, okText) {
 };
 
 // ---------------------------------------------------------------------------------------------
-// Battman: the dashboard theme's mode colours, for sensor.battman_theme_mode_colours (a template
+// Battman: the dashboard theme's eight mode colours, for sensor.battman_theme_mode_colours (a template
 // sensor in Battman's packages: the iPhone Live Activity bar reads it, and theme: battman cards
 // read its theme name). Templates can't see HA's themes, so the browser works the colours out
 // and saves them, with the theme's name, in the parameters sensor (dashboardThemeColours).
 // Whenever a Battman page is open it keeps them in step with the picked theme (dashboardTheme):
 // a theme picked or changed (Settings, Make Active), or one Battman updated.
-window.BattmanLib.MODE_HUES = ['green', 'yellow', 'blue', 'orange', 'red', 'purple', 'teal', 'amber'];
 
 // A theme colour as #rrggbb, following var(--other) inside the theme. Throws an Error saying why not.
 window.BattmanLib.themeHex = function (theme, key, depth) {
@@ -627,15 +697,18 @@ window.BattmanLib.themeHex = function (theme, key, depth) {
   throw new Error(key + " is '" + raw + "', not a colour Battman can read");
 };
 
-// What's saved for a theme: {theme, green, …, amber}, or {theme, problem}.
+// What's saved for a theme: {theme, modes: {mode: '#rrggbb'}, hues: {mode: hue}}, or {theme, problem}.
 window.BattmanLib.themeModeColours = function (themes, name) {
   var theme = themes && themes[name];
   if (!theme) return { theme: name, problem: "Theme '" + name + "' isn't loaded in Home Assistant" };
-  var out = { theme: name }, bad = [];
-  window.BattmanLib.MODE_HUES.forEach(function (hue) {
-    try { out[hue] = window.BattmanLib.themeHex(theme, 'battman-' + hue); } catch (e) { bad.push(e.message); }
+  var hex = {}, bad = [];
+  window.BattmanLib.PALETTE.forEach(function (hue) {
+    try { hex[hue] = window.BattmanLib.themeHex(theme, 'battman-' + hue); } catch (e) { bad.push(e.message); }
   });
-  return bad.length ? { theme: name, problem: bad.join('; ') } : out;
+  if (bad.length) return { theme: name, problem: bad.join('; ') };
+  var hues = window.BattmanLib.modeHues(hex), modes = {};
+  window.BattmanLib.MODES.forEach(function (m) { modes[m] = hex[hues[m]]; });
+  return { theme: name, modes: modes, hues: hues };
 };
 
 // Keep the saved colours in step: checked when a page opens and every 15 seconds after. Only
