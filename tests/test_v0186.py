@@ -13,9 +13,11 @@ from . import engine_harness as H
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 SENSOR = "sensor.battman_theme_mode_colours"
 PARAMS = "sensor.battman_parameters"
-NORD = {"battman-green": "#a3be8c", "battman-yellow": "#e9d8a6", "battman-blue": "#81a1c1",
-        "battman-orange": "#d08770", "battman-red": "#a85560", "battman-purple": "#b48ead",
-        "battman-teal": "#8fbcbb", "battman-amber": "#ebcb8b"}
+NORD = {k: v for k, v in next(iter(__import__("yaml").safe_load(
+    (Path(__file__).parents[1] / "custom_components/battman/themes/Battman Nord.yaml").read_text()).values())).items()
+    if k in {"battman-" + h for h in ("red", "darkred", "orange", "amber", "yellow", "green", "teal", "sky",
+                                       "blue", "purple", "darkpurple", "pink")}}
+MODES = ["Self Consume", "Charge", "Discharge", "Float", "Drain", "Charge Solar Off", "Float Solar Off", "Solar Soak"]
 
 
 async def _settle(hass: HomeAssistant) -> None:
@@ -61,16 +63,17 @@ async def test_theme_name_in_parameters_drives_the_colours(hass: HomeAssistant) 
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "dashboardThemeColours": saved})
     await _settle(hass)
     st = hass.states.get(SENSOR)
-    assert json.loads(st.state) == {k[8:]: v for k, v in NORD.items()}
-    assert list(json.loads(st.state)) == ["green", "yellow", "blue", "orange", "red", "purple", "teal", "amber"]
-    assert st.attributes["theme"] == "Battman Nord" and st.attributes["green"] == "#a3be8c" and st.attributes["problem"] is None
+    assert json.loads(st.state) == saved["modes"] and list(json.loads(st.state)) == MODES
+    assert json.loads(st.state)["Discharge"] == NORD["battman-green"]          # an everyday mode: its button's colour
+    assert st.attributes["theme"] == "Battman Nord" and st.attributes["hues"]["Discharge"] == "green"
+    assert st.attributes["problem"] is None
 
     # another setting changing, or a section's Reset to defaults, leaves the theme and colours alone
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "billInflation": 3})
     hass.bus.async_fire("battman_parameters_update", {"action": "SetDefaults", "defaults": {}})
     await _settle(hass)
     assert hass.states.get(PARAMS).attributes["dashboardTheme"] == "Battman Nord"
-    assert json.loads(hass.states.get(SENSOR).state)["green"] == "#a3be8c"
+    assert json.loads(hass.states.get(SENSOR).state)["Discharge"] == NORD["battman-green"]
 
     # another theme picked: the old colours aren't shown for it
     await _set_theme(hass, "Battman Gone")

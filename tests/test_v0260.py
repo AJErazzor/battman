@@ -211,8 +211,9 @@ async def test_old_python_sensor_handed_over(hass: HomeAssistant) -> None:
 
 def _keeper(in_charge: bool, saved, admin: bool = True) -> list:
     """Run battman-lib.js's keeper once on a fake page; returns the events it fired."""
-    nord = {"battman-" + k: "#" + "%06x" % (i + 1) for i, k in
-            enumerate(["green", "yellow", "blue", "orange", "red", "purple", "teal", "amber"])}
+    nord = {"battman-" + k: "#" + "%06x" % ((i + 1) * 0x151515) for i, k in
+            enumerate(["red", "darkred", "orange", "amber", "yellow", "green", "teal", "sky",
+                       "blue", "purple", "darkpurple", "pink"])}
     page = f"""
 const fired = [], timers = [];
 globalThis.window = globalThis; globalThis.setTimeout = (f) => timers.push(f); globalThis.setInterval = () => 0;
@@ -236,9 +237,10 @@ def test_keeper_saves_only_what_changed() -> None:
     fired = _keeper(True, None)                       # nothing saved yet: saves the colours of the picked theme
     assert len(fired) == 1 and fired[0]["event_type"] == "battman_parameters_update"
     want = fired[0]["event_data"]["dashboardThemeColours"]
-    assert want["theme"] == "Battman Nord" and want["green"] == "#000001" and want["amber"] == "#000008"
+    assert want["theme"] == "Battman Nord" and want["modes"]["Discharge"] == "#7e7e7e"   # green, the 6th
     assert _keeper(True, want) == []                  # already in step: nothing sent
-    assert len(_keeper(True, {**want, "green": "#ffffff"})) == 1   # the theme changed (e.g. a Battman update)
+    changed = {**want, "modes": {**want["modes"], "Discharge": "#ffffff"}}
+    assert len(_keeper(True, changed)) == 1           # the theme changed (e.g. a Battman update)
     assert _keeper(False, None) == []                 # not in charge: settings don't change then
     assert _keeper(True, None, admin=False) == []     # a user who can't fire events
 

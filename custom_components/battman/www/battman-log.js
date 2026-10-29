@@ -13,7 +13,7 @@
 // on to now, keeping your filters. The charts also refresh every minute.
 //
 // Entities come from Battman's entity map, colours from the Battman theme, the mode colours from
-// BattmanLib.MODE_HUE (battman-lib.js). Anything missing is shown on the card, never made up.
+// BattmanLib.modeHues (battman-lib.js). Anything missing is shown on the card, never made up.
 // The charts use Chart.js, shipped with Battman (/battmanfiles/vendor/).
 // ---------------------------------------------------------------------------------------------
 
@@ -332,15 +332,16 @@ function battmanLogRun(card, root) {
   let activeModes = new Set(modes);
   let periodFilter = null;     // { start, end, mode } — limit the log to a tapped mode period
 
-  // Mode colours: Battman's one list (window.BattmanLib.MODE_HUE in battman-lib.js, loaded on
+  // Mode colours: Battman's one list (window.BattmanLib.modeHues in battman-lib.js, loaded on
   // every HA page), so the timeline matches the Power view's Battery mode buttons and the Live
-  // Activity. Checked at start (no fallback colours).
-  let modeToken = {};
+  // Activity: the five everyday modes are the buttons' colours, the three party modes the
+  // theme's furthest-apart other colours. Checked at start (no fallback colours).
   let modeColor = {};
   let accentHex = '';
   // every Battman theme colour the card uses; all must come from the view's theme
   const THEME_VARS = ['--battman-blue', '--battman-green', '--battman-red', '--battman-orange',
-    '--battman-purple', '--battman-amber', '--battman-teal', '--battman-yellow', '--battman-text-muted',
+    '--battman-purple', '--battman-amber', '--battman-teal', '--battman-yellow', '--battman-darkpurple',
+    '--battman-pink', '--battman-sky', '--battman-text-muted',
     '--battman-blue-border', '--battman-blue-soft-bg', '--battman-surface-card', '--battman-surface-popup',
     '--battman-border-neutral', '--battman-darkred', '--battman-text-dim'];
   let FATAL = null;   // set when the card can't run; shown instead of everything else
@@ -365,11 +366,11 @@ function battmanLogRun(card, root) {
   function syncColors() {
     if (window.Chart) { const ff = gc('--primary-font-family'); if (ff) window.Chart.defaults.font.family = ff; }
     accentHex = gc('--ha-accent');
+    const L = window.BattmanLib, hex = {};
+    for (const hue of L.PALETTE) hex[hue] = L.cssHex(gc('--battman-' + hue));
+    const hues = L.modeHues(hex);      // throws if the theme lacks a palette colour (checked at start)
     modeColor = {};
-    for (const [mode, token] of Object.entries(modeToken)) {
-      const val = gc(token);
-      if (val) modeColor[mode] = val;
-    }
+    for (const mode of modes) modeColor[mode] = hex[hues[mode]];
   }
 
   // --------------------------------------------------------------- filters
@@ -1152,13 +1153,12 @@ function battmanLogRun(card, root) {
     } catch (e) { showFatal(e.message); return; }
     const problem = missingThemeVars(card, THEME_VARS) || missingEntities(haObj(), M, NEED_ENTITIES);
     if (problem) { showFatal(problem); return; }
-    const hues = window.BattmanLib && window.BattmanLib.MODE_HUE;
-    if (!hues) { showFatal("Battman's card library (battman-lib.js) isn't loaded on this HA page, so the mode colours aren't known. Refresh the page."); return; }
-    const noHue = modes.filter(m => !hues[m]);
-    if (noHue.length) { showFatal('Battman mode colours (MODE_HUE) have no colour for: ' + noHue.join(', ')); return; }
-    modeToken = Object.fromEntries(modes.map(m => [m, '--battman-' + hues[m]]));
+    const lib = window.BattmanLib;
+    if (!lib || !lib.modeHues) { showFatal("Battman's card library (battman-lib.js) isn't loaded on this HA page, so the mode colours aren't known. Refresh the page."); return; }
+    const noMode = modes.filter(m => lib.MODES.indexOf(m) < 0);
+    if (noMode.length) { showFatal('Battman mode colours have no colour for: ' + noMode.join(', ')); return; }
     try { ChartLib = await loadChartJs(); } catch (e) { chartProblem = e.message; }
-    syncColors();
+    try { syncColors(); } catch (e) { showFatal('Battman mode colours: ' + e.message); return; }
     applyModeColors();
     buildPanels();
     buildPanelCards();
@@ -1190,7 +1190,7 @@ function battmanLogRun(card, root) {
   // the view's theme changed: redraw in the new colours
   function themeChanged() {
     if (!started || FATAL) return;
-    syncColors();
+    try { syncColors(); } catch (e) { showFatal('Battman mode colours: ' + e.message); return; }
     applyModeColors();
     renderLog();
     refreshChart();

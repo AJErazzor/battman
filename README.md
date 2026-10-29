@@ -89,10 +89,13 @@ card shows an error saying exactly what.
 
 ## Theme mode colours sensor
 
-`sensor.battman_theme_mode_colours` holds the eight mode colours (green, yellow, blue,
-orange, red, purple, teal, amber) of the Battman dashboard's theme as hex, e.g. `{"green":"#a3be8c","yellow":"#e9d8a6",…}`, with each
-colour also as an attribute. It's for things that can't read theme colours, like an
-iPhone Live Activity. It's a template sensor in Battman's packages: templates can't see HA's
+`sensor.battman_theme_mode_colours` holds the eight battery modes' colours in the Battman
+dashboard's theme as hex, by mode, e.g. `{"Self Consume":"#81a1c1","Charge":"#e9d8a6",…}`; its
+`hues` attribute says which theme colour each mode got. The five everyday modes are the Power
+view's Battery mode button colours; the three party modes (Charge Solar Off, Float Solar Off,
+Solar Soak) get the theme's other palette colours that look most different from the rest, worked
+out per theme, so all eight are always clearly different (the Log card uses the same list). It's
+for things that can't read theme colours, like an iPhone Live Activity. It's a template sensor in Battman's packages: templates can't see HA's
 themes, so an open Battman page works the colours out and saves them in Battman's settings,
 and keeps them in step when the theme is picked or changes (a Battman update included), while
 Battman is in charge. Until a dashboard theme is picked and its colours saved (or if a colour

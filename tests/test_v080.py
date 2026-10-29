@@ -16,9 +16,11 @@ SENSOR = "sensor.battman_theme_mode_colours"
 SMIGGLES_PARAMS = "sensor.solarsystemcontrolparameters"   # the map's parameters while Smiggles is in charge
 COMPONENT = Path(__file__).resolve().parent.parent / "custom_components" / "battman"
 
-NORD = {"battman-green": "#a3be8c", "battman-yellow": "#e9d8a6", "battman-blue": "#81a1c1",
-        "battman-orange": "#d08770", "battman-red": "#a85560", "battman-purple": "#b48ead",
-        "battman-teal": "#8fbcbb", "battman-amber": "#ebcb8b"}
+NORD = {k: v for k, v in next(iter(__import__("yaml").safe_load(
+    (Path(__file__).parents[1] / "custom_components/battman/themes/Battman Nord.yaml").read_text()).values())).items()
+    if k in {"battman-" + h for h in ("red", "darkred", "orange", "amber", "yellow", "green", "teal", "sky",
+                                       "blue", "purple", "darkpurple", "pink")}}
+MODES = ["Self Consume", "Charge", "Discharge", "Float", "Drain", "Charge Solar Off", "Float Solar Off", "Solar Soak"]
 
 
 async def _setup(hass):
@@ -48,9 +50,9 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
     await _setup(hass)
     themes = {
         "Battman Nord": NORD,
-        "Battman HA": {**{f"battman-{k}": "var(--x-%s)" % k for k in ("green", "yellow", "blue", "orange", "red", "teal", "amber")},
+        "Battman HA": {**{k: "var(--x-%s)" % k[8:] for k in NORD if k != "battman-purple"},
                        "battman-purple": "var(--primary-color)",
-                       **{f"x-{k}": "rgb(1, 2, 3)" for k in ("green", "yellow", "blue", "orange", "red", "teal", "amber")}},
+                       **{"x-" + k[8:]: "rgb(1, 2, 3)" for k in NORD if k != "battman-purple"}},
     }
 
     async def _pick(theme=None):
@@ -65,9 +67,9 @@ async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
 
     await _pick("Battman Nord")                                 # parameters change -> refresh
     st = hass.states.get(SENSOR)
-    assert json.loads(st.state) == {k[8:]: v for k, v in NORD.items()}
-    assert st.attributes["theme"] == "Battman Nord" and st.attributes["green"] == "#a3be8c"
-    assert list(json.loads(st.state)) == ["green", "yellow", "blue", "orange", "red", "purple", "teal", "amber"]
+    assert list(json.loads(st.state)) == MODES and json.loads(st.state)["Self Consume"] == NORD["battman-blue"]
+    assert st.attributes["theme"] == "Battman Nord" and st.attributes["hues"]["Self Consume"] == "blue"
+    assert len(set(json.loads(st.state).values())) == 8                     # all eight different
 
     await _pick("Battman HA")                                   # var() followed; one can't be resolved
     st = hass.states.get(SENSOR)
