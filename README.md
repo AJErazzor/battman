@@ -130,6 +130,8 @@ OpenNEM to another region; only if OpenNEM has several regions does Configure as
 (a Repair says so). Their `source` attribute names the sensor they read. A source OpenNEM
 doesn't report is unknown, never 0. They only exist while the OpenNEM integration is installed,
 and aren't on the Battman device (find them under Settings → Entities, "battman_nem").
+Without OpenNEM, a Repair says the NEM mix card needs it; OpenNEM is optional, so you can
+press **Ignore** (it stays ignored) and remove the card instead.
 
 ## Battman cards
 

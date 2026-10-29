@@ -112,6 +112,10 @@
       "title": "Battman can't find entities it uses",
       "description": "Battman uses these entities by name, and they aren't available:\n\n{missing}\n\nInstall or enable the integration named, or enable the entity under Settings → Entities. If it exists under a different name, rename it to the name above. Until then, what uses it shows a note or a blank (never a made-up value)."
     },
+    "opennem_missing": {
+      "title": "Battman's NEM mix card needs OpenNEM",
+      "description": "The NEM mix card on the Power view (SA Generation Mix and SA Demand Mix) shows where your region's power comes from and goes. Its figures come from the **OpenNEM** integration, which isn't installed, so the card is empty.\n\nTo fill it: HACS → search **OpenNEM** → Download, restart Home Assistant, then Settings → Devices & services → Add integration → OpenNEM and pick your region. Battman finds it by itself.\n\nDon't want it? OpenNEM is optional and nothing else in Battman uses it: press **Ignore** here and remove the NEM mix card from your dashboard."
+    },
     "opennem_choose": {
       "title": "Pick your OpenNEM region",
       "description": "Battman found several OpenNEM region sensors ({regions}) and doesn't know which one its NEM sensors should read. Pick one under Settings → Devices & services → Battman → Configure. Until then the NEM sensors are unavailable."

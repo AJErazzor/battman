@@ -7,7 +7,8 @@
 #
 # Reads Battman's own NEM sensors (sensor.battman_nem_*), which Battman makes from the
 # OpenNEM integration's region sensor (it finds it itself). If any of them has no value, a
-# line above the pies names them (the pies themselves are drawn by power-pie-card).
+# line above the pies names them (the pies themselves are drawn by power-pie-card). Without
+# OpenNEM installed the sensors don't exist at all: the line says to install it (a Repair says so too).
 type: vertical-stack
 cards:
   - type: conditional
@@ -87,10 +88,12 @@ cards:
     card:
       type: markdown
       content: >-
-        {% set gone = ['sensor.battman_nem_wind', 'sensor.battman_nem_rooftop_solar', 'sensor.battman_nem_utility_solar', 'sensor.battman_nem_imports', 'sensor.battman_nem_battery', 'sensor.battman_nem_gas_ccgt', 'sensor.battman_nem_gas_ocgt', 'sensor.battman_nem_distillate', 'sensor.battman_nem_gas_steam', 'sensor.battman_nem_gas_recip', 'sensor.battman_nem_exports', 'sensor.battman_nem_battery_charging', 'sensor.battman_nem_total_supply', 'sensor.battman_nem_consumers'] | select('is_state', ['unknown', 'unavailable']) | list
+        {% if states.sensor.battman_nem_wind is none %}<span style="color:var(--battman-darkred);font-weight:700">NEM
+        mix needs the OpenNEM integration: install it from HACS and add it for your region
+        (Settings → Repairs has the steps).</span>{% else %}{% set gone = ['sensor.battman_nem_wind', 'sensor.battman_nem_rooftop_solar', 'sensor.battman_nem_utility_solar', 'sensor.battman_nem_imports', 'sensor.battman_nem_battery', 'sensor.battman_nem_gas_ccgt', 'sensor.battman_nem_gas_ocgt', 'sensor.battman_nem_distillate', 'sensor.battman_nem_gas_steam', 'sensor.battman_nem_gas_recip', 'sensor.battman_nem_exports', 'sensor.battman_nem_battery_charging', 'sensor.battman_nem_total_supply', 'sensor.battman_nem_consumers'] | select('is_state', ['unknown', 'unavailable']) | list
         %}<span style="color:var(--battman-darkred);font-weight:700">NEM mix: no value from
         {{ gone | join(', ') }}{% set p = state_attr(gone[0], 'problem') if gone else none
-        %}{% if p %} ({{ p }}){% endif %}</span>
+        %}{% if p %} ({{ p }}){% endif %}</span>{% endif %}
   - type: custom:power-pie-card
     title: SA Generation Mix
     display_unit: MW
