@@ -49,8 +49,8 @@ const HOUSE_ITEMS = [
   { key: "pv2", title: "PV string (top)", label: "PV2", ent: { entity: "sensor.sigen_inverter_pv2_power" }, need: ["entity"], at: [9.0, 2.5, 25.3] },
   { key: "pv1", title: "PV string (middle)", label: "PV1", ent: { entity: "sensor.sigen_inverter_pv1_power" }, need: ["entity"], at: [16.8, 2.5, 25.3] },
   { key: "pv3", title: "PV string (bottom)", label: "PV3", ent: { entity: "sensor.sigen_inverter_pv3_power" }, need: ["entity"], at: [24.6, 2.5, 25.3] },
-  { key: "solar", title: "Solar power", label: "SOLAR", ent: { entity: "sensor.sigen_plant_pv_power" }, need: ["entity"], at: [5.6, 44.3, 25.3] },
-  { key: "solar_today", title: "Solar today", ent: { entity: "sensor.sigen_plant_daily_pv_energy" }, need: ["entity"], at: [14.3, 44.3, 35.4] },
+  { key: "solar", title: "Solar power", label: "SOLAR", ent: { entity: "sensor.sigen_plant_pv_power", entity2: "" }, need: ["entity"], at: [5.6, 44.3, 25.3] },
+  { key: "solar_today", title: "Solar today", ent: { entity: "sensor.sigen_plant_daily_pv_energy", entity2: "" }, need: ["entity"], at: [14.3, 44.3, 35.4] },
   { key: "countdown", title: "Price countdown", label: "LEFT", at: [0, 60, 20] },
   { key: "sell", title: "Sell price (feed-in)", label: "FIT", ent: { entity: "sensor.amber_5min_current_feed_in_price" }, need: ["entity"], at: [0, 74, 25] },
   { key: "buy", title: "Buy price", label: "BUY", ent: { entity: "sensor.amber_5min_current_general_price" }, need: ["entity"], at: [7.8, 74, 25] },
@@ -64,11 +64,11 @@ const HOUSE_ITEMS = [
   { key: "battery_flow", title: "Battery charging / discharging", ent: { entity: "sensor.sigen_plant_battery_power", soc: "sensor.sigen_plant_battery_state_of_charge", capacity: "sensor.sigen_plant_rated_energy_capacity" }, need: ["entity"], at: [83.3, 32, 46] },
   { key: "grid", title: "Grid power", label: "GRID", ent: { import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power" }, need: ["import", "export"], at: [75.6, 79.8, 19.5] },
   { key: "grid_flow", title: "Grid import / export today", ent: { import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power", import_today: "sensor.sigen_plant_daily_grid_import_energy", export_today: "sensor.sigen_plant_daily_grid_export_energy" }, need: ["import", "export"], at: [83.3, 79.8, 19.5] },
-  { key: "lines", title: "Flow lines", ent: { solar: "sensor.sigen_plant_pv_power", home: "sensor.sigen_plant_consumed_power", battery: "sensor.sigen_plant_battery_power", import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power" } },
+  { key: "lines", title: "Flow lines", ent: { solar: "sensor.sigen_plant_pv_power", solar2: "", home: "sensor.sigen_plant_consumed_power", battery: "sensor.sigen_plant_battery_power", import: "sensor.sigen_plant_grid_import_power", export: "sensor.sigen_plant_grid_export_power" } },
 ];
 const HOUSE_BY_KEY = Object.fromEntries(HOUSE_ITEMS.map((i) => [i.key, i]));
 const HOUSE_ENT_LABELS = {
-  entity: "Entity", capacity: "Battery capacity (kWh)", soc: "Battery charge (%)", import: "Grid import power",
+  entity: "Entity", entity2: "Add this sensor too (e.g. a third-party inverter; same unit)", solar2: "Solar power: add this sensor too", capacity: "Battery capacity (kWh)", soc: "Battery charge (%)", import: "Grid import power",
   export: "Grid export power", import_today: "Grid import today", export_today: "Grid export today",
   solar: "Solar power", home: "Home power", battery: "Battery power",
 };
@@ -267,7 +267,9 @@ class BattmanHouseCard extends HTMLElement {
     // a value with its text under it; pc / sc: their classes, colour: the value's theme colour
     const two = (p, sec, pc = "blend", sc = "muted", colour = "") =>
       `<div class="p ${pc}"${colour ? ` style="color:var(--battman-${colour})"` : ""}>${p}</div>${sec ? `<div class="s ${sc}">${esc(sec)}</div>` : ""}`;
-    const v = num(st.entity);
+    // Solar power / Solar today can add a second sensor (a third-party inverter) to the first
+    const sum2 = () => { const a = num(st.entity), b = st.entity2 ? num(st.entity2) : null; return a === null && b === null ? null : (a || 0) + (b || 0); };
+    const v = key === "solar" || key === "solar_today" ? sum2() : num(st.entity);
     const dash = "-";
     switch (key) {
       case "buy": {
@@ -357,7 +359,8 @@ class BattmanHouseCard extends HTMLElement {
 
   // The moving lines: which way power flows now (each line only when its entities exist).
   _lines(st, num) {
-    const pv = num(st.solar);
+    const pvA = num(st.solar), pvB = st.solar2 ? num(st.solar2) : null;
+    const pv = pvA === null && pvB === null ? null : (pvA || 0) + (pvB || 0);
     const home = num(st.home);
     const batt = num(st.battery);
     const imp = num(st.import);

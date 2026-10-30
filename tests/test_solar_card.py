@@ -29,6 +29,7 @@ def test_card_options_and_defaults() -> None:
     assert 'forecast_basis: "p10"' in js                      # 10% is the big figure until you tap the pill
     assert "sensor.sigen_plant_third_party_pv_power" in js and "sensor.sigen_inverter_pv_power" in js
     assert "sensor.solcast_pv_forecast_forecast_remaining_today" in js
+    assert 'sparkline: "total"' in js and "detailedForecast" in js    # a total-only sparkline with the forecast dashed behind it
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs node")

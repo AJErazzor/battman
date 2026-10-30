@@ -62,8 +62,9 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-theme-studio` | The Theme studio: edit a Battman theme with a live preview (including the real State card), save it to HA or make it the dashboard's theme. Draws itself; no options | nothing |
 | `battman-cost-chart` | Daily buy, sell and net cost with Sigen import / export, over N days, a bill cycle or From / To (the range is kept per device; it starts on 5 days on a narrow card, 10 on a wide one). Draws itself; no options | nothing |
 | `battman-cost-compare` | This bill cycle against the last: the running net cost day by day, and how far ahead or behind you are. Draws itself; no options | nothing |
-| `battman-amber-forecast-chart` | Amber's buy and sell price forecasts (price, predicted, low and high) for the next 4, 8, 12 or 24 hours; tap a name to hide a line (see [Battman Amber forecast chart](#battman-amber-forecast-chart)). Draws itself; no options | nothing |
+| `battman-amber-forecast-chart` | Amber's buy and sell price forecasts (price, predicted, low and high) for the next 15 or 30 minutes, or 1, 2, 4, 8, 12 or 24 hours; tap a name to hide a line (see [Battman Amber forecast chart](#battman-amber-forecast-chart)). Draws itself; no options | nothing |
 | `battman-solar-card` | Live power, today's generation and Solcast's forecast for one or two inverters, as Now / Forecast pills, two stacked tables, or either alone (see [Battman Solar](#battman-solar)) | nothing |
+| `battman-mode-history-strip` | The battery mode over the last 15 minutes to 24 hours as one coloured strip, on its own; tap or drag for the mode at a point (see [Battman Mode history strip](#battman-mode-history-strip)). Draws itself; no options | nothing |
 | `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
 | `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
 | `battman-house` | The house picture with live prices, solar, PV strings, home, grid, battery, temperature and three of your own devices, with moving flow lines (see [Battman House](#battman-house)) | nothing |
@@ -199,8 +200,8 @@ no options.
 
 ## Battman Amber forecast chart
 
-`custom:battman-amber-forecast-chart` is Amber's price forecasts as a chart, in c/kWh, from now to 4,
-8, 12 or 24 hours ahead. Each side has four lines, each solid in its own theme colour (Buy in the
+`custom:battman-amber-forecast-chart` is Amber's price forecasts as a chart, in c/kWh, from now to 15
+or 30 minutes, or 1, 2, 4, 8, 12 or 24 hours ahead (the pills; 8 hours to start). Each side has four lines, each solid in its own theme colour (Buy in the
 warm colours, Sell in the cool ones): the forecast price, Amber Advanced's prediction and its low and
 high. Until the first forecast (the interval under way isn't in Amber's forecasts) the price lines
 show Amber's current prices. Sell is shown as what you're paid (positive = earning), as the engine
@@ -224,6 +225,12 @@ inverter whose power sensor doesn't exist isn't drawn, so a one-inverter home ju
   the default. It applies to every figure on the card, in every layout, and is kept per device.
 - Now: total kW, today's kWh, what's left today (Solcast's remaining-today forecast) and a progress bar
   of the day done. Forecast: today and tomorrow per inverter, as bars. Tap a row for its sensor.
+- `sparkline` (default `total`) draws today's actual power from midnight to midnight with Solcast's
+  forecast curve dashed behind it, so you can see whether you're ahead of or behind the day's forecast.
+  The dashed curve follows the 10% / Est pill. `total` is one strip under the big number, `rows` one per
+  inverter, `both` both, `off` none. Per-inverter curves are the whole forecast curve scaled by that
+  inverter's share of the day (Solcast gives one daily total per site). It reads today's history for the
+  power sensors, once on load and every 5 minutes.
 - Each inverter (`symo`, `sig`) takes `show`, `label`, `power`, `today` and `site`. `site` is the
   Solcast site id (the part after `estimate_` in the sensor's attributes, for example
   `fc06_f7f8_d429_86e2`); leave it blank for a single inverter and the whole forecast is used. With two
@@ -232,6 +239,16 @@ inverter whose power sensor doesn't exist isn't drawn, so a one-inverter home ju
   `no_export_entity` (an orange "No export" flag while it's on) and `soft_limit_entity` (a red
   "Soft limit" flag) are optional; leave either empty to hide it.
 - `show_total`, `show_10` and `show_progress` turn the Total row, the 10% figures and the progress bars on or off.
+
+## Battman Mode history strip
+
+`custom:battman-mode-history-strip` is the Log page's mode timeline as a card of its own: the battery
+mode as one coloured strip over the last 15 minutes, 30 minutes, 1, 2, 4, 8, 12 or 24 hours (the pills;
+4 hours to start, kept per device). It always ends at now, so there are no dates to set.
+Tap or drag along the strip for the mode at that point: a red line marks it, and it says when that mode
+started and how long it ran (or how long so far, if it's still running). It uses the same colours as the
+Log, the Battery mode buttons and the Live Activity, redraws when the mode changes and once a minute, and
+says on the card if the mode entity, the Battman card library or the Battman theme is missing. It has no options.
 
 ## Battman Settings
 
@@ -257,6 +274,11 @@ The outside temperature, the battery temperature and the three devices have no d
 entity. An item whose entity doesn't exist isn't drawn. The three devices (the "PC" rows) also
 take your own text and what goes after the value (e.g. `W`). The pictures are Battman's;
 point House / Battery / Gateway picture at your own (e.g. `/local/house.png`) to change them.
+
+Solar today and Solar power can add a second sensor (**Add this sensor too**, `entity2`), for a
+third-party inverter whose figures aren't in the plant's. Both sensors need the same unit. Only add the
+second Solar power sensor if the first doesn't already include it. The Flow lines item has its own
+`solar2` for the same reason, so the lines move when only the third-party inverter is generating.
 
 Only what you change is written to the card's YAML, e.g.:
 

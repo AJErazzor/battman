@@ -11,7 +11,7 @@ const VIEWS = ["now", "forecast", "toggle", "both"];
 
 const DEFAULTS = {
   view: "toggle", default_view: "now", forecast_basis: "p10", title: "Solar",
-  show_total: true, show_10: true, show_progress: true,
+  show_total: true, show_10: true, show_progress: true, sparkline: "total",
   forecast_remaining: "sensor.solcast_pv_forecast_forecast_remaining_today",
   forecast_today: "sensor.solcast_pv_forecast_forecast_today",
   forecast_tomorrow: "sensor.solcast_pv_forecast_forecast_tomorrow",
@@ -67,6 +67,9 @@ class BattmanSolarCard extends BattmanCardBase {
         { name: "show_total", label: "Total row", selector: { boolean: {} } },
         { name: "show_10", label: "10% (pessimistic) figures", selector: { boolean: {} } },
         { name: "show_progress", label: "Progress bars", selector: { boolean: {} } } ] },
+      { name: "sparkline", label: "Today's power sparkline (actual vs forecast)", selector: { select: { mode: "dropdown", options: [
+        { value: "total", label: "Total only" }, { value: "rows", label: "Per inverter only" },
+        { value: "both", label: "Total and per inverter" }, { value: "off", label: "Off" }] } } },
       inv("symo", "Inverter 1 (third party)"), inv("sig", "Inverter 2 (Sigenergy)"),
       { name: "", type: "expandable", title: "Solcast and status", schema: [
         ent("forecast_remaining", "Forecast remaining today", "sensor"), ent("forecast_today", "Forecast today", "sensor"),
@@ -80,6 +83,7 @@ class BattmanSolarCard extends BattmanCardBase {
     if (extra.length) throw new Error(`${this.constructor.cardName} has no options (found: ${extra.join(", ")}).`);
     const c = { ...DEFAULTS, ...config, symo: { ...DEFAULTS.symo, ...(config.symo || {}) },
       sig: { ...DEFAULTS.sig, ...(config.sig || {}) } };
+    if (!["total", "rows", "both", "off"].includes(c.sparkline)) throw new Error("sparkline must be one of: total, rows, both, off");
     if (!VIEWS.includes(c.view)) throw new Error(`view must be one of: ${VIEWS.join(", ")}`);
     this._config = c;
   }
@@ -121,6 +125,8 @@ class BattmanSolarCard extends BattmanCardBase {
     .num { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .num small { font-size: 11px; font-weight: 600; color: var(--secondary-text-color); margin-left: 2px; }
     .num.dim { color: var(--secondary-text-color); font-weight: 600; }
+    .spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
+    .spark.big { height: 44px; margin-top: 2px; }
     .bar { height: 7px; border-radius: 4px; background: var(--divider-color); margin: 7px 0 4px; position: relative; overflow: hidden; }
     .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
     .bar i.lo { opacity: .45; }
@@ -141,6 +147,7 @@ class BattmanSolarCard extends BattmanCardBase {
     const card = this;
     const $ = (id) => root.getElementById(id);
     let tab = null, basis = null;
+    let hist = {}, histAt = 0, histBusy = false, histTimer = null;
 
     const loadTab = () => { try { const s = localStorage.getItem(SAVE_KEY + "." + (card._config.title || "")); if (s === "now" || s === "forecast") return s; } catch (e) {} return null; };
     const saveTab = () => { try { localStorage.setItem(SAVE_KEY + "." + (card._config.title || ""), tab); } catch (e) {} };
@@ -172,6 +179,72 @@ class BattmanSolarCard extends BattmanCardBase {
       return out;
     }
 
+    // ---- today's power, from midnight: one series per inverter (kW), 5-minute steps ----
+    const DAY0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+    async function loadHist() {
+      const c = card._config; if (c.sparkline === "off" || histBusy || !card.hass) return;
+      const ids = rowsOf(c).map((r) => r.power); if (!ids.length) return;
+      histBusy = true;
+      try {
+        const start = new Date(DAY0()).toISOString();
+        const r = await card.hass.callApi("GET", `history/period/${start}?filter_entity_id=${ids.join(",")}&minimal_response&no_attributes`);
+        const out = {};
+        r.forEach((arr) => {
+          if (!arr.length) return;
+          const id = arr[0].entity_id;
+          out[id] = arr.map((x) => [Date.parse(x.last_changed || x.last_updated), parseFloat(x.state)]).filter((x) => Number.isFinite(x[1]));
+        });
+        hist = out; histAt = Date.now();
+      } catch (e) { hist = {}; histAt = Date.now(); }
+      histBusy = false;
+      render();
+    }
+    // power sensors report W or kW; use the unit the sensor reports now
+    const scaleOf = (id) => ((st(id) && st(id).attributes.unit_of_measurement) || "").trim() === "W" ? 0.001 : 1;
+    // 5-minute step series from midnight to now (null before the first reading)
+    function series(id) {
+      const pts = hist[id]; if (!pts || !pts.length) return null;
+      const t0 = DAY0(), n = Math.floor((Date.now() - t0) / 300000) + 1, k = scaleOf(id), out = new Array(n).fill(null);
+      let j = 0, last = null;
+      for (let i = 0; i < n; i++) {
+        const t = t0 + i * 300000;
+        while (j < pts.length && pts[j][0] <= t) { last = pts[j][1]; j++; }
+        out[i] = last == null ? null : last * k;
+      }
+      return out;
+    }
+    // Solcast's half-hour curve for today (kW), as 5-minute steps midnight to midnight; the basis picks
+    // 10% or the estimate. A site's curve is the whole curve scaled by that site's share of the day.
+    function fcCurve(c, site) {
+      const s0 = st(c.forecast_today), d = s0 && s0.attributes.detailedForecast;
+      if (!Array.isArray(d) || !d.length) return null;
+      const key = basis === "p10" ? "pv_estimate10" : "pv_estimate", ak = basis === "p10" ? "estimate10" : "estimate";
+      let k = 1;
+      if (site) { const a = attr(c.forecast_today, `${ak}_${site}`), b = attr(c.forecast_today, ak); k = a != null && b ? a / b : 0; }
+      const t0 = DAY0(), pts = d.map((x) => [Date.parse(x.period_start), Number(x[key])]).filter((x) => Number.isFinite(x[0]) && Number.isFinite(x[1]));
+      const out = []; let j = 0, last = 0;
+      for (let i = 0; i < 288; i++) {
+        const t = t0 + i * 300000;
+        while (j < pts.length && pts[j][0] <= t) { last = pts[j][1]; j++; }
+        out.push(last * k);
+      }
+      return out;
+    }
+    function sparkSvg(vals, col, cls, fvals) {
+      if (!vals || vals.length < 2) return "";
+      const W = 288, H = cls === "big" ? 44 : 30, N = 288;   // x spans the whole day, midnight to midnight
+      const max = Math.max(0.1, ...vals.map((v) => v || 0), ...(fvals || []));
+      const fline = fvals ? "M" + fvals.map((v, i) => ((i / (N - 1)) * W).toFixed(1) + " " + (H - 2 - (v / max) * (H - 5)).toFixed(1)).join("L") : "";
+      const pts = vals.map((v, i) => [(i / (N - 1)) * W, H - 2 - ((v || 0) / max) * (H - 5)]);
+      const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("");
+      const area = line + `L${pts[pts.length - 1][0].toFixed(1)} ${H}L0 ${H}Z`;
+      const nowX = pts[pts.length - 1][0].toFixed(1);
+      return `<svg class="spark ${cls || ""}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="${col}" opacity=".18"/>`
+        + (fline ? `<path d="${fline}" fill="none" stroke="${col}" stroke-width="1.3" stroke-dasharray="4 3" opacity=".75" vector-effect="non-scaling-stroke"/>` : "")
+        + `<path d="${line}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`
+        + `<line x1="${nowX}" x2="${nowX}" y1="0" y2="${H}" stroke="var(--secondary-text-color)" stroke-width="1" stroke-dasharray="2 3" opacity=".6" vector-effect="non-scaling-stroke"/></svg>`;
+    }
+
     function flags(c) {
       const f = [];
       if (c.no_export_entity && on(c.no_export_entity)) f.push(`<span class="flag" style="color:${colour("--battman-orange")}">No export</span>`);
@@ -195,14 +268,18 @@ class BattmanSolarCard extends BattmanCardBase {
         return `<div class="row" data-e="${esc(r.power)}">
           <div class="line"><span class="dot" style="background:${r.col}"></span><span class="name">${esc(r.label)}</span>
             <span class="num">${f1(p)}<small>kW</small></span></div>
+          ${c.sparkline === "rows" || c.sparkline === "both" ? sparkSvg(series(r.power), r.col, "", r.hasFc ? fcCurve(c, rows.length === 1 ? "" : r.site) : null) : ""}
           ${c.show_progress && pct != null ? `<div class="bar"><i style="width:${pct}%;background:${r.col}"></i></div>` : `<div style="height:6px"></div>`}
           <div class="foot"><span>Today <b>${f1(g)} kWh</b></span>
             <span>${left != null ? `To go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` · ${other} ${f1(lo)}` : ""} kWh` : ""}</span></div></div>`;
       }).join("");
       const tEst = fc(c.forecast_remaining, "estimate"), tP10 = fc(c.forecast_remaining, "estimate10");
       const left = basis === "p10" && tP10 != null ? tP10 : tEst, lo = basis === "p10" ? tEst : tP10;
+      const sers = rows.map((r) => series(r.power)).filter(Boolean);
+      const sum = sers.length ? sers[0].map((_, i) => sers.reduce((a, x) => a + (x[i] || 0), 0)) : null;
+      const heroSpark = c.sparkline === "total" || c.sparkline === "both" ? sparkSvg(sum, colour("--battman-green"), "big", fcCurve(c, "")) : "";
       const hero = `<div class="hero"><div class="big">${f1(tot.p)}<small>kW</small></div>
-        <div class="side">Today <b>${f1(tot.g)} kWh</b>${left != null ? ` · to go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` (${other} ${f1(lo)})` : ""} kWh` : ""}</div></div>`;
+        <div class="side">Today <b>${f1(tot.g)} kWh</b>${left != null ? ` · to go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` (${other} ${f1(lo)})` : ""} kWh` : ""}</div></div>${heroSpark}`;
       const totalRow = c.show_total && rows.length > 1 ? `<div class="row total"><div class="line"><span class="dot" style="background:${colour("--battman-green")}"></span>
           <span class="name">Total</span><span class="num">${f1(tot.p)}<small>kW</small></span></div>
           ${c.show_progress && left != null && tot.g + left > 0 ? `<div class="bar"><i style="width:${Math.min(100, tot.g / (tot.g + left) * 100)}%;background:${colour("--battman-green")}"></i></div>` : `<div style="height:6px"></div>`}
@@ -256,8 +333,9 @@ class BattmanSolarCard extends BattmanCardBase {
     const watched = () => { const c = card._config; return [c.symo.power, c.symo.today, c.sig.power, c.sig.today, c.forecast_remaining,
       c.forecast_today, c.forecast_tomorrow, c.no_export_entity, c.soft_limit_entity].filter(Boolean); };
     render();
+    loadHist();
     return {
-      hassChanged: (old) => { if (!old || watched().some((id) => old.states[id] !== card.hass.states[id])) render(); },
+      hassChanged: (old) => { if (Date.now() - histAt > 300000) loadHist(); if (!old || watched().some((id) => old.states[id] !== card.hass.states[id])) render(); },
       themeChanged: render,
     };
   }
