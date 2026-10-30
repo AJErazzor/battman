@@ -316,7 +316,10 @@ const OWN_SCRIPT_CARDS = {
 function defineCard(id, name, description) {
   const tag = `battman-${id}`;
   if (OWN_SCRIPT_CARDS[id]) {
-    if (!customElements.get(tag)) import(`/battmanfiles/${OWN_SCRIPT_CARDS[id]}`);
+    // Resolve against this module's own URL so the import stays on the same
+    // /battmanfiles/v<version>/ path we were loaded from — a bare /battmanfiles/
+    // path would drop the version and the browser could serve a stale module.
+    if (!customElements.get(tag)) import(new URL(OWN_SCRIPT_CARDS[id], import.meta.url).href);
     return;
   }
   if (!cardClasses.has(tag)) {

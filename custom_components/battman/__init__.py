@@ -63,10 +63,28 @@ WWW_DIR = Path(__file__).parent / "www"
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Once per HA start: serve Battman's pages and its entity-map API."""
     integration = await async_get_integration(hass, DOMAIN)
-    # cache_headers=False: browsers re-check files, so a new release shows up
-    # without ?v= tricks on the URL.
+    ver = str(integration.version)
+    # Battman's cards are ES modules that import their siblings with plain relative
+    # specifiers (e.g. `import { RANGES_H } from "./battman-amber-forecast-data.js"`).
+    # A ?v= query on the entry module is NOT inherited by those relative imports, so
+    # after an update the browser re-fetches the entry file but keeps a stale sibling
+    # from its HTTP/service-worker cache (this bit the Amber forecast chart: its range
+    # pills live in battman-amber-forecast-data.js, so a bump never reached them).
+    # Serving the modules under the version in the PATH fixes it: every relative import
+    # resolves under the same /battmanfiles-v<version>/ folder, so one bump freshens the
+    # whole module graph. That folder is immutable, so it caches hard. The version mount
+    # is a sibling of /battmanfiles (not nested under it) so neither prefix can swallow
+    # the other and serving order can't matter: /battmanfiles-v... never starts with
+    # /battmanfiles/, so the base mount keeps serving images, .html pages and the
+    # BattmanLib fallback loader.
+    static_v = f"{STATIC_URL}-v{ver}"
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(STATIC_URL, str(WWW_DIR), cache_headers=False)]
+        [
+            StaticPathConfig(static_v, str(WWW_DIR), cache_headers=True),
+            # cache_headers=False: browsers re-check these, so a new release shows up
+            # without ?v= tricks on the URL.
+            StaticPathConfig(STATIC_URL, str(WWW_DIR), cache_headers=False),
+        ]
     )
     hass.http.register_view(BattmanEntityMapView(str(integration.version)))
     hass.http.register_view(BattmanThemeSaveView())
@@ -76,26 +94,26 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanImageView())
     hass.http.register_view(engine_log.BattmanLogView())
     # <battman-countdown>: the 5-minute Amber countdown some Battman cards show.
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-countdown.js?v={integration.version}")
+    frontend.add_extra_js_url(hass, f"{static_v}/battman-countdown.js")
     # Battman's card library (window.BattmanLib): the Overrides card's rows and popups.
     # Loaded on every HA page so it's there before the first tap.
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-lib.js?v={integration.version}")
+    frontend.add_extra_js_url(hass, f"{static_v}/battman-lib.js")
     # The engine log renderer: the Engine log popup and the Log page draw the log with it.
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-enginelog.js?v={integration.version}")
+    frontend.add_extra_js_url(hass, f"{static_v}/battman-enginelog.js")
     # The Battman House card (custom:battman-house): the house picture with live numbers on it.
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-house.js?v={integration.version}")
+    frontend.add_extra_js_url(hass, f"{static_v}/battman-house.js")
     # The Battman cards that draw themselves (www/battman-card-base.js is what they share): Log,
     # Cost compare, Cost chart, Settings, Theme studio, Curvy, Pricy, Amber forecast chart, Solar, Mode history strip.
     for name in ("log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy", "amber-forecast-chart", "solar-card",
                  "mode-history-strip"):
-        frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-{name}.js?v={integration.version}")
+        frontend.add_extra_js_url(hass, f"{static_v}/battman-{name}.js")
     # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
     # start are passed along so the cards exist before any dashboard draws them.
     local = cards.local_dir(hass)
     card_list = await hass.async_add_executor_job(cards.list_cards, local)
     cards.update_issue(hass, [c["id"] for c in card_list if c["source"] != "battman"])
     ids = ",".join(c["id"] for c in card_list)
-    frontend.add_extra_js_url(hass, f"{STATIC_URL}/battman-cards.js?v={integration.version}&cards={ids}")
+    frontend.add_extra_js_url(hass, f"{static_v}/battman-cards.js?cards={ids}")
     async_register_services(hass)
     # "Battman updated, restart to finish" Repair, checked every few minutes
     update_check.async_start(hass, str(integration.version))
