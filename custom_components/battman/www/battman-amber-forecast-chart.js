@@ -1,5 +1,5 @@
 // Battman Amber forecast chart: custom:battman-amber-forecast-chart. Amber's buy and sell price
-// forecasts for the next 4, 8, 12 or 24 hours: the price, Amber Advanced's prediction and its low /
+// forecasts for the next 15 or 30 minutes, 1, 2, 4, 8, 12 or 24 hours: the price, Amber Advanced's prediction and its low /
 // high band, for each side, in c/kWh, each line solid in its own theme colour. Until the first
 // forecast, the Price lines show Amber's current prices. Tap a name under the chart to hide or show that line; the range
 // and the hidden lines are kept per device. From Amber's two forecast sensors (amber2mqtt), named
@@ -17,7 +17,9 @@ const LINE_COLOR = {
 const THEME_VARS = Object.values(LINE_COLOR);
 const SAVE_KEY = "battman.amberForecastChart";
 const DEFAULT_RANGE_H = 8;
-const TICK_H = { 4: 0.5, 8: 1, 12: 2, 24: 3 };   // hours between time labels, per range
+const TICK_H = { 0.25: 1 / 12, 0.5: 1 / 6, 1: 0.25, 2: 0.5, 4: 0.5, 8: 1, 12: 2, 24: 3 };   // hours between time labels, per range
+const rangeLabel = (h) => (h < 1 ? `${h * 60}m` : `${h}h`);
+const rangeWords = (h) => (h < 1 ? `${h * 60} minutes` : h === 1 ? "1 hour" : `${h} hours`);
 
 // every line solid; Price a little heavier, Low / High a little lighter
 const WIDTH = { per_kwh: 2.5, predicted: 2, low: 1.5, high: 1.5 };
@@ -39,7 +41,7 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
       padding: 10px 16px; border-bottom: 1px solid var(--divider-color); }
     .title { font-size: 13px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
     .pills { display: flex; flex-wrap: wrap; gap: 6px; }
-    .pill { padding: 5px 12px; border: 1px solid var(--divider-color); border-radius: 999px; background: transparent;
+    .pill { padding: 5px 10px; border: 1px solid var(--divider-color); border-radius: 999px; background: transparent;
       color: var(--secondary-text-color); font: inherit; font-size: 12px; font-weight: 600; line-height: 1; cursor: pointer;
       -webkit-tap-highlight-color: transparent; transition: background .12s ease, border-color .12s ease, color .12s ease; }
     .pill:hover { color: var(--primary-text-color); }
@@ -101,13 +103,13 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
 
     // ---- range pills ----
     function buildPills() {
-      $("pills").innerHTML = RANGES_H.map((h) => `<button class="pill" data-h="${h}">${h}h</button>`).join("");
+      $("pills").innerHTML = RANGES_H.map((h) => `<button class="pill" data-h="${h}">${rangeLabel(h)}</button>`).join("");
       root.querySelectorAll(".pill").forEach((b) => { b.onclick = () => { rangeH = Number(b.dataset.h); save(); syncPills(); render(); }; });
       syncPills();
     }
     function syncPills() {
       root.querySelectorAll(".pill").forEach((b) => b.classList.toggle("active", Number(b.dataset.h) === rangeH));
-      $("titleEl").textContent = `Amber Price Forecast · next ${rangeH} hours`;
+      $("titleEl").textContent = `Amber Price Forecast · next ${rangeWords(rangeH)}`;
     }
 
     function showMsg(m) { const e = $("msg"); e.style.display = ""; e.textContent = m; $("c").style.display = "none"; if (chart) { chart.destroy(); chart = null; } }

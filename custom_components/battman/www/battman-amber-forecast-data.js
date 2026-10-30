@@ -20,7 +20,8 @@ export const SERIES = [
   { id: "sell_high", label: "Sell High", side: "sell", field: "low" },
 ];
 
-export const RANGES_H = [4, 8, 12, 24];
+// hours ahead: 15m, 30m, 1h, 2h, 4h, 8h, 12h, 24h
+export const RANGES_H = [0.25, 0.5, 1, 2, 4, 8, 12, 24];
 const STEP_MS = 5 * 60 * 1000;   // the chart has a point at least every 5 minutes, so the tooltip is always inside the right interval
 
 function num(x) {
