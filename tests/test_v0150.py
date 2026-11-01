@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .test_v0130 import run_js
 from .dashboard_views import built
+from .snapshots import assert_snapshot
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -75,6 +76,9 @@ async def test_batterymode_matches_smiggles(hass: HomeAssistant, hass_client) ->
     assert len(got) == 10 and all(s == "input_select.select_option" for s, _ in got)
     assert {json.loads(d)["option"] for _, d in got} == {"Charge", "Discharge", "Self Consume", "Float", "Drain",
                                                           "Float Solar Off", "Charge Solar Off"}
+    # Battman's side, recorded so the comparison survives Smiggles' removal (popup emptied, as compared)
+    assert_snapshot(__file__, "batterymode-config", m)
+    assert_snapshot(__file__, "batterymode-service-calls", [[s, json.loads(d)] for s, d in got])
 
 
 @needs_node
@@ -102,6 +106,11 @@ async def test_engine_log_popup(hass: HomeAssistant, hass_client) -> None:
     assert "max-height:82vh" in full and "var(--battman-surface-popup)" in full
     assert f"Engine log: missing {LOG}" in out[1] and "No data" not in out[1]
     assert "has no log message yet" in out[2]
+    # the popup replaced Smiggles' (so not in the comparison above): recorded as it draws
+    assert_snapshot(__file__, "enginelog-popup", {k: v for k, v in pop.items() if k != "content"})
+    assert_snapshot(__file__, "enginelog-popup-template", pop["content"])
+    for name, text in zip(("sample", "no-sensor", "blank-message"), out, strict=True):
+        assert_snapshot(__file__, f"enginelog-draw-{name}", text)
 
 
 async def test_forecast_table_scrolls(hass: HomeAssistant, hass_client) -> None:

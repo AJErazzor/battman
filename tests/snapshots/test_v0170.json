@@ -1,0 +1,39 @@
+{
+ "grid-power": [
+  {
+   "export": "0",
+   "import": "2.345",
+   "state": "2.35"
+  },
+  {
+   "export": "0.01",
+   "import": "0.04",
+   "state": "0"
+  },
+  {
+   "export": "3.217",
+   "import": "0",
+   "state": "-3.22"
+  },
+  {
+   "export": "1.5",
+   "import": "1.5",
+   "state": "1.5"
+  },
+  {
+   "export": "0.02",
+   "import": "0.06",
+   "state": "0.06"
+  },
+  {
+   "export": "0.06",
+   "import": "0.02",
+   "state": "-0.06"
+  },
+  {
+   "export": "0",
+   "import": "0",
+   "state": "0"
+  }
+ ]
+}

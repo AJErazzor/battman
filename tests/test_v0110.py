@@ -8,6 +8,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
+from .snapshots import assert_snapshot
 
 DOMAIN = "battman"
 ORIG = Path(__file__).parent / "fixtures" / "smiggles_limits.yaml"
@@ -76,6 +77,9 @@ async def test_limits_matches_smiggles(hass: HomeAssistant, hass_client) -> None
                             ).replace("(u ? '<span", "(u && !isNaN(n) ? '<span") == js_m
     assert {k: v for k, v in o.items() if k != "cards"} == {k: v for k, v in m.items() if k != "cards"}
     assert {k: v for k, v in o["cards"][0].items() if k != "cards"} == {k: v for k, v in m["cards"][0].items() if k != "cards"}
+    # Battman's side, recorded so the comparison survives Smiggles' removal: the whole filled-in
+    # card (every tile, its fields and its JS), which is everything compared above.
+    assert_snapshot(__file__, "limits-config", m)
 
 
 async def test_local_override_and_repair(hass: HomeAssistant, hass_client) -> None:

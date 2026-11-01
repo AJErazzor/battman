@@ -1,10 +1,24 @@
 """Test setup: load custom_components/battman from this repo."""
 
+import os
 from pathlib import Path
 
 import pytest
 
 REPO_COMPONENTS = str(Path(__file__).resolve().parent.parent / "custom_components")
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """With BATTMAN_NO_SKIPS=1 (set in CI), a skipped test fails: every test must run there, so
+    a browser test that couldn't find Chromium, or a test that couldn't find node, can't pass
+    quietly by skipping."""
+    outcome = yield
+    report = outcome.get_result()
+    if os.environ.get("BATTMAN_NO_SKIPS") == "1" and report.skipped and not hasattr(report, "wasxfail"):
+        reason = report.longrepr[2] if isinstance(report.longrepr, tuple) else str(report.longrepr)
+        report.outcome = "failed"
+        report.longrepr = f"Skipped, but BATTMAN_NO_SKIPS=1 says every test must run: {reason}"
 
 
 @pytest.fixture(autouse=True)

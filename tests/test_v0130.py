@@ -5,6 +5,7 @@ Each card is run (with node) next to the original Smiggles card on the same stat
 with real values the output must be the same, apart from the intended renames."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -19,6 +20,7 @@ from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
+from .snapshots import assert_snapshot
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -31,6 +33,18 @@ BUY_NOW, SELL_NOW = "sensor.amber_5min_current_general_price", "sensor.amber_5mi
 BUY_F, SELL_F = "sensor.amber_billing_interval_forecasts_general_price", "sensor.amber_billing_interval_forecasts_feed_in_price"
 EST = "binary_sensor.solarsystemcontrolestimatedprice"
 HA_TZ = "Australia/Adelaide"      # the time zone the fake HA reports to cards
+# For recorded snapshots node must draw the same everywhere: its local time zone and locale
+# (cards use getHours() and toLocaleTimeString([])) pinned, and for the State card its clock.
+PINNED = {"TZ": HA_TZ, "LC_ALL": "C.UTF-8", "LANG": "C.UTF-8"}
+FIXED_NOW = datetime(2026, 10, 20, 3, 7, 10, tzinfo=timezone.utc)
+
+
+def frozen_clock(when: datetime) -> str:
+    """run_js prelude: Date.now() and new Date() return `when`."""
+    ms = int(when.timestamp() * 1000)
+    return ("{ const _D = Date, _T = " + str(ms) + ";\n"
+            "  globalThis.Date = class extends _D { constructor(...a) { super(...(a.length ? a : [_T])); }"
+            " static now() { return _T; } }; }")
 
 
 async def _setup(hass):
@@ -59,10 +73,10 @@ def _orig(name):
     return yaml.safe_load((FIX / f"smiggles_{name}.yaml").read_text())[0]
 
 
-def run_js(jobs, prelude: str = ""):
+def run_js(jobs, prelude: str = "", env: dict | None = None):
     """Run button-card [[[ ]]] templates the way button-card does. jobs: [(src, states, entity_id)].
     All in one node process (same clock). Returns each output, or 'THROW: …'.
-    prelude: JS run first (e.g. a script HA loads on every page)."""
+    prelude: JS run first (e.g. a script HA loads on every page). env: extra environment for node."""
     progs = []
     for src, states, ent in jobs:
         body = src.strip()
@@ -72,7 +86,8 @@ def run_js(jobs, prelude: str = ""):
     script = ("globalThis.window = globalThis;\n" + prelude + "\nconst out = [];\n" + "".join(
         f"try {{ out.push(String({p})); }} catch (e) {{ out.push('THROW: ' + e.message); }}\n" for p in progs)
         + "process.stdout.write(JSON.stringify(out));")
-    r = subprocess.run(["node", "-"], input=script, capture_output=True, text=True, check=True)
+    r = subprocess.run(["node", "-"], input=script, capture_output=True, text=True, check=True,
+                       env={**os.environ, **env} if env else None)
     return json.loads(r.stdout)
 
 
@@ -167,11 +182,14 @@ async def test_pricegrid_matches_smiggles(hass: HomeAssistant) -> None:
     js_m, js_o = m["cards"][0]["custom_fields"]["card"], o["cards"][0]["custom_fields"]["card"]
     scen = [price_states(-0.052, 0.183), price_states(-0.004, 0.071, "on"), price_states(0.021, -0.012),
             price_states(-0.27, 0.42, "on")]
-    out = run_js([(j, s, None) for s in scen for j in (js_m, js_o)])
+    out = run_js([(j, s, None) for s in scen for j in (js_m, js_o)], env=PINNED)
     for i in range(0, len(out), 2):
         assert not out[i].startswith("THROW") and "SELL" in out[i]
         assert out[i] == norm(out[i + 1]).replace("amber-countdown", "battman-countdown")
     assert "Estimating" in out[2] and "Estimating" not in out[0]
+    # Battman's side, recorded so the comparison survives Smiggles' removal
+    for n, i in enumerate(range(0, len(out), 2)):
+        assert_snapshot(__file__, f"pricegrid-draw-{n}", out[i])
 
     # the rest of the card is the original's, renamed
     def strip(x):
@@ -181,6 +199,7 @@ async def test_pricegrid_matches_smiggles(hass: HomeAssistant) -> None:
             return [strip(v) for v in x]
         return "JS" if isinstance(x, str) and x.strip().startswith("[[[") else norm(x) if isinstance(x, str) else x
     assert strip(m) == strip(o)
+    assert_snapshot(__file__, "pricegrid-layout", strip(m))
 
 
 @needs_node
@@ -220,7 +239,7 @@ def local_label(iso):
 async def test_forecast_table_matches_smiggles(hass: HomeAssistant) -> None:
     js = (await _card(hass, "amber24hourforecasttable"))["config"]["cards"][0]["custom_fields"]["card"]
     tpl = _jinja_table(hass)
-    for sell_p, buy_p in ((SELLP, BUYP), ([p * 1.7 - 0.05 for p in SELLP], [p * 0.6 for p in BUYP])):
+    for n, (sell_p, buy_p) in enumerate(((SELLP, BUYP), ([p * 1.7 - 0.05 for p in SELLP], [p * 0.6 for p in BUYP]))):
         st = price_states(-0.05, 0.2, sell=sell_p, buy=buy_p)
         for e, v in st.items():
             hass.states.async_set(e, v["state"], v["attributes"])
@@ -232,12 +251,15 @@ async def test_forecast_table_matches_smiggles(hass: HomeAssistant) -> None:
         cell1 = re.compile(r'(<td class="at6t-td at6t-time"[^>]*>)[^<]*(</td>)')
         assert squash(cell1.sub(r"\1T\2", norm(jin))) == squash(cell1.sub(r"\1T\2", mine))
         assert times(mine) == [local_label(f["start_time"]) for f in st[SELL_F]["attributes"]["Forecasts"]]
+        assert_snapshot(__file__, f"forecast-table-{n}", mine)      # Battman's side, kept past Smiggles
 
     # no forecasts: the same error naming both sensors
     for e in (SELL_F, BUY_F):
         hass.states.async_set(e, "0", {"Forecasts": []})
     st = price_states(-0.05, 0.2, sell=[], buy=[])
-    assert squash(norm(tpl.async_render(parse_result=False))) == squash(run_js([(js, st, None)])[0])
+    empty = run_js([(js, st, None)])[0]
+    assert squash(norm(tpl.async_render(parse_result=False))) == squash(empty)
+    assert_snapshot(__file__, "forecast-table-empty", empty)
 
 
 @needs_node
@@ -259,8 +281,8 @@ async def test_forecast_table_missing_values(hass: HomeAssistant) -> None:
 
 # ── state ────────────────────────────────────────────────────────────────────
 
-def state_states(scen):
-    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+def state_states(scen, now: datetime | None = None):
+    now = (now or datetime.now(timezone.utc)).replace(minute=0, second=0, microsecond=0)
     fin = forecasts(now, SELLP * 5, -1)
     gen = forecasts(now, BUYP * 5, 1)
     rules = [{"isActive": h % 3 == 0, "hours_ahead": 4, "grouping_minutes": 30, "offset": 1, "roundTo": 2,
@@ -302,21 +324,37 @@ async def test_state_matches_smiggles(hass: HomeAssistant) -> None:
     o = _orig("state")
     main_m, main_o = m["custom_fields"]["content"], o["custom_fields"]["content"]
     pop_m, pop_o = (x["tap_action"]["browser_mod"]["data"]["content"] for x in (m, o))
-    jobs = []
-    for scen in range(5):
-        st = state_states(scen)
-        # the popup's look-ahead: v0.23.1 added sell rules (Smiggles' card had none), so it's compared
-        # with the sell rules off (test_v0231 checks them against the engine)
-        pop = json.loads(json.dumps(st))
-        pop["sensor.solarsystemcontrolsellrules"]["state"] = "false"
-        jobs += [(main_m, st, "sensor.solarsystemcontrolparameters"), (main_o, st, "sensor.solarsystemcontrolparameters"),
-                 (pop_m, pop, None), (pop_o, pop, None)]
-    out = run_js(jobs)
+
+    def jobs_for(now=None):
+        jobs = []
+        for scen in range(5):
+            st = state_states(scen, now)
+            # the popup's look-ahead: v0.23.1 added sell rules (Smiggles' card had none), so it's compared
+            # with the sell rules off (test_v0231 checks them against the engine)
+            pop = json.loads(json.dumps(st))
+            pop["sensor.solarsystemcontrolsellrules"]["state"] = "false"
+            jobs += [(main_m, st, "sensor.solarsystemcontrolparameters"), (main_o, st, "sensor.solarsystemcontrolparameters"),
+                     (pop_m, pop, None), (pop_o, pop, None)]
+        return jobs
+
+    out = run_js(jobs_for())
     for i in range(0, len(out), 2):
         assert not out[i].startswith("THROW"), out[i]
         assert len(out[i]) > 500
         assert out[i] == norm(out[i + 1])
     assert len({out[i] for i in range(0, len(out), 4)}) > 2            # the scenarios really differ
+
+    # The same again at a fixed time, zone and locale, and Battman's side recorded so the
+    # comparison survives Smiggles' removal (the run above uses the real clock, so can't be).
+    out = run_js(jobs_for(FIXED_NOW), prelude=frozen_clock(FIXED_NOW), env=PINNED)
+    for i in range(0, len(out), 2):
+        assert not out[i].startswith("THROW"), out[i]
+        assert len(out[i]) > 500
+        assert out[i] == norm(out[i + 1])
+    assert len({out[i] for i in range(0, len(out), 4)}) > 2
+    for scen in range(5):
+        assert_snapshot(__file__, f"state-main-{scen}", out[4 * scen])
+        assert_snapshot(__file__, f"state-popup-{scen}", out[4 * scen + 2])
 
     def strip(x):
         if isinstance(x, dict):
@@ -329,6 +367,7 @@ async def test_state_matches_smiggles(hass: HomeAssistant) -> None:
     so = strip(o)
     so["entity"] = "sensor.solarsystemcontrolparameters"
     assert strip(m) == so
+    assert_snapshot(__file__, "state-layout", strip(m))
 
 
 @needs_node

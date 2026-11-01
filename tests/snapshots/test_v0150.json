@@ -1,0 +1,1657 @@
+{
+ "batterymode-config": {
+  "card_mod": {
+   "style": {
+    "$": ".content { gap: 4px !important; }",
+    ".": ":host { --stack-card-gap: 4px; }"
+   }
+  },
+  "cards": [
+   {
+    "card_mod": {
+     "style": {
+      "$": ".content { gap: 4px !important; }",
+      ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+     }
+    },
+    "cards": [
+     {
+      "entity": "input_boolean.solarsystemcontrolenable",
+      "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+      "hold_action": {
+       "action": "more-info"
+      },
+      "name": "Active",
+      "show_icon": false,
+      "show_name": true,
+      "show_state": true,
+      "state": [
+       {
+        "styles": {
+         "card": [
+          {
+           "background": "var(--battman-green-soft-bg)"
+          },
+          {
+           "border": "1px solid var(--battman-green-border-strong)"
+          }
+         ],
+         "name": [
+          {
+           "color": "var(--battman-green)"
+          }
+         ],
+         "state": [
+          {
+           "color": "var(--battman-green)"
+          }
+         ]
+        },
+        "value": "on"
+       }
+      ],
+      "styles": {
+       "card": [
+        {
+         "padding": "0 10px"
+        },
+        {
+         "margin": "0"
+        },
+        {
+         "height": "40px"
+        },
+        {
+         "min-height": "40px"
+        },
+        {
+         "max-height": "40px"
+        },
+        {
+         "border-radius": "8px"
+        },
+        {
+         "box-shadow": "none"
+        },
+        {
+         "background": "var(--battman-surface-card)"
+        },
+        {
+         "border": "1px solid var(--battman-border-neutral)"
+        },
+        {
+         "--fx-ring": "[[[ return entity.state === 'on' ? 'var(--fx-enable-chase-display, none)' : 'none'; ]]]"
+        },
+        {
+         "--fx-chase-gradient": "var(--fx-enable-chase-gradient, none)"
+        },
+        {
+         "--fx-chase-duration": "var(--fx-enable-chase-duration, 0s)"
+        },
+        {
+         "--fx-ring-width": "var(--fx-enable-ring-width, 2px)"
+        },
+        {
+         "--fx-glow-name": "[[[ return entity.state === 'on' ? 'var(--fx-enable-glow-name, none)' : 'none'; ]]]"
+        },
+        {
+         "--fx-glow-duration": "var(--fx-enable-glow-duration, 0s)"
+        },
+        {
+         "--fx-glow-color": "var(--fx-enable-glow-color, transparent)"
+        },
+        {
+         "--fx-fill-soft": "var(--battman-green-soft-bg)"
+        },
+        {
+         "--fx-border": "[[[ return entity.state === 'on' ? 'var(--fx-enable-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+        }
+       ],
+       "name": [
+        {
+         "font-size": "11px"
+        },
+        {
+         "font-weight": "700"
+        },
+        {
+         "letter-spacing": "0.06em"
+        },
+        {
+         "text-transform": "uppercase"
+        },
+        {
+         "color": "var(--battman-text-muted)"
+        }
+       ],
+       "state": [
+        {
+         "font-size": "10px"
+        },
+        {
+         "color": "var(--battman-text-dim)"
+        },
+        {
+         "font-weight": "600"
+        }
+       ]
+      },
+      "tap_action": {
+       "action": "toggle"
+      },
+      "type": "custom:button-card"
+     },
+     {
+      "entity": "input_boolean.solarsystemcontrolnoexport",
+      "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+      "hold_action": {
+       "action": "more-info"
+      },
+      "name": "Curtail",
+      "show_icon": false,
+      "show_name": true,
+      "show_state": true,
+      "state": [
+       {
+        "styles": {
+         "card": [
+          {
+           "background": "var(--battman-amber-soft-bg)"
+          },
+          {
+           "border": "1px solid var(--battman-amber-border-strong)"
+          }
+         ],
+         "name": [
+          {
+           "color": "var(--battman-amber)"
+          }
+         ],
+         "state": [
+          {
+           "color": "var(--battman-amber)"
+          }
+         ]
+        },
+        "value": "on"
+       }
+      ],
+      "styles": {
+       "card": [
+        {
+         "padding": "0 10px"
+        },
+        {
+         "margin": "0"
+        },
+        {
+         "height": "40px"
+        },
+        {
+         "min-height": "40px"
+        },
+        {
+         "max-height": "40px"
+        },
+        {
+         "border-radius": "8px"
+        },
+        {
+         "box-shadow": "none"
+        },
+        {
+         "background": "var(--battman-surface-card)"
+        },
+        {
+         "border": "1px solid var(--battman-border-neutral)"
+        },
+        {
+         "--fx-ring": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-chase-display, none)' : 'none'; ]]]"
+        },
+        {
+         "--fx-chase-gradient": "var(--fx-curtail-chase-gradient, none)"
+        },
+        {
+         "--fx-chase-duration": "var(--fx-curtail-chase-duration, 0s)"
+        },
+        {
+         "--fx-ring-width": "var(--fx-curtail-ring-width, 2px)"
+        },
+        {
+         "--fx-glow-name": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-glow-name, none)' : 'none'; ]]]"
+        },
+        {
+         "--fx-glow-duration": "var(--fx-curtail-glow-duration, 0s)"
+        },
+        {
+         "--fx-glow-color": "var(--fx-curtail-glow-color, transparent)"
+        },
+        {
+         "--fx-fill-soft": "var(--battman-amber-soft-bg)"
+        },
+        {
+         "--fx-border": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-border, 1px solid var(--battman-amber-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+        }
+       ],
+       "name": [
+        {
+         "font-size": "11px"
+        },
+        {
+         "font-weight": "700"
+        },
+        {
+         "letter-spacing": "0.06em"
+        },
+        {
+         "text-transform": "uppercase"
+        },
+        {
+         "color": "var(--battman-text-muted)"
+        }
+       ],
+       "state": [
+        {
+         "font-size": "10px"
+        },
+        {
+         "color": "var(--battman-text-dim)"
+        },
+        {
+         "font-weight": "600"
+        }
+       ]
+      },
+      "tap_action": {
+       "action": "toggle"
+      },
+      "type": "custom:button-card"
+     },
+     {
+      "icon": "mdi:information-outline",
+      "show_name": false,
+      "styles": {
+       "card": [
+        {
+         "box-shadow": "none"
+        },
+        {
+         "padding": "0"
+        },
+        {
+         "margin": "0"
+        },
+        {
+         "height": "40px"
+        },
+        {
+         "min-height": "40px"
+        },
+        {
+         "max-height": "40px"
+        },
+        {
+         "background": "var(--battman-surface-card) !important"
+        },
+        {
+         "border-radius": "8px !important"
+        },
+        {
+         "border": "1px solid var(--battman-border-neutral) !important"
+        }
+       ],
+       "icon": [
+        {
+         "width": "16px"
+        },
+        {
+         "height": "16px"
+        },
+        {
+         "color": "var(--battman-text-dim) !important"
+        }
+       ]
+      },
+      "tap_action": {
+       "action": "fire-dom-event",
+       "browser_mod": {
+        "data": {},
+        "service": "browser_mod.popup"
+       }
+      },
+      "type": "custom:button-card"
+     }
+    ],
+    "type": "horizontal-stack"
+   },
+   {
+    "card_mod": {
+     "style": {
+      "$": ".content { gap: 4px !important; }",
+      ".": ":host { --stack-card-gap: 4px; }"
+     }
+    },
+    "cards": [
+     {
+      "card_mod": {
+       "style": {
+        "$": ".content { gap: 4px !important; }",
+        ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+       }
+      },
+      "cards": [
+       {
+        "entity": "input_select.solarsystemcontrolmode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Buy",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-yellow-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-yellow-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-yellow)"
+            }
+           ]
+          },
+          "value": "Charge"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 6px"
+          },
+          {
+           "height": "40px"
+          },
+          {
+           "min-height": "40px"
+          },
+          {
+           "max-height": "40px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode && simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-buy-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-buy-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-buy-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-buy-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-buy-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "11px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.06em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "call-service",
+         "service": "input_select.select_option",
+         "service_data": {
+          "entity_id": "input_select.solarsystemcontrolmode",
+          "option": "Charge"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_select.solarsystemcontrolmode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Sell",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-green-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-green-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-green)"
+            }
+           ]
+          },
+          "value": "Discharge"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 6px"
+          },
+          {
+           "height": "40px"
+          },
+          {
+           "min-height": "40px"
+          },
+          {
+           "max-height": "40px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode && simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-sell-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-sell-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-sell-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-sell-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-sell-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-green-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "11px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.06em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "call-service",
+         "service": "input_select.select_option",
+         "service_data": {
+          "entity_id": "input_select.solarsystemcontrolmode",
+          "option": "Discharge"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_select.solarsystemcontrolmode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Self Consume",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-blue-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-blue-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-blue)"
+            }
+           ]
+          },
+          "value": "Self Consume"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 6px"
+          },
+          {
+           "height": "40px"
+          },
+          {
+           "min-height": "40px"
+          },
+          {
+           "max-height": "40px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode && simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-selfconsume-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-selfconsume-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-selfconsume-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-selfconsume-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-selfconsume-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-blue-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "11px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.06em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "call-service",
+         "service": "input_select.select_option",
+         "service_data": {
+          "entity_id": "input_select.solarsystemcontrolmode",
+          "option": "Self Consume"
+         }
+        },
+        "type": "custom:button-card"
+       }
+      ],
+      "type": "horizontal-stack"
+     },
+     {
+      "card_mod": {
+       "style": {
+        "$": ".content { gap: 4px !important; }",
+        ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+       }
+      },
+      "cards": [
+       {
+        "card_mod": {
+         "style": {
+          "$": ".content { gap: 4px !important; }",
+          ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+         }
+        },
+        "cards": [
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "Self Consume",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-blue-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-blue-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-blue)"
+              }
+             ]
+            },
+            "value": "Self Consume"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-selfconsume-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-selfconsume-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-selfconsume-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-selfconsume-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-selfconsume-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-blue-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Self Consume"
+           }
+          },
+          "type": "custom:button-card"
+         },
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "Buy",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-yellow-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-yellow-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-yellow)"
+              }
+             ]
+            },
+            "value": "Charge"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-buy-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-buy-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-buy-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-buy-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-buy-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Charge"
+           }
+          },
+          "type": "custom:button-card"
+         },
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "Sell",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-green-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-green-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-green)"
+              }
+             ]
+            },
+            "value": "Discharge"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-sell-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-sell-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-sell-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-sell-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-sell-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-green-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Discharge"
+           }
+          },
+          "type": "custom:button-card"
+         }
+        ],
+        "type": "horizontal-stack"
+       },
+       {
+        "card_mod": {
+         "style": {
+          "$": ".content { gap: 4px !important; }",
+          ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+         }
+        },
+        "cards": [
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "Sell Solar",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-orange-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-orange-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-orange)"
+              }
+             ]
+            },
+            "value": "Float"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-sellsolar-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-sellsolar-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-sellsolar-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-sellsolar-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-sellsolar-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-orange-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-border, 1px solid var(--battman-orange-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Float"
+           }
+          },
+          "type": "custom:button-card"
+         },
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "Drain",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-red-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-red-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-red)"
+              }
+             ]
+            },
+            "value": "Drain"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-drain-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-drain-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-drain-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-drain-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-drain-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-red-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-border, 1px solid var(--battman-red-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Drain"
+           }
+          },
+          "type": "custom:button-card"
+         },
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "House Party",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-yellow-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-yellow-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-yellow)"
+              }
+             ]
+            },
+            "value": "Float Solar Off"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-houseparty-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-houseparty-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-houseparty-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-houseparty-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-houseparty-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            },
+            {
+             "white-space": "normal"
+            },
+            {
+             "line-height": "1.2"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Float Solar Off"
+           }
+          },
+          "type": "custom:button-card"
+         },
+         {
+          "entity": "input_select.solarsystemcontrolmode",
+          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+          "name": "HOOOOVER",
+          "show_icon": false,
+          "show_name": true,
+          "show_state": false,
+          "state": [
+           {
+            "styles": {
+             "card": [
+              {
+               "background": "var(--battman-green-soft-bg)"
+              },
+              {
+               "border": "1px solid var(--battman-green-border-strong)"
+              }
+             ],
+             "name": [
+              {
+               "color": "var(--battman-green)"
+              }
+             ]
+            },
+            "value": "Charge Solar Off"
+           }
+          ],
+          "styles": {
+           "card": [
+            {
+             "padding": "0 4px"
+            },
+            {
+             "height": "48px"
+            },
+            {
+             "min-height": "48px"
+            },
+            {
+             "max-height": "48px"
+            },
+            {
+             "border-radius": "8px"
+            },
+            {
+             "box-shadow": "none"
+            },
+            {
+             "background": "var(--battman-surface-card)"
+            },
+            {
+             "border": "1px solid var(--battman-border-neutral)"
+            },
+            {
+             "display": "[[[ const m=states['input_select.solarsystemcontrolmode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.solarsystemcontrolparameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+            },
+            {
+             "align-items": "center"
+            },
+            {
+             "justify-content": "center"
+            },
+            {
+             "--fx-ring": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-chase-display, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-chase-gradient": "var(--fx-hooover-chase-gradient, none)"
+            },
+            {
+             "--fx-chase-duration": "var(--fx-hooover-chase-duration, 0s)"
+            },
+            {
+             "--fx-ring-width": "var(--fx-hooover-ring-width, 2px)"
+            },
+            {
+             "--fx-glow-name": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-glow-name, none)' : 'none'; ]]]"
+            },
+            {
+             "--fx-glow-duration": "var(--fx-hooover-glow-duration, 0s)"
+            },
+            {
+             "--fx-glow-color": "var(--fx-hooover-glow-color, transparent)"
+            },
+            {
+             "--fx-fill-soft": "var(--battman-green-soft-bg)"
+            },
+            {
+             "--fx-border": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+            }
+           ],
+           "name": [
+            {
+             "font-size": "10px"
+            },
+            {
+             "font-weight": "700"
+            },
+            {
+             "letter-spacing": "0.04em"
+            },
+            {
+             "text-transform": "uppercase"
+            },
+            {
+             "color": "var(--battman-text-muted)"
+            },
+            {
+             "white-space": "normal"
+            },
+            {
+             "line-height": "1.2"
+            }
+           ]
+          },
+          "tap_action": {
+           "action": "call-service",
+           "service": "input_select.select_option",
+           "service_data": {
+            "entity_id": "input_select.solarsystemcontrolmode",
+            "option": "Charge Solar Off"
+           }
+          },
+          "type": "custom:button-card"
+         }
+        ],
+        "type": "horizontal-stack"
+       }
+      ],
+      "type": "vertical-stack"
+     }
+    ],
+    "type": "vertical-stack"
+   }
+  ],
+  "type": "vertical-stack"
+ },
+ "batterymode-service-calls": [
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Charge"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Discharge"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Self Consume"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Self Consume"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Charge"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Discharge"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Float"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Drain"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Float Solar Off"
+   }
+  ],
+  [
+   "input_select.select_option",
+   {
+    "entity_id": "input_select.solarsystemcontrolmode",
+    "option": "Charge Solar Off"
+   }
+  ]
+ ],
+ "enginelog-draw-blank-message": "<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'><div style='padding:8px 10px;font-size:15px;font-weight:700;color:var(--battman-text-muted);'>sensor.solar_system_control_debug_log has no log message yet.</div></div>",
+ "enginelog-draw-no-sensor": "<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'><div style='padding:8px 10px;font-size:15px;font-weight:700;color:var(--battman-darkred);'>Engine log: missing sensor.solar_system_control_debug_log</div></div>",
+ "enginelog-draw-sample": "<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'><div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;background:color-mix(in srgb, var(--battman-blue) 16%, transparent);border:1px solid color-mix(in srgb, var(--battman-blue) 45%, transparent);'><span style='color:var(--battman-blue);'>Engine log</span><span style='font-weight:600;text-transform:none;letter-spacing:0;'>Last run 2026-10-20 16:10:34</span></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-purple) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-purple) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-purple);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-purple);'>Mode</span><span style='font-size:16px;font-weight:700;color:var(--primary-text-color);'>Self Consume → Self Consume</span></div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-yellow) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-yellow) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-yellow);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-yellow);'>Prices</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Sell: <b style='color:var(--battman-green);'>$ 0.35</b> (Current: <b style='color:var(--battman-darkred);'>$-0.1209</b>) (Prorate: <b style='color:var(--battman-green);'>$0.35</b>/<b style='color:var(--battman-green);'>$0.35</b>)</div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Buy: <b style='color:var(--battman-green);'>$0.09</b> (Current: <b style='color:var(--battman-green);'>$0.0274</b>) (Prorate: <b style='color:var(--battman-green);'>$0.09</b>/<b style='color:var(--battman-green);'>$0.15</b>)</div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-green) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-green) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-green);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-green);'>Battery</span><span style='font-size:16px;font-weight:700;color:var(--primary-text-color);'>100.0% (40.0 kWh)</span></div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-blue) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-blue) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-blue);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-blue);'>SOC Limits</span><span style='font-size:16px;font-weight:700;color:var(--primary-text-color);'>(On High Curve!)</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Sell Above:  95.83%   (Prorate: 99%/80%)</div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Buy Below:  90.0%   (Prorate: 90%/90%)</div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-amber) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-amber) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-amber);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-amber);'>Solar</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Remaining (10%): 7.0568 kWh</div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-text-muted) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-text-muted) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-text-muted);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-text-muted);'>Actions</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Curtail: <b style='color:var(--battman-green);'>True</b></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Soak: <b style='color:var(--battman-text-dim);'>False</b></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Sell Discharge: <b style='color:var(--battman-text-dim);'>False</b></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Buy Charge: <b style='color:var(--battman-text-dim);'>False</b></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Soak Charge: <b style='color:var(--battman-text-dim);'>False</b></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Hold Mode: <b style='color:var(--battman-green);'>True</b></div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-green) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-green) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-green);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-green);'>Sell Forecasts</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Next Sell: <b style='color:var(--battman-darkred);'>$-0.1136</b></div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-amber) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-amber) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-amber);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-amber);'>Buy Forecasts</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Next Buy: <b style='color:var(--battman-green);'>$0.0354</b></div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-text-muted) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-text-muted) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-text-muted);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-text-muted);'>Version</span><span style='font-size:16px;font-weight:700;color:var(--primary-text-color);'>1.0.22</span></div></div></div><div style='display:flex;gap:10px;padding:9px 10px;margin-top:6px;border-radius:8px;background:color-mix(in srgb, var(--battman-text-muted) 14%, transparent);border:1px solid color-mix(in srgb, var(--battman-text-muted) 40%, transparent);'><div style='width:4px;border-radius:2px;background:var(--battman-text-muted);flex-shrink:0;'></div><div style='flex:1;min-width:0;'><div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;'><span style='font-size:17px;font-weight:800;color:var(--battman-text-muted);'>Debug</span></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Today Cost: <b style='color:var(--battman-darkred);'>$-1.57</b></div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Protected Sell: 0c/kwh</div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Tracking Sell: <b style='color:var(--battman-green);'>$1.5288</b> for 7.55kwh.</div><div style='font-size:15px;color:var(--primary-text-color);opacity:.85;line-height:1.35;margin-top:2px;padding-left:0px;'>Tracking Buy: <b style='color:var(--battman-green);'>$1.8392</b> for 21.96kwh}</div></div></div></div>",
+ "enginelog-popup": {
+  "style": "--mdc-dialog-min-width:min(94vw,480px);--mdc-dialog-max-width:min(94vw,480px);",
+  "title": " "
+ },
+ "enginelog-popup-template": "[[[\n// Engine log popup: the engine's last-run log, drawn by Battman's engine log renderer\n// (battman-enginelog.js), the same one the Log page uses: a section per heading,\n// its details under it; True / False and $ amounts coloured.\nconst LOG = 'sensor.solar_system_control_debug_log';\nconst wrap = inner => `<div style='box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif));'>${inner}</div>`;\nconst note = (t, c) => `<div style='padding:8px 10px;font-size:15px;font-weight:700;color:${c};'>${t}</div>`;\nlet body;\nconst st = states[LOG];\nconst R = window.battmanEngineLog;\nif (!R) body = note('Engine log: Battman\\'s log renderer (battman-enginelog.js) isn\\'t loaded. Refresh the page.', 'var(--battman-darkred)');\nelse if (!st) body = note(`Engine log: missing ${LOG}`, 'var(--battman-darkred)');\nelse {\n  const raw = String(st.attributes?.message ?? '');\n  body = raw.trim() ? R.render(raw, { title: 'Engine log' })\n                    : note(`${LOG} has no log message yet.`, 'var(--battman-text-muted)');\n}\nconst out = wrap(body);\n// the popup sits outside the themed view, so resolve var(--x) to real values from this card's style\nlet cs = null;\ntry { cs = getComputedStyle((this && this.nodeType === 1) ? this : document.documentElement); } catch (e) {}\nif (!cs) return out;\nlet res = out;\nfor (let i = 0; i < 6 && /var\\(--/.test(res); i++) {\n  res = res.replace(/var\\((--[\\w-]+)(?:\\s*,([^()]*))?\\)/g, (m, name, fb) => {\n    const v = cs.getPropertyValue(name).trim();\n    return v || (fb !== undefined ? fb.trim() : m);\n  });\n}\nreturn res;\n]]]"
+}

@@ -10,6 +10,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from .snapshots import assert_snapshot
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -80,6 +81,9 @@ async def test_profitloss_layout_matches_smiggles(hass: HomeAssistant, hass_clie
     bo = o["cards"][0]["cards"][0]
     bm = m["cards"][0]["cards"][0]
     assert bo["triggers_update"] == bm["triggers_update"]          # same three sensors (from the map)
+    # Battman's side, recorded so the comparison survives Smiggles' removal
+    assert_snapshot(__file__, "profitloss-layout", strip(m))
+    assert_snapshot(__file__, "profitloss-triggers_update", bm["triggers_update"])
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs node to run the card's JavaScript")
@@ -95,6 +99,9 @@ async def test_profitloss_draws_like_smiggles(hass: HomeAssistant, hass_client) 
                   "input_number.solarsystemcontroldailynetworkcharge": {"state": str(fee), "attributes": {}}}
         assert _js(js_m, states) == _js(js_o, states).replace("--smiggles-", "--battman-")
         assert _js(bord_m, states) == _js(bord_o, states).replace("--smiggles-", "--battman-")
+        # Battman's side, recorded so the comparison survives Smiggles' removal
+        assert_snapshot(__file__, f"profitloss-draw-{sell}-{buy}-{fee}",
+                        {"card": _js(js_m, states), "border": _js(bord_m, states)})
 
     # Unavailable (no 'day' yet): —, never $0.00; border goes neutral.
     states = {SELL: _st(), BUY: _st(2.0), PAR: _st(dailyNetworkCharge=1.1)}

@@ -9,11 +9,13 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 from homeassistant.core import HomeAssistant
 
 from tools.smiggles_log_text import LOG_TEXT, plain_log
 
 from . import engine_harness as H
+from .snapshots import assert_snapshot
 
 ROOT = Path(__file__).parents[1]
 WWW = ROOT / "custom_components/battman/www"
@@ -40,6 +42,11 @@ def test_engine_script_has_no_emoji() -> None:
     # the change is exactly the listed one, each once, on Smiggles' original
     orig = (Path(__file__).parent / "fixtures/smiggles_engine/scripts/SolarSystemControl.yaml").read_text()
     assert len(LOG_TEXT) == 16 and not EMOJI.findall(plain_log(orig)[orig.index("prettyMessage"):orig.index("alias: Debug Message")])
+    # Battman's log text (the Debug Message step's prettyMessage): the headings and lines above
+    steps = yaml.safe_load(text)["sequence"]
+    pretty = [s["variables"]["prettyMessage"] for s in steps if "prettyMessage" in s.get("variables", {})]
+    assert len(pretty) == 1
+    assert_snapshot(__file__, "engine-log-text", pretty[0])
 
 
 async def test_battman_log_reads_back_as_sections(hass: HomeAssistant) -> None:
@@ -91,8 +98,8 @@ def test_log_card_uses_the_popup_renderer() -> None:
     assert "battman-enginelog.js" in init
 
 
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-NODE_PATH = "/tmp/pwtest/node_modules"
+CHROME = os.environ.get("BATTMAN_CHROME", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+NODE_PATH = os.environ.get("BATTMAN_NODE_PATH", "/tmp/pwtest/node_modules")
 
 
 @pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),

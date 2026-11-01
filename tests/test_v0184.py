@@ -13,8 +13,8 @@ from pathlib import Path
 import pytest
 
 WWW = Path(__file__).parents[1] / "custom_components/battman/www"
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-NODE_PATH = "/tmp/pwtest/node_modules"
+CHROME = os.environ.get("BATTMAN_CHROME", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+NODE_PATH = os.environ.get("BATTMAN_NODE_PATH", "/tmp/pwtest/node_modules")
 
 
 def test_every_registration_goes_through_the_helper() -> None:

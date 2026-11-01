@@ -1,0 +1,343 @@
+{
+ "gauges-layout": [
+  [
+   {
+    "entity": "sensor.sigen_plant_battery_state_of_charge",
+    "gauge_type": "half",
+    "grid_options": {
+     "columns": 6,
+     "rows": "auto"
+    },
+    "max": 100,
+    "min": 0,
+    "name": "SOC",
+    "needle": true,
+    "segments": [
+     {
+      "color": "var(--battman-darkred)",
+      "from": 0
+     },
+     {
+      "color": "var(--battman-orange)",
+      "from": 15
+     },
+     {
+      "color": "var(--battman-green)",
+      "from": 55
+     }
+    ],
+    "type": "custom:modern-circular-gauge"
+   },
+   {
+    "entity": "sensor.sigen_plant_battery_power",
+    "gauge_type": "half",
+    "grid_options": {
+     "columns": 6,
+     "rows": "auto"
+    },
+    "max": 15,
+    "min": -10,
+    "name": "In⠀⠀⠀Battery⠀⠀⠀Out",
+    "needle": true,
+    "segments": [
+     {
+      "color": "var(--battman-darkred)",
+      "from": -10
+     },
+     {
+      "color": "var(--battman-orange)",
+      "from": -4
+     },
+     {
+      "color": "var(--battman-green)",
+      "from": 0
+     }
+    ],
+    "type": "custom:modern-circular-gauge"
+   }
+  ],
+  [
+   {
+    "entity": "sensor.battman_grid_power",
+    "gauge_type": "half",
+    "grid_options": {
+     "columns": 6,
+     "rows": "auto"
+    },
+    "max": 15,
+    "min": -15,
+    "name": "Grid",
+    "needle": true,
+    "segments": [
+     {
+      "color": "var(--battman-darkred)",
+      "from": -15
+     },
+     {
+      "color": "var(--battman-orange)",
+      "from": -2
+     },
+     {
+      "color": "var(--battman-green)",
+      "from": -1
+     },
+     {
+      "color": "var(--battman-orange)",
+      "from": 1
+     },
+     {
+      "color": "var(--battman-darkred)",
+      "from": 2
+     }
+    ],
+    "type": "custom:modern-circular-gauge"
+   },
+   {
+    "entity": "sensor.sigen_plant_consumed_power",
+    "gauge_type": "half",
+    "grid_options": {
+     "columns": 6,
+     "rows": "auto"
+    },
+    "max": 15,
+    "min": 0,
+    "name": "Home",
+    "needle": true,
+    "segments": [
+     {
+      "color": "var(--battman-green)",
+      "from": 0
+     },
+     {
+      "color": "var(--battman-orange)",
+      "from": 3
+     },
+     {
+      "color": "var(--battman-darkred)",
+      "from": 6
+     }
+    ],
+    "type": "custom:modern-circular-gauge"
+   }
+  ]
+ ],
+ "gauges-text-estimated-off": [
+  [
+   [
+    "SOC",
+    "23.2 kWh (+15.0kWh)"
+   ],
+   [
+    "In⠀⠀⠀Battery⠀⠀⠀Out",
+    "Current Solar 5.4kW"
+   ]
+  ],
+  [
+   [
+    "Grid",
+    "$-0.08 ⠀⠀⠀Act⠀⠀⠀ $0.17"
+   ],
+   [
+    "Home",
+    "Avg 30m 1.46 kW ⚡"
+   ]
+  ]
+ ],
+ "gauges-text-estimated-on": [
+  [
+   [
+    "SOC",
+    "23.2 kWh (+15.0kWh)"
+   ],
+   [
+    "In⠀⠀⠀Battery⠀⠀⠀Out",
+    "Current Solar 5.4kW"
+   ]
+  ],
+  [
+   [
+    "Grid",
+    "$-0.08 Est $0.17"
+   ],
+   [
+    "Home",
+    "Avg 30m 1.46 kW ⚡"
+   ]
+  ]
+ ],
+ "nem-sensors": {
+  "battery": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "41.9",
+   "unit": "MW"
+  },
+  "battery_charging": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "77.46",
+   "unit": "MW"
+  },
+  "consumers": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "1811.17",
+   "unit": "MW"
+  },
+  "distillate": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "0.0",
+   "unit": "MW"
+  },
+  "exports": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "455.12",
+   "unit": "MW"
+  },
+  "gas_ccgt": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "55.0",
+   "unit": "MW"
+  },
+  "gas_ocgt": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "0.0",
+   "unit": "MW"
+  },
+  "gas_recip": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "-3.2",
+   "unit": "MW"
+  },
+  "gas_steam": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "12.5",
+   "unit": "MW"
+  },
+  "imports": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "-0.0",
+   "unit": "MW"
+  },
+  "rooftop_solar": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "1120.7",
+   "unit": "MW"
+  },
+  "total_supply": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "2343.75",
+   "unit": "MW"
+  },
+  "utility_solar": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "301.25",
+   "unit": "MW"
+  },
+  "wind": {
+   "problem": null,
+   "source": "sensor.opennem_sa",
+   "state": "812.4",
+   "unit": "MW"
+  }
+ },
+ "nemmix-demand": {
+  "decimals": 1,
+  "display_unit": "MW",
+  "entities": [
+   {
+    "color": "var(--battman-teal, #94e2d5)",
+    "entity": "sensor.battman_nem_consumers",
+    "name": "Consumers"
+   },
+   {
+    "color": "var(--battman-blue)",
+    "entity": "sensor.battman_nem_exports",
+    "name": "Exports"
+   },
+   {
+    "color": "var(--battman-purple)",
+    "entity": "sensor.battman_nem_battery_charging",
+    "name": "Battery Charging"
+   }
+  ],
+  "hide_legend_value": true,
+  "legend": "auto",
+  "min_pct_label": 4,
+  "sort": "max",
+  "title": "SA Demand Mix",
+  "type": "custom:power-pie-card"
+ },
+ "nemmix-generation": {
+  "decimals": 1,
+  "display_unit": "MW",
+  "entities": [
+   {
+    "color": "var(--battman-green)",
+    "entity": "sensor.battman_nem_wind",
+    "name": "Wind"
+   },
+   {
+    "color": "var(--battman-orange)",
+    "entity": "sensor.battman_nem_rooftop_solar",
+    "name": "Rooftop Solar"
+   },
+   {
+    "color": "var(--battman-amber)",
+    "entity": "sensor.battman_nem_utility_solar",
+    "name": "Utility Solar"
+   },
+   {
+    "color": "var(--battman-blue)",
+    "entity": "sensor.battman_nem_imports",
+    "name": "Imports"
+   },
+   {
+    "color": "var(--battman-purple)",
+    "entity": "sensor.battman_nem_battery",
+    "name": "Battery"
+   },
+   {
+    "color": "var(--battman-darkred)",
+    "entity": "sensor.battman_nem_gas_ccgt",
+    "name": "Gas (CCGT)"
+   },
+   {
+    "color": "var(--battman-red)",
+    "entity": "sensor.battman_nem_gas_ocgt",
+    "name": "Gas (OCGT)"
+   },
+   {
+    "color": "var(--battman-text-muted)",
+    "entity": "sensor.battman_nem_distillate",
+    "name": "Distillate"
+   },
+   {
+    "color": "var(--battman-darkred)",
+    "entity": "sensor.battman_nem_gas_steam",
+    "name": "Gas (Steam)"
+   },
+   {
+    "color": "var(--battman-red)",
+    "entity": "sensor.battman_nem_gas_recip",
+    "name": "Gas (Recip)"
+   }
+  ],
+  "hide_legend_value": true,
+  "legend": "auto",
+  "min_pct_label": 4,
+  "sort": "max",
+  "title": "SA Generation Mix",
+  "type": "custom:power-pie-card"
+ }
+}

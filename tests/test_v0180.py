@@ -14,8 +14,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 ROOT = Path(__file__).parents[1]
 WWW = ROOT / "custom_components/battman/www"
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-NODE_PATH = "/tmp/pwtest/node_modules"
+CHROME = os.environ.get("BATTMAN_CHROME", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+NODE_PATH = os.environ.get("BATTMAN_NODE_PATH", "/tmp/pwtest/node_modules")
 
 
 async def _client(hass: HomeAssistant, hass_client):
