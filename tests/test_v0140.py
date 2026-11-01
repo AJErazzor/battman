@@ -22,6 +22,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .test_v0130 import run_js
 from .dashboard_views import built
+from .snapshots import assert_snapshot
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -93,6 +94,12 @@ async def test_nem_sensors_match_templates(hass: HomeAssistant) -> None:
         assert st is not None, k
         assert float(st.state) == pytest.approx(float(hass.states.get(ids[uid]).state)), k
         assert st.attributes["unit_of_measurement"] == "MW" and "problem" not in st.attributes
+    # Battman's side, recorded so the comparison survives the original templates' removal
+    assert_snapshot(__file__, "nem-sensors", {
+        k: {"state": hass.states.get(f"sensor.battman_nem_{k}").state,
+            "unit": hass.states.get(f"sensor.battman_nem_{k}").attributes["unit_of_measurement"],
+            "source": hass.states.get(f"sensor.battman_nem_{k}").attributes["source"],
+            "problem": hass.states.get(f"sensor.battman_nem_{k}").attributes.get("problem")} for k in mine})
 
     # OpenNEM changes -> Battman follows
     hass.states.async_set("sensor.opennem_sa", "ok", {**GEN, "wind": 900})
@@ -148,6 +155,9 @@ async def test_nemmix_matches_smiggles(hass: HomeAssistant, hass_client) -> None
         o["entities"] = [{**e, "entity": ren[e["entity"]], "color": e["color"].replace("--smiggles-", "--battman-")}
                          for e in o["entities"]]
         assert o == m
+    # Battman's side, recorded so the comparison survives Smiggles' removal
+    assert_snapshot(__file__, "nemmix-generation", gen)
+    assert_snapshot(__file__, "nemmix-demand", dem)
 
     # the note names every NEM sensor without a value
     content = note["card"]["content"]
@@ -205,6 +215,12 @@ async def test_gauges_match_smiggles(hass: HomeAssistant, hass_client) -> None:
                                     .replace('"sensor.sigen_inverter_battery_state_of_charge"',
                                              '"sensor.sigen_plant_battery_state_of_charge"'))       # v0.23.0
                 assert rest_o == {k: v for k, v in m.items() if k != "secondary"}
+        # Battman's side, recorded so the comparison survives Smiggles' removal: each gauge's text
+        assert_snapshot(__file__, f"gauges-text-estimated-{est}",
+                        [[[m["name"], _render(hass, m["secondary"])] for m in row["cards"]] for row in m_rows])
+    # ...and everything else about each gauge
+    assert_snapshot(__file__, "gauges-layout",
+                    [[{k: v for k, v in m.items() if k != "secondary"} for m in row["cards"]] for row in m_rows])
 
 
 async def test_gauges_unavailable(hass: HomeAssistant, hass_client) -> None:

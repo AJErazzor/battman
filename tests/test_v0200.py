@@ -29,7 +29,7 @@ def test_log_card_is_a_real_card() -> None:
     assert subprocess.run(["node", "--check", str(WWW / "battman-log.js")]).returncode == 0
     assert 'battmanDefine("battman-log", BattmanLogCard)' in JS
     init = (ROOT / "__init__.py").read_text()
-    assert '"log", ' in init and 'add_extra_js_url(hass, f"{STATIC_URL}/battman-{name}.js' in init
+    assert '"log", ' in init and 'add_extra_js_url(hass, f"{static_v}/battman-{name}.js' in init
     assert not (WWW / "log.html").exists() and not (ROOT / "cards/log.yaml").exists()
     # HA's connection, not a token taken from the page around it, and no frame
     for gone in ("access_token", "parent.document", "frameElement", "fetch(", "haCall", "iframe"):
@@ -83,8 +83,8 @@ def test_picker_shows_the_preview_picture() -> None:
     assert 'static preview = "log.webp";' in JS and 'battmanPicker("battman-log", "Battman Log",' in JS
 
 
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-NODE_PATH = "/tmp/pwtest/node_modules"
+CHROME = os.environ.get("BATTMAN_CHROME", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+NODE_PATH = os.environ.get("BATTMAN_NODE_PATH", "/tmp/pwtest/node_modules")
 
 
 def test_card_wrapper_leaves_the_log_to_its_script() -> None:

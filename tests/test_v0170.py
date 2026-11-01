@@ -17,6 +17,8 @@ from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from .snapshots import assert_snapshot
+
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
 LOG = Path(__file__).parents[1] / "custom_components/battman/www/battman-log.js"
@@ -47,6 +49,7 @@ def _smiggles(name):
 async def test_grid_power_matches_smiggles(hass: HomeAssistant) -> None:
     await _setup(hass)
     tpl = Template(_smiggles("GridPower"), hass)
+    seen = []
     for imp, exp in CASES:
         hass.states.async_set(IMP, imp)
         hass.states.async_set(EXP, exp)
@@ -54,9 +57,12 @@ async def test_grid_power_matches_smiggles(hass: HomeAssistant) -> None:
         st = hass.states.get("sensor.battman_grid_power")
         assert float(st.state) == float(tpl.async_render(parse_result=False).strip()), (imp, exp)
         assert st.attributes["unit_of_measurement"] == "kW" and st.attributes["device_class"] == "power"
+        seen.append({"import": imp, "export": exp, "state": st.state})
     hass.states.async_set(EXP, "unavailable")
     await hass.async_block_till_done()
     assert hass.states.get("sensor.battman_grid_power").state == "unavailable"     # Smiggles showed 0
+    # Battman's grid power per case, recorded while it matches Smiggles' GridPower above
+    assert_snapshot(__file__, "grid-power", seen)
 
 
 async def test_load_30m_avg_is_the_mean_of_home_power(hass: HomeAssistant) -> None:

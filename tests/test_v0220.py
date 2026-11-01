@@ -24,8 +24,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 WWW = ROOT / "www"
 CARDS = {"curvy": "BattmanCurvyCard", "pricy": "BattmanPricyCard"}
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-NODE_PATH = "/tmp/pwtest/node_modules"
+CHROME = os.environ.get("BATTMAN_CHROME", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+NODE_PATH = os.environ.get("BATTMAN_NODE_PATH", "/tmp/pwtest/node_modules")
 
 
 def test_each_card_is_a_real_card() -> None:

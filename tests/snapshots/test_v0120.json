@@ -1,0 +1,105 @@
+{
+ "profitloss-draw-0.5-4.75-1.1": {
+  "border": "1px solid var(--battman-darkred-border)",
+  "card": "<div style=\"display:flex;align-items:center;height:44px;padding:0 14px\"><div style=\"display:flex;gap:15px\"><div style=\"display:flex;flex-direction:column;justify-content:center;flex:none\"><span style=\"font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:var(--battman-green)\">SELL</span><span style=\"font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:var(--battman-green)\">$0.50</span></div><div style=\"display:flex;flex-direction:column;justify-content:center;flex:none\"><span style=\"font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:var(--battman-darkred)\">BUY</span><span style=\"font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:var(--battman-darkred)\">$4.75</span></div></div><div style=\"margin-left:auto;text-align:right;line-height:1.15;white-space:nowrap\"><div style=\"font-size:10px;font-weight:700;letter-spacing:0.06em;opacity:0.7;color:var(--battman-darkred)\">GROSS -$4.25</div><div style=\"font-size:22px;font-weight:900;line-height:1.05;color:var(--battman-darkred)\">-$5.35<span style=\"font-size:10px;font-weight:800;letter-spacing:0.08em;opacity:0.6;margin-left:4px\">NET</span></div></div></div>"
+ },
+ "profitloss-draw-12.34-3.21-1.1": {
+  "border": "1px solid var(--battman-green-border)",
+  "card": "<div style=\"display:flex;align-items:center;height:44px;padding:0 14px\"><div style=\"display:flex;gap:15px\"><div style=\"display:flex;flex-direction:column;justify-content:center;flex:none\"><span style=\"font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:var(--battman-green)\">SELL</span><span style=\"font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:var(--battman-green)\">$12.34</span></div><div style=\"display:flex;flex-direction:column;justify-content:center;flex:none\"><span style=\"font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:var(--battman-darkred)\">BUY</span><span style=\"font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:var(--battman-darkred)\">$3.21</span></div></div><div style=\"margin-left:auto;text-align:right;line-height:1.15;white-space:nowrap\"><div style=\"font-size:10px;font-weight:700;letter-spacing:0.06em;opacity:0.7;color:var(--battman-green)\">GROSS $9.13</div><div style=\"font-size:22px;font-weight:900;line-height:1.05;color:var(--battman-green)\">$8.03<span style=\"font-size:10px;font-weight:800;letter-spacing:0.08em;opacity:0.6;margin-left:4px\">NET</span></div></div></div>"
+ },
+ "profitloss-draw-2.0-1.0-1.0": {
+  "border": "1px solid var(--battman-green-border)",
+  "card": "<div style=\"display:flex;align-items:center;height:44px;padding:0 14px\"><div style=\"display:flex;gap:15px\"><div style=\"display:flex;flex-direction:column;justify-content:center;flex:none\"><span style=\"font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:var(--battman-green)\">SELL</span><span style=\"font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:var(--battman-green)\">$2.00</span></div><div style=\"display:flex;flex-direction:column;justify-content:center;flex:none\"><span style=\"font-size:8px;font-weight:700;letter-spacing:0.1em;opacity:0.55;margin-bottom:2px;color:var(--battman-darkred)\">BUY</span><span style=\"font-size:22px;font-weight:900;line-height:1;white-space:nowrap;color:var(--battman-darkred)\">$1.00</span></div></div><div style=\"margin-left:auto;text-align:right;line-height:1.15;white-space:nowrap\"><div style=\"font-size:10px;font-weight:700;letter-spacing:0.06em;opacity:0.7;color:var(--battman-green)\">GROSS $1.00</div><div style=\"font-size:22px;font-weight:900;line-height:1.05;color:var(--battman-green)\">$0.00<span style=\"font-size:10px;font-weight:800;letter-spacing:0.08em;opacity:0.6;margin-left:4px\">NET</span></div></div></div>"
+ },
+ "profitloss-layout": {
+  "cards": [
+   {
+    "cards": [
+     {
+      "custom_fields": {
+       "card": "JS"
+      },
+      "show_icon": false,
+      "show_label": false,
+      "show_name": false,
+      "show_state": false,
+      "styles": {
+       "card": [
+        {
+         "padding": "0"
+        },
+        {
+         "margin": "0"
+        },
+        {
+         "box-shadow": "none"
+        },
+        {
+         "overflow": "hidden"
+        },
+        {
+         "border-radius": "8px"
+        },
+        {
+         "height": "44px"
+        },
+        {
+         "min-height": "44px"
+        },
+        {
+         "max-height": "44px"
+        },
+        {
+         "background": "var(--battman-surface-card)"
+        },
+        {
+         "border": "JS"
+        }
+       ],
+       "custom_fields": {
+        "card": [
+         {
+          "grid-area": "card"
+         },
+         {
+          "width": "100%"
+         },
+         {
+          "height": "44px"
+         }
+        ]
+       },
+       "grid": [
+        {
+         "grid-template-areas": "\"card\""
+        },
+        {
+         "grid-template-rows": "44px"
+        }
+       ]
+      },
+      "tap_action": {
+       "action": "none"
+      },
+      "type": "custom:button-card"
+     }
+    ],
+    "grid_options": {
+     "columns": "full",
+     "rows": "auto"
+    },
+    "type": "horizontal-stack"
+   }
+  ],
+  "grid_options": {
+   "columns": "full",
+   "rows": "auto"
+  },
+  "type": "horizontal-stack"
+ },
+ "profitloss-triggers_update": [
+  "sensor.solarsystemcontrolselltotal",
+  "sensor.solarsystemcontrolbuytotal",
+  "sensor.solarsystemcontrolparameters"
+ ]
+}

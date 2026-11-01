@@ -8,6 +8,7 @@ through the entity map."""
 
 import difflib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -19,6 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
+from .snapshots import assert_snapshot
 
 pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
@@ -28,6 +30,9 @@ WWW = Path(__file__).parents[1] / "custom_components/battman/www"
 CARDS = Path(__file__).parents[1] / "custom_components/battman/cards"
 needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node to run the cards' JavaScript")
 PARAMS = "sensor.solarsystemcontrolparameters"
+# node's local time zone and locale pinned (templates use getHours() and toLocaleTimeString([])),
+# so the recorded outputs repeat on any machine
+PINNED = {"TZ": "Australia/Adelaide", "LC_ALL": "C.UTF-8", "LANG": "C.UTF-8"}
 
 # the page stand-in the templates need (window, document, localStorage, getComputedStyle)
 SHIM = """
@@ -51,7 +56,8 @@ def run_templates(lib_js, jobs, states):
             f"({json.dumps(states)}, {json.dumps(states.get(ent))}, {{name:'A.J.'}}, globalThis.__hass, "
             f"{json.dumps(variables)}))); }} catch (e) {{ out.push('THROW: ' + e.message); }}")
     parts.append("process.stdout.write(JSON.stringify(out));")
-    r = subprocess.run(["node", "-"], input="\n".join(parts), capture_output=True, text=True, check=True)
+    r = subprocess.run(["node", "-"], input="\n".join(parts), capture_output=True, text=True, check=True,
+                       env={**os.environ, **PINNED})
     return json.loads(r.stdout)
 
 
@@ -169,6 +175,8 @@ async def test_overrides_structure_matches(hass: HomeAssistant, hass_client) -> 
             return [d for i, (x, y) in enumerate(zip(a, b)) for d in diff(x, y, f"{p}[{i}]")]
         return [] if a == b else [(p, str(a)[:120], str(b)[:120])]
     assert diff(so, sm) == []
+    # Battman's side, recorded so the comparison survives Smiggles' removal (templates: test below)
+    assert_snapshot(__file__, "overrides-structure", sm)
 
 
 def _unexplained(a, b, allowed):
@@ -202,6 +210,9 @@ async def test_overrides_output_matches(hass: HomeAssistant, hass_client, kind) 
             continue
         bad = _unexplained(a, b, allowed)
         assert not bad, (path, bad[:6])
+    # Battman's side, recorded so the comparison survives Smiggles' removal: each template's output
+    for (path, *_), b in zip(t_m, out_m, strict=True):
+        assert_snapshot(__file__, f"overrides-{kind}:{'/'.join(map(str, path))}", b)
     # the rows really drew something
     rows = [b for (p, *_), b in zip(t_m, out_m) if p[-2:] == ("custom_fields", "content") and p[1] in range(1, 7) and "SOC" in b]
     assert rows

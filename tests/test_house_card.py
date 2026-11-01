@@ -15,7 +15,7 @@ JS = (ROOT / "www/battman-house.js").read_text()
 
 
 def test_loaded_and_valid() -> None:
-    assert 'add_extra_js_url(hass, f"{STATIC_URL}/battman-house.js' in (ROOT / "__init__.py").read_text()
+    assert 'add_extra_js_url(hass, f"{static_v}/battman-house.js' in (ROOT / "__init__.py").read_text()
     assert subprocess.run(["node", "--check", str(ROOT / "www/battman-house.js")]).returncode == 0
     assert 'battmanDefine("battman-house", BattmanHouseCard)' in JS
     assert 'battmanDefine("battman-house-editor", BattmanHouseEditor)' in JS

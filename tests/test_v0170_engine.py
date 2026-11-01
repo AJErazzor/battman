@@ -9,6 +9,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 
 from . import engine_harness as H
+from .snapshots import assert_snapshot
 
 
 async def test_both_engines_load(hass: HomeAssistant, caplog) -> None:
@@ -137,6 +138,38 @@ async def _same_store(hass, key: str) -> None:
     assert (a.state, sa) == (b.state, sb), (key, {k: (sa.get(k), sb.get(k)) for k in set(sa) | set(sb) if sa.get(k) != sb.get(k)})
 
 
+# ── snapshots: Battman's side of each comparison, recorded (tests/snapshots.py) ─────────
+_ISO = re.compile(r"\d{4}-\d\d-\d\d(?:[T ]\d\d:\d\d(?::\d\d(?:\.\d+)?)?(?:[+-]\d\d:\d\d|Z)?)?")
+_RUN_LINE = re.compile(r"^Run: .*$", re.M)
+
+
+def _no_run_time(log: str) -> list[str]:
+    """The engine log's lines with the run time blanked. In the decision test the clock is frozen
+    at each world's time, so the other times in the log (forecast windows) repeat and are kept."""
+    return _RUN_LINE.sub("Run: <time>", log).splitlines()
+
+
+def _no_times(value):
+    """`value` with ISO dates / date-times replaced, for tests that run on the real clock."""
+    if isinstance(value, str):
+        return _ISO.sub("<time>", value)
+    if isinstance(value, dict):
+        return {k: _no_times(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_no_times(v) for v in value]
+    return value
+
+
+def _battman_store(hass, key: str, *, state: bool = True) -> dict:
+    """Battman's side of _same_store: its state and the attributes compared (time stamps already
+    left out by _strip)."""
+    b = hass.states.get(ENGINE_MAP[key])
+    out = {"attributes": _strip(b.attributes)}
+    if state:
+        out["state"] = b.state
+    return out
+
+
 async def test_engine_decides_like_smiggles(hass: HomeAssistant, freezer) -> None:
     await hass.config.async_set_time_zone("Australia/Adelaide")
     freezer.move_to(datetime(2026, 10, 21, 9, 0, 10, tzinfo=ZoneInfo("Australia/Adelaide")))
@@ -178,6 +211,19 @@ async def test_engine_decides_like_smiggles(hass: HomeAssistant, freezer) -> Non
         la = _same_tracking(hass.states.get(SMIGGLES_NAMES["debug_log"]).attributes["message"])
         lb = _same_tracking(hass.states.get(ENGINE_MAP["debug_log"]).attributes["message"])
         assert la == lb, (n, la, lb)
+        # Battman's side, recorded: its settings (they build up world on world), the curves and rules
+        # (the same for every world with the same curves seed / rules switch), then what it decided
+        assert_snapshot(__file__, f"world-{n:03d}-parameters", _battman_store(hass, "parameters"))
+        for k in ("soc_curves", "price_curves"):   # a curves sensor's state is when it last changed
+            assert_snapshot(__file__, f"{k}-seed-{sc['curves_seed']}", _battman_store(hass, k, state=False))
+        for k in ("buy_rules", "sell_rules"):
+            assert_snapshot(__file__, f"{k}-{sc['rules']}", _battman_store(hass, k))
+        assert_snapshot(__file__, f"world-{n:03d}", {
+            "mode": hass.states.get(ENGINE_MAP["mode"]).state,
+            "no_export": hass.states.get(ENGINE_MAP["no_export"]).state,
+            "run": _battman_store(hass, "run"),
+            "log": _no_run_time(lb),
+        })
         seen_modes.add(hass.states.get(ENGINE_MAP["mode"]).state)
         tally[(hass.states.get(ENGINE_MAP["mode"]).state, hass.states.get(ENGINE_MAP["no_export"]).state)] += 1
         compared += 1
@@ -260,11 +306,12 @@ async def test_sigen_mode_like_smiggles(hass: HomeAssistant) -> None:
 
             calls = await _compare(hass, rec, ids, "automation.solarsystemcontrolsigmode", act)
             assert calls and calls[0][0] == "select", (mode, calls)
+            assert_snapshot(__file__, f"sig-mode {start_mode} -> {mode}", calls)
 
 
 async def test_curtail_and_sapn_like_smiggles(hass: HomeAssistant) -> None:
     _entry, rec, ids = await _engines(hass)
-    for state in ("on", "off", "on"):
+    for step, state in enumerate(("on", "off", "on")):
         async def act(names, state=state):
             await hass.services.async_call("input_boolean", f"turn_{'off' if state == 'on' else 'on'}",
                                            {"entity_id": names["no_export"]}, blocking=False)
@@ -274,6 +321,7 @@ async def test_curtail_and_sapn_like_smiggles(hass: HomeAssistant) -> None:
                                            blocking=True)
         calls = await _compare(hass, rec, ids, "automation.solarsystemcontrolsigcurtail", act)
         assert calls[-1][2]["value"] == (0 if state == "on" else 18.2)
+        assert_snapshot(__file__, f"curtail {step} no export {state}", calls)
 
     async def sapn(names):
         await hass.services.async_call("input_boolean", "turn_on", {"entity_id": names["no_export"]}, blocking=True)
@@ -283,6 +331,7 @@ async def test_curtail_and_sapn_like_smiggles(hass: HomeAssistant) -> None:
     calls = await _compare(hass, rec, ids, "automation.solarsystemcontrolsapnoverride", sapn)
     assert calls == [("number", "set_value", {"value": 0, "entity_id": ["number.sigen_plant_grid_export_limitation"]})] \
         or calls[-1][2]["value"] == 0
+    assert_snapshot(__file__, "sapn override", calls)
 
 
 async def test_timer_and_watchdog_like_smiggles(hass: HomeAssistant) -> None:
@@ -307,6 +356,7 @@ async def test_timer_and_watchdog_like_smiggles(hass: HomeAssistant) -> None:
         results[side] = {k: p.get(k) for k in over if k != "action"}
         results[side]["mode"] = hass.states.get(names["mode"]).state
     assert results["smiggles"] == results["battman"], results
+    assert_snapshot(__file__, "timer and watchdog", results["battman"])
 
 
 async def test_apply_scene_like_smiggles(hass: HomeAssistant) -> None:
@@ -328,6 +378,7 @@ async def test_apply_scene_like_smiggles(hass: HomeAssistant) -> None:
                       or "sellSolar" in k or "buyAnytime" in k}, t.state)
     assert out["smiggles"] == out["battman"], out
     assert out["battman"][1] == "active"
+    assert_snapshot(__file__, "apply scene", {"parameters": _no_times(out["battman"][0]), "timer": out["battman"][1]})
 
 
 async def test_main_loop_runs_the_engine_only_in_charge(hass: HomeAssistant) -> None:
