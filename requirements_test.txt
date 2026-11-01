@@ -1,0 +1,15 @@
+# What the test suite needs. Python 3.13.
+#
+#   python3.13 -m venv .venv && .venv/bin/pip install -r requirements_test.txt
+#   .venv/bin/python -m pytest -q
+#
+# Some tests also need Node (on PATH). The browser tests need Playwright and Chromium,
+# found through BATTMAN_NODE_PATH (a node_modules folder holding playwright) and
+# BATTMAN_CHROME (the Chromium executable); without them those tests are skipped.
+#
+# Keep these two in step: home-assistant-frontend must be the version the pinned HA expects
+# (Battman depends on HA's frontend, so without it most tests fail at setup).
+
+# HA 2026.2.3, plus pytest, pytest-asyncio, pytest-xdist and pytest-cov
+pytest-homeassistant-custom-component==0.13.316
+home-assistant-frontend==20260128.6
