@@ -1,2 +1,9 @@
 __pycache__/
 *.pyc
+
+# test and dev leftovers
+.venv/
+.coverage
+.pytest_cache/
+*.whl
+tests/snapshots/*.lock
