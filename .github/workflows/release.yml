@@ -8,6 +8,7 @@ name: Release
 # Anything else: no release.
 # The workflow writes the new version into manifest.json, commits it,
 # tags vX.Y.Z and publishes a GitHub Release (which HACS picks up).
+# Nothing is released unless the full test suite (tests.yml) passes first.
 
 on:
   push:
@@ -21,7 +22,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yml
+
   release:
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

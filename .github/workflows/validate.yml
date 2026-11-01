@@ -8,6 +8,10 @@ on:
     - cron: "0 3 * * 1"
 
 jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yml
+
   hassfest:
     name: Hassfest
     runs-on: ubuntu-latest
