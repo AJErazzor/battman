@@ -6,8 +6,8 @@ Replaces Smiggles' shell commands (LogWriter / PruneLog / load-filtered-log):
   but with the message's line breaks kept as \\n);
 - Sundays at 03:00 the file is cut to its last 4032 lines (two weeks of 5-minute runs),
   as Smiggles' PruneLog did;
-- the Log page asks GET /api/battman/log?start=&end= for a time range. Until you
-  migrate, that reads Smiggles' log file; after, Battman's.
+- the Log page asks GET /api/battman/log?start=&end= for a time range, read from
+  Battman's log file.
 """
 
 from __future__ import annotations
@@ -29,15 +29,10 @@ EVENT = "battman_engine_log"
 KEEP_LINES = 4032
 LOG_URL = "/api/battman/log"
 BATTMAN_LOG = ("battman", "engine.log")
-SMIGGLES_LOG = ("smiggles", "solar_debug.log")
 
 
 def battman_path(hass: HomeAssistant) -> Path:
     return Path(hass.config.path(*BATTMAN_LOG))
-
-
-def smiggles_path(hass: HomeAssistant) -> Path:
-    return Path(hass.config.path(*SMIGGLES_LOG))
 
 
 def line_for(when: str, message: str) -> str:
@@ -82,20 +77,6 @@ def read_range(path: Path, start: str, end: str) -> list[str]:
     return out
 
 
-def copy_in(src: Path, dst: Path) -> int:
-    """Migrate: put Smiggles' log lines in front of Battman's. Returns lines copied."""
-    if not src.exists():
-        return 0
-    old = src.read_text(encoding="utf-8", errors="replace")
-    if old and not old.endswith("\n"):
-        old += "\n"
-    mine = dst.read_text(encoding="utf-8") if dst.exists() else ""
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_text(old + mine, encoding="utf-8")
-    prune(dst)
-    return old.count("\n")
-
-
 @callback
 def async_start(hass: HomeAssistant) -> callable:
     """Listen for engine log events and prune weekly. Returns an unsubscribe callable."""
@@ -136,13 +117,11 @@ class BattmanLogView(HomeAssistantView):
     requires_auth = True
 
     async def get(self, request: web.Request) -> web.Response:
-        from .api import smiggles_in_charge  # noqa: PLC0415
-
         hass: HomeAssistant = request.app["hass"]
         start, end = request.query.get("start"), request.query.get("end")
         if not start or not end:
             return self.json({"message": "Log: start and end are needed"}, status_code=400)
-        path = smiggles_path(hass) if smiggles_in_charge(hass) else battman_path(hass)
+        path = battman_path(hass)
         try:
             lines = await hass.async_add_executor_job(read_range, path, start, end)
         except FileNotFoundError:
