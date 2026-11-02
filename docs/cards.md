@@ -92,7 +92,7 @@ cards:
 ```
 
 Sigen's, Amber's and Solcast's entities are written by name. `[[map:name]]` is one of Battman's
-engine entities from its entity map (Smiggles' before you migrate, Battman's after). Quote it when
+engine entities from its entity map. Quote it when
 it's a whole value, as above. HA's own `{{ … }}` templates are left alone.
 
 ## Trying out changes on your own HA
@@ -265,7 +265,7 @@ your themes; **Make Active** makes it the dashboard's theme. It has no options.
 
 ## Battman House
 
-`custom:battman-house` is the house picture from the Smiggles Power view, drawn by Battman
+`custom:battman-house` is the house picture, drawn by Battman
 itself (no button-card, mushroom or card-mod). It's the first card on the Power view.
 
 Every item has a **Show** switch and its own entity, all set in the card's editor. Leave them

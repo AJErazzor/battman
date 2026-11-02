@@ -7,8 +7,8 @@ factory_curves.yaml, then reloads template entities and helpers,
 so no restart is needed. They're rewritten on every Battman update and whenever the entity
 map changes. Files Battman no longer ships are removed from that folder.
 
-Template sensors live here (not in Battman's code) so a Smiggles template sensor can be
-renamed into Battman's and keep its history: same unique ID, same entity.
+Template sensors live here (not in Battman's code) so they keep stable unique IDs and
+their history across updates: same unique ID, same entity.
 
 If HA isn't reading the folder (packages not set up), a Repair says what to add.
 """

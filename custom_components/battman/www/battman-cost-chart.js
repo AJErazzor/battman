@@ -131,9 +131,6 @@ class BattmanCostChartCard extends BattmanCardBase {
     function saveRange(v) { try { localStorage.setItem(RANGE_KEY, JSON.stringify(v)); } catch (e) {} }
     function loadRange() {
       try {
-        // one-time move of the range saved by the old Smiggles page
-        const old = localStorage.getItem("costRange");
-        if (old !== null) { if (localStorage.getItem(RANGE_KEY) === null) localStorage.setItem(RANGE_KEY, old); localStorage.removeItem("costRange"); }
         return JSON.parse(localStorage.getItem(RANGE_KEY));
       } catch (e) { return null; }
     }

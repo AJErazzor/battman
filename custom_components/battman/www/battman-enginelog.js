@@ -7,9 +7,9 @@
 // - Battman's: one section per line that starts with a heading (Run:, Mode:, Prices:, ...);
 //   the indented lines under it are its details. In the log file the line breaks are
 //   written as \n so a whole run stays on one line.
-// - Smiggles' (lines copied in at migration, and Battman's first runs): sections start
-//   with an emoji (🔄 Mode, 💰 Prices, ...); in the log file the line breaks were turned
-//   into spaces, so the emoji are where sections start. The emoji aren't shown.
+// - older runs (emoji-headed): sections start with an emoji (🔄 Mode, 💰 Prices, ...);
+//   in the log file the line breaks were turned into spaces, so the emoji are where
+//   sections start. The emoji aren't shown.
 //
 // window.battmanEngineLog.parse(message)  -> { time, from, to, sections: [{ key, head, value, lines }] }
 // window.battmanEngineLog.render(message, { title }) -> HTML (colours as var(--battman-*))
@@ -21,7 +21,7 @@
     darkred: "var(--battman-darkred)", muted: "var(--battman-text-muted)", dim: "var(--battman-text-dim)",
     text: "var(--primary-text-color)",
   };
-  // heading -> colour (Battman's headings; Smiggles' emoji map onto them)
+  // heading -> colour (headings; older emoji map onto them)
   const HEADS = {
     "Run": C.muted, "Mode": C.purple, "Prices": C.yellow, "Min Sell": C.orange, "Battery": C.green,
     "SOC Limits": C.blue, "Solar": C.amber, "Actions": C.muted, "Sell Forecasts": C.green,
@@ -44,12 +44,12 @@
     const i = line.indexOf("|");
     if (i < 0) return { stamp: "", message: line };
     let msg = line.slice(i + 1);
-    // Smiggles' shell commands mangled some $ amounts
+    // some older $ amounts were mangled by shell escaping
     msg = msg.replace(/hBc/g, "$-").replace(/bash\./g, "$0.");
     return { stamp: line.slice(0, i), message: msg.replace(/\\n/g, "\n") };
   }
 
-  // Smiggles' format: a section starts at a known emoji: at a line start, or anywhere when the
+  // Older format: a section starts at a known emoji: at a line start, or anywhere when the
   // line breaks were flattened into spaces (the log file). Returns [{ em, text }].
   const EM_RE = new RegExp("(" + EMOJI_LIST.map((e) => e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")");
   function emojiLines(message) {

@@ -1,13 +1,12 @@
 """Battman's engine log: a text file, one line per engine run.
 
-Replaces Smiggles' shell commands (LogWriter / PruneLog / load-filtered-log):
+How it works:
 - every `battman_engine_log` event the engine fires is appended to
-  <config>/battman/engine.log as `<time>|<message>` (as Smiggles' /config/smiggles/solar_debug.log,
-  but with the message's line breaks kept as \\n);
-- Sundays at 03:00 the file is cut to its last 4032 lines (two weeks of 5-minute runs),
-  as Smiggles' PruneLog did;
-- the Log page asks GET /api/battman/log?start=&end= for a time range. Until you
-  migrate, that reads Smiggles' log file; after, Battman's.
+  <config>/battman/engine.log as `<time>|<message>`, with the message's line breaks
+  kept as \\n;
+- Sundays at 03:00 the file is cut to its last 4032 lines (two weeks of 5-minute runs);
+- the Log page asks GET /api/battman/log?start=&end= for a time range, read from
+  Battman's log file.
 """
 
 from __future__ import annotations
@@ -29,20 +28,15 @@ EVENT = "battman_engine_log"
 KEEP_LINES = 4032
 LOG_URL = "/api/battman/log"
 BATTMAN_LOG = ("battman", "engine.log")
-SMIGGLES_LOG = ("smiggles", "solar_debug.log")
 
 
 def battman_path(hass: HomeAssistant) -> Path:
     return Path(hass.config.path(*BATTMAN_LOG))
 
 
-def smiggles_path(hass: HomeAssistant) -> Path:
-    return Path(hass.config.path(*SMIGGLES_LOG))
-
-
 def line_for(when: str, message: str) -> str:
     """One log line: `<time>|<message>`, the message's line breaks written as \\n so the run stays
-    on one line and its sections can be read back. (Smiggles turned them into spaces.)"""
+    on one line and its sections can be read back."""
     return f"{when}|{message.replace(chr(13), '').replace(chr(10), chr(92) + 'n')}\n"
 
 
@@ -63,7 +57,7 @@ def prune(path: Path, keep: int = KEEP_LINES) -> None:
 
 
 def _stamp(ts: str) -> str:
-    """Smiggles' filter: 'T' -> space, drop everything from the first '.'."""
+    """Timestamp filter: 'T' -> space, drop everything from the first '.'."""
     ts = ts.replace("T", " ")
     return ts.split(".", 1)[0]
 
@@ -80,20 +74,6 @@ def read_range(path: Path, start: str, end: str) -> list[str]:
             if start <= ts <= end:
                 out.append(line)
     return out
-
-
-def copy_in(src: Path, dst: Path) -> int:
-    """Migrate: put Smiggles' log lines in front of Battman's. Returns lines copied."""
-    if not src.exists():
-        return 0
-    old = src.read_text(encoding="utf-8", errors="replace")
-    if old and not old.endswith("\n"):
-        old += "\n"
-    mine = dst.read_text(encoding="utf-8") if dst.exists() else ""
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_text(old + mine, encoding="utf-8")
-    prune(dst)
-    return old.count("\n")
 
 
 @callback
@@ -136,13 +116,11 @@ class BattmanLogView(HomeAssistantView):
     requires_auth = True
 
     async def get(self, request: web.Request) -> web.Response:
-        from .api import smiggles_in_charge  # noqa: PLC0415
-
         hass: HomeAssistant = request.app["hass"]
         start, end = request.query.get("start"), request.query.get("end")
         if not start or not end:
             return self.json({"message": "Log: start and end are needed"}, status_code=400)
-        path = smiggles_path(hass) if smiggles_in_charge(hass) else battman_path(hass)
+        path = battman_path(hass)
         try:
             lines = await hass.async_add_executor_job(read_range, path, start, end)
         except FileNotFoundError:

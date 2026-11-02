@@ -1,8 +1,7 @@
 """v0.13.0: Amber 5-min price grid, Amber forecast table, State card, <battman-countdown>,
-browser_mod in the dependency check, and the Power view in Smiggles order.
+browser_mod in the dependency check, and the Power view layout.
 
-Each card is run (with node) next to the original Smiggles card on the same states:
-with real values the output must be the same, apart from the intended renames."""
+Each card is run (with node) on a scenario of states and its output recorded as a snapshot."""
 
 import json
 import os
@@ -16,13 +15,10 @@ import pytest
 import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
 from .snapshots import assert_snapshot
-
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
@@ -31,7 +27,7 @@ needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node to 
 
 BUY_NOW, SELL_NOW = "sensor.amber_5min_current_general_price", "sensor.amber_5min_current_feed_in_price"
 BUY_F, SELL_F = "sensor.amber_billing_interval_forecasts_general_price", "sensor.amber_billing_interval_forecasts_feed_in_price"
-EST = "binary_sensor.solarsystemcontrolestimatedprice"
+EST = "binary_sensor.battman_estimated_price"
 HA_TZ = "Australia/Adelaide"      # the time zone the fake HA reports to cards
 # For recorded snapshots node must draw the same everywhere: its local time zone and locale
 # (cards use getHours() and toLocaleTimeString([])) pinned, and for the State card its clock.
@@ -69,10 +65,6 @@ async def _card(hass, card_id):
     return await (await client.get(f"/api/battman/cards/{card_id}")).json()
 
 
-def _orig(name):
-    return yaml.safe_load((FIX / f"smiggles_{name}.yaml").read_text())[0]
-
-
 def run_js(jobs, prelude: str = "", env: dict | None = None):
     """Run button-card [[[ ]]] templates the way button-card does. jobs: [(src, states, entity_id)].
     All in one node process (same clock). Returns each output, or 'THROW: …'.
@@ -89,14 +81,6 @@ def run_js(jobs, prelude: str = "", env: dict | None = None):
     r = subprocess.run(["node", "-"], input=script, capture_output=True, text=True, check=True,
                        env={**os.environ, **env} if env else None)
     return json.loads(r.stdout)
-
-
-def norm(s: str) -> str:
-    return s.replace("--smiggles-", "--battman-")
-
-
-def squash(s: str) -> str:
-    return re.sub(r"\s+", "", s)
 
 
 # ── shared fake data ─────────────────────────────────────────────────────────
@@ -176,29 +160,24 @@ async def test_countdown_and_browser_mod(hass: HomeAssistant) -> None:
 # ── amber5minpricegrid ───────────────────────────────────────────────────────
 
 @needs_node
-async def test_pricegrid_matches_smiggles(hass: HomeAssistant) -> None:
+async def test_pricegrid(hass: HomeAssistant) -> None:
     m = (await _card(hass, "amber5minpricegrid"))["config"]
-    o = _orig("amber5minpricegrid")
-    js_m, js_o = m["cards"][0]["custom_fields"]["card"], o["cards"][0]["custom_fields"]["card"]
+    js_m = m["cards"][0]["custom_fields"]["card"]
     scen = [price_states(-0.052, 0.183), price_states(-0.004, 0.071, "on"), price_states(0.021, -0.012),
             price_states(-0.27, 0.42, "on")]
-    out = run_js([(j, s, None) for s in scen for j in (js_m, js_o)], env=PINNED)
-    for i in range(0, len(out), 2):
-        assert not out[i].startswith("THROW") and "SELL" in out[i]
-        assert out[i] == norm(out[i + 1]).replace("amber-countdown", "battman-countdown")
-    assert "Estimating" in out[2] and "Estimating" not in out[0]
-    # Battman's side, recorded so the comparison survives Smiggles' removal
-    for n, i in enumerate(range(0, len(out), 2)):
-        assert_snapshot(__file__, f"pricegrid-draw-{n}", out[i])
+    out = run_js([(js_m, s, None) for s in scen], env=PINNED)
+    for o in out:
+        assert not o.startswith("THROW") and "SELL" in o
+    assert "Estimating" in out[1] and "Estimating" not in out[0]
+    for n, o in enumerate(out):
+        assert_snapshot(__file__, f"pricegrid-draw-{n}", o)
 
-    # the rest of the card is the original's, renamed
     def strip(x):
         if isinstance(x, dict):
             return {k: strip(v) for k, v in x.items() if k != "version"}
         if isinstance(x, list):
             return [strip(v) for v in x]
-        return "JS" if isinstance(x, str) and x.strip().startswith("[[[") else norm(x) if isinstance(x, str) else x
-    assert strip(m) == strip(o)
+        return "JS" if isinstance(x, str) and x.strip().startswith("[[[") else x
     assert_snapshot(__file__, "pricegrid-layout", strip(m))
 
 
@@ -221,11 +200,6 @@ async def test_pricegrid_missing(hass: HomeAssistant) -> None:
 
 # ── amber24hourforecasttable ─────────────────────────────────────────────────
 
-def _jinja_table(hass):
-    pkg = yaml.safe_load((FIX / "smiggles_amberforecast_sensor.yaml").read_text())
-    return Template(pkg["template"][0]["sensor"][0]["attributes"]["friendly_table"], hass)
-
-
 def times(html):
     return re.findall(r'<td class="at6t-td at6t-time"[^>]*>([^<—]+)</td>', html)
 
@@ -236,29 +210,19 @@ def local_label(iso):
 
 
 @needs_node
-async def test_forecast_table_matches_smiggles(hass: HomeAssistant) -> None:
+async def test_forecast_table(hass: HomeAssistant) -> None:
     js = (await _card(hass, "amber24hourforecasttable"))["config"]["cards"][0]["custom_fields"]["card"]
-    tpl = _jinja_table(hass)
     for n, (sell_p, buy_p) in enumerate(((SELLP, BUYP), ([p * 1.7 - 0.05 for p in SELLP], [p * 0.6 for p in BUYP]))):
         st = price_states(-0.05, 0.2, sell=sell_p, buy=buy_p)
-        for e, v in st.items():
-            hass.states.async_set(e, v["state"], v["attributes"])
-        jin = tpl.async_render(parse_result=False)
         mine = run_js([(js, st, None)])[0]
         assert "at6t-tr" in mine and mine.count("<tr class=\"at6t-tr\">") == len(sell_p)
-        # v0.14.0: the time column is the interval start in HA's time zone (Smiggles showed
-        # NEM time), so compare everything else exactly and the times separately.
-        cell1 = re.compile(r'(<td class="at6t-td at6t-time"[^>]*>)[^<]*(</td>)')
-        assert squash(cell1.sub(r"\1T\2", norm(jin))) == squash(cell1.sub(r"\1T\2", mine))
+        # v0.14.0: the time column is the interval start in HA's time zone
         assert times(mine) == [local_label(f["start_time"]) for f in st[SELL_F]["attributes"]["Forecasts"]]
-        assert_snapshot(__file__, f"forecast-table-{n}", mine)      # Battman's side, kept past Smiggles
+        assert_snapshot(__file__, f"forecast-table-{n}", mine)
 
-    # no forecasts: the same error naming both sensors
-    for e in (SELL_F, BUY_F):
-        hass.states.async_set(e, "0", {"Forecasts": []})
+    # no forecasts: the error naming both sensors
     st = price_states(-0.05, 0.2, sell=[], buy=[])
     empty = run_js([(js, st, None)])[0]
-    assert squash(norm(tpl.async_render(parse_result=False))) == squash(empty)
     assert_snapshot(__file__, "forecast-table-empty", empty)
 
 
@@ -297,21 +261,20 @@ def state_states(scen, now: datetime | None = None):
               "dailyNetworkCharge": 1.1, "buyProrateSOCOffset": 1, "sellProrateSOCOffset": 30}
     curve = {"buy": [10, 20, 30], "sell": [60, 50, 40]}
     return {
-        "sensor.solarsystemcontrolrun": {"state": "ok", "attributes": run},
-        "sensor.solarsystemcontrolparameters": {"state": "ok", "attributes": params},
-        "sensor.solarsystemcontrolbuyrules": {"state": "true", "attributes": {"rules": rules}},
-        "sensor.solarsystemcontrolsellrules": {"state": "true", "attributes": {"rules": rules}},
-        "sensor.solar_system_control_soc_curves": {"state": "ok", "attributes": {"curves": {m: curve for m in
-                                                   ("jan feb mar apr may jun jul aug sep oct nov dec").split()}}},
-        "sensor.solar_system_control_price_curves": {"state": "ok", "attributes": {"curves": {}}},
-        "input_select.solarsystemcontrolmode": {"state": ["Self Consume", "Self Consume", "Charge", "Discharge", "Charge"][scen], "attributes": {}},
-        "timer.solarsystemoverridetimer": {"state": "idle", "attributes": {}},
+        "sensor.battman_run": {"state": "ok", "attributes": run},
+        "sensor.battman_parameters": {"state": "ok", "attributes": params},
+        "sensor.battman_buy_rules": {"state": "true", "attributes": {"rules": rules}},
+        "sensor.battman_sell_rules": {"state": "true", "attributes": {"rules": rules}},
+        "sensor.battman_soc_curves": {"state": "ok", "attributes": {"curves": {m: curve for m in
+                                      ("jan feb mar apr may jun jul aug sep oct nov dec").split()}}},
+        "sensor.battman_price_curves": {"state": "ok", "attributes": {"curves": {}}},
+        "input_select.battman_mode": {"state": ["Self Consume", "Self Consume", "Charge", "Discharge", "Charge"][scen], "attributes": {}},
+        "timer.battman_override_timer": {"state": "idle", "attributes": {}},
         SELL_NOW: {"state": "-0.081", "attributes": {}}, BUY_NOW: {"state": "0.172", "attributes": {}},
         SELL_F: {"state": "0", "attributes": {"Forecasts": fin}}, BUY_F: {"state": "0", "attributes": {"Forecasts": gen}},
         "sensor.sigen_plant_battery_state_of_charge": {"state": "57", "attributes": {}},
         "sensor.sigen_plant_battery_power": {"state": "-2.4", "attributes": {}},
-        "sensor.sigen_inverter_rated_battery_capacity": {"state": "40.3", "attributes": {}},   # what Smiggles read
-        "sensor.sigen_plant_rated_energy_capacity": {"state": "40.3", "attributes": {}},      # what Battman reads (v0.14.0)
+        "sensor.sigen_plant_rated_energy_capacity": {"state": "40.3", "attributes": {}},
         "sensor.solcast_pv_forecast_forecast_today": {"state": "20", "attributes": {"detailedForecast": [
             {"period_start": (now + timedelta(minutes=30 * i)).isoformat(), "pv_estimate": max(0, 6 - abs(i - 6))} for i in range(48)]}},
         "sensor.solcast_pv_forecast_forecast_tomorrow": {"state": "20", "attributes": {"detailedForecast": []}},
@@ -319,42 +282,34 @@ def state_states(scen, now: datetime | None = None):
 
 
 @needs_node
-async def test_state_matches_smiggles(hass: HomeAssistant) -> None:
+async def test_state(hass: HomeAssistant) -> None:
     m = (await _card(hass, "state"))["config"]
-    o = _orig("state")
-    main_m, main_o = m["custom_fields"]["content"], o["custom_fields"]["content"]
-    pop_m, pop_o = (x["tap_action"]["browser_mod"]["data"]["content"] for x in (m, o))
+    main_m = m["custom_fields"]["content"]
+    pop_m = m["tap_action"]["browser_mod"]["data"]["content"]
 
     def jobs_for(now=None):
         jobs = []
         for scen in range(5):
             st = state_states(scen, now)
-            # the popup's look-ahead: v0.23.1 added sell rules (Smiggles' card had none), so it's compared
-            # with the sell rules off (test_v0231 checks them against the engine)
+            # the popup's look-ahead with sell rules off (test_v0231 checks them against the engine)
             pop = json.loads(json.dumps(st))
-            pop["sensor.solarsystemcontrolsellrules"]["state"] = "false"
-            jobs += [(main_m, st, "sensor.solarsystemcontrolparameters"), (main_o, st, "sensor.solarsystemcontrolparameters"),
-                     (pop_m, pop, None), (pop_o, pop, None)]
+            pop["sensor.battman_sell_rules"]["state"] = "false"
+            jobs += [(main_m, st, "sensor.battman_parameters"), (pop_m, pop, None)]
         return jobs
 
     out = run_js(jobs_for())
-    for i in range(0, len(out), 2):
-        assert not out[i].startswith("THROW"), out[i]
-        assert len(out[i]) > 500
-        assert out[i] == norm(out[i + 1])
-    assert len({out[i] for i in range(0, len(out), 4)}) > 2            # the scenarios really differ
+    for o in out:
+        assert not o.startswith("THROW"), o
+    assert all(len(out[2 * s]) > 500 for s in range(5))
+    assert len({out[2 * s] for s in range(5)}) > 2            # the scenarios really differ
 
-    # The same again at a fixed time, zone and locale, and Battman's side recorded so the
-    # comparison survives Smiggles' removal (the run above uses the real clock, so can't be).
+    # at a fixed time, zone and locale, recorded as snapshots
     out = run_js(jobs_for(FIXED_NOW), prelude=frozen_clock(FIXED_NOW), env=PINNED)
-    for i in range(0, len(out), 2):
-        assert not out[i].startswith("THROW"), out[i]
-        assert len(out[i]) > 500
-        assert out[i] == norm(out[i + 1])
-    assert len({out[i] for i in range(0, len(out), 4)}) > 2
     for scen in range(5):
-        assert_snapshot(__file__, f"state-main-{scen}", out[4 * scen])
-        assert_snapshot(__file__, f"state-popup-{scen}", out[4 * scen + 2])
+        assert not out[2 * scen].startswith("THROW"), out[2 * scen]
+        assert len(out[2 * scen]) > 500
+        assert_snapshot(__file__, f"state-main-{scen}", out[2 * scen])
+        assert_snapshot(__file__, f"state-popup-{scen}", out[2 * scen + 1])
 
     def strip(x):
         if isinstance(x, dict):
@@ -362,11 +317,8 @@ async def test_state_matches_smiggles(hass: HomeAssistant) -> None:
         if isinstance(x, list):
             return [strip(v) for v in x]
         if isinstance(x, str):
-            return "JS" if x.strip().startswith("[[[") else norm(x).strip()
+            return "JS" if x.strip().startswith("[[[") else x.strip()
         return x
-    so = strip(o)
-    so["entity"] = "sensor.solarsystemcontrolparameters"
-    assert strip(m) == so
     assert_snapshot(__file__, "state-layout", strip(m))
 
 
@@ -376,14 +328,14 @@ async def test_state_missing(hass: HomeAssistant) -> None:
     main = m["custom_fields"]["content"]
     pop = m["tap_action"]["browser_mod"]["data"]["content"]
     gone = state_states(0)
-    del gone["sensor.solarsystemcontrolrun"]
+    del gone["sensor.battman_run"]
     no_cap = state_states(0)
     no_cap["sensor.sigen_plant_rated_energy_capacity"]["state"] = "unavailable"
     no_sun = state_states(0)
     del no_sun["sensor.solcast_pv_forecast_forecast_tomorrow"]
     out = run_js([(main, gone, None), (pop, gone, None), (pop, no_cap, None), (pop, no_sun, None)])
-    assert "State: missing sensor.solarsystemcontrolrun" in out[0]
-    assert "Next hours: missing sensor.solarsystemcontrolrun" in out[1]
+    assert "State: missing sensor.battman_run" in out[0]
+    assert "Next hours: missing sensor.battman_run" in out[1]
     assert "battery capacity (sensor.sigen_plant_rated_energy_capacity) unavailable" in out[2]
     assert "40.3" not in out[2]
     assert out[3].startswith('<div style="padding:4px') and "assumes no solar" in out[3]

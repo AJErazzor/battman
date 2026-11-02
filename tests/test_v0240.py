@@ -270,16 +270,15 @@ def test_engine_has_no_made_up_solar() -> None:
 @needs_node
 async def test_state_popup_shows_sell_rules(hass: HomeAssistant, hass_client) -> None:
     """With sell rules on, the look-ahead holds out for the better price ahead and says why."""
-    from custom_components.battman.const import ENGINE_MAP, SMIGGLES_NAMES
+    from custom_components.battman.const import ENGINE_MAP
 
     from .test_v0130 import _card, hass_client_holder, run_js, state_states
 
     hass_client_holder["c"] = hass_client
     pop = (await _card(hass, "state"))["config"]["tap_action"]["browser_mod"]["data"]["content"]
-    to_battman = {SMIGGLES_NAMES[k]: v for k, v in ENGINE_MAP.items() if k in SMIGGLES_NAMES}
 
     def world(sell_rules_on: bool) -> dict:
-        st = {to_battman.get(e, e): v for e, v in state_states(0).items()}
+        st = state_states(0)
         st["sensor.sigen_plant_battery_state_of_charge"]["state"] = "95"      # plenty to sell
         st[ENGINE_MAP["sell_rules"]]["state"] = "true" if sell_rules_on else "false"
         return st

@@ -1,8 +1,7 @@
 // Battman shared card library: window.BattmanLib
 // Served by the Battman integration at /battmanfiles/battman-lib.js (caching off, so
 // no ?v= needed). Used by the Overrides card (rows, popups) and the theme studio's
-// dock previews. Battman's copy of Smiggles' ssc-lib.js v8 (checked line for line),
-// with renames and the fixes marked "Battman:" below.
+// dock previews. Fixes are marked "Battman:" below.
 
 window.BattmanLib=(function(){
 var L = {};

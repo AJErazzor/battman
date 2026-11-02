@@ -11,20 +11,15 @@ from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.http import KEY_HASS
 
 from . import cards, images, themes
 from .const import (
     CARDS_URL,
-    DOMAIN,
     ENTITY_MAP_DEFAULTS,
     ENTITY_MAP_URL,
     IMAGE_URL,
     IMAGES_URL,
-    MIGRATED,
-    SMIGGLES_NAMES,
-    SMIGGLES_PROBE,
     THEMES_URL,
 )
 
@@ -32,24 +27,9 @@ VIEWS_DIR = Path(__file__).parent / "views"
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
 
 
-def smiggles_in_charge(hass: HomeAssistant) -> bool:
-    """True until you migrate, if Smiggles is installed (its parameters sensor exists)."""
-    entries = hass.config_entries.async_entries(DOMAIN)
-    if entries and entries[0].data.get(MIGRATED):
-        return False
-    if hass.states.get(SMIGGLES_PROBE) is not None:
-        return True
-    # early in HA's start the sensor may not be loaded yet: its registry entry says it exists
-    return er.async_get(hass).async_get(SMIGGLES_PROBE) is not None
-
-
 def entity_map(hass: HomeAssistant) -> dict[str, str]:
-    """The entity map: Battman's engine entries, pointing at whichever engine is in charge:
-    Smiggles' entities until you migrate (if Smiggles is installed), Battman's after."""
-    emap = dict(ENTITY_MAP_DEFAULTS)
-    if smiggles_in_charge(hass):
-        emap.update(SMIGGLES_NAMES)
-    return emap
+    """The entity map: Battman's engine entries, pointing at Battman's own entities."""
+    return dict(ENTITY_MAP_DEFAULTS)
 
 
 def _load_views() -> list[tuple[str, Any]]:

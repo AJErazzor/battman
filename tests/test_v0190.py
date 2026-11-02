@@ -34,17 +34,16 @@ FACTORY = yaml.safe_load((ROOT / "factory_curves.yaml").read_text())
 
 
 def _in_charge(hass, entry) -> None:
-    from custom_components.battman.const import IN_CHARGE
-
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
+    # Battman's engine is always in charge now; kept as a no-op so callers are unchanged.
+    return
 
 
 # ── A2 ───────────────────────────────────────────────────────────────────────────────────
 
 
 async def test_fresh_install_has_every_setting_and_the_factory_curves(hass: HomeAssistant) -> None:
-    await H.start(hass, smiggles=False)
-    assert hass.states.get("binary_sensor.battman_in_charge").state == "off"
+    await H.start(hass)
+    assert hass.states.get("binary_sensor.battman_in_charge").state == "on"
     params = hass.states.get("sensor.battman_parameters").attributes
     engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
     read = set(re.findall(r"battman_parameters'{1,2},\s*'{1,2}(\w+)'{1,2}\)", engine))
@@ -58,7 +57,7 @@ async def test_fresh_install_has_every_setting_and_the_factory_curves(hass: Home
 
 
 async def test_your_settings_and_curves_are_kept(hass: HomeAssistant) -> None:
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     _in_charge(hass, entry)
     soc, price = H.curves(random.Random(7))
     hass.bus.async_fire("battman_soc_curves_update", {"curves": soc})
@@ -69,13 +68,6 @@ async def test_your_settings_and_curves_are_kept(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     assert hass.states.get("sensor.battman_soc_curves").attributes["curves"] == soc
     assert hass.states.get("sensor.battman_price_curves").attributes["curves"] == price
-    assert hass.states.get("sensor.battman_parameters").attributes["needyTriggerPVGap"] == 7
-    # not in charge: changes are still ignored, the start fill-in isn't a way round that
-    from custom_components.battman.const import IN_CHARGE
-
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: False})
-    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "needyTriggerPVGap": 9})
-    await hass.async_block_till_done()
     assert hass.states.get("sensor.battman_parameters").attributes["needyTriggerPVGap"] == 7
 
 
@@ -118,7 +110,7 @@ async def test_engine_says_when_the_load_average_is_missing(hass: HomeAssistant,
     from zoneinfo import ZoneInfo
     await hass.config.async_set_time_zone("Australia/Adelaide")
     freezer.move_to(datetime(2026, 10, 21, 20, 0, 10, tzinfo=ZoneInfo("Australia/Adelaide")))
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     hass.states.async_set(H.LOAD_AVG, "unavailable")
     msg = await _run_engine(hass, entry)
     assert "Load average: missing (sensor.battman_load_30m_avg has no value), high consumption check skipped" in msg
@@ -126,7 +118,7 @@ async def test_engine_says_when_the_load_average_is_missing(hass: HomeAssistant,
 
 
 async def test_engine_uses_the_load_average_when_there(hass: HomeAssistant) -> None:
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     hass.states.async_set(H.LOAD_AVG, "9.5")                    # over the 3.5 kW default
     msg = await _run_engine(hass, entry)
     assert "Load average: missing" not in msg and "(On High Curve!)" in msg
@@ -146,7 +138,7 @@ def test_load_30m_map_entry_gone() -> None:
 async def test_removing_battman_takes_away_what_it_wrote(hass: HomeAssistant) -> None:
     from custom_components.battman import engine_log
 
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     cfg = Path(hass.config.config_dir)
     autos = yaml.safe_load((cfg / "automations.yaml").read_text())
     assert any(a["id"] == "battman_engine_loop" for a in autos)
@@ -253,7 +245,7 @@ def test_tidy_ups() -> None:
 
 
 async def test_estimated_price_unavailable_without_times(hass: HomeAssistant, caplog) -> None:
-    await H.start(hass, smiggles=False)
+    await H.start(hass)
     fip = "sensor.amber_5min_current_feed_in_price"
     assert hass.states.get("binary_sensor.battman_estimated_price").state in ("on", "off")
     caplog.clear()

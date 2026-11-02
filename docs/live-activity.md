@@ -51,7 +51,7 @@ Nothing is made up: a value that isn't available shows as "—", an unknown batt
 mode shows a red "?" icon, and with no dashboard theme picked the bar is grey
 (`sensor.battman_theme_mode_colours` says why in its `problem` attribute).
 
-## Swapping over from the Smiggles automations
+## Swapping over from the old automations
 
 1. Update Battman and restart. Check Settings → Automations: the three
    "Battman Live Activity" automations and the script are there.

@@ -1,16 +1,16 @@
 """Create the Battman engine automations and scripts.
 
-The engine is Smiggles' engine ported like for like (see docs/engine.md): a script that
-decides the battery mode, plus automations that run it and act on Sigen. They're made
+Battman's engine (see docs/engine.md) is a script that decides the battery mode, plus
+automations that run it and act on Sigen. They're made
 from Battman's blueprints and written into automations.yaml and scripts.yaml, exactly
 as if you'd made them from the blueprints in HA's editor, so you can open them, see
 their traces, and read every step.
 
-- Battman creates any that are missing on install, and again when you Migrate.
+- Battman creates any that are missing on install.
 - It never edits or overwrites one that exists. Updates to the engine arrive through
   the blueprints (Battman replaces those on every update), so the automations follow.
-- Every one of them checks binary_sensor.battman_in_charge first: they do nothing
-  until you migrate, and nothing again after Hand back.
+- Every one of them checks binary_sensor.battman_in_charge first (always on now that
+  Battman is the only engine).
 """
 
 from __future__ import annotations
@@ -29,9 +29,9 @@ _LOGGER = logging.getLogger(__name__)
 
 ISSUE_NOT_LOADED = "engine_not_loaded"
 NOTE = (
-    "Battman engine, made by Battman from its blueprint (ported like for like from Smiggles). "
+    "Battman engine, made by Battman from its blueprint. "
     "Does nothing unless Battman is in charge (binary_sensor.battman_in_charge). "
-    "Battman won't overwrite it; delete it and run Migrate (or reinstall) to get Battman's version back."
+    "Battman won't overwrite it; delete it and reinstall to get Battman's version back."
 )
 
 SCRIPTS: dict[str, dict[str, Any]] = {

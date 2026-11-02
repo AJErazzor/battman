@@ -33,11 +33,8 @@ async def _totals(hass):
 
 
 async def _start_totals(hass):
-    """Battman in charge, the totals running (they start on a price-interval change)."""
-    from custom_components.battman.const import IN_CHARGE
-
-    entry, _rec = await H.start(hass, smiggles=False)
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
+    """The totals running (they start on a price-interval change)."""
+    entry, _rec = await H.start(hass)
     await hass.async_block_till_done()
     H.set_world(hass, {"estimate": False})
     await hass.async_block_till_done()
@@ -77,18 +74,6 @@ async def test_set_total_corrects_each_period(hass: HomeAssistant) -> None:
     comp = hass.data["entity_components"]["sensor"]
     ent = next(e for e in comp.entities if e.entity_id == "sensor.battman_buy_total")
     assert ent.extra_state_attributes["day"] == 9
-
-
-async def test_set_total_ignored_when_not_in_charge(hass: HomeAssistant) -> None:
-    from custom_components.battman.const import IN_CHARGE
-
-    entry = await _start_totals(hass)
-    b, _ = await _totals(hass)
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: False})
-    await hass.async_block_till_done()
-    hass.bus.async_fire("battman_totals_update", {"attribute": "SetTotal", "period": "day", "buy": 77, "sell": 77})
-    await hass.async_block_till_done()
-    assert (await _totals(hass))[0].attributes["day"] == b.attributes["day"]
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs Node")

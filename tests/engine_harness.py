@@ -1,7 +1,5 @@
-"""A test Home Assistant with Smiggles' engine (the originals, tests/fixtures/smiggles_engine)
-and Battman's ported engine loaded side by side, the way A.J.'s HA will be on migration day.
-
-Sigen / Amber / Solcast are plain states; Sigen's select / number actions are recorded.
+"""A test Home Assistant with Battman's engine loaded, plus the outside world (Sigen /
+Amber / Solcast as plain states; Sigen's select / number actions are recorded).
 """
 
 from __future__ import annotations
@@ -9,18 +7,13 @@ from __future__ import annotations
 import random
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
 
-import yaml
-
-from tools.smiggles_log_text import plain_log
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-SM = Path(__file__).parent / "fixtures" / "smiggles_engine"
 DOMAIN = "battman"
 
 CONFIG = """homeassistant:
@@ -32,18 +25,12 @@ script: !include scripts.yaml
 """
 
 LOAD_AVG = "sensor.battman_load_30m_avg"
-SMIGGLES_LOAD = "sensor.solarsystemcontrolload30m"
+LOAD_DEFAULT = "1.1"
 
 HELPER_DOMAINS = ("input_boolean", "input_number", "input_select", "input_datetime", "input_text", "timer")
 
-AUTOMATION_FILES = [
-    "SolarSystemControl.yaml", "SolarSystemControlWatchdog.yaml", "SolarSystemControlSigMode.yaml",
-    "SolarSystemControlSigCurtail.yaml", "SolarSystemControlSAPNOverride.yaml",
-    "SolarSystemOverrideTimerInitialDuration.yaml", "SolarSystemControlCopyCurve.yaml",
-]
-
-# the outside world both engines read
-WORLD_DEFAULTS: dict[str, Any] = {
+# the outside world the engine reads
+WORLD_DEFAULTS: dict[str, str] = {
     "sensor.sigen_plant_battery_state_of_charge": "50",
     "sensor.sigen_plant_rated_energy_capacity": "32",
     "sensor.sigen_inverter_rated_active_power": "10",
@@ -57,7 +44,6 @@ WORLD_DEFAULTS: dict[str, Any] = {
     "sensor.sigen_plant_third_party_pv_power": "0",
     "sensor.sigen_plant_total_imported_energy": "12000.5",
     "sensor.sigen_plant_total_exported_energy": "18000.25",
-    SMIGGLES_LOAD: "1.1",
     "number.sigen_plant_grid_export_limitation": "10",
     "number.sigen_plant_pv_max_power_limit": "20",
     "number.sigen_plant_ess_max_charging_limit": "10",
@@ -65,39 +51,11 @@ WORLD_DEFAULTS: dict[str, Any] = {
 }
 
 
-def smiggles_files() -> dict[str, Any]:
-    """Smiggles' packages (as package files), script and automations, as on A.J.'s HA."""
-    pkgs = {}
-    for f in sorted((SM / "packages").glob("*.yaml")):
-        data = yaml.safe_load(f.read_text())
-        # the parts that only run shell commands / command-line sensors (not the engine)
-        data.pop("shell_command", None)
-        data.pop("sensor", None)
-        pkgs[f.name] = data
-    # the one text change Battman made to the engine (log headings instead of emoji), applied to
-    # Smiggles' original too, so both engines' logs can be compared exactly
-    script = yaml.safe_load(plain_log((SM / "scripts/SolarSystemControl.yaml").read_text()))
-    autos = []
-    for name in AUTOMATION_FILES:
-        a = yaml.safe_load((SM / "automations" / name).read_text())
-        a["id"] = "smiggles_" + name.split(".")[0].lower()
-        autos.append(a)
-    return {"packages": pkgs, "scripts": {"solarsystemcontrol": script}, "automations": autos}
-
-
-def write_config(cfg: Path, smiggles: bool = True) -> None:
+def write_config(cfg: Path) -> None:
     (cfg / "configuration.yaml").write_text(CONFIG)
     (cfg / "packages").mkdir(exist_ok=True)
-    if smiggles:
-        files = smiggles_files()
-        (cfg / "packages/smiggles").mkdir(exist_ok=True)
-        for name, data in files["packages"].items():
-            (cfg / "packages/smiggles" / name).write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
-        (cfg / "scripts.yaml").write_text(yaml.safe_dump(files["scripts"], sort_keys=False, allow_unicode=True))
-        (cfg / "automations.yaml").write_text(yaml.safe_dump(files["automations"], sort_keys=False, allow_unicode=True))
-    else:
-        (cfg / "scripts.yaml").write_text("{}\n")
-        (cfg / "automations.yaml").write_text("[]\n")
+    (cfg / "scripts.yaml").write_text("{}\n")
+    (cfg / "automations.yaml").write_text("[]\n")
 
 
 class Recorder:
@@ -118,9 +76,9 @@ class Recorder:
             call.hass.states.async_set(ent, str(data["value"]))
 
 
-async def start(hass: HomeAssistant, smiggles: bool = True, world: dict | None = None) -> tuple[MockConfigEntry, Recorder]:
+async def start(hass: HomeAssistant, world: dict | None = None) -> tuple[MockConfigEntry, Recorder]:
     cfg = Path(hass.config.config_dir)
-    write_config(cfg, smiggles)
+    write_config(cfg)
     rec = Recorder()
     hass.services.async_register("select", "select_option", rec)
     hass.services.async_register("number", "set_value", rec)
@@ -137,7 +95,7 @@ async def start(hass: HomeAssistant, smiggles: bool = True, world: dict | None =
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    # the load average is set by hand (set_world) to the value Smiggles' helper has
+    # the load average is set by hand (set_world); its Statistics sensor is switched off here
     er.async_get(hass).async_update_entity(LOAD_AVG, disabled_by=er.RegistryEntryDisabler.USER)
     await hass.async_block_till_done()
     set_world(hass, world or {})
@@ -153,12 +111,11 @@ def set_world(hass: HomeAssistant, world: dict) -> None:
     states = {**WORLD_DEFAULTS, **{k: v for k, v in world.items() if "." in k}}
     for ent, val in states.items():
         hass.states.async_set(ent, val)
-    # Smiggles reads its 30-minute load helper; Battman works its own out from home power over
-    # 30 minutes (a Statistics sensor, switched off by start() for these runs). For a like-for-like
-    # run both engines see the same average.
+    # the engine reads its 30-minute load average; its Statistics sensor is switched off for these
+    # runs, so set it by hand (default, or the world's "load").
     entry = er.async_get(hass).async_get(LOAD_AVG)
     if entry is not None and entry.disabled_by is not None:
-        hass.states.async_set(LOAD_AVG, states[SMIGGLES_LOAD], {"unit_of_measurement": "kW"})
+        hass.states.async_set(LOAD_AVG, str(world.get("load", LOAD_DEFAULT)), {"unit_of_measurement": "kW"})
     buy = float(world.get("buy", 0.2))
     sell = float(world.get("sell", 0.05))
     rnd = random.Random(world.get("seed", 1))

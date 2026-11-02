@@ -1,9 +1,7 @@
-# Battman dashboard view: Power. Built from Battman cards (custom:battman-<id>),
-# added one at a time as they move over from Smiggles.
+# Battman dashboard view: Power. Built from Battman cards (custom:battman-<id>).
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
 #
-# Layout follows the Smiggles Power view. Each card goes in its original section and
-# position as it moves over:
+# Each card goes in its section and position:
 #   Section 1: house (custom:battman-house: point its items at your own entities in its editor) · battery mode stack · state · profitloss · overrides
 #   Section 2 (2 columns wide): amber5minpricegrid · limits · amber24hourforecasttable
 #   Section 3: gauges · (PV chart, solar forecast: left out for now) · nemmix (generation and demand mix)

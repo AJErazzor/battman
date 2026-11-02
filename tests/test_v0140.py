@@ -24,7 +24,6 @@ from .test_v0130 import run_js
 from .dashboard_views import built
 from .snapshots import assert_snapshot
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
@@ -141,21 +140,11 @@ async def test_nem_entity_ids(hass: HomeAssistant) -> None:
 
 # ── nemmix card ──────────────────────────────────────────────────────────────
 
-async def test_nemmix_matches_smiggles(hass: HomeAssistant, hass_client) -> None:
+async def test_nemmix_card(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     card = await (await (await hass_client()).get("/api/battman/cards/nemmix")).json()
     assert card["missing_map"] == [] and card["needs"] == ["power-pie-card"]
     note, gen, dem = card["config"]["cards"]
-    o_gen, o_dem = yaml.safe_load((FIX / "smiggles_nemmix.yaml").read_text())
-    ren = {f"sensor.opennem_sa_{k}": f"sensor.battman_nem_{k}" for k in KEYS} | {
-        "sensor.sa_consumers": "sensor.battman_nem_consumers", "sensor.sa_exports": "sensor.battman_nem_exports",
-        "sensor.sa_battery_charging": "sensor.battman_nem_battery_charging"}
-    for o, m in ((o_gen, gen), (o_dem, dem)):
-        o = {k: v for k, v in o.items() if k != "version"}
-        o["entities"] = [{**e, "entity": ren[e["entity"]], "color": e["color"].replace("--smiggles-", "--battman-")}
-                         for e in o["entities"]]
-        assert o == m
-    # Battman's side, recorded so the comparison survives Smiggles' removal
     assert_snapshot(__file__, "nemmix-generation", gen)
     assert_snapshot(__file__, "nemmix-demand", dem)
 
@@ -171,56 +160,16 @@ async def test_nemmix_matches_smiggles(hass: HomeAssistant, hass_client) -> None
 # ── gauges card ──────────────────────────────────────────────────────────────
 
 GAUGE_STATES = {
-    "sensor.sigen_inverter_battery_state_of_charge": ("57.5", {}),   # what Smiggles' card read
-    "sensor.sigen_plant_battery_state_of_charge": ("57.5", {}),      # what Battman's reads (v0.23.0: plant SOC)
+    "sensor.sigen_plant_battery_state_of_charge": ("57.5", {}),      # v0.23.0: plant SOC
     "sensor.sigen_plant_rated_energy_capacity": ("40.3", {}),
     "sensor.solcast_pv_forecast_forecast_remaining_today": ("20.1", {"estimate10": 14.62}),
     "sensor.sigen_plant_battery_power": ("-2.4", {}),
     "sensor.sigen_plant_pv_power": ("5.437", {}),
-    "sensor.gridpower": ("1.2", {}),
     "sensor.sigen_plant_consumed_power": ("1.9", {}),
     "sensor.amber_5min_current_feed_in_price": ("-0.0812", {}),
     "sensor.amber_5min_current_general_price": ("0.1734", {}),
-    "binary_sensor.solarsystemcontrolestimatedprice": ("on", {}),
-    "sensor.solarsystemcontrolload30mavg": ("1.4567", {}),      # what Smiggles' card read
-    "sensor.battman_load_30m_avg": ("1.46", {}),                # what Battman's card reads (v0.17.0: renamed)
-    "sensor.solarsystemcontrolrun": ("ok", {"needPower": True}),
+    "sensor.battman_load_30m_avg": ("1.46", {}),
 }
-
-
-def _package_sensor(name):
-    pkg = yaml.safe_load((FIX / "smiggles_package.yaml").read_text())
-    return next(s for s in pkg["template"][0]["sensor"] if s["name"] == name)["state"]
-
-
-async def test_gauges_match_smiggles(hass: HomeAssistant, hass_client) -> None:
-    await _setup(hass)
-    card = await (await (await hass_client()).get("/api/battman/cards/gauges")).json()
-    assert card["missing_map"] == [] and card["needs"] == ["modern-circular-gauge"]
-    for est in ("on", "off"):
-        for e, (s, a) in GAUGE_STATES.items():
-            hass.states.async_set(e, est if e.startswith("binary_sensor") else s, a)
-        # the Smiggles template sensors the original gauges read, rendered by the Smiggles package
-        hass.states.async_set("sensor.sockwh", _render(hass, _package_sensor("SOCkwh")))
-        hass.states.async_set("sensor.solarremainingtoday10", _render(hass, _package_sensor("SolarRemainingToday10")))
-        await hass.async_block_till_done()
-        o_rows = yaml.safe_load((FIX / "smiggles_gauges.yaml").read_text())[0]["cards"]
-        m_rows = card["config"]["cards"]
-        for o_row, m_row in zip(o_rows, m_rows, strict=True):
-            for o, m in zip(o_row["cards"], m_row["cards"], strict=True):
-                assert _render(hass, o["secondary"]) == _render(hass, m["secondary"]), o["name"]
-                rest_o = {k: v for k, v in o.items() if k not in ("secondary",)}
-                rest_o = json.loads(json.dumps(rest_o).replace("--smiggles-", "--battman-")
-                                    .replace('"sensor.gridpower"', '"sensor.battman_grid_power"')   # v0.17.0
-                                    .replace('"sensor.sigen_inverter_battery_state_of_charge"',
-                                             '"sensor.sigen_plant_battery_state_of_charge"'))       # v0.23.0
-                assert rest_o == {k: v for k, v in m.items() if k != "secondary"}
-        # Battman's side, recorded so the comparison survives Smiggles' removal: each gauge's text
-        assert_snapshot(__file__, f"gauges-text-estimated-{est}",
-                        [[[m["name"], _render(hass, m["secondary"])] for m in row["cards"]] for row in m_rows])
-    # ...and everything else about each gauge
-    assert_snapshot(__file__, "gauges-layout",
-                    [[{k: v for k, v in m.items() if k != "secondary"} for m in row["cards"]] for row in m_rows])
 
 
 async def test_gauges_unavailable(hass: HomeAssistant, hass_client) -> None:

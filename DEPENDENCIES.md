@@ -37,17 +37,16 @@ solar inverter (Log card). Settings → Entities → search → Enable.
 
 Battman's own pieces that other parts rely on:
 
-- **Entity map** (`/api/battman/entities`): every Battman page (Battman's engine entities, Smiggles' before you migrate).
+- **Entity map** (`/api/battman/entities`): every Battman page (Battman's engine entities).
 - **Packages** (`homeassistant: packages: !include_dir_named packages` in configuration.yaml): Battman's
   engine sensors and helpers in `packages/battman/`. Without it, a Repair names what's missing.
 - **Themes** (`frontend: themes: !include_dir_merge_named themes` in configuration.yaml): Battman's
   themes in `themes/battman/`. Without it, every Battman page says "no theme" and a Repair says what to add.
 - **automations.yaml / scripts.yaml** included in configuration.yaml (HA's default): Battman's engine
   automations and scripts (and the Live Activity ones) are written there. Without them, a Repair.
-- **Recorder** (HA's default): Migrate copies the cost odometers' long-term statistics. Without it,
-  Migrate still runs and says the statistics weren't copied.
-- **Engine log**: `<config>/battman/engine.log`, written by Battman. Before you migrate, the Log card
-  reads Smiggles' `<config>/smiggles/solar_debug.log`.
+- **Recorder** (HA's default): keeps the cost odometers' long-term statistics (their graphs).
+  Without it, those graphs are empty.
+- **Engine log**: `<config>/battman/engine.log`, written by Battman; the Log card reads it.
 - **NEM sensors** (`sensor.battman_nem_*`, 14 of them, MW): made by Battman from the OpenNEM sensor's
   attributes, because power-pie-card can only read states. They replace hand-made template sensors
   (`sensor.opennem_sa_*`, `sensor.sa_*`): once the NEM mix card checks out, those can go.

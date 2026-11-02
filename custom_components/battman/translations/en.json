@@ -77,26 +77,6 @@
     "create_live_activity": {
       "name": "Create Live Activity automations",
       "description": "Creates any missing Battman Live Activity automations and script from Battman's blueprints. Never changes ones that exist."
-    },
-    "migrate_from_smiggles": {
-      "name": "Migrate from Smiggles",
-      "description": "Moves control of the battery from Smiggles to Battman: turns every Smiggles automation off, copies Smiggles' settings, overrides, rules, curves, odometers, helpers and log into Battman's, then puts Battman in charge. Without confirm it's a dry run that shows what it would do.",
-      "fields": {
-        "confirm": {
-          "name": "Confirm",
-          "description": "Off: dry run (shows the plan, changes nothing). On: migrate."
-        }
-      }
-    },
-    "hand_back_to_smiggles": {
-      "name": "Hand back to Smiggles",
-      "description": "Gives control of the battery back to Smiggles: Battman's engine stops, its values are copied back into Smiggles', and the Smiggles automations that were on are turned back on. Without confirm it's a dry run.",
-      "fields": {
-        "confirm": {
-          "name": "Confirm",
-          "description": "Off: dry run (shows the plan, changes nothing). On: hand back."
-        }
-      }
     }
   },
   "issues": {

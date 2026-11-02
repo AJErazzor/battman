@@ -11,7 +11,6 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 
@@ -101,7 +100,7 @@ async def test_configure_screen(hass: HomeAssistant, hass_client) -> None:
 
     client = await hass_client()
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
-    assert "buy_price" not in emap and emap["sell_total"] == "sensor.solarsystemcontrolselltotal"
+    assert "buy_price" not in emap and emap["sell_total"] == "sensor.battman_sell_total"
     assert "sensor.amber_5min_current_general_price" in json.dumps(await built(hass))
 
 
@@ -147,4 +146,4 @@ async def test_curvy_and_pricy(hass: HomeAssistant, hass_client) -> None:
     assert by_path["pricy"]["cards"][0]["type"] == "custom:battman-pricy" and by_path["pricy"]["title"] == "Pricy"
     emap = (await (await client.get("/api/battman/entities")).json())["entities"]
     assert "sigen_pv_power" not in emap and "pv_power" not in emap        # v0.23.0: Sigen by name, not on the map
-    assert emap["soc_curves_update_event"] == "solar_system_control_soc_curves_update"
+    assert emap["soc_curves_update_event"] == "battman_soc_curves_update"

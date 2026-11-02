@@ -4,8 +4,7 @@ Home battery automation for Home Assistant.
 
 Battman controls a Sigenergy battery from Amber prices and a Solcast solar forecast. It ships its
 engine (as Home Assistant blueprints and packages you can open and trace), a dashboard (Power,
-Curvy, Pricy, Finances, Settings, Log, Theme), its cards and themes. It started as
-[Smiggles](https://github.com/biggls73/Smiggles) and can take over from it (see below).
+Curvy, Pricy, Finances, Settings, Log, Theme), its cards and themes.
 
 ## Install (HACS)
 
@@ -46,9 +45,7 @@ update, so don't edit them.
 **Your own themes** go in `config/themes/battman/custom/`. Battman never touches
 that folder, not on update and not when Battman is removed. The Theme studio's
 **Save to HA** button writes there for you (admins only) and reloads themes.
-Names must start with `Battman `, and can't be the name of a theme Battman ships. Battman themes define only `--battman-*` colours: anything still using
-`--smiggles-*` won't get colours on a Battman theme, so keep Smiggles views on
-Smiggles themes until they move.
+Names must start with `Battman `, and can't be the name of a theme Battman ships. Battman themes define `--battman-*` colours.
 
 ## The Battman dashboard
 
@@ -101,14 +98,11 @@ and keeps them in step when the theme is picked or changes (a Battman update inc
 Battman is in charge. Until a dashboard theme is picked and its colours saved (or if a colour
 can't be read) it's `unknown`, and the `problem` attribute says why.
 
-## The engine, and moving from Smiggles
+## The engine
 
-Battman's engine is Smiggles' engine ported like for like (same decisions, renamed): template
-sensors and helpers in `packages/battman/`, and automations and scripts made from Battman's
-blueprints. It runs while `binary_sensor.battman_in_charge` is on. Today the way to put it in
-charge is **Migrate from Smiggles** (`battman.migrate_from_smiggles`), which turns Smiggles off,
-copies everything across and puts Battman in charge. **Hand back to Smiggles** reverses it.
-Details: [docs/engine.md](docs/engine.md). Step by step: [docs/migration.md](docs/migration.md).
+Battman's engine is template sensors and helpers in `packages/battman/`, and automations and
+scripts made from Battman's blueprints. It runs while **Active**
+(`input_boolean.battman_enable`) is on. Details: [docs/engine.md](docs/engine.md).
 
 **Starting values.** On a fresh install every setting starts at its default and the SOC and price
 curves start as Battman's factory curves (`custom_components/battman/factory_curves.yaml`, the same
@@ -155,8 +149,8 @@ it follows on the Battman dashboard, **Settings → Live Activity**. See
 
 ## Entity map
 
-The map holds Battman's engine entities (`buy_total`, `parameters`, `mode`, …): until you migrate
-from Smiggles they point at Smiggles' entities, after at Battman's. Other integrations' entities
+The map holds Battman's engine entities (`buy_total`, `parameters`, `mode`, …), pointing at
+Battman's own entities. Other integrations' entities
 (Sigen, Amber, Solcast) and Battman's own grid power and load average sensors aren't on it: Battman
 uses them by name, and a Repair names any Sigen, Amber or Solcast entity that's missing (see
 [DEPENDENCIES.md](DEPENDENCIES.md)). Battman's **Configure** screen only has the OpenNEM region,

@@ -2,7 +2,7 @@
 // <battman-countdown></battman-countdown>: counts down to the next 5-minute Amber
 // interval boundary (m:ss), updating every second. It inherits colour and font
 // from its parent, so wrap it in a styled <span> to control how it looks.
-// Battman's copy of Smiggles' amber-countdown (same logic), loaded on every HA page.
+// Battman's amber-countdown, loaded on every HA page.
 class BattmanCountdown extends HTMLElement {
   connectedCallback() {
     this._update();
