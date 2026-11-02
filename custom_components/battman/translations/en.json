@@ -62,11 +62,6 @@
       "nem_consumers": {
         "name": "Battman NEM consumers"
       }
-    },
-    "binary_sensor": {
-      "in_charge": {
-        "name": "In charge"
-      }
     }
   },
   "services": {
