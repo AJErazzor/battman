@@ -23,7 +23,6 @@ from .const import (
     IMAGE_URL,
     IMAGES_URL,
     MIGRATED,
-    SMIGGLES_NAMES,
     SMIGGLES_PROBE,
     THEMES_URL,
 )
@@ -44,12 +43,8 @@ def smiggles_in_charge(hass: HomeAssistant) -> bool:
 
 
 def entity_map(hass: HomeAssistant) -> dict[str, str]:
-    """The entity map: Battman's engine entries, pointing at whichever engine is in charge:
-    Smiggles' entities until you migrate (if Smiggles is installed), Battman's after."""
-    emap = dict(ENTITY_MAP_DEFAULTS)
-    if smiggles_in_charge(hass):
-        emap.update(SMIGGLES_NAMES)
-    return emap
+    """The entity map: Battman's engine entries, pointing at Battman's own entities."""
+    return dict(ENTITY_MAP_DEFAULTS)
 
 
 def _load_views() -> list[tuple[str, Any]]:
