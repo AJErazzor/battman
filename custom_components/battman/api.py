@@ -11,35 +11,20 @@ from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.http import KEY_HASS
 
 from . import cards, images, themes
 from .const import (
     CARDS_URL,
-    DOMAIN,
     ENTITY_MAP_DEFAULTS,
     ENTITY_MAP_URL,
     IMAGE_URL,
     IMAGES_URL,
-    MIGRATED,
-    SMIGGLES_PROBE,
     THEMES_URL,
 )
 
 VIEWS_DIR = Path(__file__).parent / "views"
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
-
-
-def smiggles_in_charge(hass: HomeAssistant) -> bool:
-    """True until you migrate, if Smiggles is installed (its parameters sensor exists)."""
-    entries = hass.config_entries.async_entries(DOMAIN)
-    if entries and entries[0].data.get(MIGRATED):
-        return False
-    if hass.states.get(SMIGGLES_PROBE) is not None:
-        return True
-    # early in HA's start the sensor may not be loaded yet: its registry entry says it exists
-    return er.async_get(hass).async_get(SMIGGLES_PROBE) is not None
 
 
 def entity_map(hass: HomeAssistant) -> dict[str, str]:

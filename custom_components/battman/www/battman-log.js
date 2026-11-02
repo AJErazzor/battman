@@ -479,8 +479,7 @@ function battmanLogRun(card, root) {
   // collapse / expand the log to reach the charts quickly
   $('logToggle').onclick = () => { haptic(); $('logCard').classList.toggle('collapsed'); };
 
-  // The engine log for the chosen range, from Battman (GET /api/battman/log): Battman's log once
-  // you've migrated, Smiggles' log file before that.
+  // The engine log for the chosen range, from Battman (GET /api/battman/log).
   let logRange = null;
   function load() {
     if (!logRange || FATAL) return;

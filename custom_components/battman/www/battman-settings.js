@@ -144,7 +144,7 @@ class BattmanSettingsCard extends BattmanCardBase {
     // the Live Activity: its switch, and its settings on Battman's own parameters sensor (named
     // directly: they're Battman's whichever engine is in charge)
     const LA = { sw: 'switch.battman_live_activity', params: 'sensor.battman_parameters',
-                 event: 'battman_parameters_update', inCharge: 'binary_sensor.battman_in_charge' };
+                 event: 'battman_parameters_update' };
     const LA_RANGE = { liveActivityFollowDelay: [true, 0, 60], liveActivitySpikeAlert: [false, 0, 20] };   // parseNum: [whole number, min, max]
     const NOT_PHONES = ['send_message', 'persistent_notification'];   // notify services that aren't a device
     const LA_MADE = ['script.battman_live_activity_push', 'automation.battman_live_activity_on_off',
@@ -379,10 +379,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       const f = String(A.liveActivityFollow || '').trim(), fe = f ? h.states[f] : null;
       const followNow = !f ? 'Blank: not following anything (use the switch)' : fe ? 'Now: ' + esc((fe.attributes && fe.attributes.friendly_name) || f) + ' is ' + esc(fe.state) : '';
       const notMade = LA_MADE.filter((id) => !h.states[id]);
-      const charge = h.states[LA.inCharge] && h.states[LA.inCharge].state === 'on'
-        ? '' : note("These change once Battman is in charge of the battery (after Migrate): like all Battman's settings, they're ignored until then.", true);
       return note("Your battery on your phone's lock screen. Pick a phone, then switch it on, or let it follow something like your car's ignition.")
-        + charge
         + '<div class="rows">'
         + row('Live Activity', 'On shows it, off clears it', swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
         + row('Phone', 'Which notify service gets it (Off sends nothing)', '<select class="wide" data-la-select="liveActivityPhone">' + phoneOpts + '</select>',
