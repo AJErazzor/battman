@@ -21,7 +21,6 @@ from . import (
     engine,
     engine_log,
     live_activity,
-    migrate,
     package_files,
     required_entities,
     themes,
@@ -52,7 +51,7 @@ PLATFORMS: list[str] = ["binary_sensor", "button", "sensor"]
 DASHBOARD_DONE = "dashboard_created_on_install"
 # Same idea for the Live Activity automations/script (button: Create Live Activity automations).
 LIVE_ACTIVITY_DONE = "live_activity_created_on_install"
-# And the engine automations/scripts (they do nothing until you migrate). Migrate makes any missing.
+# And the engine automations/scripts (they do nothing unless Battman is enabled). Create makes any missing.
 ENGINE_DONE = "engine_created_on_install"
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -153,8 +152,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     package_files.async_start(hass, entry)
     # the engine log file (engine.log): every battman_engine_log event is a line
     entry.async_on_unload(engine_log.async_start(hass))
-    # while Battman is in charge, Smiggles' automations stay off
-    entry.async_on_unload(migrate.async_guard(hass, entry))
 
     async def _map_changed(_hass: HomeAssistant, _entry: ConfigEntry) -> None:
         # the engine blueprints carry map entries: rewrite them when the map changes
