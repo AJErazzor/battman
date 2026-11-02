@@ -232,9 +232,9 @@ def test_house_card_defaults_are_battmans() -> None:
 def test_tidy_ups() -> None:
     assert not (ROOT / "strings.json").exists()
     assert json.loads((ROOT / "manifest.json").read_text())["iot_class"] == "calculated"
-    for name in ("button.py", "binary_sensor.py"):          # v0.26.0: what's left on the Battman device
-        text = (ROOT / name).read_text()
-        assert "DeviceInfo(" not in text and "device_info(entry)" in text, name
+    text = (ROOT / "button.py").read_text()                 # v0.26.0: what's on the Battman device
+    assert "DeviceInfo(" not in text and "device_info(entry)" in text
+    assert not (ROOT / "binary_sensor.py").exists()         # the in-charge sensor is gone
 
 
 async def test_estimated_price_unavailable_without_times(hass: HomeAssistant, caplog) -> None:
