@@ -1,5 +1,5 @@
 """v0.17.0: Battman's package files (packages/battman/), with the grid power template sensor
-(Smiggles' GridPower, renamed so history carries over) and the 30-minute load average (a
+(renamed so history carries over) and the 30-minute load average (a
 Statistics sensor of home power since v0.19.0), the Log page's grid graph from import / export
 history."""
 
@@ -9,18 +9,15 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from .snapshots import assert_snapshot
 
 DOMAIN = "battman"
-FIX = Path(__file__).parent / "fixtures"
 LOG = Path(__file__).parents[1] / "custom_components/battman/www/battman-log.js"
 IMP, EXP = "sensor.sigen_plant_grid_import_power", "sensor.sigen_plant_grid_export_power"
 HOME = "sensor.sigen_plant_consumed_power"
@@ -41,33 +38,24 @@ async def _setup(hass, packages=True):
     return entry
 
 
-def _smiggles(name):
-    pkg = yaml.safe_load((FIX / "smiggles_package.yaml").read_text())
-    return next(s for s in pkg["template"][0]["sensor"] if s["name"] == name)["state"]
-
-
-async def test_grid_power_matches_smiggles(hass: HomeAssistant) -> None:
+async def test_grid_power(hass: HomeAssistant) -> None:
     await _setup(hass)
-    tpl = Template(_smiggles("GridPower"), hass)
     seen = []
     for imp, exp in CASES:
         hass.states.async_set(IMP, imp)
         hass.states.async_set(EXP, exp)
         await hass.async_block_till_done()
         st = hass.states.get("sensor.battman_grid_power")
-        assert float(st.state) == float(tpl.async_render(parse_result=False).strip()), (imp, exp)
         assert st.attributes["unit_of_measurement"] == "kW" and st.attributes["device_class"] == "power"
         seen.append({"import": imp, "export": exp, "state": st.state})
     hass.states.async_set(EXP, "unavailable")
     await hass.async_block_till_done()
-    assert hass.states.get("sensor.battman_grid_power").state == "unavailable"     # Smiggles showed 0
-    # Battman's grid power per case, recorded while it matches Smiggles' GridPower above
+    assert hass.states.get("sensor.battman_grid_power").state == "unavailable"     # unavailable, never 0
     assert_snapshot(__file__, "grid-power", seen)
 
 
 async def test_load_30m_avg_is_the_mean_of_home_power(hass: HomeAssistant) -> None:
-    """v0.19.0: a Statistics sensor of home power (the same settings as Smiggles' helper:
-    mean, 30 minutes, 2 decimals), not a copy of that helper."""
+    """v0.19.0: a Statistics sensor of home power (mean, 30 minutes, 2 decimals)."""
     await _setup(hass)
     for v in ("2.0", "3.456"):
         hass.states.async_set(HOME, v, {"unit_of_measurement": "kW"})
@@ -117,9 +105,9 @@ async def test_load_avg_keeps_its_entity_when_it_moves_off_template(hass: HomeAs
     assert reg.async_get_entity_id("sensor", "template", "battman_grid_power") == "sensor.battman_grid_power"
 
 
-async def test_renamed_smiggles_sensor_keeps_its_entity(hass: HomeAssistant) -> None:
+async def test_renamed_sensor_keeps_its_entity(hass: HomeAssistant) -> None:
     """The rename path: a sensor already registered with this unique ID under another entity
-    ID (as after adding the unique_id to Smiggles' GridPower and renaming it) is the same entity."""
+    ID is the same entity (so its history carries over)."""
     reg = er.async_get(hass)
     reg.async_get_or_create("sensor", "template", "battman_grid_power", suggested_object_id="gridpower")
     await _setup(hass)

@@ -11,7 +11,6 @@ from .dashboard_views import built
 from .snapshots import assert_snapshot
 
 DOMAIN = "battman"
-ORIG = Path(__file__).parent / "fixtures" / "smiggles_limits.yaml"
 
 
 async def _setup(hass):
@@ -49,36 +48,15 @@ async def test_cards_api(hass: HomeAssistant, hass_client) -> None:
     assert r.status in (400, 404)                               # never read outside the card folders
 
 
-async def test_limits_matches_smiggles(hass: HomeAssistant, hass_client) -> None:
-    """Filled in, the Battman limits card is the Smiggles one except the intended changes."""
+async def test_limits_card(hass: HomeAssistant, hass_client) -> None:
+    """The filled-in Battman limits card: every tile, its fields and its JS (snapshot)."""
     await _setup(hass)
     card = await (await (await hass_client()).get("/api/battman/cards/limits")).json()
-    orig = yaml.safe_load(ORIG.read_text())[0]
-
-    def norm(x):
-        if isinstance(x, dict):
-            return {k: norm(v) for k, v in x.items()}
-        if isinstance(x, list):
-            return [norm(v) for v in x]
-        if isinstance(x, str):
-            return x.replace("--smiggles-", "--battman-")
-        return x
-
-    o, m = norm(orig), card["config"]
-    tiles_o = o["cards"][0]["cards"]
-    tiles_m = m["cards"][0]["cards"]
-    assert len(tiles_o) == len(tiles_m) == 3
-    for to, tm in zip(tiles_o, tiles_m):
-        assert to["entity"] == tm["entity"]
-        assert {k: v for k, v in to.items() if k != "custom_fields"} == {k: v for k, v in tm.items() if k != "custom_fields"}
-        js_o, js_m = to["custom_fields"]["c"], tm["custom_fields"]["c"]
-        assert js_o.replace("var v = Math.round(parseFloat(entity.state)), u = entity.attributes.unit_of_measurement || '';",
-                            "var n = parseFloat(entity.state), v = isNaN(n) ? '—' : Math.round(n), u = entity.attributes.unit_of_measurement;   // unavailable shows —, never NaN"
-                            ).replace("(u ? '<span", "(u && !isNaN(n) ? '<span") == js_m
-    assert {k: v for k, v in o.items() if k != "cards"} == {k: v for k, v in m.items() if k != "cards"}
-    assert {k: v for k, v in o["cards"][0].items() if k != "cards"} == {k: v for k, v in m["cards"][0].items() if k != "cards"}
-    # Battman's side, recorded so the comparison survives Smiggles' removal: the whole filled-in
-    # card (every tile, its fields and its JS), which is everything compared above.
+    m = card["config"]
+    tiles = m["cards"][0]["cards"]
+    assert len(tiles) == 3
+    for t in tiles:
+        assert t["entity"] and "c" in t["custom_fields"]
     assert_snapshot(__file__, "limits-config", m)
 
 

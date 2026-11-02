@@ -138,7 +138,7 @@ async def test_overrides_card_loads(hass: HomeAssistant, hass_client) -> None:
     for old in (r"smiggles", r"solarsystemcontrol", r"(?<![a-z])ssc", r"kwh_per_pct:"):
         assert not re.search(old, raw, re.I), old
     text = json.dumps(card["config"])
-    assert "/battmanfiles/battman-lib.js" in text and "script.ssc_apply_scene" in text      # the map's scene script
+    assert "/battmanfiles/battman-lib.js" in text and "script.battman_apply_scene" in text      # the map's scene script
     power = (await built(hass))["views"][0]
     assert power["sections"][0]["cards"][-1] == {"type": "custom:battman-overrides"}
 

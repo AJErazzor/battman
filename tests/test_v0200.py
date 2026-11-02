@@ -40,10 +40,10 @@ def test_log_card_is_a_real_card() -> None:
     assert 'const LOG_EVENT = "battman_engine_log";' in JS and "subscribeEvents(" in JS
     assert "setInterval(load" not in JS and "3000)" not in JS
     assert "setInterval(refreshChart, 60000)" in JS
-    # same blocks, same per-device order key (and the one-time move from Smiggles' key)
+    # same blocks, same per-device order key
     for block in ("controls", "log", "mode"):
         assert f'data-block="{block}"' in JS
-    assert "'battman.logOrder'" in JS and "smigglesLogOrderV1" in JS
+    assert "'battman.logOrder'" in JS
 
 
 def test_log_card_on_the_log_view() -> None:

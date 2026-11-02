@@ -36,10 +36,10 @@ async def test_dashboard_views_fill_the_map(hass: HomeAssistant, hass_client) ->
     text = json.dumps(view)
     assert "{{" not in text                                  # every placeholder filled
     assert "--smiggles-" not in text                         # Battman colours only
-    # the Finances cards fill the map themselves (Smiggles' entities here: it's in charge)
+    # the Finances cards fill the map themselves (Battman's engine entities)
     billing = await (await client.get("/api/battman/cards/billing")).json()
     btext = json.dumps(billing["config"])
-    assert "sensor.solarsystemcontrolbuytotal" in btext and "solarsystemcontrolparametersupdate" in btext
+    assert "sensor.battman_buy_total" in btext and "battman_parameters_update" in btext
     assert [b["entity"] for b in view["badges"]] == [
         "sensor.sigen_plant_battery_state_of_charge",
         "sensor.amber_5min_current_general_price",

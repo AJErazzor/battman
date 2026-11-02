@@ -16,8 +16,8 @@ pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
-SELL, BUY, PAR = ("sensor.solarsystemcontrolselltotal", "sensor.solarsystemcontrolbuytotal",
-                  "sensor.solarsystemcontrolparameters")
+SELL, BUY, PAR = ("sensor.battman_sell_total", "sensor.battman_buy_total",
+                  "sensor.battman_parameters")
 
 
 async def _card(hass, hass_client):

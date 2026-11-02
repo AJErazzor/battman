@@ -5,7 +5,6 @@ import shutil
 from pathlib import Path
 
 import pytest
-import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -14,13 +13,12 @@ from .test_v0130 import run_js
 from .dashboard_views import built
 from .snapshots import assert_snapshot
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 ENGINELOG = (Path(__file__).parents[1] / "custom_components/battman/www/battman-enginelog.js").read_text()
 FIX = Path(__file__).parent / "fixtures"
 CARDS = Path(__file__).parents[1] / "custom_components/battman/cards"
-LOG = "sensor.solar_system_control_debug_log"
+LOG = "sensor.battman_engine_log"
 needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node to run the cards' JavaScript")
 
 
@@ -38,30 +36,17 @@ def _popup(cfg):
     return cfg["cards"][0]["cards"][2]["tap_action"]["browser_mod"]["data"]
 
 
-async def test_batterymode_matches_smiggles(hass: HomeAssistant, hass_client) -> None:
-    """Filled in, every button (entities, services, options, templates, styles, fx) is the
-    original's with --smiggles- -> --battman-; only the info popup was redone."""
+async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
+    """The battery-mode card: entities, services, options, templates, styles, fx (snapshot)."""
     _client, card = await _card(hass, hass_client, "batterymode")
     assert card["missing_map"] == [] and card["needs"] == ["button-card"]
     raw = (CARDS / "batterymode.yaml").read_text().lower()
     for old in ("smiggles", "solarsystemcontrol", "solar_system_control", "ssc"):
         assert old not in raw, old
-    o = yaml.safe_load((FIX / "smiggles_batterymode.yaml").read_text())[0]
-    m = card["config"]
-
-    def norm(x):
-        if isinstance(x, dict):
-            return {k: norm(v) for k, v in x.items() if k != "version"}
-        if isinstance(x, list):
-            return [norm(v) for v in x]
-        return x.replace("--smiggles-", "--battman-") if isinstance(x, str) else x
-
-    o, m = norm(o), json.loads(json.dumps(m))
-    _popup(o).clear()
+    m = json.loads(json.dumps(card["config"]))
     _popup(m).clear()
-    assert o == m
 
-    # every service call a button makes, listed: the same as the original's
+    # every service call a button makes, listed
     def calls(x, out):
         if isinstance(x, dict):
             if x.get("action") == "call-service":
@@ -106,7 +91,7 @@ async def test_engine_log_popup(hass: HomeAssistant, hass_client) -> None:
     assert "max-height:82vh" in full and "var(--battman-surface-popup)" in full
     assert f"Engine log: missing {LOG}" in out[1] and "No data" not in out[1]
     assert "has no log message yet" in out[2]
-    # the popup replaced Smiggles' (so not in the comparison above): recorded as it draws
+    # the engine log popup: recorded as it draws
     assert_snapshot(__file__, "enginelog-popup", {k: v for k, v in pop.items() if k != "content"})
     assert_snapshot(__file__, "enginelog-popup-template", pop["content"])
     for name, text in zip(("sample", "no-sensor", "blank-message"), out, strict=True):
