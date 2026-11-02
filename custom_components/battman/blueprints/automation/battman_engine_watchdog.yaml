@@ -4,7 +4,7 @@
 
 blueprint:
   name: Battman engine – watchdog
-  description: Forces Self Consume if the engine stops running, and clears overrides / net targets when their timer, target or reset time says so. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  description: Forces Self Consume if the engine stops running, and clears overrides / net targets when their timer, target or reset time says so.
   domain: automation
   source_url: https://github.com/AJErazzor/battman
   input: {}
@@ -27,9 +27,6 @@ triggers:
     entity_id: timer.battman_override_timer
   id: Timer Cancelled
 conditions:
-- condition: state
-  entity_id: binary_sensor.battman_in_charge
-  state: 'on'
 - condition: state
   entity_id: input_boolean.battman_enable
   state:

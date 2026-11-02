@@ -9,8 +9,6 @@ their traces, and read every step.
 - Battman creates any that are missing on install.
 - It never edits or overwrites one that exists. Updates to the engine arrive through
   the blueprints (Battman replaces those on every update), so the automations follow.
-- Every one of them checks binary_sensor.battman_in_charge first (always on now that
-  Battman is the only engine).
 """
 
 from __future__ import annotations
@@ -30,7 +28,6 @@ _LOGGER = logging.getLogger(__name__)
 ISSUE_NOT_LOADED = "engine_not_loaded"
 NOTE = (
     "Battman engine, made by Battman from its blueprint. "
-    "Does nothing unless Battman is in charge (binary_sensor.battman_in_charge). "
     "Battman won't overwrite it; delete it and reinstall to get Battman's version back."
 )
 

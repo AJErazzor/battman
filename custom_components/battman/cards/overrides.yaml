@@ -7,7 +7,7 @@
 # config/battman/cards/overrides.yaml and edit that copy.
 #
 # Settings change by firing the parameters update event (SetAttribute) and starting or
-# cancelling the override timer, exactly as before, so the current engine stays in charge.
+# cancelling the override timer, exactly as before.
 # Rows and popups come from Battman's library (/battmanfiles/battman-lib.js, window.BattmanLib).
 # The rows' settings block is written once (&settings) and shared.
 # No made-up values: a row's kWh uses the rated capacity sensor (shows — if it's missing),

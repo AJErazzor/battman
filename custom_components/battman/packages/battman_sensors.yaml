@@ -73,7 +73,7 @@ template:
 
   # The Live Activity on/off switch (Battman addition). Its state is the parameters sensor's
   # liveActivity setting; turning it on or off sets that, like every other Battman setting (so
-  # it only changes while Battman is in charge). Anything can flip it: you, the dashboard, or
+  # it follows the settings). Anything can flip it: you, the dashboard, or
   # the Live Activity automations (follow an entity, the keep-alive restart).
   - switch:
       - name: Battman Live Activity
@@ -119,16 +119,13 @@ template:
     - platform: event
       event_type: battman_soc_curves_update
     # start / templates reloaded: fill in the factory curves if there are none yet (a fresh
-    # install), keep yours otherwise. Changes (the update event) only while Battman is in charge.
+    # install), keep yours otherwise. Changes come from the update event.
     - platform: homeassistant
       event: start
       id: start
     - platform: event
       event_type: event_template_reloaded
       id: start
-    condition:
-      - condition: template
-        value_template: "{{ trigger.id == 'start' or is_state('binary_sensor.battman_in_charge', 'on') }}"
     sensor:
     - name: "Battman SOC curves"
       unique_id: battman_soc_curves
@@ -177,16 +174,13 @@ template:
     - platform: event
       event_type: battman_price_curves_update
     # start / templates reloaded: fill in the factory curves if there are none yet (a fresh
-    # install), keep yours otherwise. Changes (the update event) only while Battman is in charge.
+    # install), keep yours otherwise. Changes come from the update event.
     - platform: homeassistant
       event: start
       id: start
     - platform: event
       event_type: event_template_reloaded
       id: start
-    condition:
-      - condition: template
-        value_template: "{{ trigger.id == 'start' or is_state('binary_sensor.battman_in_charge', 'on') }}"
     sensor:
     - name: "Battman price curves"
       unique_id: battman_price_curves
@@ -228,10 +222,6 @@ template:
   - trigger:
       - platform: event
         event_type: battman_engine_log
-    condition:
-      - condition: state
-        entity_id: binary_sensor.battman_in_charge
-        state: "on"
     sensor:
       - name: "Battman engine log"
         unique_id: battman_engine_log

@@ -625,14 +625,14 @@ window.BattmanLib.applyTotal = function (btn, period) {
   if (!confirm('Set ' + label + ':\n\nSell  $' + oldS + ' → $' + data.sell.toFixed(4) + '\nBuy   $' + oldB + ' → $' + data.buy.toFixed(4) + '\n\nThis overwrites the running totals.')) return;
   say('Applying…', true);
   hass.callWS({ type: 'fire_event', event_type: ids.event, event_data: data }).then(function () {
-    // check the sensors took it (they ignore it if Battman isn't in charge): no silent success
+    // check the sensors took it: no silent success
     var t0 = Date.now();
     (function check() {
       var st = document.querySelector('home-assistant').hass.states;
       var okB = Math.abs(parseFloat(st[ids.buy].attributes[period]) - data.buy) < 0.00005;
       var okS = Math.abs(parseFloat(st[ids.sell].attributes[period]) - data.sell) < 0.00005;
       if (okB && okS) return say('✓ ' + label + ' updated', true);
-      if (Date.now() - t0 > 5000) return say(label + ': not changed. The totals ignored it (is Battman in charge of the battery?)', false);
+      if (Date.now() - t0 > 5000) return say(label + ': not changed. The totals ignored it', false);
       setTimeout(check, 300);
     })();
   }, function (e) { say('Error: ' + ((e && e.message) || e), false); });
@@ -640,9 +640,9 @@ window.BattmanLib.applyTotal = function (btn, period) {
 
 // ---------------------------------------------------------------------------------------------
 // Battman: a save you can trust. Sends the event, then waits for the sensor to show the change
-// (Battman's sensors ignore changes while it isn't in charge, or values they won't accept), and
+// (Battman's sensors ignore values they won't accept), and
 // says what happened in HA's own toast, which survives the card redrawing with the new value.
-window.BattmanLib.NOT_SAVED = "Not saved: Battman didn't take it (it ignores changes while it isn't in charge of the battery)";
+window.BattmanLib.NOT_SAVED = "Not saved: Battman didn't take it";
 window.BattmanLib.toast = function (el, message) {
   (el || document.querySelector('home-assistant')).dispatchEvent(new CustomEvent('hass-notification', { detail: { message: message }, bubbles: true, composed: true }));
 };
@@ -711,15 +711,13 @@ window.BattmanLib.themeModeColours = function (themes, name) {
 };
 
 // Keep the saved colours in step: checked when a page opens and every 15 seconds after. Only
-// while Battman is in charge (its settings change only then) and for a user who may fire events.
-// Battman's own settings sensor, whichever engine is in charge: it only changes while Battman is.
+// for a user who may fire events.
 (function keepThemeColours() {
   var PARAMS = 'sensor.battman_parameters', EVENT = 'battman_parameters_update', busy = false, sent = '';
   function check() {
     var ha = document.querySelector('home-assistant'), hass = ha && ha.hass;
     if (!hass || !hass.themes || busy) return;
-    var inCharge = hass.states['binary_sensor.battman_in_charge'];
-    if (!inCharge || inCharge.state !== 'on' || (hass.user && !hass.user.is_admin)) return;
+    if (hass.user && !hass.user.is_admin) return;
     var p = hass.states[PARAMS], name = p && String(p.attributes.dashboardTheme || '').trim();
     if (!name) return;
     var want = window.BattmanLib.themeModeColours(hass.themes.themes, name), key = JSON.stringify(want);

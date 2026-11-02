@@ -4,7 +4,7 @@
 
 blueprint:
   name: Battman engine – SAPN override
-  description: Puts the export limit back to 0 if it's raised while curtailing. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  description: Puts the export limit back to 0 if it's raised while curtailing.
   domain: automation
   source_url: https://github.com/AJErazzor/battman
   input: {}
@@ -14,9 +14,6 @@ triggers:
   - number.sigen_plant_grid_export_limitation
   above: 0
 conditions:
-- condition: state
-  entity_id: binary_sensor.battman_in_charge
-  state: 'on'
 - condition: state
   entity_id: input_boolean.battman_no_export
   state:

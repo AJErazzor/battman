@@ -12,10 +12,6 @@ template:
         entity_id: binary_sensor.battman_estimated_price
 
 
-    condition:
-      - condition: state
-        entity_id: binary_sensor.battman_in_charge
-        state: "on"
     sensor:
       - name: "Battman power provider buy"
         unique_id: battman_power_provider_buy

@@ -94,8 +94,7 @@ Solar Soak) get the theme's other palette colours that look most different from 
 out per theme, so all eight are always clearly different (the Log card uses the same list). It's
 for things that can't read theme colours, like an iPhone Live Activity. It's a template sensor in Battman's packages: templates can't see HA's
 themes, so an open Battman page works the colours out and saves them in Battman's settings,
-and keeps them in step when the theme is picked or changes (a Battman update included), while
-Battman is in charge. Until a dashboard theme is picked and its colours saved (or if a colour
+and keeps them in step when the theme is picked or changes (a Battman update included). Until a dashboard theme is picked and its colours saved (or if a colour
 can't be read) it's `unknown`, and the `problem` attribute says why.
 
 ## The engine

@@ -254,7 +254,7 @@ says on the card if the mode entity, the Battman card library or the Battman the
 
 `custom:battman-settings` is every Battman setting on one card, in sections you can drag between
 two columns (the order is kept per device). Each change is sent to Battman and checked: it shows
-**✓ Saved**, or why not (a value out of range, or Battman not in charge of the battery). It has no
+**✓ Saved**, or why not (for example a value out of range). It has no
 options.
 
 ## Battman Theme studio

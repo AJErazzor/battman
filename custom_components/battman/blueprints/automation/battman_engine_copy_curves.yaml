@@ -4,7 +4,7 @@
 
 blueprint:
   name: Battman engine – copy curves to next month
-  description: At 8pm on the last day of the month, copies this month's SOC and price curves into next month. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  description: At 8pm on the last day of the month, copies this month's SOC and price curves into next month.
   domain: automation
   source_url: https://github.com/AJErazzor/battman
   input: {}
@@ -12,9 +12,6 @@ triggers:
 - at: '20:00:00'
   trigger: time
 conditions:
-- condition: state
-  entity_id: binary_sensor.battman_in_charge
-  state: 'on'
 - condition: template
   value_template: |
     {{ (now() + timedelta(days=1)).day == 1 }}

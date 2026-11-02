@@ -44,8 +44,8 @@ export function wireHandlers(root, handlers) {
 
 export const hourLabel = (h) => (h === 0 ? "12am" : h < 12 ? `${h}am` : h === 12 ? "12pm" : `${h - 12}pm`);
 
-// Battman's curves sensors ignore changes while Battman isn't in charge of the battery.
-export const NOT_SAVED = "Not saved: Battman didn't take it (it ignores changes while it isn't in charge of the battery)";
+// Battman's curves sensors ignore values they won't accept.
+export const NOT_SAVED = "Not saved: Battman didn't take it";
 function sameData(a, b) {
   if (typeof a === "number" || typeof b === "number") return Math.abs(Number(a) - Number(b)) < 1e-6;
   if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((x, i) => sameData(x, b[i]));

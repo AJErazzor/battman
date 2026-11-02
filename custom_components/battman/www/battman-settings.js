@@ -142,7 +142,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       billing: ['dailyNetworkCharge', 'billDayOfMonth'],
     };
     // the Live Activity: its switch, and its settings on Battman's own parameters sensor (named
-    // directly: they're Battman's whichever engine is in charge)
+    // directly)
     const LA = { sw: 'switch.battman_live_activity', params: 'sensor.battman_parameters',
                  event: 'battman_parameters_update' };
     const LA_RANGE = { liveActivityFollowDelay: [true, 0, 60], liveActivitySpikeAlert: [false, 0, 20] };   // parseNum: [whole number, min, max]
@@ -225,11 +225,11 @@ class BattmanSettingsCard extends BattmanCardBase {
         try { if (check()) { say(el, '✓ Saved', 'ok'); return true; } } catch (e) {}
         await new Promise((r) => setTimeout(r, 250));
       }
-      say(el, 'Not saved: ' + (what || 'the setting') + " didn't change. Battman ignores changes while it isn't in charge of the battery.", 'bad');
+      say(el, 'Not saved: ' + (what || 'the setting') + " didn't change.", 'bad');
       return false;
     }
     const fire = (key, data) => getHass().callWS({ type: 'fire_event', event_type: M[key], event_data: data });
-    // a Live Activity setting: Battman's own parameters sensor, whichever engine is in charge
+    // a Live Activity setting: Battman's own parameters sensor
     const laAttr = (key) => ((st(LA.params) || {}).attributes || {})[key];
     const setLA = (el, key, value, check, what) => apply(el, () => getHass().callWS({ type: 'fire_event', event_type: LA.event,
       event_data: { action: 'SetAttribute', [key]: value } }), check, what);
