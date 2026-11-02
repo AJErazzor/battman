@@ -12,15 +12,13 @@ import pytest
 import yaml
 from homeassistant.core import HomeAssistant
 
-from tools.smiggles_log_text import LOG_TEXT, plain_log
-
 from . import engine_harness as H
 from .snapshots import assert_snapshot
 
 ROOT = Path(__file__).parents[1]
 WWW = ROOT / "custom_components/battman/www"
 ENGINELOG = (WWW / "battman-enginelog.js").read_text()
-SAMPLE = (Path(__file__).parent / "fixtures/engine_log_sample.txt").read_text()   # a Smiggles message
+SAMPLE = (Path(__file__).parent / "fixtures/engine_log_sample.txt").read_text()   # an older emoji-format message
 EMOJI = re.compile(r"[\U0001F300-\U0001FAFF☀-➿ℹ]")
 HEADS = ["Mode", "Prices", "Battery", "SOC Limits", "Solar", "Actions", "Sell Forecasts", "Buy Forecasts",
          "Version", "Debug"]
@@ -39,9 +37,6 @@ def test_engine_script_has_no_emoji() -> None:
     for head in ("Run: {{ now()", "Mode:", "Prices:", "Battery:", "SOC Limits:", "Solar:", "Actions:",
                  "Sell Forecasts:", "Buy Forecasts:", "Version:", "Debug: ", "(Spike 1)", "(Spike 2)", "(Bad!)"):
         assert head in text, head
-    # the change is exactly the listed one, each once, on Smiggles' original
-    orig = (Path(__file__).parent / "fixtures/smiggles_engine/scripts/SolarSystemControl.yaml").read_text()
-    assert len(LOG_TEXT) == 16 and not EMOJI.findall(plain_log(orig)[orig.index("prettyMessage"):orig.index("alias: Debug Message")])
     # Battman's log text (the Debug Message step's prettyMessage): the headings and lines above
     steps = yaml.safe_load(text)["sequence"]
     pretty = [s["variables"]["prettyMessage"] for s in steps if "prettyMessage" in s.get("variables", {})]
@@ -52,10 +47,8 @@ def test_engine_script_has_no_emoji() -> None:
 async def test_battman_log_reads_back_as_sections(hass: HomeAssistant) -> None:
     """A real Battman run: its message, and its line in engine.log, draw the same sections, no emoji."""
     from custom_components.battman import engine_log
-    from custom_components.battman.const import IN_CHARGE
 
     entry, _rec = await H.start(hass)
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute"})
     import random
     soc, price = H.curves(random.Random(3))
@@ -76,8 +69,8 @@ async def test_battman_log_reads_back_as_sections(hass: HomeAssistant) -> None:
     assert a["time"] and a["from"] and a["to"]
 
 
-def test_smiggles_lines_still_read() -> None:
-    """Smiggles' lines (copied in at migration): as a message, and flattened in the log file."""
+def test_older_emoji_lines_still_read() -> None:
+    """Older emoji-format lines: as a message, and flattened in the log file."""
     flat = "2026-10-20T16:10:34.1+10:30|" + SAMPLE.replace("\n", " ")
     a, b, html = js([f"L.parse({json.dumps(SAMPLE)})", f"L.parse(L.fromFileLine({json.dumps(flat)}).message)",
                      f"L.render({json.dumps(SAMPLE)}, {{title: 'Engine log'}})"])

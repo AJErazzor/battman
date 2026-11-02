@@ -91,8 +91,6 @@ from pathlib import Path
 from homeassistant.core import State
 from pytest_homeassistant_custom_component.common import mock_restore_cache
 
-from custom_components.battman.const import IN_CHARGE
-
 OLD = {  # the old entities: (domain, key) -> (entity_id, last state)
     ("switch", "live_activity"): ("switch.battman_live_activity", "on"),
     ("select", "live_activity_phone"): ("select.battman_live_activity_phone", "mobile_app_ajs_iphone"),
@@ -104,10 +102,10 @@ OLD = {  # the old entities: (domain, key) -> (entity_id, last state)
 }
 
 
-async def _updated_from_v025(hass, in_charge=True):
+async def _updated_from_v025(hass):
     """A v0.25.0 install with its Live Activity setting entities and their saved values, updated."""
     (Path(hass.config.config_dir) / "configuration.yaml").write_text("homeassistant:\n  packages: !include_dir_named packages\n")
-    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={IN_CHARGE: in_charge})
+    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
     entry.add_to_hass(hass)
     reg = er.async_get(hass)
     for (domain, key), (entity_id, _v) in OLD.items():
@@ -135,12 +133,6 @@ async def test_live_activity_settings_carried_over(hass: HomeAssistant) -> None:
             assert hass.states.get(entity_id).state == "on"
         else:
             assert e is None and hass.states.get(entity_id) is None, entity_id
-
-
-async def test_not_carried_over_when_not_in_charge(hass: HomeAssistant, caplog) -> None:
-    await _updated_from_v025(hass, in_charge=False)
-    assert hass.states.get("sensor.battman_parameters").attributes["liveActivityPhone"] == "Off"
-    assert "couldn't be carried over" in caplog.text and "mobile_app_ajs_iphone" in caplog.text
 
 
 async def test_battman_device_now(hass: HomeAssistant) -> None:

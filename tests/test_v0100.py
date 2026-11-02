@@ -13,8 +13,6 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.battman.const import IN_CHARGE
-
 DOMAIN = "battman"
 SW = "switch.battman_live_activity"
 PARAMS = "sensor.battman_parameters"
@@ -36,14 +34,14 @@ def _write_config(hass, include=True):
     (cfg / "scripts.yaml").write_text("{}\n")
 
 
-async def _setup(hass, include=True, in_charge=True):
+async def _setup(hass, include=True):
     _write_config(hass, include)
     config = await conf_util.async_hass_config_yaml(hass)
     assert await async_setup_component(hass, "homeassistant", {})
     assert await async_setup_component(hass, "lovelace", {})
     assert await async_setup_component(hass, "automation", config)
     assert await async_setup_component(hass, "script", config)
-    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={IN_CHARGE: in_charge})
+    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -126,14 +124,6 @@ async def test_settings(hass: HomeAssistant) -> None:
     await _set(hass, liveActivityFollowDelay=5, liveActivitySpikeAlert=0.45, liveActivityPhone="test_phone")
     assert (_la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert"), _la(hass, "liveActivityPhone")) == \
            (5, 0.45, "test_phone")
-
-
-async def test_only_while_in_charge(hass: HomeAssistant) -> None:
-    """Like all Battman settings: ignored until Battman is in charge (the switch springs back)."""
-    await _setup(hass, in_charge=False)
-    await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
-    await _settle(hass)
-    assert hass.states.get(SW).state == "off" and _la(hass, "liveActivity") is False
 
 
 async def _states(hass, mode="Charge"):

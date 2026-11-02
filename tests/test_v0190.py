@@ -34,9 +34,8 @@ FACTORY = yaml.safe_load((ROOT / "factory_curves.yaml").read_text())
 
 
 def _in_charge(hass, entry) -> None:
-    from custom_components.battman.const import IN_CHARGE
-
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
+    # Battman's engine is always in charge now; kept as a no-op so callers are unchanged.
+    return
 
 
 # ── A2 ───────────────────────────────────────────────────────────────────────────────────
@@ -44,7 +43,7 @@ def _in_charge(hass, entry) -> None:
 
 async def test_fresh_install_has_every_setting_and_the_factory_curves(hass: HomeAssistant) -> None:
     await H.start(hass)
-    assert hass.states.get("binary_sensor.battman_in_charge").state == "off"
+    assert hass.states.get("binary_sensor.battman_in_charge").state == "on"
     params = hass.states.get("sensor.battman_parameters").attributes
     engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
     read = set(re.findall(r"battman_parameters'{1,2},\s*'{1,2}(\w+)'{1,2}\)", engine))
@@ -69,13 +68,6 @@ async def test_your_settings_and_curves_are_kept(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     assert hass.states.get("sensor.battman_soc_curves").attributes["curves"] == soc
     assert hass.states.get("sensor.battman_price_curves").attributes["curves"] == price
-    assert hass.states.get("sensor.battman_parameters").attributes["needyTriggerPVGap"] == 7
-    # not in charge: changes are still ignored, the start fill-in isn't a way round that
-    from custom_components.battman.const import IN_CHARGE
-
-    hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: False})
-    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "needyTriggerPVGap": 9})
-    await hass.async_block_till_done()
     assert hass.states.get("sensor.battman_parameters").attributes["needyTriggerPVGap"] == 7
 
 
