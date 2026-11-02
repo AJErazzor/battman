@@ -98,8 +98,8 @@
   "type": "horizontal-stack"
  },
  "profitloss-triggers_update": [
-  "sensor.solarsystemcontrolselltotal",
-  "sensor.solarsystemcontrolbuytotal",
-  "sensor.solarsystemcontrolparameters"
+  "sensor.battman_sell_total",
+  "sensor.battman_buy_total",
+  "sensor.battman_parameters"
  ]
 }
