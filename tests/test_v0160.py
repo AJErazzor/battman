@@ -1,12 +1,6 @@
-"""v0.16.0: Overrides card on battman-lib.js.
+"""v0.16.0: Overrides card on battman-lib.js. Every button-card template in the card is
+run on a scenario of states (via node) and its output recorded as a snapshot."""
 
-Every button-card template in the card is run twice on the same states: the original
-Smiggles card with its own ssc-lib.js (v8), and Battman's card with battman-lib.js. After
-the renames, the outputs must be the same; the only allowed differences are Battman's
-"no made-up values" fixes (marked isNaN / NTBAD / ntBlocked) and the scene script going
-through the entity map."""
-
-import difflib
 import json
 import os
 import re
@@ -15,21 +9,18 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
 from .snapshots import assert_snapshot
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
-
 DOMAIN = "battman"
 FIX = Path(__file__).parent / "fixtures"
 WWW = Path(__file__).parents[1] / "custom_components/battman/www"
 CARDS = Path(__file__).parents[1] / "custom_components/battman/cards"
 needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node to run the cards' JavaScript")
-PARAMS = "sensor.solarsystemcontrolparameters"
+PARAMS = "sensor.battman_parameters"
 # node's local time zone and locale pinned (templates use getHours() and toLocaleTimeString([])),
 # so the recorded outputs repeat on any machine
 PINNED = {"TZ": "Australia/Adelaide", "LC_ALL": "C.UTF-8", "LANG": "C.UTF-8"}
@@ -75,15 +66,6 @@ def templates(card, variables=None, entity=None, path=()):
         yield path, card, variables, entity
 
 
-def norm(s: str) -> str:
-    """Rename the original's names to Battman's (what the card port did)."""
-    s = s.replace("/local/smiggles/ssc-lib.js?v=8", "/battmanfiles/battman-lib.js").replace("/local/smiggles/ssc-lib.js?v=1", "/battmanfiles/battman-lib.js")
-    s = s.replace("ssc_timer_unit", "battman_timer_unit")
-    s = s.replace("__ssclibLoad", "__battmanLibLoad").replace("SSCLIB", "BattmanLib").replace("variables.ssc", "variables.battman")
-    s = re.sub(r"\bssc(?=[A-Za-z_-])", "bm", s)
-    return s.replace("--smiggles-", "--battman-")
-
-
 def fc(n=40):
     from datetime import datetime, timedelta, timezone
     t0 = datetime.now(timezone.utc).replace(second=0, microsecond=0)
@@ -108,12 +90,12 @@ def scenario(kind):
         "sensor.sigen_plant_available_max_active_power": {"state": "15", "attributes": {}},
         "sensor.amber_billing_interval_forecasts_general_price": {"state": "0.1", "attributes": {"Forecasts": fc()}},
         "sensor.amber_5min_current_general_price": {"state": "0.12", "attributes": {}},
-        "sensor.solarsystemcontrolselltotal": {"state": "1", "attributes": {"day": 4.21}},
-        "sensor.solarsystemcontrolbuytotal": {"state": "1", "attributes": {"day": 1.37}},
-        "sensor.solarsystemcontrolrun": {"state": "ok", "attributes": {}},
-        "input_select.solarsystemcontrolmode": {"state": "Self Consume", "attributes": {}},
-        "timer.solarsystemoverridetimer": {"state": "active" if kind == "set" else "idle",
-                                            "attributes": {"finishes_at": "2099-01-01T10:00:00+10:30", "remaining": "1:00:00"}},
+        "sensor.battman_sell_total": {"state": "1", "attributes": {"day": 4.21}},
+        "sensor.battman_buy_total": {"state": "1", "attributes": {"day": 1.37}},
+        "sensor.battman_run": {"state": "ok", "attributes": {}},
+        "input_select.battman_mode": {"state": "Self Consume", "attributes": {}},
+        "timer.battman_override_timer": {"state": "active" if kind == "set" else "idle",
+                                         "attributes": {"finishes_at": "2099-01-01T10:00:00+10:30", "remaining": "1:00:00"}},
         "sun.sun": {"state": "above_horizon", "attributes": {"next_rising": "2099-01-01T06:00:00+10:30",
                                                              "next_setting": "2099-01-01T19:30:00+10:30"}},
     }
@@ -143,10 +125,9 @@ async def test_overrides_card_loads(hass: HomeAssistant, hass_client) -> None:
     assert power["sections"][0]["cards"][-1] == {"type": "custom:battman-overrides"}
 
 
-async def test_overrides_structure_matches(hass: HomeAssistant, hass_client) -> None:
-    """Everything except the templates is the original's, renamed (kwh_per_pct dropped)."""
+async def test_overrides_structure(hass: HomeAssistant, hass_client) -> None:
+    """Everything except the templates (snapshot)."""
     _c, card = await _served(hass, hass_client)
-    o = yaml.safe_load((FIX / "smiggles_overrides.yaml").read_text())[0]
 
     def strip(x):
         if isinstance(x, dict):
@@ -154,64 +135,23 @@ async def test_overrides_structure_matches(hass: HomeAssistant, hass_client) -> 
         if isinstance(x, list):
             return [strip(v) for v in x]
         if isinstance(x, str):
-            return "JS" if x.strip().startswith("[[[") else norm(x)
+            return "JS" if x.strip().startswith("[[[") else x
         return x
-    so, sm = strip(o), strip(card["config"])
-    # net_src (Net Target maths): the only change is "missing total = unknown, not $0"
-    ns = so["cards"][0]["variables"]["battman"]["net_src"]
-    for old, new in (("return x && x.attributes ? (parseFloat(x.attributes.day) || 0) : 0; }",
-                      "return x && x.attributes ? parseFloat(x.attributes.day) : NaN; }  /* Battman: missing total = unknown, not $0 */"),
-                     ("function money(v) { var n", 'function money(v) { if (isNaN(v)) return "\u2014"; var n')):
-        assert ns.count(old) == 1
-        ns = ns.replace(old, new)
-    so["cards"][0]["variables"]["battman"]["net_src"] = ns
-    # v0.23.0: the rows redraw on the whole plant's SOC (Battman's SOC), not the inverter's
-    so = json.loads(json.dumps(so).replace("sensor.sigen_inverter_battery_state_of_charge",
-                                           "sensor.sigen_plant_battery_state_of_charge"))
-    def diff(a, b, p=""):
-        if isinstance(a, dict) and isinstance(b, dict):
-            return [d for k in sorted(set(a) | set(b)) for d in diff(a.get(k), b.get(k), f"{p}/{k}")]
-        if isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
-            return [d for i, (x, y) in enumerate(zip(a, b)) for d in diff(x, y, f"{p}[{i}]")]
-        return [] if a == b else [(p, str(a)[:120], str(b)[:120])]
-    assert diff(so, sm) == []
-    # Battman's side, recorded so the comparison survives Smiggles' removal (templates: test below)
+    sm = strip(card["config"])
     assert_snapshot(__file__, "overrides-structure", sm)
-
-
-def _unexplained(a, b, allowed):
-    """Changed chunks (split at ;) whose Battman side carries none of the fix markers."""
-    A, B = a.split(";"), b.split(";")
-    bad = []
-    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, A, B, autojunk=False).get_opcodes():
-        if op == "equal":
-            continue
-        new = ";".join(B[j1:j2])
-        if op == "delete" or not any(w in new for w in allowed):
-            bad.append((";".join(A[i1:i2])[:150], new[:150]))
-    return bad
 
 
 @needs_node
 @pytest.mark.parametrize("kind", ["empty", "set"])
-async def test_overrides_output_matches(hass: HomeAssistant, hass_client, kind) -> None:
+async def test_overrides_output(hass: HomeAssistant, hass_client, kind) -> None:
     _c, card = await _served(hass, hass_client)
-    o = yaml.safe_load((FIX / "smiggles_overrides.yaml").read_text())[0]
-    t_o, t_m = list(templates(o)), list(templates(card["config"]))
-    assert len(t_o) == len(t_m) > 20
+    t_m = list(templates(card["config"]))
+    assert len(t_m) > 20
     states = scenario(kind)
-    out_o = run_templates((FIX / "smiggles_ssc_lib.js").read_text(), [(s, v, e) for _p, s, v, e in t_o], states)
     out_m = run_templates((WWW / "battman-lib.js").read_text(), [(s, v, e) for _p, s, v, e in t_m], states)
-    allowed = ("isNaN", ":NaN", "NTBAD", "ntBlocked", "apply_scene", "libWait")   # libWait: v0.18.2, waits for the library
-    for (path, *_), a, b in zip(t_o, out_o, out_m, strict=True):
-        assert not b.startswith("THROW"), (path, b)
-        a = norm(a)
-        if a == b:
-            continue
-        bad = _unexplained(a, b, allowed)
-        assert not bad, (path, bad[:6])
-    # Battman's side, recorded so the comparison survives Smiggles' removal: each template's output
+    # Battman's side, recorded as each template's output
     for (path, *_), b in zip(t_m, out_m, strict=True):
+        assert not b.startswith("THROW"), (path, b)
         assert_snapshot(__file__, f"overrides-{kind}:{'/'.join(map(str, path))}", b)
     # the rows really drew something
     rows = [b for (p, *_), b in zip(t_m, out_m) if p[-2:] == ("custom_fields", "content") and p[1] in range(1, 7) and "SOC" in b]
@@ -238,7 +178,7 @@ async def test_rows_no_made_up_values(hass: HomeAssistant, hass_client) -> None:
 async def test_net_target_without_totals(hass: HomeAssistant, hass_client) -> None:
     _c, card = await _served(hass, hass_client)
     states = scenario("set")
-    del states["sensor.solarsystemcontrolbuytotal"]
+    del states["sensor.battman_buy_total"]
     head = next((s, v) for p, s, v, e in templates(card["config"]) if p[:3] == ("cards", 0, "custom_fields"))
     out = run_templates((WWW / "battman-lib.js").read_text(), [(head[0], head[1], PARAMS)], states)[0]
     assert "$NaN" not in out and "NaN" not in out and "—" in out

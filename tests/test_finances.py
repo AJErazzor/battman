@@ -10,7 +10,6 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 

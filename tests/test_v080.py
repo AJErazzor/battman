@@ -1,4 +1,3 @@
-import pytest
 """v0.8.0: Settings view, theme mode colours sensor, brand icon."""
 
 import json
@@ -9,11 +8,9 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .dashboard_views import built
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
 SENSOR = "sensor.battman_theme_mode_colours"
-SMIGGLES_PARAMS = "sensor.solarsystemcontrolparameters"   # the map's parameters while Smiggles is in charge
 COMPONENT = Path(__file__).resolve().parent.parent / "custom_components" / "battman"
 
 NORD = {k: v for k, v in next(iter(__import__("yaml").safe_load(

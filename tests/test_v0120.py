@@ -12,10 +12,8 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from .snapshots import assert_snapshot
 
-pytestmark = pytest.mark.usefixtures("smiggles_installed")
 
 DOMAIN = "battman"
-FIX = Path(__file__).parent / "fixtures"
 SELL, BUY, PAR = ("sensor.battman_sell_total", "sensor.battman_buy_total",
                   "sensor.battman_parameters")
 
@@ -62,44 +60,33 @@ async def test_profitloss_card(hass: HomeAssistant, hass_client) -> None:
     assert "smiggles" not in raw and "solarsystemcontrol" not in raw and "ssc" not in raw
 
 
-async def test_profitloss_layout_matches_smiggles(hass: HomeAssistant, hass_client) -> None:
-    """Same structure and styles as the original; only the templates and the version tag differ."""
+async def test_profitloss_layout(hass: HomeAssistant, hass_client) -> None:
+    """The card's structure, styles and trigger sensors (snapshot)."""
     m = (await _card(hass, hass_client))["config"]
-    o = yaml.safe_load((FIX / "smiggles_profitloss.yaml").read_text())[0]
-    o.pop("version")
 
-    def strip(x):   # drop the JS templates and colour-variable prefix; compare the rest exactly
+    def strip(x):   # drop the JS templates; keep structure/styles
         if isinstance(x, dict):
             return {k: strip(v) for k, v in x.items() if k not in ("triggers_update",)}
         if isinstance(x, list):
             return [strip(v) for v in x]
         if isinstance(x, str):
-            return "JS" if x.strip().startswith("[[[") else x.replace("--smiggles-", "--battman-")
+            return "JS" if x.strip().startswith("[[[") else x
         return x
 
-    assert strip(o) == strip(m)
-    bo = o["cards"][0]["cards"][0]
     bm = m["cards"][0]["cards"][0]
-    assert bo["triggers_update"] == bm["triggers_update"]          # same three sensors (from the map)
-    # Battman's side, recorded so the comparison survives Smiggles' removal
     assert_snapshot(__file__, "profitloss-layout", strip(m))
     assert_snapshot(__file__, "profitloss-triggers_update", bm["triggers_update"])
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs node to run the card's JavaScript")
-async def test_profitloss_draws_like_smiggles(hass: HomeAssistant, hass_client) -> None:
-    """With real values it draws exactly what Smiggles draws; missing values show — or an error."""
+async def test_profitloss_draws(hass: HomeAssistant, hass_client) -> None:
+    """With real values it draws correctly; missing values show — or an error (snapshot)."""
     m = (await _card(hass, hass_client))["config"]["cards"][0]["cards"][0]
-    o = yaml.safe_load((FIX / "smiggles_profitloss.yaml").read_text())[0]["cards"][0]["cards"][0]
-    js_m, js_o = m["custom_fields"]["card"], o["custom_fields"]["card"]
-    bord_m, bord_o = m["styles"]["card"][-1]["border"], o["styles"]["card"][-1]["border"]
+    js_m = m["custom_fields"]["card"]
+    bord_m = m["styles"]["card"][-1]["border"]
 
     for sell, buy, fee in ((12.34, 3.21, 1.10), (0.5, 4.75, 1.10), (2.0, 1.0, 1.0)):
-        states = {SELL: _st(sell), BUY: _st(buy), PAR: _st(dailyNetworkCharge=fee),
-                  "input_number.solarsystemcontroldailynetworkcharge": {"state": str(fee), "attributes": {}}}
-        assert _js(js_m, states) == _js(js_o, states).replace("--smiggles-", "--battman-")
-        assert _js(bord_m, states) == _js(bord_o, states).replace("--smiggles-", "--battman-")
-        # Battman's side, recorded so the comparison survives Smiggles' removal
+        states = {SELL: _st(sell), BUY: _st(buy), PAR: _st(dailyNetworkCharge=fee)}
         assert_snapshot(__file__, f"profitloss-draw-{sell}-{buy}-{fee}",
                         {"card": _js(js_m, states), "border": _js(bord_m, states)})
 
