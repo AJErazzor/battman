@@ -420,7 +420,7 @@ function battmanLogRun(card, root) {
   function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   // strip a trailing "(...)" variant so e.g. "Charge (Anytime)" matches the "Charge" checkbox
   function baseMode(m) { return m.replace(/\s*\([^)]*\)\s*$/, '').trim(); }
-  // each log line is "time|message"; Battman's renderer reads both its own and Smiggles' format
+  // each log line is "time|message"; the renderer reads both the current and older formats
   const EL = window.battmanEngineLog;
   const parsed = new Map();
   function parseLine(line) {
@@ -832,11 +832,6 @@ function battmanLogRun(card, root) {
   function initReorder() {
     const container = $('reorder');
     const KEY = 'battman.logOrder';
-    // one-time move of the order saved by the old Smiggles page
-    try {
-      const old = localStorage.getItem('smigglesLogOrderV1');
-      if (old !== null) { if (localStorage.getItem(KEY) === null) localStorage.setItem(KEY, old); localStorage.removeItem('smigglesLogOrderV1'); }
-    } catch (e) {}
     let dragEl = null, placeholder = null, startY = 0, startTop = 0, scroller = null;
 
     const cards = () => Array.from(container.querySelectorAll('.reCard'));
@@ -936,7 +931,7 @@ function battmanLogRun(card, root) {
   }
 
   // Grid power history from import / export history, with the same rule as Battman's grid power
-  // sensor (and Smiggles' GridPower): whichever side flows over 50 W, import +, export -.
+  // grid power sensor: whichever side flows over 50 W, import +, export -.
   // A point only where both are known: no made-up values.
   function gridSeries(imp, exp) {
     const ev = [];

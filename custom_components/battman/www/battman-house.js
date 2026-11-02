@@ -1,6 +1,6 @@
 // Battman House: custom:battman-house. The house picture with live numbers on it: prices, solar,
 // home, grid, battery, PV strings, temperature and up to three of your own devices, with flow
-// lines that move when power flows. Battman's copy of the Smiggles house card, drawn by itself
+// lines that move when power flows. Drawn by itself
 // (no button-card, mushroom or card-mod needed).
 //
 // Every item has its own settings, all optional. The defaults are Sigen's and Amber's entities by
@@ -40,7 +40,7 @@ function battmanDefine(tag, cls) {
 
 // The items, in the editor's order. ent: { field: default entity } ("" = none). need: the fields that must
 // exist for the item to be drawn.
-// at: [top %, left %, width %] on the card (the Smiggles card's places).
+// at: [top %, left %, width %] on the card.
 const HOUSE_ITEMS = [
   { key: "house", title: "House picture", image: "/battmanfiles/images/house.webp", at: [1.1, 0, 100] },
   { key: "battery_unit", title: "Battery picture", image: "/battmanfiles/images/house-battery.webp", at: [1.1, -3.8, 100] },
@@ -303,7 +303,7 @@ class BattmanHouseCard extends HTMLElement {
       case "pv2":
       case "pv3": {
         if (v === null) return two(dash, st.label, "blend", "blue");
-        // the plant's solar power, split by each string's share (as Smiggles did)
+        // the plant's solar power, split by each string's share
         const plant = num(this._s.solar.entity) || 0;
         const tot = ["pv1", "pv2", "pv3"].reduce((a, k) => a + (num(this._s[k].entity) || 0), 0);
         return two(`${houseRound(tot > 0 ? (plant * v) / tot : 0, 2)} kW`, st.label, "blend", "blue");

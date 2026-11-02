@@ -3,12 +3,11 @@
 # overwritten. Put your own template sensors in your own package file.
 #
 # The double-bracket map markers are entries in Battman's entity map, filled in when Battman writes the file.
-# Unavailable, never 0, when what a sensor is made from is missing (Smiggles used float(0)).
+# Unavailable, never 0, when what a sensor is made from is missing.
 
 # 30-minute average home load, kW: the mean of home power over the last 30 minutes.
-# Same settings as the Statistics helper Smiggles used (mean, max age 30 min, no sampling
-# size, last sample not kept, 2 decimals). Unknown when home power has sent nothing for
-# 30 minutes. Was a template copying that helper: same entity, same history.
+# Statistics settings: mean, max age 30 min, no sampling size, last sample not kept,
+# 2 decimals. Unknown when home power has sent nothing for 30 minutes.
 sensor:
   - platform: statistics
     name: Battman load 30m avg
@@ -22,7 +21,7 @@ sensor:
 template:
   - sensor:
       # Grid power, kW: + importing, - exporting, whichever side flows over 50 W.
-      # (Smiggles' sensor.gridpower, renamed: same rule, now labelled kW / power.)
+      # (Labelled kW / power.)
       - name: Battman grid power
         unique_id: battman_grid_power
         unit_of_measurement: kW

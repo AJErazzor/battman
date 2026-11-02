@@ -1,11 +1,10 @@
 """Battman's engine log: a text file, one line per engine run.
 
-Replaces Smiggles' shell commands (LogWriter / PruneLog / load-filtered-log):
+How it works:
 - every `battman_engine_log` event the engine fires is appended to
-  <config>/battman/engine.log as `<time>|<message>` (as Smiggles' /config/smiggles/solar_debug.log,
-  but with the message's line breaks kept as \\n);
-- Sundays at 03:00 the file is cut to its last 4032 lines (two weeks of 5-minute runs),
-  as Smiggles' PruneLog did;
+  <config>/battman/engine.log as `<time>|<message>`, with the message's line breaks
+  kept as \\n;
+- Sundays at 03:00 the file is cut to its last 4032 lines (two weeks of 5-minute runs);
 - the Log page asks GET /api/battman/log?start=&end= for a time range, read from
   Battman's log file.
 """
@@ -37,7 +36,7 @@ def battman_path(hass: HomeAssistant) -> Path:
 
 def line_for(when: str, message: str) -> str:
     """One log line: `<time>|<message>`, the message's line breaks written as \\n so the run stays
-    on one line and its sections can be read back. (Smiggles turned them into spaces.)"""
+    on one line and its sections can be read back."""
     return f"{when}|{message.replace(chr(13), '').replace(chr(10), chr(92) + 'n')}\n"
 
 
@@ -58,7 +57,7 @@ def prune(path: Path, keep: int = KEEP_LINES) -> None:
 
 
 def _stamp(ts: str) -> str:
-    """Smiggles' filter: 'T' -> space, drop everything from the first '.'."""
+    """Timestamp filter: 'T' -> space, drop everything from the first '.'."""
     ts = ts.replace("T", " ")
     return ts.split(".", 1)[0]
 

@@ -1,4 +1,4 @@
-# Battman engine: ported like for like from Smiggles (automations/SolarSystemControlWatchdog.yaml).
+# Battman engine.
 # Managed by Battman: written into your config and replaced on every Battman update.
 # Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
 
