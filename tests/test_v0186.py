@@ -38,7 +38,7 @@ async def test_theme_name_in_parameters_drives_the_colours(hass: HomeAssistant) 
 
     from .test_v0260 import lib_colours
 
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute"})
     await hass.async_block_till_done()

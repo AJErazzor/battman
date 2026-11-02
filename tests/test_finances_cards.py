@@ -36,7 +36,7 @@ async def _start_totals(hass):
     """Battman in charge, the totals running (they start on a price-interval change)."""
     from custom_components.battman.const import IN_CHARGE
 
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
     await hass.async_block_till_done()
     H.set_world(hass, {"estimate": False})

@@ -54,7 +54,7 @@ async def test_battman_log_reads_back_as_sections(hass: HomeAssistant) -> None:
     from custom_components.battman import engine_log
     from custom_components.battman.const import IN_CHARGE
 
-    entry, _rec = await H.start(hass, smiggles=False)
+    entry, _rec = await H.start(hass)
     hass.config_entries.async_update_entry(entry, data={**entry.data, IN_CHARGE: True})
     hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute"})
     import random
