@@ -7,7 +7,7 @@
 # config/battman/cards/batterymode.yaml and edit that copy.
 #
 # The buttons change the same entities as before (the mode select and
-# the Active / Curtail switches), so the current engine stays in charge of the battery.
+# the Active / Curtail switches).
 # The info button opens the Engine log (browser_mod popup), styled like the State card's
 # Next hours popup, drawn by battman-enginelog.js (the Log page uses the same).
 type: vertical-stack

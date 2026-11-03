@@ -4,7 +4,7 @@
 
 blueprint:
   name: Battman engine – override timer start
-  description: Starts the override timer at 10 minutes when it's started from idle. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  description: Starts the override timer at 10 minutes when it's started from idle.
   domain: automation
   source_url: https://github.com/AJErazzor/battman
   input: {}
@@ -16,10 +16,6 @@ triggers:
   - idle
   to:
   - active
-conditions:
-- condition: state
-  entity_id: binary_sensor.battman_in_charge
-  state: 'on'
 actions:
 - action: timer.change
   metadata: {}

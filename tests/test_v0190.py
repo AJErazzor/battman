@@ -33,17 +33,12 @@ MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", 
 FACTORY = yaml.safe_load((ROOT / "factory_curves.yaml").read_text())
 
 
-def _in_charge(hass, entry) -> None:
-    # Battman's engine is always in charge now; kept as a no-op so callers are unchanged.
-    return
-
-
 # ── A2 ───────────────────────────────────────────────────────────────────────────────────
 
 
 async def test_fresh_install_has_every_setting_and_the_factory_curves(hass: HomeAssistant) -> None:
     await H.start(hass)
-    assert hass.states.get("binary_sensor.battman_in_charge").state == "on"
+    assert hass.states.get("binary_sensor.battman_in_charge") is None        # gone: nothing needs it
     params = hass.states.get("sensor.battman_parameters").attributes
     engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
     read = set(re.findall(r"battman_parameters'{1,2},\s*'{1,2}(\w+)'{1,2}\)", engine))
@@ -58,7 +53,6 @@ async def test_fresh_install_has_every_setting_and_the_factory_curves(hass: Home
 
 async def test_your_settings_and_curves_are_kept(hass: HomeAssistant) -> None:
     entry, _rec = await H.start(hass)
-    _in_charge(hass, entry)
     soc, price = H.curves(random.Random(7))
     hass.bus.async_fire("battman_soc_curves_update", {"curves": soc})
     hass.bus.async_fire("battman_price_curves_update", {"curves": price})
@@ -93,7 +87,6 @@ def test_engine_reads_settings_without_fallbacks() -> None:
 
 
 async def _run_engine(hass, entry) -> str:
-    _in_charge(hass, entry)
     soc, price = H.curves(random.Random(3))
     hass.bus.async_fire("battman_soc_curves_update", {"curves": soc})
     hass.bus.async_fire("battman_price_curves_update", {"curves": price})
@@ -239,9 +232,9 @@ def test_house_card_defaults_are_battmans() -> None:
 def test_tidy_ups() -> None:
     assert not (ROOT / "strings.json").exists()
     assert json.loads((ROOT / "manifest.json").read_text())["iot_class"] == "calculated"
-    for name in ("button.py", "binary_sensor.py"):          # v0.26.0: what's left on the Battman device
-        text = (ROOT / name).read_text()
-        assert "DeviceInfo(" not in text and "device_info(entry)" in text, name
+    text = (ROOT / "button.py").read_text()                 # v0.26.0: what's on the Battman device
+    assert "DeviceInfo(" not in text and "device_info(entry)" in text
+    assert not (ROOT / "binary_sensor.py").exists()         # the in-charge sensor is gone
 
 
 async def test_estimated_price_unavailable_without_times(hass: HomeAssistant, caplog) -> None:

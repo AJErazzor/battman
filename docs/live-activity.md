@@ -28,8 +28,7 @@ other Battman setting. You set them on the Battman dashboard under **Settings �
 | Off after | `liveActivityFollowDelay` (minutes, 0–60) | 2 |
 | Feed-in spike alert | `liveActivitySpikeAlert` ($/kWh, 0–20) | 0.30 |
 
-Like all Battman settings they only change while Battman is in charge of the battery (after
-Migrate); before that the switch springs back off. Before v0.26.0 these were separate Battman
+Before v0.26.0 these were separate Battman
 entities; updating carries their values over.
 
 With the phone on **Off** nothing is sent, so a new install is harmless until you pick one.

@@ -4,7 +4,7 @@
 
 blueprint:
   name: Battman engine – armed scene (00:01)
-  description: Applies the moon-armed Battman scene at 00:01:30, disarms, then logs the outcome when its net target clears. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  description: Applies the moon-armed Battman scene at 00:01:30, disarms, then logs the outcome when its net target clears.
   domain: automation
   source_url: https://github.com/AJErazzor/battman
   input: {}
@@ -22,9 +22,6 @@ variables:
     {{ (state_attr('sensor.battman_parameters', 'overridePresets') or [])
        | selectattr('name', 'eq', armed) | list | count > 0 }}
 conditions:
-- condition: state
-  entity_id: binary_sensor.battman_in_charge
-  state: 'on'
 - condition: template
   value_template: '{{ armed | trim not in ['''', ''None'', ''none'', ''unknown''] }}'
 actions:

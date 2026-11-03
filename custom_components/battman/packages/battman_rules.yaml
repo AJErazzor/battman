@@ -10,10 +10,6 @@ template:
      
   
 
-    condition:
-      - condition: state
-        entity_id: binary_sensor.battman_in_charge
-        state: "on"
     sensor:
       - name: "Battman sell rules"
         unique_id: battman_sell_rules
@@ -124,10 +120,6 @@ template:
      
   
 
-    condition:
-      - condition: state
-        entity_id: binary_sensor.battman_in_charge
-        state: "on"
     sensor:
       - name: "Battman buy rules"
         unique_id: battman_buy_rules

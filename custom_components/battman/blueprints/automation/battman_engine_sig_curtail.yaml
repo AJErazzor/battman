@@ -4,7 +4,7 @@
 
 blueprint:
   name: Battman engine – curtail
-  description: Sets the Sigen grid export limit when Battman no export changes. Only runs while Battman is in charge (binary_sensor.battman_in_charge).
+  description: Sets the Sigen grid export limit when Battman no export changes.
   domain: automation
   source_url: https://github.com/AJErazzor/battman
   input: {}
@@ -12,10 +12,6 @@ triggers:
 - trigger: state
   entity_id:
   - input_boolean.battman_no_export
-conditions:
-- condition: state
-  entity_id: binary_sensor.battman_in_charge
-  state: 'on'
 actions:
 - alias: Curtail if Battman No Export is On
   if:

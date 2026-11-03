@@ -136,12 +136,11 @@ async def test_live_activity_settings_carried_over(hass: HomeAssistant) -> None:
 
 
 async def test_battman_device_now(hass: HomeAssistant) -> None:
-    """What's left on the Battman device: the in-charge sensor and the two buttons."""
+    """What's on the Battman device: the two buttons (the old in-charge sensor is gone)."""
     entry = await _setup(hass)
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
     on = sorted(e.entity_id for e in er.async_entries_for_device(er.async_get(hass), device.id))
-    assert on == ["binary_sensor.battman_in_charge", "button.battman_create_dashboard",
-                  "button.battman_create_live_activity_automations"], on
+    assert on == ["button.battman_create_dashboard", "button.battman_create_live_activity_automations"], on
 
 
 
@@ -178,9 +177,9 @@ process.stdout.write(JSON.stringify(r));""")
 
 
 async def test_template_sensor_and_keeper(hass: HomeAssistant) -> None:
-    """The browser keeps the saved colours in step with the picked theme while Battman is in charge."""
+    """The browser keeps the saved colours in step with the picked theme (and needs no in-charge flag)."""
     keeper = (LIB.read_text().split("(function keepThemeColours() {")[1])
-    assert "inCharge.state !== 'on'" in keeper and "!hass.user.is_admin" in keeper
+    assert "in_charge" not in keeper and "!hass.user.is_admin" in keeper
     assert "setInterval(check, 15000)" in keeper and "setTimeout(check, 3000)" in keeper
     sensors = (ROOT / "packages/battman_sensors.yaml").read_text()
     assert "unique_id: battman_theme_mode_colours" in sensors and "dashboardThemeColours" in sensors
@@ -201,7 +200,7 @@ async def test_old_python_sensor_handed_over(hass: HomeAssistant) -> None:
     assert e is not None and e.platform == "template"
 
 
-def _keeper(in_charge: bool, saved, admin: bool = True) -> list:
+def _keeper(saved, admin: bool = True) -> list:
     """Run battman-lib.js's keeper once on a fake page; returns the events it fired."""
     nord = {"battman-" + k: "#" + "%06x" % ((i + 1) * 0x151515) for i, k in
             enumerate(["red", "darkred", "orange", "amber", "yellow", "green", "teal", "sky",
@@ -212,8 +211,7 @@ globalThis.window = globalThis; globalThis.setTimeout = (f) => timers.push(f); g
 const hass = {{
   user: {{ is_admin: {json.dumps(admin)} }},
   themes: {{ themes: {{ 'Battman Nord': {json.dumps(nord)} }} }},
-  states: {{ 'binary_sensor.battman_in_charge': {{ state: {json.dumps('on' if in_charge else 'off')} }},
-            'sensor.battman_parameters': {{ attributes: {{ dashboardTheme: 'Battman Nord', dashboardThemeColours: {json.dumps(saved)} }} }} }},
+  states: {{ 'sensor.battman_parameters': {{ attributes: {{ dashboardTheme: 'Battman Nord', dashboardThemeColours: {json.dumps(saved)} }} }} }},
   callApi: () => Promise.resolve({{ entities: {{ parameters: 'sensor.battman_parameters', parameters_update_event: 'battman_parameters_update' }} }}),
   callWS: (m) => {{ fired.push(m); return Promise.resolve(); }},
 }};
@@ -226,15 +224,14 @@ globalThis.document = {{ querySelector: (s) => (s === 'home-assistant' ? {{ hass
 
 
 def test_keeper_saves_only_what_changed() -> None:
-    fired = _keeper(True, None)                       # nothing saved yet: saves the colours of the picked theme
+    fired = _keeper(None)                             # nothing saved yet: saves the colours of the picked theme
     assert len(fired) == 1 and fired[0]["event_type"] == "battman_parameters_update"
     want = fired[0]["event_data"]["dashboardThemeColours"]
     assert want["theme"] == "Battman Nord" and want["modes"]["Discharge"] == "#7e7e7e"   # green, the 6th
-    assert _keeper(True, want) == []                  # already in step: nothing sent
+    assert _keeper(want) == []                        # already in step: nothing sent
     changed = {**want, "modes": {**want["modes"], "Discharge": "#ffffff"}}
-    assert len(_keeper(True, changed)) == 1           # the theme changed (e.g. a Battman update)
-    assert _keeper(False, None) == []                 # not in charge: settings don't change then
-    assert _keeper(True, None, admin=False) == []     # a user who can't fire events
+    assert len(_keeper(changed)) == 1                 # the theme changed (e.g. a Battman update)
+    assert _keeper(None, admin=False) == []           # a user who can't fire events
 
 
 

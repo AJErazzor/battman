@@ -162,11 +162,6 @@ def async_carry_over(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     async def _apply(*_args) -> None:
         await package_files.async_sync(hass)          # the parameters sensor and the switch are loaded
-        if hass.states.get("binary_sensor.battman_in_charge") is None or \
-                hass.states.get("binary_sensor.battman_in_charge").state != "on":
-            _LOGGER.warning("Battman Live Activity: your settings %s couldn't be carried over: Battman "
-                            "isn't in charge, and its settings only change while it is", values)
-            return
         hass.bus.async_fire(ENGINE_MAP["parameters_update_event"], {"action": "SetAttribute", **values})
         _LOGGER.info("Battman Live Activity: settings carried over into its parameters: %s", values)
 

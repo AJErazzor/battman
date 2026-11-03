@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
@@ -44,7 +45,7 @@ from .services import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["binary_sensor", "button", "sensor"]
+PLATFORMS: list[str] = ["button", "sensor"]
 
 # Set in the config entry once the install-time dashboard has been made, so it
 # only ever happens once. After that, use the button or battman.create_dashboard.
@@ -130,6 +131,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_update_entry(
             entry, data={k: v for k, v in entry.data.items() if k in ENTRY_DATA_KEYS}
         )
+    # The "In charge" sensor Battman used to add is gone (its engine is always in charge): remove the
+    # registry entry an older version left, so an upgraded install matches a fresh one. Based on what's
+    # in the registry, not on the version before, and does nothing when it isn't there.
+    registry = er.async_get(hass)
+    if stale := registry.async_get_entity_id("binary_sensor", DOMAIN, f"{entry.entry_id}_in_charge"):
+        registry.async_remove(stale)
     dst = themes.dst_dir(hass)
     try:
         if await hass.async_add_executor_job(themes.install, dst):
@@ -173,6 +180,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Battman Live Activity: %s", result["message"])
         if not result["message"].startswith("Could not"):
             hass.config_entries.async_update_entry(entry, data={**entry.data, LIVE_ACTIVITY_DONE: True})
+
+    # descriptions an older version wrote into the engine items, brought up to date (exact matches only)
+    async def _notes(*_args) -> None:
+        await engine.async_refresh_notes(hass)
+
+    if hass.state is CoreState.running:
+        hass.async_create_task(_notes())
+    else:
+        entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _notes))
 
     # the engine automations/scripts (written after Live Activity's: same files, one at a time)
     if not entry.data.get(ENGINE_DONE):

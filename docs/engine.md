@@ -20,9 +20,7 @@ scripts after making them, so you can open one, see its traces, or take control 
 
 ## Enabled, or not
 
-The engine runs while **Active** (`input_boolean.battman_enable`) is on. Every engine automation
-and trigger-based engine sensor also checks `binary_sensor.battman_in_charge`, which is always on
-(Battman is the only engine).
+The engine runs while **Active** (`input_boolean.battman_enable`) is on.
 
 The entity map holds Battman's engine entities (settings, odometers, mode, curves, rules, events),
 pointing at Battman's own entities; cards and pages use the names on it. Sigen, Amber and Solcast

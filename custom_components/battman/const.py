@@ -51,9 +51,9 @@ FACTORY_MAP: dict[str, str] = {
     "price_curves_factory": "sensor.battman_price_curves",
 }
 
-# Every map entry with its Battman default. Only Battman's engine entities are on the map (they follow
-# whichever engine is in charge); other integrations' entities (Sigen, Amber, Solcast) and Battman's
-# own grid power and load average sensors are named directly where they're used.
+# Every map entry with its Battman default. Only Battman's engine entities are on the map; other
+# integrations' entities (Sigen, Amber, Solcast) and Battman's own grid power and load average
+# sensors are named directly where they're used.
 ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **FACTORY_MAP}
 
 # Authenticated, admin-only API the theme studio uses to save your own themes.

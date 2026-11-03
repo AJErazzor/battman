@@ -19,9 +19,6 @@ template:
         to: "on"
         
     condition:
-      - condition: state
-        entity_id: binary_sensor.battman_in_charge
-        state: "on"
       - condition: template
         value_template: >
           {% set importedEnergy = states('sensor.sigen_plant_total_imported_energy') | float(0) %}
