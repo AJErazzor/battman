@@ -33,7 +33,7 @@ async def _card(hass, hass_client, cid):
 
 
 def _popup(cfg):
-    return cfg["cards"][0]["cards"][2]["tap_action"]["browser_mod"]["data"]
+    return cfg["cards"][0]["cards"][0]["cards"][2]["tap_action"]["browser_mod"]["data"]
 
 
 async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
