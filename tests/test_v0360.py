@@ -32,13 +32,13 @@ def test_when_a_mode_asks() -> None:
         ("Charge Solar Off", 0, 5, {}), ("Charge Solar Off", -3, 5, {}), ("Float Solar Off", 8, 5, {}), ("Float Solar Off", -8, 5, {}),
         ("Charge", 42, 5, {"buyAbove": 30}), ("Charge", 25, 5, {"buyAbove": 30}), ("Charge", 42, 5, {}), ("Charge", -9, 5, {"buyAbove": 30}),
         ("Self Consume", 99, -9, {}), ("Drain", 99, -9, {}),
-        ("Discharge", 20, -4, {"overridden": True}), ("Discharge", 20, -4, {"confirmPrice": False}),
+        ("Discharge", 20, -4, {"confirmPrice": False}),
         ("Discharge", 20, None, {}), ("Charge", None, 5, {"buyAbove": 30}),
     ]
     out = _node(f"""const cases = {json.dumps(cases)}; const nan = (v) => v === null ? NaN : v;
 process.stdout.write(JSON.stringify(cases.map(([o, b, f, x]) => window.BattmanLib.modeWarning(Object.assign({{ option: o, buy: nan(b), fit: nan(f) }}, x)))));""")
     asks = [w is not None for w in out]
-    assert asks == [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False, False, False]
+    assert asks == [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False, False]
     assert out[0] == "Feed-in is -4.0c: you would pay to export.\n\nSell anyway?"
     assert out[4] == "Buy is 0.0c: HOOOOVER is for negative prices.\n\nHOOOOVER anyway?"
     assert out[8] == "Buy is 42.0c, above your 30.0c limit.\n\nBuy anyway?"
@@ -49,14 +49,14 @@ def test_pressing_a_mode_button() -> None:
     out = _node("""
 const calls = []; let asked = [];
 const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
-  'timer.t': { state: 'idle' }, 'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
+  'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
 globalThis.document = { querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push([d, s, x.entity_id, x.option]) } }) };
 const press = (option, answer) => { window.confirm = (m) => { asked.push(m); return answer; };
-  window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p', override_timer: 'timer.t' }); };
+  window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p' }); };
 press('Discharge', false);       // feed-in is negative: asks, you say no -> nothing happens
 press('Discharge', true);        // ... you say yes -> sells
 press('Self Consume', false);    // never asks
-states['timer.t'].state = 'active'; press('Float', false);   // an override is running: no question
+press('Float', true);            // an override running makes no difference: still asks (and you said yes)
 globalThis.document = { querySelector: () => ({ hass: { get states() { throw new Error('boom'); }, callService: (d, s, x) => calls.push(['fallback', x.option]) } }) };
 press('Charge', false);          // anything failing in the check must not stop the press
 process.stdout.write(JSON.stringify({ calls, asked: asked.length }));""")
@@ -64,7 +64,7 @@ process.stdout.write(JSON.stringify({ calls, asked: asked.length }));""")
                             ["input_select", "select_option", "input_select.m", "Self Consume"],
                             ["input_select", "select_option", "input_select.m", "Float"],
                             ["fallback", "Charge"]]
-    assert out["asked"] == 2
+    assert out["asked"] == 3
 
 
 def test_mode_card_buttons() -> None:

@@ -459,7 +459,6 @@
          "battman_mode": {
           "mode": "input_select.battman_mode",
           "option": "Charge",
-          "override_timer": "timer.battman_override_timer",
           "parameters": "sensor.battman_parameters"
          }
         },
@@ -578,7 +577,6 @@
          "battman_mode": {
           "mode": "input_select.battman_mode",
           "option": "Discharge",
-          "override_timer": "timer.battman_override_timer",
           "parameters": "sensor.battman_parameters"
          }
         },
@@ -952,7 +950,6 @@
            "battman_mode": {
             "mode": "input_select.battman_mode",
             "option": "Charge",
-            "override_timer": "timer.battman_override_timer",
             "parameters": "sensor.battman_parameters"
            }
           },
@@ -1071,7 +1068,6 @@
            "battman_mode": {
             "mode": "input_select.battman_mode",
             "option": "Discharge",
-            "override_timer": "timer.battman_override_timer",
             "parameters": "sensor.battman_parameters"
            }
           },
@@ -1201,7 +1197,6 @@
            "battman_mode": {
             "mode": "input_select.battman_mode",
             "option": "Float",
-            "override_timer": "timer.battman_override_timer",
             "parameters": "sensor.battman_parameters"
            }
           },
@@ -1444,7 +1439,6 @@
            "battman_mode": {
             "mode": "input_select.battman_mode",
             "option": "Float Solar Off",
-            "override_timer": "timer.battman_override_timer",
             "parameters": "sensor.battman_parameters"
            }
           },
@@ -1569,7 +1563,6 @@
            "battman_mode": {
             "mode": "input_select.battman_mode",
             "option": "Charge Solar Off",
-            "override_timer": "timer.battman_override_timer",
             "parameters": "sensor.battman_parameters"
            }
           },

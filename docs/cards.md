@@ -305,7 +305,7 @@ ask only when the press goes against the current price, and just switch otherwis
 | Buy | the buy price is above your limit | Warn on Buy above (`confirmBuyAbove`, c/kWh; blank or 0 = never, a negative price never asks) |
 | Self Consume, Drain | never | |
 
-It doesn't ask while an override is running (you chose this), or when a price isn't available, and a
-failure in the check never stops the press: the mode is set. The question is the browser's own
+It doesn't ask when a price isn't available, and a failure in the check never stops the press: the mode is set.
+A running override makes no difference. The question is the browser's own
 confirm box, so it works on a phone without browser_mod.
 

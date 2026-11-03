@@ -249,7 +249,6 @@ cards:
           option: Charge
           mode: '[[map:mode]]'
           parameters: '[[map:parameters]]'
-          override_timer: '[[map:override_timer]]'
       styles:
         card:
         - padding: 0 6px
@@ -325,7 +324,6 @@ cards:
           option: Discharge
           mode: '[[map:mode]]'
           parameters: '[[map:parameters]]'
-          override_timer: '[[map:override_timer]]'
       styles:
         card:
         - padding: 0 6px
@@ -559,7 +557,6 @@ cards:
             option: Charge
             mode: '[[map:mode]]'
             parameters: '[[map:parameters]]'
-            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -635,7 +632,6 @@ cards:
             option: Discharge
             mode: '[[map:mode]]'
             parameters: '[[map:parameters]]'
-            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -717,7 +713,6 @@ cards:
             option: Float
             mode: '[[map:mode]]'
             parameters: '[[map:parameters]]'
-            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -868,7 +863,6 @@ cards:
             option: Float Solar Off
             mode: '[[map:mode]]'
             parameters: '[[map:parameters]]'
-            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -946,7 +940,6 @@ cards:
             option: Charge Solar Off
             mode: '[[map:mode]]'
             parameters: '[[map:parameters]]'
-            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
