@@ -8,6 +8,7 @@ those files is left exactly as it was.
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,38 @@ def write_missing(
         write_utf8_file_atomic(str(auto_path), dump([*autos, *new_autos]))
         added += [a["id"] for a in new_autos]
     return added
+
+
+def refresh_descriptions(
+    auto_path: Path, script_path: Path, automation_ids: set[str], script_ids: set[str],
+    current: str, old_hashes: frozenset[str],
+) -> list[str]:
+    """Give Battman's own items today's description where it is exactly one an older version wrote.
+
+    old_hashes are SHA-256 hashes of those older descriptions. A description you edited doesn't match,
+    so it's left alone, and so is everything else in the files (triggers, actions, aliases, ids).
+    Returns the ids changed; writes only when there are some.
+    """
+    autos, scripts = _load(auto_path, script_path)
+
+    def stale(item: Any) -> bool:
+        d = item.get("description") if isinstance(item, dict) else None
+        return isinstance(d, str) and hashlib.sha256(d.encode()).hexdigest() in old_hashes
+
+    changed: list[str] = []
+    for a in autos:
+        if isinstance(a, dict) and a.get("id") in automation_ids and stale(a):
+            a["description"] = current
+            changed.append(a["id"])
+    if changed:
+        write_utf8_file_atomic(str(auto_path), dump(autos))
+    fixed = [k for k, v in scripts.items() if k in script_ids and stale(v)]
+    if fixed:
+        for k in fixed:
+            scripts[k]["description"] = current
+        write_utf8_file_atomic(str(script_path), dump(scripts))
+        changed += fixed
+    return changed
 
 
 def remove(auto_path: Path, script_path: Path, automation_ids: set[str], script_ids: set[str]) -> list[str]:

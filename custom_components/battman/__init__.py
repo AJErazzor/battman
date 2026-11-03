@@ -181,6 +181,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not result["message"].startswith("Could not"):
             hass.config_entries.async_update_entry(entry, data={**entry.data, LIVE_ACTIVITY_DONE: True})
 
+    # descriptions an older version wrote into the engine items, brought up to date (exact matches only)
+    async def _notes(*_args) -> None:
+        await engine.async_refresh_notes(hass)
+
+    if hass.state is CoreState.running:
+        hass.async_create_task(_notes())
+    else:
+        entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _notes))
+
     # the engine automations/scripts (written after Live Activity's: same files, one at a time)
     if not entry.data.get(ENGINE_DONE):
         try:

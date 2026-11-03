@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 
@@ -30,6 +30,15 @@ NOTE = (
     "Battman engine, made by Battman from its blueprint. "
     "Battman won't overwrite it; delete it and reinstall to get Battman's version back."
 )
+
+# SHA-256 of the descriptions earlier versions wrote into these items (they mentioned things that
+# no longer exist). A description that is exactly one of them is replaced with NOTE on setup; one you
+# edited doesn't match and is left alone.
+OLD_NOTE_HASHES = frozenset({
+    "cd49a3806470b3133f1207bf74cb5f450ff152a3847854abc3f706ccc8b1d0b8",
+    "a01f8b031888d4559aa2340d66aadc31d945b0d5f6620a6ecbf5484eb07ccfc7",
+    "a6d5b1c5ffa1141530b7f8136ac257455bd62d5f3c33c0409dd5475c6e94141d",
+})
 
 SCRIPTS: dict[str, dict[str, Any]] = {
     "battman_engine": {
@@ -111,6 +120,29 @@ async def async_reload_and_check(hass: HomeAssistant) -> None:
         )
         raise EngineError(f"Home Assistant didn't load these Battman engine items: {', '.join(gone)}")
     ir.async_delete_issue(hass, DOMAIN, ISSUE_NOT_LOADED)
+
+
+async def async_refresh_notes(hass: HomeAssistant) -> list[str]:
+    """Bring the descriptions of Battman's engine items up to date where an older version wrote them.
+
+    Only the description changes, and only where it is exactly one of OLD_NOTE_HASHES. Idempotent, and
+    based on what's in the files, not on the version before. Any problem is logged, never raised.
+    """
+    auto_path, script_path = automation_files.paths(hass)
+    try:
+        changed = await hass.async_add_executor_job(
+            automation_files.refresh_descriptions, auto_path, script_path,
+            {a["id"] for a in AUTOMATIONS}, set(SCRIPTS), NOTE, OLD_NOTE_HASHES,
+        )
+    except (automation_files.AutomationFileError, OSError) as err:
+        _LOGGER.warning("Battman couldn't update the descriptions of its engine items: %s", err)
+        return []
+    if changed:
+        _LOGGER.info("Battman updated the descriptions of: %s", ", ".join(changed))
+        for domain in ("script", "automation"):
+            if hass.state is CoreState.running and hass.services.has_service(domain, "reload"):
+                await hass.services.async_call(domain, "reload", blocking=True)
+    return changed
 
 
 async def async_create_missing(hass: HomeAssistant) -> list[str]:
