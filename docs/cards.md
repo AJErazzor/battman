@@ -306,6 +306,6 @@ ask only when the press goes against the current price, and just switch otherwis
 | Self Consume, Drain | never | |
 
 It doesn't ask when a price isn't available, and a failure in the check never stops the press: the mode is set.
-A running override makes no difference. The question is a browser_mod dialog (the same kind as the info
-buttons') with Cancel and "<Mode> anyway"; without browser_mod it falls back to the browser's own confirm box.
+A running override makes no difference. The question is a browser_mod popup styled like the info
+popups, with Cancel and "<Mode> anyway" buttons inside it; without browser_mod it falls back to the browser's own confirm box.
 

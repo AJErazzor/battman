@@ -775,23 +775,37 @@ window.BattmanLib.setMode = function (d, el) {
   window.BattmanLib.askMode(warning, d.option, go, el);
 };
 
-// The question, in browser_mod's own dialog (its Cancel and confirm buttons close it themselves). Without
-// browser_mod, or if it can't open, the browser's own confirm box.
+// The question, in the same kind of Battman panel as the info popups (browser_mod popup, no title bar text,
+// themed card with an uppercase heading). Without browser_mod, or if it can't open, the browser's confirm box.
 window.BattmanLib.askMode = function (message, option, go, el) {
   var L = window.BattmanLib, name = L.MODE_NAMES[option] || option;
   try {
-    if (!window.browser_mod || !window.browser_mod.showPopup) throw new Error('no browser_mod');
-    var html = String(message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    window.browser_mod.showPopup({
-      title: name + '?',
-      content: '<div style="font-size:16px;line-height:1.5">' + html + '</div>',
-      style: L.popupStyle(el || document.body, 'min(92vw,360px)'),
-      left_button: 'Cancel',
-      right_button: name + ' anyway', right_button_appearance: 'accent', right_button_action: function () { go(); },
+    if (!window.browser_mod) throw new Error('no browser_mod');
+    var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+    var btn = 'flex:1;min-height:42px;border-radius:8px;font-family:var(--battman-font,inherit);font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;';
+    L._pendingMode = go;
+    L.localPopup({
+      title: ' ',
+      style: L.popupStyle(el || document.body, 'min(92vw,340px)'),
+      content: '<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(name) + '?</div>'
+        + '<div style="font-size:14px;line-height:1.5;margin-bottom:14px">' + esc(message) + '</div>'
+        + '<div style="display:flex;gap:8px">'
+        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(false)" style="' + btn + 'display:flex;align-items:center;justify-content:center;background:transparent;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral)">Cancel</div>'
+        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn + 'flex:1.4;display:flex;align-items:center;justify-content:center;background:var(--battman-orange-wash);color:var(--battman-orange);border:1px solid var(--battman-orange-border-strong)">' + esc(name) + ' anyway</div>'
+        + '</div></div>',
     });
   } catch (e) {
+    L._pendingMode = null;
     if (window.confirm(message)) go();
   }
+};
+
+window.BattmanLib.answerMode = function (yes) {
+  var go = window.BattmanLib._pendingMode;
+  window.BattmanLib._pendingMode = null;
+  try { window.browser_mod.service('close_popup', {}); } catch (e) {}
+  if (yes && go) go();
 };
 
 if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {

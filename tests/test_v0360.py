@@ -46,33 +46,37 @@ process.stdout.write(JSON.stringify(cases.map(([o, b, f, x]) => window.BattmanLi
 
 @needs_node
 def test_pressing_a_mode_button() -> None:
-    """Asks in browser_mod's own dialog (native Cancel / confirm buttons); never stops a press it can't judge."""
+    """Asks in a Battman-styled browser_mod popup (like the info popups); never stops a press it can't judge."""
     out = _node("""
-const calls = [], popups = []; let native = 0;
+const calls = [], popups = [], closed = []; let native = 0;
 const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
   'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
 globalThis.document = { body: {}, querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
 window.confirm = () => { native++; return true; };
-window.browser_mod = { showPopup: (o) => popups.push(o) };
+window.browser_mod = { service: (n, o) => { if (n === 'popup') popups.push(o); else closed.push(n); } };
 const press = (option) => window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p' }, {});
 press('Self Consume');              // never asks: switches at once
 press('Discharge');                 // negative feed-in: asks, nothing switched yet
 const sellAsk = popups[0], afterAsk = calls.length;
-sellAsk.right_button_action();      // the confirm button: sells
-press('Charge'); const buyAsk = popups[1];   // Buy above the 30c limit
+window.BattmanLib.answerMode(false); const cancelled = calls.length;   // Cancel: closes, switches nothing
+press('Discharge');
+window.BattmanLib.answerMode(true);   // the confirm button: closes and sells
+press('Charge'); const buyAsk = popups[2];   // Buy above the 30c limit
 delete window.browser_mod;          // no browser_mod: the browser's own box, and Yes sets it
 press('Float');
 states['sensor.p'].attributes = { confirmPriceMismatch: false };   // the setting off and no Buy limit: no question
 press('Discharge'); press('Charge');
 globalThis.document = { querySelector: () => ({ hass: { get states() { throw new Error('boom'); }, callService: (d, s, x) => calls.push('fallback ' + x.option) } }) };
 press('Charge');                    // anything failing in the check must not stop the press
-process.stdout.write(JSON.stringify({ calls, afterAsk, popups: popups.length, native, title: sellAsk.title, buyTitle: buyAsk.title,
-  content: sellAsk.content, left: sellAsk.left_button, right: sellAsk.right_button }));""")
-    assert out["afterAsk"] == 1                                               # only Self Consume so far: asking switched nothing
+process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, closed, popups: popups.length, native,
+  content: sellAsk.content, buyContent: buyAsk.content }));""")
+    assert out["afterAsk"] == 1 and out["cancelled"] == 1                     # only Self Consume so far: asking and Cancel switched nothing
+    assert out["closed"] == ["close_popup", "close_popup"]                    # both answers close the popup
     assert out["calls"] == ["Self Consume", "Discharge", "Float", "Discharge", "Charge", "fallback Charge"]
-    assert out["popups"] == 2 and out["native"] == 1                          # two dialogs; the one without browser_mod used the box
-    assert (out["title"], out["buyTitle"], out["left"], out["right"]) == ("Sell?", "Buy?", "Cancel", "Sell anyway")
+    assert out["popups"] == 3 and out["native"] == 1                          # three dialogs; the one without browser_mod used the box
+    assert "Sell?" in out["content"] and "Cancel" in out["content"] and "Sell anyway" in out["content"]
+    assert "Buy?" in out["buyContent"] and "Buy anyway" in out["buyContent"]
     assert "Feed-in is -4.0c: you would pay to export. Sell anyway?" in out["content"]
 
 
