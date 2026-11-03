@@ -55,12 +55,12 @@ console.log(JSON.stringify({{
 
 
 @needs_node
-def test_amber_has_eight_pills() -> None:
+def test_amber_has_seven_pills() -> None:
     uri = (WWW / "battman-amber-forecast-data.js").as_uri()
-    assert _node(f'import {{ RANGES_H }} from "{uri}"; console.log(JSON.stringify(RANGES_H));') == [0.25, 0.5, 1, 2, 4, 8, 12, 24]
+    assert _node(f'import {{ RANGES_H }} from "{uri}"; console.log(JSON.stringify(RANGES_H));') == [0.5, 1, 2, 4, 8, 12, 24]
     js = (WWW / "battman-amber-forecast-chart.js").read_text()
     assert "const DEFAULT_RANGE_H = 8" in js
-    for h in ("0.25", "0.5", "1", "2", "4", "8", "12", "24"):
+    for h in ("0.5", "1", "2", "4", "8", "12", "24"):
         assert re.search(rf"\b{re.escape(h)}: ", js.split("const TICK_H")[1].split("\n")[0]), h   # each range has its label spacing
 
 

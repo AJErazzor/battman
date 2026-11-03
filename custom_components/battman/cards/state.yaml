@@ -23,6 +23,10 @@ triggers_update:
 - '[[map:mode]]'
 - '[[map:parameters]]'
 - '[[map:override_timer]]'
+- 'sensor.sigen_plant_grid_connection_status'
+- 'sensor.sigen_plant_consumed_power'
+- 'sensor.sigen_plant_rated_energy_capacity'
+- 'sensor.sigen_plant_pv_power'
 custom_fields:
   content: |-
     [[[
@@ -32,6 +36,49 @@ custom_fields:
     const _note = '';
     return (_note ? '<div style="padding:4px 2px 6px;font-size:11px;font-weight:700;line-height:1.4;color:var(--battman-darkred)">' + _note + '</div>' : '') + (() => {
     // Chill card — curve status (top pill) · SELL / BUY tiles · what the engine is doing (bottom pill)
+    const _og = (() => {
+      // Off-grid takeover: replaces the whole Chill card while the plant is off-grid (tap still opens the next-hours forecast)
+      const SC = null;   // sandpit mocks inject scenarios here; null = live
+      const gs = states['sensor.sigen_plant_grid_connection_status'];
+      const num = (id) => parseFloat(states[id]?.state);
+      const S = SC ? SC : {status: gs?.state, soc: num('sensor.sigen_plant_battery_state_of_charge'), cap: num('sensor.sigen_plant_rated_energy_capacity'),
+        load: num('sensor.sigen_plant_consumed_power'), pv: num('sensor.sigen_plant_pv_power'), offMin: gs ? (Date.now() - Date.parse(gs.last_changed)) / 60000 : NaN};
+      const auto = S.status === 'Off Grid (Auto)', manual = S.status === 'Off Grid (Manual)';
+      if (!auto && !manual) return '';
+      const mix = (col, pct) => `color-mix(in srgb,${col} ${pct}%,transparent)`;
+      const ok = (v) => isFinite(v);
+      const hm = (h) => { if (!ok(h)) return '—'; if (h >= 48) return '48h+'; const m = Math.round(h * 60); return m >= 60 ? Math.floor(m / 60) + 'h ' + ('0' + (m % 60)).slice(-2) + 'm' : m + 'm'; };
+      const since = (m) => { if (!ok(m)) return '—'; const t = Math.max(1, Math.round(m)); return t >= 60 ? Math.floor(t / 60) + 'h ' + ('0' + (t % 60)).slice(-2) + 'm' : t + 'm'; };
+      const kwh = ok(S.cap) && ok(S.soc) ? S.cap * S.soc / 100 : NaN;
+      const lasts = ok(kwh) && ok(S.load) && S.load >= 0.05 ? kwh / S.load : NaN;       // same maths as the push notification
+      const low = ok(lasts) && lasts < 2 || (ok(S.soc) && S.soc < 15);
+      const col = auto ? 'var(--battman-red)' : 'var(--battman-orange)';
+      const ico = (i, s, c, x = '') => `<ha-icon icon="${i}" style="display:flex;flex:none;--mdc-icon-size:${s}px;width:${s}px;height:${s}px;color:${c};${x}"></ha-icon>`;
+      const solarTxt = !ok(S.pv) ? 'solar —' : S.pv >= 0.05 ? S.pv.toFixed(1) + ' kW solar' : 'No solar';
+      const lab = (t, c, extra = '') => `<span style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:${c};white-space:nowrap;${extra}">${t}</span>`;
+      const small = (t, c) => `<span style="font-size:10px;line-height:1;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;color:${c}">${t}</span>`;
+      const bigT = (t, c, size) => `<span style="font-size:${size}px;font-weight:900;letter-spacing:-.5px;line-height:1;color:${c};white-space:nowrap">${t}</span>`;
+      const pulse = `--og:${col};animation:ogpulse 1.6s ease-in-out infinite;`;   // manual panics too: only the colour differs
+      const rightC = low ? 'var(--battman-red)' : 'var(--battman-green)';
+      // one full-width box, EXACTLY the Chill tile's size: 1px border + 7px / 6px padding + 66px of content (24 + 21 + 21) = 81px
+      // left column = the two time estimates, right column = battery and load
+      const cell = (label, value, c, size) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;height:21px;line-height:1">
+          ${small(label, 'var(--battman-text-muted)')}<span style="font-size:${size}px;font-weight:900;line-height:1;color:${c};white-space:nowrap;letter-spacing:-.3px">${value}</span></div>`;
+      const colCss = 'display:flex;flex-direction:column;min-width:0';
+      const box = `<div style="box-sizing:border-box;height:81px;overflow:hidden;padding:7px 12px 6px;color:${col};background:${mix(col, 12)};border:1px solid ${col};border-radius:10px;box-shadow:0 0 12px -2px ${col},inset 0 0 14px -6px ${col};${pulse}">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0;height:24px">${ico('mdi:alert', 22, col, 'margin-right:10px')}${bigT('OFF GRID!!', col, 24)}${ico('mdi:alert', 22, col, 'margin-left:10px')}</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px">
+            <div style="${colCss}">${cell('Lasts about', hm(lasts), rightC, 17)}${ok(lasts) ? cell('Halve load', hm(lasts * 2), 'var(--battman-green)', 17) : ''}</div>
+            <div style="${colCss}">${cell('Battery', ok(S.soc) ? Math.round(S.soc) + '%' : '—', rightC, 17)}${cell('Load', ok(S.load) ? S.load.toFixed(1) + ' kW' : '—', 'var(--primary-text-color)', 17)}</div></div></div>`;
+      return `<div style="font-family:var(--primary-font-family,var(--battman-font,sans-serif));font-variant-numeric:tabular-nums;font-feature-settings:'tnum';position:relative;margin-top:11px;margin-bottom:26px;padding:16px 6px 16px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(col, 70)};box-shadow:0 0 10px -4px ${col};">
+        <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(col, 70)}">
+          ${ico('mdi:alert', 16, col)}<span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:${col};white-space:nowrap">Panic · Off Grid${auto ? '' : ' · Manual'} · off for ${since(S.offMin)}</span></div>
+        ${box}
+        <div style="position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 9px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix('var(--primary-text-color)', 30)}">
+          <span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--primary-text-color);white-space:nowrap">On battery · ${solarTxt}</span></div>
+      </div>`;
+    })();
+    if (_og) return _og;
     const SC = null;  // sandpit gallery injects mocked scenarios here; null = live
     const attr = SC ? SC.flags : (states['[[map:run]]']?.attributes || {});
     const P = states['[[map:parameters]]']?.attributes || {};
@@ -596,6 +643,7 @@ tap_action:
 hold_action:
   action: none
 extra_styles: |
+  @keyframes ogpulse { 0%,100% { box-shadow: 0 0 10px -4px var(--og), inset 0 0 14px -8px var(--og); } 50% { box-shadow: 0 0 22px 0 var(--og), inset 0 0 22px -6px var(--og); } }
   @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
   @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
   @keyframes fx-glow-rainbow {

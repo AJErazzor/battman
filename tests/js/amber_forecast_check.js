@@ -15,20 +15,20 @@ const http = require("http");
 #wrap{width:800px;height:340px}</style></head><body><div id="wrap"></div>
 <script type="module">
 const base = Math.floor(Date.now() / 1800000) * 1800000;   // on a half hour
-const f = (i, raw, dur) => ({ start_time: new Date(base + i * 1800000).toISOString(), duration: dur || 30,
-  per_kwh: raw, advanced_price_low: raw - 0.02, advanced_price_predicted: raw + 0.01, advanced_price_high: raw + 0.03 });
+const f = (i, raw, dur, feedIn) => ({ start_time: new Date(base + i * 1800000).toISOString(), duration: dur || 30,
+  per_kwh: raw, advanced_price_low: raw - (feedIn ? -0.03 : 0.02), advanced_price_predicted: raw + 0.01, advanced_price_high: raw + (feedIn ? -0.02 : 0.03) });   // feed-in: Amber's low is the higher raw figure
 window.mk = (buy, sell, tz) => ({ config: { time_zone: tz === undefined ? "Australia/Adelaide" : tz }, themes: {}, states: Object.assign({},
   buy === null ? {} : { "sensor.amber_billing_interval_forecasts_general_price": { attributes: { Forecasts: buy } } },
   sell === null ? {} : { "sensor.amber_billing_interval_forecasts_feed_in_price": { attributes: { Forecasts: sell } } },
   { "sensor.amber_5min_current_general_price": { state: "0.31", attributes: {} },
     "sensor.amber_5min_current_feed_in_price": { state: "0.12", attributes: {} } }) });
 // Amber's own shape: the interval under way isn't in the forecasts, and each starts a second past the boundary
-const g = (i, raw) => ({ start_time: new Date(base + i * 1800000 + 1000).toISOString(), end_time: new Date(base + (i + 1) * 1800000).toISOString(),
-  per_kwh: raw, advanced_price_low: raw - 0.02, advanced_price_predicted: raw + 0.01, advanced_price_high: raw + 0.03 });
+const g = (i, raw, feedIn) => ({ start_time: new Date(base + i * 1800000 + 1000).toISOString(), end_time: new Date(base + (i + 1) * 1800000).toISOString(),
+  per_kwh: raw, advanced_price_low: raw - (feedIn ? -0.03 : 0.02), advanced_price_predicted: raw + 0.01, advanced_price_high: raw + (feedIn ? -0.02 : 0.03) });
 window.BUY2 = Array.from({ length: 60 }, (_, i) => g(i + 1, 0.25 + (i % 2) * 0.1));
-window.SELL2 = Array.from({ length: 60 }, (_, i) => g(i + 1, -0.10));
+window.SELL2 = Array.from({ length: 60 }, (_, i) => g(i + 1, -0.10, true));
 window.BUY = Array.from({ length: 60 }, (_, i) => f(i, 0.25));
-window.SELL = Array.from({ length: 60 }, (_, i) => f(i, -0.10));
+window.SELL = Array.from({ length: 60 }, (_, i) => f(i, -0.10, undefined, true));
 await import("/battmanfiles/battman-amber-forecast-chart.js");
 const el = document.createElement("battman-amber-forecast-chart");
 el.setConfig({ type: "custom:battman-amber-forecast-chart" });

@@ -6,8 +6,10 @@
 // low / predicted / high, nested (advanced_price.low) or flat (advanced_price_low).
 //
 // Feed-in prices are negative when you're paid, so Sell is shown negated (positive = earning), as the
-// engine does. Negating swaps the band's ends: Sell High is the raw low, Sell Low the raw high, so
-// High is always the upper line. Prices are shown in c/kWh. A missing figure is a gap, never 0.
+// engine does. Amber orders a feed-in band the other way round from a buy one: its "low" is the
+// numerically higher raw figure and its "high" the lower (low > predicted > high), so after negating,
+// "low" is the lower line and "high" the upper one: Sell Low and Sell High are Amber's low and high as
+// they are. Prices are shown in c/kWh. A missing figure is a gap, never 0.
 
 export const SERIES = [
   { id: "buy", label: "Buy Price", side: "buy", field: "per_kwh" },
@@ -16,12 +18,12 @@ export const SERIES = [
   { id: "buy_high", label: "Buy High", side: "buy", field: "high" },
   { id: "sell", label: "Sell Price", side: "sell", field: "per_kwh" },
   { id: "sell_predicted", label: "Sell Predicted", side: "sell", field: "predicted" },
-  { id: "sell_low", label: "Sell Low", side: "sell", field: "high" },     // negated: raw high is the lower line
-  { id: "sell_high", label: "Sell High", side: "sell", field: "low" },
+  { id: "sell_low", label: "Sell Low", side: "sell", field: "low" },     // Amber's feed-in low, negated: the lower line
+  { id: "sell_high", label: "Sell High", side: "sell", field: "high" },
 ];
 
-// hours ahead: 15m, 30m, 1h, 2h, 4h, 8h, 12h, 24h
-export const RANGES_H = [0.25, 0.5, 1, 2, 4, 8, 12, 24];
+// hours ahead: 30m, 1h, 2h, 4h, 8h, 12h, 24h
+export const RANGES_H = [0.5, 1, 2, 4, 8, 12, 24];
 const STEP_MS = 5 * 60 * 1000;   // the chart has a point at least every 5 minutes, so the tooltip is always inside the right interval
 
 function num(x) {

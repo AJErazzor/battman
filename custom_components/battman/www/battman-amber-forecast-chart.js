@@ -1,5 +1,5 @@
 // Battman Amber forecast chart: custom:battman-amber-forecast-chart. Amber's buy and sell price
-// forecasts for the next 15 or 30 minutes, 1, 2, 4, 8, 12 or 24 hours: the price, Amber Advanced's prediction and its low /
+// forecasts for the next 30 minutes, 1, 2, 4, 8, 12 or 24 hours (short ranges drawn as Amber's real steps, 4 hours and longer rounded): the price, Amber Advanced's prediction and its low /
 // high band, for each side, in c/kWh, each line solid in its own theme colour. Until the first
 // forecast, the Price lines show Amber's current prices. Tap a name under the chart to hide or show that line; the range
 // and the hidden lines are kept per device. From Amber's two forecast sensors (amber2mqtt), named
@@ -17,11 +17,12 @@ const LINE_COLOR = {
 const THEME_VARS = Object.values(LINE_COLOR);
 const SAVE_KEY = "battman.amberForecastChart";
 const DEFAULT_RANGE_H = 8;
-const TICK_H = { 0.25: 1 / 12, 0.5: 1 / 6, 1: 0.25, 2: 0.5, 4: 0.5, 8: 1, 12: 2, 24: 3 };   // hours between time labels, per range
+const TICK_H = { 0.5: 1 / 6, 1: 0.25, 2: 0.5, 4: 0.5, 8: 1, 12: 2, 24: 3 };   // hours between time labels, per range
 const rangeLabel = (h) => (h < 1 ? `${h * 60}m` : `${h}h`);
 const rangeWords = (h) => (h < 1 ? `${h * 60} minutes` : h === 1 ? "1 hour" : `${h} hours`);
 
 // every line solid; Price a little heavier, Low / High a little lighter
+const SMOOTH_FROM_H = 4;   // this range and longer: a rounded line; shorter: the accurate stepped one
 const WIDTH = { per_kwh: 2.5, predicted: 2, low: 1.5, high: 1.5 };
 const kindOf = (sd) => sd.id.endsWith("_predicted") ? "predicted" : sd.id.endsWith("_low") ? "low" : sd.id.endsWith("_high") ? "high" : "per_kwh";
 
@@ -128,7 +129,9 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
           label: sd.label, sid: sd.id, hidden: hidden.has(sd.id),
           data: S.times.map((t, i) => ({ x: t, y: S.data[sd.id][i] })),
           borderColor: color, backgroundColor: color, borderWidth: WIDTH[kindOf(sd)],
-          pointRadius: 0, pointHoverRadius: 3, stepped: "after", spanGaps: false,
+          pointRadius: 0, pointHoverRadius: 3, spanGaps: false,
+          // short ranges show Amber's real 5/30-minute steps; long ones a smooth line (monotone: never overshoots a price)
+          ...(rangeH >= SMOOTH_FROM_H ? { stepped: false, tension: 0.35, cubicInterpolationMode: "monotone" } : { stepped: "after" }),
         };
       });
     }

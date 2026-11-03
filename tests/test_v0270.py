@@ -60,7 +60,7 @@ const buy = [
   {{ start_time: at(30), duration: 30, per_kwh: 0.5, advanced_price_low: 0.4, advanced_price_predicted: null, advanced_price_high: 0.6 }},
 ];
 const sell = [
-  {{ start_time: at(0), end_time: at(60), per_kwh: -0.1, advanced_price_low: -0.15, advanced_price_predicted: -0.09, advanced_price_high: -0.05 }},
+  {{ start_time: at(0), end_time: at(60), per_kwh: -0.1, advanced_price_low: -0.05, advanced_price_predicted: -0.09, advanced_price_high: -0.15 }},   // feed-in: Amber's low is the higher raw figure
 ];
 const S = forecastSeries(buy, sell, T0 + 10 * 60000, T0 + 90 * 60000);
 const pick = (id, m) => S.data[id][S.times.indexOf(T0 + m * 60000)];
@@ -80,7 +80,7 @@ console.log(JSON.stringify({{
     assert out["buyPredAt30"] is None                       # missing: a gap, not 0
     assert out["buyHighAt0"] == 30
     assert out["sellAt10"] == 10                            # Sell negated: positive = earning
-    assert out["sellLow"] == 5 and out["sellHigh"] == 15    # High stays the upper line after negating
+    assert out["sellLow"] == 5 and out["sellHigh"] == 15    # Amber's feed-in low/high, negated: High is the upper line
     assert out["sellAt60"] == 10 and out["buyAt60"] == 50   # the last forecast's end closes its line
     assert out["buyAt65"] is None and out["buyAt90"] is None   # past the forecasts: nothing drawn
     assert out["nested"] == 0.3 and out["flat"] == 0.1 and out["none"] is None

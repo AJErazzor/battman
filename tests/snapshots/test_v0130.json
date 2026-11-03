@@ -75,7 +75,7 @@
    "content": "JS"
   },
   "entity": "sensor.battman_parameters",
-  "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card { overflow: visible !important; }\n/* bottom pill — same fx harness as the mode buttons; the chase spins a conic layer behind a centre mask */\n.fxp { overflow: hidden; }\n.fxp::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%; width:600px; height:600px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none); animation: fx-spin var(--fx-chase-duration, 0s) linear infinite; display: var(--fx-ring, none);\n}\n.fxp::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:999px;\n  background: var(--battman-surface-popup); display: var(--fx-ring, none);\n}\n.fxp > * { position: relative; z-index: 2; }\n@media (prefers-reduced-motion: reduce) { .fxp, .fxp::before { animation: none !important; } }",
+  "extra_styles": "@keyframes ogpulse { 0%,100% { box-shadow: 0 0 10px -4px var(--og), inset 0 0 14px -8px var(--og); } 50% { box-shadow: 0 0 22px 0 var(--og), inset 0 0 22px -6px var(--og); } }\n@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card { overflow: visible !important; }\n/* bottom pill — same fx harness as the mode buttons; the chase spins a conic layer behind a centre mask */\n.fxp { overflow: hidden; }\n.fxp::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%; width:600px; height:600px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none); animation: fx-spin var(--fx-chase-duration, 0s) linear infinite; display: var(--fx-ring, none);\n}\n.fxp::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:999px;\n  background: var(--battman-surface-popup); display: var(--fx-ring, none);\n}\n.fxp > * { position: relative; z-index: 2; }\n@media (prefers-reduced-motion: reduce) { .fxp, .fxp::before { animation: none !important; } }",
   "hold_action": {
    "action": "none"
   },
@@ -134,7 +134,11 @@
    "sensor.sigen_plant_battery_state_of_charge",
    "input_select.battman_mode",
    "sensor.battman_parameters",
-   "timer.battman_override_timer"
+   "timer.battman_override_timer",
+   "sensor.sigen_plant_grid_connection_status",
+   "sensor.sigen_plant_consumed_power",
+   "sensor.sigen_plant_rated_energy_capacity",
+   "sensor.sigen_plant_pv_power"
   ],
   "type": "custom:button-card"
  },
