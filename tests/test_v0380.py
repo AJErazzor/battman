@@ -42,7 +42,9 @@ async def _scene(hass: HomeAssistant, kwh_per_period: float = 2.0, periods: int 
 
 
 async def _arm(hass: HomeAssistant) -> None:
-    """_setup turns every battman_engine* automation off; the switcher needs to be on to act."""
+    """_setup turns every battman_engine* automation off; the switcher needs to be on to act.
+    This setup has no logbook integration, so register the service the apply/restore lines use."""
+    hass.services.async_register("logbook", "log", lambda call: None)
     await hass.services.async_call("automation", "turn_on", {"entity_id": SW}, blocking=True)
     await _settle_all(hass)
 

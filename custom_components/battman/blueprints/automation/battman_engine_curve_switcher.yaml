@@ -88,6 +88,7 @@ actions:
         original: {}
         lastCheck: '{{ now().isoformat() }}'
     - action: logbook.log
+      continue_on_error: true
       data:
         name: Battman auto curve
         message: "{{ orig_mon | upper }} curve put back."
@@ -208,6 +209,7 @@ actions:
           curves: '{{ new_curves }}'
           preset_tracking: '{{ tracking }}'
       - action: logbook.log
+        continue_on_error: true
         data:
           name: Battman auto curve
           message: '{{ pname }} applied to {{ mon | upper }} ({{ why | trim }}).'
