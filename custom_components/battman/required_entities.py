@@ -106,6 +106,8 @@ REQUIRED: dict[str, tuple[str, str]] = {
     "sensor.sigen_plant_available_max_active_power": ("available power, on the Overrides card", SIGEN),
     "sensor.sigen_plant_pv_power": ("solar power, on the cards", SIGEN),
     "sensor.sigen_plant_daily_pv_energy": ("solar today, on the House card", SIGEN),
+    "sensor.sigen_inverter_daily_pv_energy": ("inverter solar today, on the Solar card and the auto curve switcher's projection", SIGEN),
+    "sensor.sigen_plant_daily_third_party_inverter_energy": ("third-party inverter solar today, on the Solar card and the projection", SIGEN),
     "sensor.sigen_plant_daily_load_consumption": ("house use today, on the House card", SIGEN),
     "sensor.sigen_plant_daily_grid_import_energy": ("grid bought today, on the Cost chart", SIGEN),
     "sensor.sigen_plant_daily_grid_export_energy": ("grid sold today, on the Cost chart", SIGEN),

@@ -216,12 +216,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 except engine.EngineError as err:
                     _LOGGER.error("Battman engine: %s", err)
                     return
-                hass.config_entries.async_update_entry(entry, data={**entry.data, ENGINE_DONE: True})
+                hass.config_entries.async_update_entry(entry, data={
+                    **entry.data, ENGINE_DONE: True,
+                    AUTOMATIONS_OFFERED: sorted(set(entry.data.get(AUTOMATIONS_OFFERED, [])) | set(engine.ADDED_LATER))})
 
             if hass.state is CoreState.running:
                 hass.async_create_task(_check())
             else:
                 entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _check))
+    else:
+        # engine automations added since this install made its engine: each is made once
+        later = {i for i in engine.ADDED_LATER if i not in set(entry.data.get(AUTOMATIONS_OFFERED, []))}
+        if later:
+            try:
+                await engine.async_write_missing(hass, only=later)
+            except engine.EngineError as err:
+                _LOGGER.error("Battman engine: %s", err)
+            else:
+                hass.config_entries.async_update_entry(entry, data={
+                    **entry.data, AUTOMATIONS_OFFERED: sorted(set(entry.data.get(AUTOMATIONS_OFFERED, [])) | later)})
+
+                async def _reload(*_args) -> None:
+                    try:
+                        await engine.async_reload_and_check(hass)
+                    except engine.EngineError as err:
+                        _LOGGER.error("Battman engine: %s", err)
+
+                if hass.state is CoreState.running:
+                    hass.async_create_task(_reload())
+                else:
+                    entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _reload))
     return True
 
 

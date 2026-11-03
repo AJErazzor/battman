@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------------------------------
 
 import { AMBER, BATTMAN_SENSORS, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
-import { NOT_SAVED, debugBox, hourLabel, presetMenus, pressFeedback, savedIn, showNote as noteIn, wireHandlers } from "./battman-curve-editor.js";
+import { NOT_SAVED, debugBox, hourLabel, presetMenus, pressFeedback, sameData, savedIn, showNote as noteIn, wireHandlers } from "./battman-curve-editor.js";
 
 const CSS = `
   :host { display: block; }
@@ -794,6 +794,8 @@ function curvyRun(card, root) {
   let chart = null;
   let autoSave = false;
   let saveTimeout = null;
+  let lastSeenCurves = null;    // the soc_curves `curves` we last loaded/saved; detects outside changes (e.g. the auto curve switcher)
+  let externalNoteShown = false;
   let showActual = true;
   let showToday = true;
   let showDebugBox = false;
@@ -1552,6 +1554,7 @@ function curvyRun(card, root) {
       months.forEach(month => { curvesData[month] = { sell: data[month].sell, sell_high: data[month].sell_high, buy: data[month].buy, buy_high: data[month].buy_high }; });
       await hass.callWS({ type: 'fire_event', event_type: M.soc_curves_update_event, event_data: { curves: curvesData } });
       if (!(await savedIn(getHass, M.soc_curves, 'curves', curvesData))) { showStatus(NOT_SAVED, 'error'); debugLog('❌ Not saved'); return; }
+      lastSeenCurves = curvesData;   // our own save: don't treat it as an outside change
       if (!silent) { showStatus('Saved!', 'success'); debugLog('✅ Saved to HA'); }
     } catch (error) { showStatus('Save failed', 'error'); debugLog(`❌ ${error.message}`); }
   }
@@ -1686,6 +1689,7 @@ function curvyRun(card, root) {
     fetchSolarForecast();
 
     pressFeedback(root);
+    lastSeenCurves = (getHass().states[M.soc_curves] || {}).attributes?.curves ?? null;
     started = true;
   }
 
@@ -1738,10 +1742,36 @@ function curvyRun(card, root) {
     chart.update();
   }
 
+  // the curves sensor changed outside the editor (the auto curve switcher, the end-of-month copy, another tab):
+  // redraw to match, unless the user has unsaved edits — then just say so, don't throw their work away.
+  function hassChanged() {
+    if (!started || !chart) return;
+    const ent = getHass().states[M.soc_curves];
+    const curves = ent && ent.attributes.curves;
+    if (!curves || curves === lastSeenCurves) return;          // same object: the sensor didn't change (cheap, runs every tick)
+    if (sameData(curves, lastSeenCurves)) { lastSeenCurves = curves; return; }   // equal by value (e.g. our own save round-tripped)
+    const mine = {};
+    months.forEach((m) => { mine[m] = { sell: data[m].sell, sell_high: data[m].sell_high, buy: data[m].buy, buy_high: data[m].buy_high }; });
+    const dirty = !sameData(mine, lastSeenCurves);   // the editor holds unsaved edits vs what was last loaded
+    lastSeenCurves = curves;
+    if (dirty) {
+      if (!externalNoteShown) { showNote('The curves changed outside the editor — reload to see the new ones (your unsaved edits are kept).'); externalNoteShown = true; }
+      return;
+    }
+    loadFromHA().then(() => {
+      renderControls();
+      const _ds = getThresholdDataset(); if (_ds) _ds.data = getCurrentCurve();
+      chart.update();
+      updateDisplay();
+      loadPresetInfo();
+      showStatus('Curves updated', 'success');
+    });
+  }
+
   let started = false;
   wireHandlers(root, { clearDebugLog, closeManagePresets, copyCurve, copyFromActualSOC, exportPeriod, importPeriod, loadFactoryDefaults, loadPreset, openImport, openManagePresets, pasteCurve, runScript, savePreset, savePresetNames, saveToHA, switchCurveType, switchEditMode, switchPeriod, toggleActualSOC, toggleAutoSave, toggleDebugger, toggleHourDetails, togglePresetMenu, toggleTodaySOC, updateActualSOC, updateValueFromInput });
   start();
-  return { themeChanged };
+  return { themeChanged, hassChanged };
 }
 
 class BattmanCurvyCard extends BattmanCardBase {

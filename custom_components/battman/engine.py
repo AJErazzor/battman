@@ -62,6 +62,7 @@ AUTOMATION_NAMES = {
     "sapn_override": "SAPN override",
     "timer_duration": "override timer start",
     "copy_curves": "copy curves to next month",
+    "curve_switcher": "auto curve switcher",
     "armed_scene": "armed scene (00:01)",
 }
 AUTOMATIONS: list[dict[str, Any]] = [
@@ -73,6 +74,12 @@ AUTOMATIONS: list[dict[str, Any]] = [
     }
     for name, title in AUTOMATION_NAMES.items()
 ]
+
+
+# Engine automations added after the first release of the engine. An install that already has the
+# engine gets each one made once, by the first start of a version that has it (so one you delete
+# stays deleted); a fresh install gets them with the rest.
+ADDED_LATER = ("battman_engine_curve_switcher",)
 
 
 class EngineError(Exception):
@@ -94,12 +101,17 @@ def missing(hass: HomeAssistant) -> list[str]:
     return [k for k, v in entity_ids(hass).items() if v is None]
 
 
-async def async_write_missing(hass: HomeAssistant) -> list[str]:
-    """Write any missing engine automations/scripts into the files (no reload). Returns ids added."""
+async def async_write_missing(hass: HomeAssistant, only: set[str] | None = None) -> list[str]:
+    """Write any missing engine automations/scripts into the files (no reload). Returns ids added.
+
+    `only`: just these automation ids (no scripts), for the ones added after the first release.
+    """
     auto_path, script_path = automation_files.paths(hass)
+    autos = AUTOMATIONS if only is None else [a for a in AUTOMATIONS if a["id"] in only]
+    scripts = SCRIPTS if only is None else {}
     try:
         added = await hass.async_add_executor_job(
-            automation_files.write_missing, auto_path, script_path, AUTOMATIONS, SCRIPTS
+            automation_files.write_missing, auto_path, script_path, autos, scripts
         )
     except automation_files.AutomationFileError as err:
         raise EngineError(str(err)) from err
