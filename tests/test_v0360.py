@@ -96,10 +96,15 @@ const before = calls.length;
 window.BattmanLib.answerMode(false); const cancelled = calls.length;
 window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' }, {});
 window.BattmanLib.answerMode(true);
-process.stdout.write(JSON.stringify({ before, cancelled, calls, content: popups[0].content }));""")
+states['input_boolean.a'].state = 'on'; states['sensor.fit'] = { state: '-0.04' };   // Curtail on, feed-in negative: says why off costs money
+window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Curtail', ask_off: 'Off msg', ask_on: 'On msg', ask_off_negative: 'Feed-in is {price}. Pay.', price: 'sensor.fit' }, {});
+states['sensor.fit'].state = '0.10';                                                      // positive: the plain off message
+window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Curtail', ask_off: 'Off msg', ask_on: 'On msg', ask_off_negative: 'Feed-in is {price}. Pay.', price: 'sensor.fit' }, {});
+process.stdout.write(JSON.stringify({ before, cancelled, calls, content: popups[0].content, neg: popups[2].content, pos: popups[3].content }));""")
     assert out["before"] == 0 and out["cancelled"] == 0
     assert out["calls"] == ["homeassistant.toggle input_boolean.a"]
     assert "Turn Active?" in out["content"] and "Off msg" in out["content"] and "Turn off" in out["content"]
+    assert "Feed-in is -4.0c. Pay." in out["neg"] and "Off msg" in out["pos"] and "Pay." not in out["pos"]
 
 
 def test_mode_card_buttons() -> None:
@@ -109,7 +114,7 @@ def test_mode_card_buttons() -> None:
     assert yml.count("battman_mode:") == 7                                   # Buy, Sell, Sell Solar, HOOOOVER, House Party (+ the two simple-mode rows)
     for mode in ("Self Consume", "Drain"):                                   # no price rule: still a plain service call
         assert re.search(rf"service: input_select.select_option\n\s+service_data:\n\s+entity_id: '\[\[map:mode\]\]'\n\s+option: {mode}\n", yml), mode
-    assert yml.count("battman_toggle:") == 2 and "Turn Active off?" in yml and "Turn Curtail on?" in yml   # Active / Curtail ask in the same popup
+    assert yml.count("battman_toggle:") == 2 and "This will stop any exports." in yml and "Turning off means you pay to export" in yml   # Active / Curtail ask in the same popup
     assert "confirmation:" not in yml
     assert yml.count("visibility:") == 3                                     # the simple row and the two full rows are rows of the one stack, so hiding leaves no gap
 

@@ -25,8 +25,8 @@ cards:
       battman_toggle:
         entity: '[[map:enable]]'
         name: Turn Active
-        ask_off: Turn Active off? Battman will stop controlling the battery.
-        ask_on: Turn Active on? Battman will control the battery again.
+        ask_off: Battman will stop controlling the battery.
+        ask_on: Battman will control the battery again.
     hold_action:
       action: more-info
     styles:
@@ -107,8 +107,10 @@ cards:
       battman_toggle:
         entity: '[[map:no_export]]'
         name: Turn Curtail
-        ask_off: Turn Curtail off? The grid export limit will be lifted.
-        ask_on: Turn Curtail on? Grid export will be limited.
+        ask_off: Exports resume. Curtail stops them while feed-in is negative.
+        ask_off_negative: Feed-in is {price}. Turning off means you pay to export.
+        ask_on: This will stop any exports.
+        price: sensor.amber_5min_current_feed_in_price
     hold_action:
       action: more-info
     styles:

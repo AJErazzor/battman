@@ -848,7 +848,12 @@ window.BattmanLib.answerMode = function (yes) {
 window.BattmanLib.setToggle = function (d, el) {
   var hass = document.querySelector('home-assistant').hass;
   var st = hass.states[d.entity], isOn = st && st.state === 'on';
-  window.BattmanLib.askConfirm(d.name + '?', isOn ? d.ask_off : d.ask_on, isOn ? 'Turn off' : 'Turn on',
+  var msg = isOn ? d.ask_off : d.ask_on;
+  if (isOn && d.ask_off_negative && d.price && hass.states[d.price]) {      // turning off while feed-in is negative: say so
+    var c = parseFloat(hass.states[d.price].state) * 100;
+    if (isFinite(c) && c < 0) msg = d.ask_off_negative.replace('{price}', window.BattmanLib.centsText(c));
+  }
+  window.BattmanLib.askConfirm(d.name + '?', msg, isOn ? 'Turn off' : 'Turn on',
     function () { hass.callService('homeassistant', 'toggle', { entity_id: d.entity }); }, el);
 };
 
