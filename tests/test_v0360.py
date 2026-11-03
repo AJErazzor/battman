@@ -51,10 +51,11 @@ def test_pressing_a_mode_button() -> None:
 const calls = [], popups = [], closed = []; let native = 0;
 const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
   'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
-globalThis.document = { body: {}, querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
+globalThis.document = { body: {}, dispatchEvent: (e) => closed.push(e.key), querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+globalThis.KeyboardEvent = class { constructor(t, o) { this.key = o.key; } };
 window.confirm = () => { native++; return true; };
-window.browser_mod = { service: (n, o) => { if (n === 'popup') popups.push(o); else closed.push(n); } };
+window.browser_mod = { service: (n, o) => { if (n === 'popup') popups.push(o); } };
 const press = (option) => window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p' }, {});
 press('Self Consume');              // never asks: switches at once
 press('Discharge');                 // negative feed-in: asks, nothing switched yet
@@ -72,7 +73,7 @@ press('Charge');                    // anything failing in the check must not st
 process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, closed, popups: popups.length, native,
   content: sellAsk.content, buyContent: buyAsk.content }));""")
     assert out["afterAsk"] == 1 and out["cancelled"] == 1                     # only Self Consume so far: asking and Cancel switched nothing
-    assert out["closed"] == ["close_popup", "close_popup"]                    # both answers close the popup
+    assert out["closed"] == ["Escape", "Escape"]                    # both answers close the popup
     assert out["calls"] == ["Self Consume", "Discharge", "Float", "Discharge", "Charge", "fallback Charge"]
     assert out["popups"] == 3 and out["native"] == 1                          # three dialogs; the one without browser_mod used the box
     assert "Sell?" in out["content"] and "Cancel" in out["content"] and "Sell anyway" in out["content"]

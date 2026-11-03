@@ -786,8 +786,8 @@ window.BattmanLib.askMode = function (message, option, go, el) {
     L._pendingMode = go;
     L.localPopup({
       title: ' ',
-      style: L.popupStyle(el || document.body, 'min(92vw,340px)'),
-      content: '<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
+      style: '--mdc-dialog-min-width:340px;--mdc-dialog-max-width:360px;',
+      content: '<div style="' + L.themeStyle(el || document.body) + 'background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(name) + '?</div>'
         + '<div style="font-size:14px;line-height:1.5;margin-bottom:14px">' + esc(message) + '</div>'
         + '<div style="display:flex;gap:8px">'
@@ -801,10 +801,13 @@ window.BattmanLib.askMode = function (message, option, go, el) {
   }
 };
 
+// Closes the popup the way the Override panel does (its own bmClose): Escape.
+function L_close() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true, cancelable: true })); }
+
 window.BattmanLib.answerMode = function (yes) {
   var go = window.BattmanLib._pendingMode;
   window.BattmanLib._pendingMode = null;
-  try { window.browser_mod.service('close_popup', {}); } catch (e) {}
+  L_close();
   if (yes && go) go();
 };
 
