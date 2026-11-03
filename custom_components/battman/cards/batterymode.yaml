@@ -244,12 +244,11 @@ cards:
       show_name: true
       show_state: false
       tap_action:
-        action: call-service
-        service: input_select.select_option
-        service_data:
-          entity_id: '[[map:mode]]'
+        action: fire-dom-event
+        battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
           option: Charge
-        confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Charge", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+          mode: '[[map:mode]]'
+          parameters: '[[map:parameters]]'
       styles:
         card:
         - padding: 0 6px
@@ -320,12 +319,11 @@ cards:
       show_name: true
       show_state: false
       tap_action:
-        action: call-service
-        service: input_select.select_option
-        service_data:
-          entity_id: '[[map:mode]]'
+        action: fire-dom-event
+        battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
           option: Discharge
-        confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Discharge", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+          mode: '[[map:mode]]'
+          parameters: '[[map:parameters]]'
       styles:
         card:
         - padding: 0 6px
@@ -554,12 +552,11 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Charge
-          confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Charge", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
         styles:
           card:
           - padding: 0 4px
@@ -630,12 +627,11 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Discharge
-          confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Discharge", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
         styles:
           card:
           - padding: 0 4px
@@ -712,12 +708,11 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Float
-          confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Float", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
         styles:
           card:
           - padding: 0 4px
@@ -863,12 +858,11 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Float Solar Off
-          confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Float Solar Off", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
         styles:
           card:
           - padding: 0 4px
@@ -941,12 +935,11 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Charge Solar Off
-          confirmation: '[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, "Charge Solar Off", "[[map:parameters]]") : false; ]]]'   # asks only when the press goes against the price
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
         styles:
           card:
           - padding: 0 4px

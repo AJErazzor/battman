@@ -735,8 +735,10 @@ window.BattmanLib.themeModeColours = function (themes, name) {
 
 // ---------------------------------------------------------------------------------------------
 // Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy ask (in HA's own
-// confirmation dialog, like Active and Curtail) when the press goes against the price, and just switch
-// otherwise. Nothing it can't judge (a missing price, a failure here) stops the press: the mode is set.
+// popup, as the info buttons use, when the press goes against the price, and just switch otherwise. The buttons
+// fire a "battman_mode" dom event (as browser_mod's popups do); the listener below decides. Nothing it can't
+// judge (a missing price, a failure here) stops the press: the mode is set. Active and Curtail use HA's own
+// confirmation on their buttons.
 window.BattmanLib.MODE_NAMES = { 'Charge': 'Buy', 'Discharge': 'Sell', 'Float': 'Sell Solar', 'Charge Solar Off': 'HOOOOVER', 'Float Solar Off': 'House Party' };
 window.BattmanLib.centsText = function (c) { return (c < 0 ? '-' : '') + Math.abs(c).toFixed(1) + 'c'; };
 
@@ -757,17 +759,45 @@ window.BattmanLib.modeWarning = function (x) {
   return null;
 };
 
-// What a mode button asks before it switches: { text } for HA's own confirmation dialog, or false to just
-// switch. The card calls this when the button is tapped; anything it can't judge (a missing price, an error
-// here) is false, so the mode is set.
-window.BattmanLib.modeConfirmation = function (states, option, parametersId) {
+window.BattmanLib.setMode = function (d, el) {
+  var hass = document.querySelector('home-assistant').hass;
+  var go = function () { hass.callService('input_select', 'select_option', { entity_id: d.mode, option: d.option }); };
+  var warning = null;
   try {
-    var p = (states[parametersId] || {}).attributes || {};
-    var cents = function (id) { return states[id] ? parseFloat(states[id].state) * 100 : NaN; };
-    var w = window.BattmanLib.modeWarning({
-      option: option, buy: cents('sensor.amber_5min_current_general_price'), fit: cents('sensor.amber_5min_current_feed_in_price'),
+    var st = hass.states, p = (st[d.parameters] || {}).attributes || {};
+    var cents = function (id) { return st[id] ? parseFloat(st[id].state) * 100 : NaN; };
+    warning = window.BattmanLib.modeWarning({
+      option: d.option, buy: cents('sensor.amber_5min_current_general_price'), fit: cents('sensor.amber_5min_current_feed_in_price'),
       confirmPrice: p.confirmPriceMismatch, buyAbove: parseFloat(p.confirmBuyAbove),
     });
-    return w ? { text: w } : false;
-  } catch (e) { return false; }
+  } catch (e) { warning = null; }
+  if (!warning) return go();
+  window.BattmanLib.askMode(warning, d.option, go, el);
 };
+
+// The question, in browser_mod's own dialog (its Cancel and confirm buttons close it themselves). Without
+// browser_mod, or if it can't open, the browser's own confirm box.
+window.BattmanLib.askMode = function (message, option, go, el) {
+  var L = window.BattmanLib, name = L.MODE_NAMES[option] || option;
+  try {
+    if (!window.browser_mod || !window.browser_mod.showPopup) throw new Error('no browser_mod');
+    var html = String(message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    window.browser_mod.showPopup({
+      title: name + '?',
+      content: '<div style="font-size:16px;line-height:1.5">' + html + '</div>',
+      style: L.popupStyle(el || document.body, 'min(92vw,360px)'),
+      left_button: 'Cancel',
+      right_button: name + ' anyway', right_button_appearance: 'accent', right_button_action: function () { go(); },
+    });
+  } catch (e) {
+    if (window.confirm(message)) go();
+  }
+};
+
+if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {
+  window.BattmanLib._modeListener = true;
+  window.addEventListener('ll-custom', function (ev) {
+    var d = ev.detail && ev.detail.battman_mode;
+    if (d) window.BattmanLib.setMode(d, ev.composedPath ? ev.composedPath()[0] : ev.target);
+  });
+}

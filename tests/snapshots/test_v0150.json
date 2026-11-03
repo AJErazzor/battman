@@ -455,12 +455,11 @@
          ]
         },
         "tap_action": {
-         "action": "call-service",
-         "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Charge\", \"sensor.battman_parameters\") : false; ]]]",
-         "service": "input_select.select_option",
-         "service_data": {
-          "entity_id": "input_select.battman_mode",
-          "option": "Charge"
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Charge",
+          "parameters": "sensor.battman_parameters"
          }
         },
         "type": "custom:button-card"
@@ -574,12 +573,11 @@
          ]
         },
         "tap_action": {
-         "action": "call-service",
-         "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Discharge\", \"sensor.battman_parameters\") : false; ]]]",
-         "service": "input_select.select_option",
-         "service_data": {
-          "entity_id": "input_select.battman_mode",
-          "option": "Discharge"
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Discharge",
+          "parameters": "sensor.battman_parameters"
          }
         },
         "type": "custom:button-card"
@@ -948,12 +946,11 @@
            ]
           },
           "tap_action": {
-           "action": "call-service",
-           "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Charge\", \"sensor.battman_parameters\") : false; ]]]",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Charge"
+           "action": "fire-dom-event",
+           "battman_mode": {
+            "mode": "input_select.battman_mode",
+            "option": "Charge",
+            "parameters": "sensor.battman_parameters"
            }
           },
           "type": "custom:button-card"
@@ -1067,12 +1064,11 @@
            ]
           },
           "tap_action": {
-           "action": "call-service",
-           "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Discharge\", \"sensor.battman_parameters\") : false; ]]]",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Discharge"
+           "action": "fire-dom-event",
+           "battman_mode": {
+            "mode": "input_select.battman_mode",
+            "option": "Discharge",
+            "parameters": "sensor.battman_parameters"
            }
           },
           "type": "custom:button-card"
@@ -1197,12 +1193,11 @@
            ]
           },
           "tap_action": {
-           "action": "call-service",
-           "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Float\", \"sensor.battman_parameters\") : false; ]]]",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Float"
+           "action": "fire-dom-event",
+           "battman_mode": {
+            "mode": "input_select.battman_mode",
+            "option": "Float",
+            "parameters": "sensor.battman_parameters"
            }
           },
           "type": "custom:button-card"
@@ -1440,12 +1435,11 @@
            ]
           },
           "tap_action": {
-           "action": "call-service",
-           "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Float Solar Off\", \"sensor.battman_parameters\") : false; ]]]",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Float Solar Off"
+           "action": "fire-dom-event",
+           "battman_mode": {
+            "mode": "input_select.battman_mode",
+            "option": "Float Solar Off",
+            "parameters": "sensor.battman_parameters"
            }
           },
           "type": "custom:button-card"
@@ -1565,12 +1559,11 @@
            ]
           },
           "tap_action": {
-           "action": "call-service",
-           "confirmation": "[[[ return window.BattmanLib && window.BattmanLib.modeConfirmation ? window.BattmanLib.modeConfirmation(states, \"Charge Solar Off\", \"sensor.battman_parameters\") : false; ]]]",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Charge Solar Off"
+           "action": "fire-dom-event",
+           "battman_mode": {
+            "mode": "input_select.battman_mode",
+            "option": "Charge Solar Off",
+            "parameters": "sensor.battman_parameters"
            }
           },
           "type": "custom:button-card"
@@ -1592,20 +1585,6 @@
    "input_select.select_option",
    {
     "entity_id": "input_select.battman_mode",
-    "option": "Charge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Discharge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
     "option": "Self Consume"
    }
   ],
@@ -1614,27 +1593,6 @@
    {
     "entity_id": "input_select.battman_mode",
     "option": "Self Consume"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Charge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Discharge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Float"
    }
   ],
   [
@@ -1642,20 +1600,6 @@
    {
     "entity_id": "input_select.battman_mode",
     "option": "Drain"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Float Solar Off"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Charge Solar Off"
    }
   ]
  ],
