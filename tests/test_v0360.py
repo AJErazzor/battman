@@ -67,6 +67,31 @@ process.stdout.write(JSON.stringify({ calls, asked: asked.length }));""")
     assert out["asked"] == 3
 
 
+@needs_node
+def test_the_question_is_a_themed_popup() -> None:
+    """With browser_mod the question is a popup with Cancel and '<Mode> anyway'; no box from the browser."""
+    out = _node("""
+const calls = [], popups = [], closed = []; let nativeAsked = 0;
+const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
+  'sensor.p': { attributes: {} } };
+globalThis.document = { body: {}, querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
+globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+window.confirm = () => { nativeAsked++; return true; };
+window.browser_mod = { service: (n, d) => (n === 'popup' ? popups.push(d) : closed.push(n)) };
+const press = () => window.BattmanLib.setMode({ option: 'Discharge', mode: 'input_select.m', parameters: 'sensor.p' }, {});
+press();                                    // negative feed-in: asks, in a popup
+const first = popups[0];
+window.BattmanLib.answerMode(false);        // Cancel: nothing happens
+press(); window.BattmanLib.answerMode(true);  // "Sell anyway": sells
+process.stdout.write(JSON.stringify({ calls, popups: popups.length, closed, nativeAsked, title: first.title,
+  body: first.content.custom_fields.body.replace(/<[^>]+>/g, '|').replace(/\\|+/g, '|') }));""")
+    assert out["calls"] == ["Discharge"] and out["popups"] == 2 and out["nativeAsked"] == 0
+    assert out["closed"] == ["close_popup", "close_popup"]
+    assert out["title"] == "Sell?"
+    assert "Feed-in is -4.0c: you would pay to export." in out["body"] and "Cancel" in out["body"] and "Sell anyway" in out["body"]
+    assert "[[[" not in out["body"]
+
+
 def test_mode_card_buttons() -> None:
     yml = (ROOT / "cards/batterymode.yaml").read_text()
     for mode in ("Charge", "Discharge", "Float", "Charge Solar Off", "Float Solar Off"):

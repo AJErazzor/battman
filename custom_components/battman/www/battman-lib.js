@@ -758,7 +758,7 @@ window.BattmanLib.modeWarning = function (x) {
   return null;
 };
 
-window.BattmanLib.setMode = function (d) {
+window.BattmanLib.setMode = function (d, el) {
   var hass = document.querySelector('home-assistant').hass;
   var go = function () { hass.callService('input_select', 'select_option', { entity_id: d.mode, option: d.option }); };
   var warning = null;
@@ -770,14 +770,57 @@ window.BattmanLib.setMode = function (d) {
       confirmPrice: p.confirmPriceMismatch, buyAbove: parseFloat(p.confirmBuyAbove),
     });
   } catch (e) { warning = null; }
-  if (warning && !window.confirm(warning)) return;
-  go();
+  if (!warning) return go();
+  window.BattmanLib.askMode(warning, d.option, go, el);
+};
+
+// The question, as a themed popup with Cancel and "<Mode> anyway" (browser_mod, on this device only, as the
+// Correct totals popup). Without browser_mod, or if the popup can't open, the browser's own confirm box.
+window.BattmanLib.askMode = function (message, option, go, el) {
+  var L = window.BattmanLib, name = L.MODE_NAMES[option] || option;
+  try {
+    if (!window.browser_mod) throw new Error('no browser_mod');
+    var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); };
+    var btn = 'flex:1;min-height:44px;border-radius:10px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;';
+    L._pendingMode = go;
+    L.localPopup({
+      title: name + '?',
+      style: L.popupStyle(el || document.body, 'min(92vw,360px)'),
+      content: {
+        type: 'custom:button-card',
+        show_icon: false, show_name: false, show_state: false,
+        tap_action: { action: 'none' },
+        styles: { card: [{ padding: '0' }, { background: 'var(--battman-surface-card)' }, { 'box-shadow': 'none' }, { border: 'none' }],
+                  grid: [{ 'grid-template-areas': '"body"' }, { 'grid-template-columns': '1fr' }], custom_fields: { body: [{ width: '100%' }] } },
+        custom_fields: {
+          body: '<div style="color:var(--battman-text-bright);font-family:var(--primary-font-family,inherit);padding:2px 0 4px">'
+            + '<div style="font-size:15px;line-height:1.5;margin-bottom:16px">' + esc(message) + '</div>'
+            + '<div style="display:flex;gap:10px">'
+            + '<button onclick="event.stopPropagation();window.BattmanLib.answerMode(false)" style="' + btn
+            + 'background:var(--battman-surface-popup);color:var(--battman-text-bright);border:1px solid var(--battman-border-neutral)">Cancel</button>'
+            + '<button onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn
+            + 'background:var(--battman-orange);color:var(--battman-surface-card);border:1px solid var(--battman-orange)">' + esc(name) + ' anyway</button>'
+            + '</div></div>',
+        },
+      },
+    });
+  } catch (e) {
+    L._pendingMode = null;
+    if (window.confirm(message)) go();
+  }
+};
+
+window.BattmanLib.answerMode = function (yes) {
+  var go = window.BattmanLib._pendingMode;
+  window.BattmanLib._pendingMode = null;
+  try { window.browser_mod.service('close_popup', {}); } catch (e) {}
+  if (yes && go) go();
 };
 
 if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {
   window.BattmanLib._modeListener = true;
   window.addEventListener('ll-custom', function (ev) {
     var d = ev.detail && ev.detail.battman_mode;
-    if (d) window.BattmanLib.setMode(d);
+    if (d) window.BattmanLib.setMode(d, ev.composedPath ? ev.composedPath()[0] : ev.target);
   });
 }
