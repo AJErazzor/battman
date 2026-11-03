@@ -62,6 +62,19 @@ AUTOMATIONS: list[dict[str, Any]] = [
         "use_blueprint": {"path": f"battman/battman_live_activity_{name}.yaml", "input": {}},
     }
     for name, title in (("on_off", "on/off"), ("updates", "updates"), ("follow", "follow"))
+] + [
+    {
+        "id": f"battman_{name}",
+        "alias": f"Battman {title}",
+        "description": NOTE,
+        "use_blueprint": {"path": f"battman/battman_{name}.yaml", "input": {}},
+    }
+    for name, title in (
+        ("amber_buy_alert", "Amber – cheap price alert"),
+        ("amber_negative_alert", "Amber – negative price alert"),
+        ("amber_charge_action", "Amber – charge from the alert"),
+        ("offgrid_alert", "Off-grid alert"),
+    )
 ]
 
 
@@ -132,7 +145,7 @@ async def async_create_missing(hass: HomeAssistant, only: set[str] | None = None
 # The Live Activity settings before v0.26.0: (domain, unique ID key) -> (parameters attribute, value)
 OLD_SETTINGS: dict[tuple[str, str], tuple[str, Any]] = {
     ("switch", "live_activity"): ("liveActivity", lambda s: s == "on"),
-    ("select", "live_activity_phone"): ("liveActivityPhone", str),
+    ("select", "live_activity_phone"): ("alertNotifyTarget", lambda s: "" if s == "Off" else s),   # now the shared notify target
     ("text", "live_activity_follow"): ("liveActivityFollow", str),
     ("text", "live_activity_follow_on"): ("liveActivityFollowOn", str),
     ("text", "live_activity_follow_off"): ("liveActivityFollowOff", str),

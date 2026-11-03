@@ -131,7 +131,7 @@ class BattmanSettingsCard extends BattmanCardBase {
   run(root) {
     const card = this;
 
-    const ICON = {"buy": "M11.39 5.45L9.61 4.55L10.87 2H19.34L20.61 4.55L18.83 5.44L18.11 4H12.11L11.39 5.45M21.73 8H17.2L16.41 5H13.81L13 8H8.5L7.21 10.55L9 11.44L9.73 10H20.5L21.21 11.45L23 10.56L21.73 8M20.88 22H18.81L18.57 21.1L15.11 15.9L11.64 21.1L11.41 22H9.34L12.23 11H14.3L13.94 12.35L15.11 14.1L16.27 12.35L15.92 11H18L20.88 22M14.5 15L13.61 13.65L12.43 18.13L14.5 15M17.79 18.12L16.61 13.64L15.71 15L17.79 18.12M9 16L5 12V15H1V17H5V20L9 16Z", "buyRules": "M11 15H6L13 1V9H18L11 23V15Z", "needy": "M20 13C20.6 13 21.1 13.2 21.5 13.6C21.8 14 22 14.5 22 15L14 18L7 16V7H8.9L16.2 9.7C16.7 9.9 17 10.3 17 10.8C17 11.1 16.9 11.4 16.7 11.6S16.1 12 15.8 12H13L11.2 11.3L10.9 12.2L13 13H20M1 7H5V18H1V7Z", "watchdog": "M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z", "billing": "M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9M1,10H3V20H19V22H1V10Z", "system": "M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z", "sell": "M5.18 5.45L3.4 4.55L4.66 2H13.13L14.4 4.55L12.62 5.44L11.9 4H5.9L5.18 5.45M15.5 8H11L10.2 5H7.6L6.81 8H2.28L1 10.55L2.79 11.44L3.5 10H14.28L15 11.45L16.79 10.56L15.5 8M14.67 22H12.6L12.36 21.1L8.9 15.9L5.43 21.1L5.2 22H3.13L6 11H8.09L7.73 12.35L8.9 14.1L10.06 12.35L9.71 11H11.78L14.67 22M8.3 15L7.4 13.65L6.22 18.13L8.3 15M11.58 18.12L10.4 13.64L9.5 15L11.58 18.12M23 16L19 12V15H15V17H19V20L23 16Z", "sellRules": "M2.3,20.28L11.9,10.68L10.5,9.26L9.78,9.97C9.39,10.36 8.76,10.36 8.37,9.97L7.66,9.26C7.27,8.87 7.27,8.24 7.66,7.85L13.32,2.19C13.71,1.8 14.34,1.8 14.73,2.19L15.44,2.9C15.83,3.29 15.83,3.92 15.44,4.31L14.73,5L16.15,6.43C16.54,6.04 17.17,6.04 17.56,6.43C17.95,6.82 17.95,7.46 17.56,7.85L18.97,9.26L19.68,8.55C20.07,8.16 20.71,8.16 21.1,8.55L21.8,9.26C22.19,9.65 22.19,10.29 21.8,10.68L16.15,16.33C15.76,16.72 15.12,16.72 14.73,16.33L14.03,15.63C13.63,15.24 13.63,14.6 14.03,14.21L14.73,13.5L13.32,12.09L3.71,21.7C3.32,22.09 2.69,22.09 2.3,21.7C1.91,21.31 1.91,20.67 2.3,20.28M20,19A2,2 0 0,1 22,21V22H12V21A2,2 0 0,1 14,19H20Z", "spike": "M7,2V13H10V22L17,10H13L17,2H7Z", "protection": "M10 12C10 10.9 10.9 10 12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12M7.8 17.7L6.3 16.3L7.8 14.8C7.3 14 7 13 7 12C7 11 7.3 10 7.8 9.3L6.3 7.8L7.8 6.3L9.2 7.8C10 7.3 11 7 12 7C13 7 14 7.3 14.8 7.8L16.3 6.3L17.7 7.7L16.2 9.2C16.7 10 17 11 17 12C17 13 16.7 14 16.2 14.8L17.7 16.3L16.3 17.7L14.8 16.2C14 16.7 13 17 12 17C11 17 10 16.7 9.3 16.2L7.8 17.7M12 9C10.3 9 9 10.3 9 12C9 13.7 10.3 15 12 15C13.7 15 15 13.7 15 12C15 10.3 13.7 9 12 9M20 2C21.1 2 22 2.9 22 4V20C22 21.1 21.1 22 20 22H19V23H15V22H9V23H5V22H4C2.9 22 2 21.1 2 20V4C2 2.9 2.9 2 4 2H20M20 20V4H4V20H20Z", "provider": "M8.28,5.45L6.5,4.55L7.76,2H16.23L17.5,4.55L15.72,5.44L15,4H9L8.28,5.45M18.62,8H14.09L13.3,5H10.7L9.91,8H5.38L4.1,10.55L5.89,11.44L6.62,10H17.38L18.1,11.45L19.89,10.56L18.62,8M17.77,22H15.7L15.46,21.1L12,15.9L8.53,21.1L8.3,22H6.23L9.12,11H11.19L10.83,12.35L12,14.1L13.16,12.35L12.81,11H14.88L17.77,22M11.4,15L10.5,13.65L9.32,18.13L11.4,15M14.68,18.12L13.5,13.64L12.6,15L14.68,18.12Z", "alert": "M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21M19.75,3.19L18.33,4.61C20.04,6.3 21,8.6 21,11H23C23,8.07 21.84,5.25 19.75,3.19M1,11H3C3,8.6 3.96,6.3 5.67,4.61L4.25,3.19C2.16,5.25 1,8.07 1,11Z", "liveActivity": "M13 7H11V9H13V7M13 11H11V17H13V11M17 1H7C5.9 1 5 1.9 5 3V21C5 22.1 5.9 23 7 23H17C18.1 23 19 22.1 19 21V3C19 1.9 18.1 1 17 1M17 19H7V5H17V19Z", "dashboard": "M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z", "defaults": "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"};
+    const ICON = {"buy": "M11.39 5.45L9.61 4.55L10.87 2H19.34L20.61 4.55L18.83 5.44L18.11 4H12.11L11.39 5.45M21.73 8H17.2L16.41 5H13.81L13 8H8.5L7.21 10.55L9 11.44L9.73 10H20.5L21.21 11.45L23 10.56L21.73 8M20.88 22H18.81L18.57 21.1L15.11 15.9L11.64 21.1L11.41 22H9.34L12.23 11H14.3L13.94 12.35L15.11 14.1L16.27 12.35L15.92 11H18L20.88 22M14.5 15L13.61 13.65L12.43 18.13L14.5 15M17.79 18.12L16.61 13.64L15.71 15L17.79 18.12M9 16L5 12V15H1V17H5V20L9 16Z", "buyRules": "M11 15H6L13 1V9H18L11 23V15Z", "needy": "M20 13C20.6 13 21.1 13.2 21.5 13.6C21.8 14 22 14.5 22 15L14 18L7 16V7H8.9L16.2 9.7C16.7 9.9 17 10.3 17 10.8C17 11.1 16.9 11.4 16.7 11.6S16.1 12 15.8 12H13L11.2 11.3L10.9 12.2L13 13H20M1 7H5V18H1V7Z", "watchdog": "M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z", "billing": "M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9M1,10H3V20H19V22H1V10Z", "system": "M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z", "sell": "M5.18 5.45L3.4 4.55L4.66 2H13.13L14.4 4.55L12.62 5.44L11.9 4H5.9L5.18 5.45M15.5 8H11L10.2 5H7.6L6.81 8H2.28L1 10.55L2.79 11.44L3.5 10H14.28L15 11.45L16.79 10.56L15.5 8M14.67 22H12.6L12.36 21.1L8.9 15.9L5.43 21.1L5.2 22H3.13L6 11H8.09L7.73 12.35L8.9 14.1L10.06 12.35L9.71 11H11.78L14.67 22M8.3 15L7.4 13.65L6.22 18.13L8.3 15M11.58 18.12L10.4 13.64L9.5 15L11.58 18.12M23 16L19 12V15H15V17H19V20L23 16Z", "sellRules": "M2.3,20.28L11.9,10.68L10.5,9.26L9.78,9.97C9.39,10.36 8.76,10.36 8.37,9.97L7.66,9.26C7.27,8.87 7.27,8.24 7.66,7.85L13.32,2.19C13.71,1.8 14.34,1.8 14.73,2.19L15.44,2.9C15.83,3.29 15.83,3.92 15.44,4.31L14.73,5L16.15,6.43C16.54,6.04 17.17,6.04 17.56,6.43C17.95,6.82 17.95,7.46 17.56,7.85L18.97,9.26L19.68,8.55C20.07,8.16 20.71,8.16 21.1,8.55L21.8,9.26C22.19,9.65 22.19,10.29 21.8,10.68L16.15,16.33C15.76,16.72 15.12,16.72 14.73,16.33L14.03,15.63C13.63,15.24 13.63,14.6 14.03,14.21L14.73,13.5L13.32,12.09L3.71,21.7C3.32,22.09 2.69,22.09 2.3,21.7C1.91,21.31 1.91,20.67 2.3,20.28M20,19A2,2 0 0,1 22,21V22H12V21A2,2 0 0,1 14,19H20Z", "spike": "M7,2V13H10V22L17,10H13L17,2H7Z", "protection": "M10 12C10 10.9 10.9 10 12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12M7.8 17.7L6.3 16.3L7.8 14.8C7.3 14 7 13 7 12C7 11 7.3 10 7.8 9.3L6.3 7.8L7.8 6.3L9.2 7.8C10 7.3 11 7 12 7C13 7 14 7.3 14.8 7.8L16.3 6.3L17.7 7.7L16.2 9.2C16.7 10 17 11 17 12C17 13 16.7 14 16.2 14.8L17.7 16.3L16.3 17.7L14.8 16.2C14 16.7 13 17 12 17C11 17 10 16.7 9.3 16.2L7.8 17.7M12 9C10.3 9 9 10.3 9 12C9 13.7 10.3 15 12 15C13.7 15 15 13.7 15 12C15 10.3 13.7 9 12 9M20 2C21.1 2 22 2.9 22 4V20C22 21.1 21.1 22 20 22H19V23H15V22H9V23H5V22H4C2.9 22 2 21.1 2 20V4C2 2.9 2.9 2 4 2H20M20 20V4H4V20H20Z", "provider": "M8.28,5.45L6.5,4.55L7.76,2H16.23L17.5,4.55L15.72,5.44L15,4H9L8.28,5.45M18.62,8H14.09L13.3,5H10.7L9.91,8H5.38L4.1,10.55L5.89,11.44L6.62,10H17.38L18.1,11.45L19.89,10.56L18.62,8M17.77,22H15.7L15.46,21.1L12,15.9L8.53,21.1L8.3,22H6.23L9.12,11H11.19L10.83,12.35L12,14.1L13.16,12.35L12.81,11H14.88L17.77,22M11.4,15L10.5,13.65L9.32,18.13L11.4,15M14.68,18.12L13.5,13.64L12.6,15L14.68,18.12Z", "notifications": "M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21M19.75,3.19L18.33,4.61C20.04,6.3 21,8.6 21,11H23C23,8.07 21.84,5.25 19.75,3.19M1,11H3C3,8.6 3.96,6.3 5.67,4.61L4.25,3.19C2.16,5.25 1,8.07 1,11Z", "dashboard": "M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z", "defaults": "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"};
     const NEEDS = ['parameters', 'parameters_update_event', 'buy_rules', 'buy_rules_event', 'sell_rules', 'sell_rules_event',
                    'buy_total', 'totals_update_event', 'power_provider_buy', 'power_provider_sell', 'power_provider_event'];
     const NEED_ENTITIES = ['parameters', 'buy_rules', 'sell_rules', 'buy_total', 'power_provider_buy', 'power_provider_sell'];
@@ -144,7 +144,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       dailyNetworkCharge: [0, 0, 5], billDayOfMonth: [1, 0, 31, true],
       systemCost: [0, 0, 100000], systemIncome: [0, 0, 50000], systemExpenses: [0, 0, 50000],
       preSystemBillQ1: [0, 0, 5000], preSystemBillQ2: [0, 0, 5000], preSystemBillQ3: [0, 0, 5000], preSystemBillQ4: [0, 0, 5000],
-      billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99],
+      billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99], amberBuyAlertMaxSoc: [1, 0, 100], offGridAlertDelay: [1, 0, 30],
     };
     const DEFAULT_KEYS = {   // the defaults each section's Reset restores (parameters' `defaults`)
       gridChargingPositive: ['buyProrateSOCOffset', 'buyHighSOCOffset'], gridDischarging: ['sellProrateSOCOffset', 'sellLowSOCOffset'],
@@ -157,7 +157,6 @@ class BattmanSettingsCard extends BattmanCardBase {
     const LA = { sw: 'switch.battman_live_activity', params: 'sensor.battman_parameters',
                  event: 'battman_parameters_update' };
     const LA_RANGE = { liveActivityFollowDelay: [true, 0, 60], liveActivitySpikeAlert: [false, 0, 20] };   // parseNum: [whole number, min, max]
-    const NOT_PHONES = ['send_message', 'persistent_notification'];   // notify services that aren't a device
     const HOURS = ['12am','1am','2am','3am','4am','5am','6am','7am','8am','9am','10am','11am',
                    '12pm','1pm','2pm','3pm','4pm','5pm','6pm','7pm','8pm','9pm','10pm','11pm'];
     const ORDER_KEY = 'battman.settingsOrder';
@@ -369,48 +368,44 @@ class BattmanSettingsCard extends BattmanCardBase {
       return title(svc);
     }
 
-    function alertSection() {
+    function notificationsSection() {
       const h = getHass(), p = attrs('parameters');
+      const gone = [LA.sw, LA.params].filter((id) => !h.states[id]);
+      if (gone.length) return note('Battman setting not found: ' + esc(gone.join(', ')) + ". Is Battman set up (and its packages loaded)?", true);
+      const A = h.states[LA.params].attributes;
       const list = Object.keys((h.services && h.services.notify) || {}).sort();
       const target = has(p.alertNotifyTarget) || p.alertNotifyTarget === '' ? p.alertNotifyTarget : null;
       const opts = (target === null ? '<option value="" disabled selected>Not set</option>' : '')
         + (target && list.indexOf(target) < 0 ? '<option value="' + esc(target) + '" selected>' + esc(target) + ' (not found)</option>' : '')
-        + '<option value=""' + (target === '' ? ' selected' : '') + '>— Off (no alerts) —</option>'
+        + '<option value=""' + (target === '' ? ' selected' : '') + '>— Off —</option>'
         + list.map((n) => '<option value="' + esc(n) + '"' + (n === target ? ' selected' : '') + '>' + esc(prettyNotify(h, n)) + '</option>').join('');
-      return note('Alerts when the live buy price is cheap, with quick-charge actions. Set Notify target to Off to turn alerts off.')
-        + '<div class="rows">'
-        + numParam('amberBuyAlertThreshold', 'Alert threshold', 'Notify when the buy price drops below this', 'c/kWh')
-        + row('Notify target', 'Which notify service gets the alerts', '<select class="wide" data-notify>' + opts + '</select>')
-        + row('Alert on negative price', 'Also notify when the buy price goes below zero', swHtml('data-pswitch="amberNegativeBuyAlert"', !!p.amberNegativeBuyAlert))
-        + '</div>';
-    }
-
-    function liveActivitySection() {
-      const h = getHass();
-      const gone = [LA.sw, LA.params].filter((id) => !h.states[id]);
-      if (gone.length) return note('Battman setting not found: ' + esc(gone.join(', ')) + ". Is Battman set up (and its packages loaded)?", true);
-      const A = h.states[LA.params].attributes;
-      const phone = A.liveActivityPhone || 'Off';
-      const phones = Object.keys((h.services && h.services.notify) || {}).filter((s) => NOT_PHONES.indexOf(s) < 0).sort();
-      const lost = phone !== 'Off' && phones.indexOf(phone) < 0;
-      const phoneOpts = ['Off'].concat(phones, lost ? [phone] : []).map((o) => '<option value="' + esc(o) + '"' + (o === phone ? ' selected' : '') + '>'
-        + esc(o === 'Off' ? '— Off —' : prettyNotify(h, o) + (o === phone && lost ? ' (not found)' : '')) + '</option>').join('');
       const txt = (key, w) => '<div class="field ' + (w ? 'wide' : '') + '"><input data-la-text="' + key + '" value="' + esc(A[key] == null ? '' : A[key]) + '"></div>';
       const num = (key, unit) => '<div class="field"><input inputmode="decimal" data-la-num="' + key + '" value="' + esc(A[key] == null ? '' : A[key]) + '"><span class="sfx">' + unit + '</span></div>';
       const f = String(A.liveActivityFollow || '').trim(), fe = f ? h.states[f] : null;
-      const followNow = !f ? 'Blank: not following anything (use the switch)' : fe ? 'Now: ' + esc((fe.attributes && fe.attributes.friendly_name) || f) + ' is ' + esc(fe.state) : '';
-      return note("Your battery on your phone's lock screen. Pick a phone, then switch it on, or let it follow something like your car's ignition.")
+      const followNow = !f ? 'Blank: not following anything' : fe ? 'Now: ' + esc((fe.attributes && fe.attributes.friendly_name) || f) + ' is ' + esc(fe.state) : '';
+      const sw = (key, label, desc) => row(label, desc, swHtml('data-pswitch="' + key + '"', !!p[key]));
+      return note('Every alert goes to one phone, and each is off until you switch it on.')
         + '<div class="rows">'
-        + row('Live Activity', 'On shows it, off clears it', swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
-        + row('Phone', 'Which notify service gets it (Off sends nothing)', '<select class="wide" data-la-select="liveActivityPhone">' + phoneOpts + '</select>',
-              lost ? '⚠ notify.' + esc(phone) + ' not found' : '')
-        + '<div class="subdiv">Follow an entity</div>'
-        + row('Entity', followNow, txt('liveActivityFollow', true), f && !fe ? '⚠ ' + esc(f) + ' not found' : '')
+        + row('Notify target', 'Which phone gets the alerts (Off silences all)', '<select class="wide" data-notify>' + opts + '</select>')
+        + '<div class="subdiv">Cheap price</div>'
+        + sw('amberBuyAlert', 'Cheap-price alert', 'Push when the buy price drops below the limit')
+        + numParam('amberBuyAlertThreshold', 'Below', '', 'c/kWh')
+        + '<div class="subdiv">Negative price</div>'
+        + sw('amberNegativeBuyAlert', 'Negative-price alert', "Push when you're paid to import")
+        + numParam('amberBuyAlertMaxSoc', 'Skip at SOC above', 'Also applies to the cheap-price alert', '%')
+        + '<div class="subdiv">Live Activity</div>'
+        + row('Live Activity', "Your battery on the phone's lock screen", swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
+        + row('Follow entity', followNow, txt('liveActivityFollow', true), f && !fe ? '⚠ ' + esc(f) + ' not found' : '')
         + row('On when it becomes', '', txt('liveActivityFollowOn'))
-        + row('Off when it becomes', '…and has stayed that way for the time below', txt('liveActivityFollowOff'))
-        + row('Off after', "So a quick stop doesn't restart it", num('liveActivityFollowDelay', 'min'))
-        + '<div class="subdiv">Alerts</div>'
-        + row('Feed-in spike alert', 'Push with a sound when feed-in rises above this', num('liveActivitySpikeAlert', '$/kWh'))
+        + row('Off when it becomes', 'And stays that way for the time below', txt('liveActivityFollowOff'))
+        + row('Off after', '', num('liveActivityFollowDelay', 'min'))
+        + '<div class="subdiv">Feed-in spike</div>'
+        + sw('liveActivitySpikeAlertOn', 'Spike alert', 'Sound on the Live Activity when feed-in spikes')
+        + row('Above', '', num('liveActivitySpikeAlert', '$/kWh'))
+        + '<div class="subdiv">Off-grid</div>'
+        + sw('offGridAlert', 'Off-grid alert', 'Time-sensitive push, with how long the battery will last')
+        + numParam('offGridAlertDelay', 'Wait before alerting', 'Ignores brief blips', 'min')
+        + sw('offGridRestoredAlert', 'Grid-restored alert', 'Also tell me when it is back')
         + '</div>';
     }
 
@@ -501,13 +496,12 @@ class BattmanSettingsCard extends BattmanCardBase {
                     + '<div class="subdiv">Tier 2</div>' + numParam('sellSpikePrice2', 'Spike sell price', '', 'c/kWh') + numParam('sellSpikeSOC2', 'Sell above SOC', '', '%') + '</div>' },
       protection: { title: 'Sell price protection', deps: ['buy_total'], render: protectionSection },
       provider:   { title: 'Power provider', deps: ['power_provider_buy', 'power_provider_sell'], render: providerSection },
-      alert:      { title: 'Amber buy alert', deps: ['parameters'], render: alertSection, services: true },
-      liveActivity: { title: 'Live Activity', deps: [], extra: () => [LA.sw, LA.params, LA.inCharge], render: liveActivitySection, services: true },
+      notifications: { title: 'Notifications', deps: ['parameters'], extra: () => [LA.sw], render: notificationsSection, services: true },
       dashboard:  { title: 'Dashboard options', deps: ['parameters'], render: dashboardSection, themes: true },
       defaults:   { title: 'Reset defaults', deps: ['parameters'], render: defaultsSection },
     };
     const DEFAULT_ORDER = [['buy', 'buyRules', 'needy', 'watchdog', 'billing', 'system'],
-                           ['sell', 'sellRules', 'spike', 'protection', 'provider', 'alert', 'liveActivity', 'dashboard', 'defaults']];
+                           ['sell', 'sellRules', 'spike', 'protection', 'provider', 'notifications', 'dashboard', 'defaults']];
 
     // ---------------------------------------------------------------- layout, drawing and keeping up to date
     function loadOrder() {
@@ -653,10 +647,6 @@ class BattmanSettingsCard extends BattmanCardBase {
         const key = t.dataset.laNum, n = parseNum(t.value, LA_RANGE[key]); if (n.err) return say(t, n.err, 'bad');
         t.value = n.v;
         return setLA(t, key, n.v, () => near(laAttr(key), n.v), 'the setting');
-      }
-      if (t.dataset.laSelect) {
-        const key = t.dataset.laSelect, v = t.value;
-        return setLA(t, key, v, () => laAttr(key) === v, 'the phone');
       }
       if ('laSwitch' in t.dataset) {
         const on = t.checked;

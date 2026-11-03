@@ -1,0 +1,71 @@
+blueprint:
+  name: Battman Amber – negative price alert
+  author: Battman
+  description: >-
+    Sends a notification when the buy price goes below zero (you're paid to import), with
+    buttons to charge the battery for 5, 10 or 15 minutes. Skipped at or above the SOC limit.
+
+
+    Battman creates this automation for you; settings are on the Battman dashboard
+    (Settings → Notifications). Installed and updated by the Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    buy_price:
+      name: Buy price ($/kWh)
+      default: sensor.amber_5min_current_general_price
+      selector:
+        entity:
+          domain: sensor
+    battery_soc:
+      name: Battery state of charge (%)
+      default: sensor.sigen_plant_battery_state_of_charge
+      selector:
+        entity:
+          domain: sensor
+    settings:
+      name: Battman settings
+      description: The sensor holding Battman's settings (the alert ones among them).
+      default: [[map:parameters]]
+      selector:
+        entity:
+          domain: sensor
+
+mode: single
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input buy_price
+    below: 0
+
+conditions:
+  - condition: template
+    value_template: "{{ state_attr(settings, 'amberNegativeBuyAlert') | bool(false) }}"
+  - condition: template
+    value_template: "{{ (state_attr(settings, 'alertNotifyTarget') or '') | trim | length > 0 }}"
+  - condition: template
+    value_template: >-
+      {{ is_number(states(soc_e)) and states(soc_e) | float < state_attr(settings, 'amberBuyAlertMaxSoc') | float(0) }}
+
+variables:
+  settings: !input settings
+  soc_e: !input battery_soc
+  buy_e: !input buy_price
+
+actions:
+  - action: "notify.{{ state_attr(settings, 'alertNotifyTarget') | trim }}"
+    data:
+      title: "💸 Negative Buy Price"
+      message: >-
+        Buy {{ (states(buy_e) | float(0) * 100) | round(1) }}c — you're paid to import. Charge battery?
+      data:
+        actions:
+          - action: AMBER_CHARGE_5
+            title: 5 min
+          - action: AMBER_CHARGE_10
+            title: 10 min
+          - action: AMBER_CHARGE_15
+            title: 15 min
+          - action: AMBER_CHARGE_NO
+            title: "No"

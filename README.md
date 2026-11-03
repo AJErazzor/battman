@@ -143,8 +143,16 @@ or dark mode. See [Battman Image](docs/cards.md#battman-image).
 
 Your battery on your phone's lock screen. Battman creates the automations and script
 for it (from its own blueprints) and keeps them updated; you pick the phone and what
-it follows on the Battman dashboard, **Settings → Live Activity**. See
+it follows on the Battman dashboard, **Settings → Notifications**. See
 [docs/live-activity.md](docs/live-activity.md).
+
+## Notifications
+
+One **Notifications** section on the Settings page: a shared notify target, then the cheap-price
+and negative-price Amber alerts, the Live Activity, its feed-in spike alert, and the off-grid
+alert. Every alert is off until you switch it on. Battman makes their automations from its own
+blueprints, and **Create automations** (a button on the Battman device) makes any you deleted.
+See [docs/notifications.md](docs/notifications.md).
 
 ## Entity map
 

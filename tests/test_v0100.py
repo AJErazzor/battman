@@ -105,9 +105,10 @@ async def test_not_loaded_repair(hass: HomeAssistant) -> None:
 async def test_settings(hass: HomeAssistant) -> None:
     await _setup(hass)
     # the defaults (as the old setting entities had), and none of those entities any more
-    assert (_la(hass, "liveActivity"), _la(hass, "liveActivityPhone"), _la(hass, "liveActivityFollow"),
+    assert (_la(hass, "liveActivity"), _la(hass, "liveActivityFollow"),
             _la(hass, "liveActivityFollowOn"), _la(hass, "liveActivityFollowOff"),
-            _la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert")) == (False, "Off", "", "ON", "OFF", 2, 0.3)
+            _la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert")) == (False, "", "ON", "OFF", 2, 0.3)
+    assert "liveActivityPhone" not in hass.states.get(PARAMS).attributes     # the phone is the shared notify target now
     assert hass.states.get(SW).state == "off"
     for gone in ("select.battman_live_activity_phone", "text.battman_live_activity_follow",
                  "number.battman_live_activity_spike_alert"):
@@ -121,9 +122,8 @@ async def test_settings(hass: HomeAssistant) -> None:
     # out-of-range numbers are ignored, as for every Battman setting
     await _set(hass, liveActivityFollowDelay=99, liveActivitySpikeAlert=-1)
     assert (_la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert")) == (2, 0.3)
-    await _set(hass, liveActivityFollowDelay=5, liveActivitySpikeAlert=0.45, liveActivityPhone="test_phone")
-    assert (_la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert"), _la(hass, "liveActivityPhone")) == \
-           (5, 0.45, "test_phone")
+    await _set(hass, liveActivityFollowDelay=5, liveActivitySpikeAlert=0.45)
+    assert (_la(hass, "liveActivityFollowDelay"), _la(hass, "liveActivitySpikeAlert")) == (5, 0.45)
 
 
 async def _states(hass, mode="Charge"):
@@ -146,9 +146,9 @@ async def test_end_to_end(hass: HomeAssistant, freezer) -> None:
 
     await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
     await _settle(hass)
-    assert calls == []                                          # phone is Off: nothing sent
+    assert calls == []                                          # notify target is Off: nothing sent
     await hass.services.async_call("switch", "turn_off", {"entity_id": SW}, blocking=True)
-    await _set(hass, liveActivityPhone="test_phone")
+    await _set(hass, alertNotifyTarget="test_phone")
 
     await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
     await _settle(hass)
@@ -158,7 +158,7 @@ async def test_end_to_end(hass: HomeAssistant, freezer) -> None:
     assert d["progress_bar_color"] == "#8E8E93"                 # no dashboard theme picked: grey
 
     n = len(calls)                                              # spike: read from the Battman setting
-    await _set(hass, liveActivitySpikeAlert=0.10)
+    await _set(hass, liveActivitySpikeAlert=0.10, liveActivitySpikeAlertOn=True)
     hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.15")
     await _settle(hass)
     spikes = [c for c in calls[n:] if c.get("title", "").startswith("⚡")]

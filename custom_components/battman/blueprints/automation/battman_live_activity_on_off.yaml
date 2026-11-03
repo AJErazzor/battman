@@ -9,7 +9,7 @@ blueprint:
 
     Uses the script made from the "Battman Live Activity – push" blueprint. Battman
     creates this automation and that script for you; settings are on the Battman
-    dashboard (Settings → Live Activity). Installed and updated by the Battman integration.
+    dashboard (Settings → Notifications). Installed and updated by the Battman integration.
   domain: automation
   homeassistant:
     min_version: "2024.10.0"
@@ -74,12 +74,13 @@ triggers:
     for:
       hours: !input keep_alive_hours
     id: keep_alive
-  # the feed-in price goes above the spike alert setting (liveActivitySpikeAlert, $/kWh); an
-  # unavailable price or a missing setting is no spike
+  # the spike alert is on and the feed-in price goes above its setting (liveActivitySpikeAlert, $/kWh);
+  # an unavailable price or a missing setting is no spike
   - trigger: template
     value_template: >-
       {% set limit = state_attr(settings, 'liveActivitySpikeAlert') %}
-      {{ has_value(feed_in_price) and limit is number and states(feed_in_price) | float > limit }}
+      {{ state_attr(settings, 'liveActivitySpikeAlertOn') | bool(false)
+         and has_value(feed_in_price) and limit is number and states(feed_in_price) | float > limit }}
     id: spike
 
 actions:

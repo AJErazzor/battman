@@ -12,8 +12,8 @@ blueprint:
     mode shows a red "?" icon, and with no Battman dashboard theme picked the bar is grey.
 
 
-    The phone is chosen on the Battman dashboard (Settings → Live Activity), stored in
-    Battman's settings (sensor.battman_parameters, liveActivityPhone). "Off" sends nothing. Battman creates a script
+    The phone is the notify target chosen on the Battman dashboard (Settings → Notifications),
+    stored in Battman's settings (sensor.battman_parameters, alertNotifyTarget). Off sends nothing. Battman creates a script
     from this blueprint for you (script.battman_live_activity_push).
     Installed and updated by the Battman integration.
   domain: script
@@ -154,19 +154,19 @@ sequence:
       mode_hues: !input mode_hues
       tag: !input tag
       url: !input url
-      phone: "{{ state_attr(settings, 'liveActivityPhone') or '' }}"
-  # Off: nothing to send. No phone setting at all is a fault: stop with an error.
+      phone: "{{ state_attr(settings, 'alertNotifyTarget') }}"
+  # No notify target setting at all is a fault: stop with an error. A blank one is Off: nothing to send.
   - if:
       - condition: template
-        value_template: "{{ phone in ['unknown', 'unavailable', ''] }}"
+        value_template: "{{ phone is none or phone in ['unknown', 'unavailable'] }}"
     then:
-      - stop: The Live Activity phone setting isn't available, so there's no phone to send to
+      - stop: The notify target setting isn't available, so there's no phone to send to
         error: true
   - if:
       - condition: template
-        value_template: "{{ phone == 'Off' }}"
+        value_template: "{{ phone | trim == '' }}"
     then:
-      - stop: Live Activity phone is Off
+      - stop: The notify target is Off
   - if:
       - condition: template
         value_template: "{{ clear | default(false) }}"

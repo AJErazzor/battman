@@ -20,12 +20,13 @@ PARAMS = ["buyProrateSOCOffset", "buyHighSOCOffset", "sellProrateSOCOffset", "se
           "watchdogScriptNotRunLimit", "watchdogScriptDisabledLimit", "watchdogResetOverridesAt", "dailyNetworkCharge",
           "billDayOfMonth", "systemCost", "systemInstallDate", "systemIncome", "systemExpenses", "preSystemBillQ1",
           "preSystemBillQ2", "preSystemBillQ3", "preSystemBillQ4", "billInflation", "amberBuyAlertThreshold",
-          "alertNotifyTarget", "amberNegativeBuyAlert", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme"]
+          "alertNotifyTarget", "amberNegativeBuyAlert", "amberBuyAlert", "amberBuyAlertMaxSoc", "liveActivitySpikeAlertOn",
+          "offGridAlert", "offGridAlertDelay", "offGridRestoredAlert", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme"]
 RULE_ITEMS = ["isActive", "allowLastChance", "hours_ahead", "grouping_minutes", "roundTo", "roundtype", "offset"]
 TRACKING = ["buy_trackingA_CutOffKwh", "buy_trackingA_CutOffcKwh", "buy_trackingA_Offset",
             "buy_trackingA_AllowLastChance", "buy_trackingA_ResetHour"]
 # the Live Activity: its switch and its settings (parameters attributes since v0.26.0)
-LIVE_ACTIVITY = ["switch.battman_live_activity", "sensor.battman_parameters", "liveActivityPhone", "liveActivityFollow",
+LIVE_ACTIVITY = ["switch.battman_live_activity", "sensor.battman_parameters", "liveActivityFollow",
                  "liveActivityFollowOn", "liveActivityFollowOff", "liveActivityFollowDelay", "liveActivitySpikeAlert"]
 
 
@@ -42,7 +43,7 @@ def test_every_old_setting_is_on_the_page() -> None:
                    "action: 'SetDefaults'", "data-cascade", "lovelace/config/save"):
         assert marker in JS, marker
     for sec in ("buy", "buyRules", "needy", "watchdog", "billing", "system", "sell", "sellRules", "spike", "protection",
-                "provider", "alert", "liveActivity", "dashboard", "defaults"):
+                "provider", "notifications", "dashboard", "defaults"):
         assert re.search(rf"\b{sec}:\s+\{{ title:", JS), sec
     assert "{{" not in JS and "[[map:" not in JS                             # entity names come from the map at run time
     assert "?? " not in JS                                                    # no made-up values for missing settings

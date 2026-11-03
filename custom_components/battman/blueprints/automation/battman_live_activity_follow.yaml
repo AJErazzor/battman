@@ -9,7 +9,7 @@ blueprint:
 
 
     Which entity, which states and how long are Battman settings on the Battman
-    dashboard (Settings → Live Activity). A blank entity means nothing is followed.
+    dashboard (Settings → Notifications). A blank entity means nothing is followed.
     Battman creates this automation for you. Installed and updated by the Battman
     integration.
   domain: automation
