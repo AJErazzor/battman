@@ -777,6 +777,33 @@ window.BattmanLib.setMode = function (d, el) {
 
 // The question, in the same kind of Battman panel as the info popups (browser_mod popup, no title bar text,
 // themed card with an uppercase heading). Without browser_mod, or if it can't open, the browser's confirm box.
+// The Battman colours the panel uses, read off the tapped element (the popup sits outside the themed view).
+window.BattmanLib.popupVars = function (el) {
+  var KEYS = ['surface-popup', 'surface-card', 'text-bright', 'text-muted', 'orange', 'orange-wash', 'orange-border', 'orange-border-strong', 'border-neutral', 'font'];
+  var read = function (node) {
+    var cs = getComputedStyle(node), out = '', n = 0;
+    KEYS.forEach(function (k) {
+      var v = String(cs.getPropertyValue('--battman-' + k) || '').trim().replace(/"/g, "'");
+      if (v) { out += '--battman-' + k + ':' + v + ';'; n++; }
+    });
+    return { css: out, n: n };
+  };
+  var got = read(el);
+  if (got.n < 5) {                       // the tapped element didn't see the theme: find one that does (as the Override panel does)
+    var found = null;
+    (function walk(root) {
+      var all = root.querySelectorAll('*');
+      for (var i = 0; i < all.length && !found; i++) {
+        var x = all[i];
+        if (getComputedStyle(x).getPropertyValue('--battman-surface-popup').trim()) { found = x; return; }
+        if (x.shadowRoot) walk(x.shadowRoot);
+      }
+    })(document);
+    if (found) got = read(found);
+  }
+  return got.css;
+};
+
 window.BattmanLib.askMode = function (message, option, go, el) {
   var L = window.BattmanLib, name = L.MODE_NAMES[option] || option;
   try {
@@ -787,7 +814,7 @@ window.BattmanLib.askMode = function (message, option, go, el) {
     L.localPopup({
       title: ' ',
       style: '--mdc-dialog-min-width:340px;--mdc-dialog-max-width:360px;',
-      content: '<div style="' + L.themeStyle(el || document.body) + 'background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
+      content: '<div style="' + L.popupVars(el || document.body) + 'background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(name) + '?</div>'
         + '<div style="font-size:14px;line-height:1.5;margin-bottom:14px">' + esc(message) + '</div>'
         + '<div style="display:flex;gap:8px">'
