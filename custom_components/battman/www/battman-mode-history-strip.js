@@ -6,7 +6,7 @@
 // BattmanLib.modeHues (the same colours as the Log, the Battery mode buttons and the Live Activity).
 
 import { BattmanCardBase, battmanDefine, battmanMap, battmanPicker, cssVar, esc, inCardPicker } from "./battman-card-base.js";
-import { DEFAULT_RANGE_MIN, RANGES_MIN, blockAt, durationText, modeBlocks, rangeLabel, tickTimes } from "./battman-mode-history-data.js";
+import { DEFAULT_RANGE_MIN, RANGES_MIN, blockAt, centsText, logValuesAt, modeBlocks, modeLengthText, percentText, rangeLabel, tickTimes } from "./battman-mode-history-data.js";
 
 const SAVE_KEY = "battman.modeHistoryStrip";
 
@@ -65,7 +65,7 @@ class BattmanModeHistoryStripCard extends BattmanCardBase {
     const card = this;
     const $ = (id) => root.getElementById(id);
     let rangeMin = DEFAULT_RANGE_MIN, modeId = null, FATAL = null, rows = null, fetchedAt = 0, busy = false, timer = null;
-    let blocks = [], win = { t0: 0, t1: 0 }, modeColor = {}, fmtHM = null, fmtDay = null, seq = 0;
+    let blocks = [], win = { t0: 0, t1: 0 }, modeColor = {}, fmtHM = null, fmtDay = null, seq = 0, logLines = [];
 
     try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && RANGES_MIN.includes(s.range)) rangeMin = s.range; } catch (e) {}
     const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ range: rangeMin })); } catch (e) {} };
@@ -98,6 +98,13 @@ class BattmanModeHistoryStripCard extends BattmanCardBase {
         hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(ms).forEach((x) => { p[x.type] = x.value; });
       return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(ms / 1000) * 1000;
     };
+    // the log is asked for a range as "YYYY-MM-DD HH:MM:SS" in HA's time zone (its own lines carry full ISO times)
+    const stamp = (ms) => {
+      const p = {};
+      new Intl.DateTimeFormat("en-US", { timeZone: card.hass.config.time_zone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(ms).forEach((x) => { p[x.type] = x.value; });
+      return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+    };
     const clock = (ms) => fmtHM.format(ms);
     const clockDay = (ms) => (Date.now() - ms > 20 * 3600000 ? fmtDay.format(ms) + " " : "") + clock(ms);
 
@@ -114,6 +121,11 @@ class BattmanModeHistoryStripCard extends BattmanCardBase {
         const r = await card.hass.callApi("GET", `history/period/${new Date(t0).toISOString()}?filter_entity_id=${modeId}&end_time=${new Date(t1).toISOString()}&minimal_response&no_attributes`);
         if (my === seq) { rows = (r && r[0]) || []; fetchedAt = Date.now(); win = { t0, t1 }; }
       } catch (e) { if (my === seq) rows = null; }
+      // buy / sell price and SOC come from the engine log, as on the Log page (the price sensors aren't in the recorder)
+      try {
+        const j = await card.hass.callApi("GET", "battman/log?start=" + encodeURIComponent(stamp(t0 - 300000)) + "&end=" + encodeURIComponent(stamp(t1)));
+        if (my === seq) logLines = ((j && j.lines) || []).filter((l) => l.trim());
+      } catch (e) { if (my === seq) logLines = []; }
       busy = false;
       if (my !== seq) return load();   // the range changed while this was loading
       draw();
@@ -145,10 +157,12 @@ class BattmanModeHistoryStripCard extends BattmanCardBase {
       const t = win.t0 + f * (win.t1 - win.t0), b = blockAt(blocks, t);
       const mark = $("mark"); mark.style.left = (f * 100).toFixed(2) + "%"; mark.style.opacity = "1";
       if (!b) return;
-      const running = b.to === null;
-      const len = (running ? Date.now() : b.to) - b.from;
-      $("read").innerHTML = `<span class="dot" style="background:${modeColor[b.mode] || "var(--primary-color)"}"></span><b>${esc(b.mode)}</b>`
-        + `<span class="sub">from ${clockDay(b.from)}${running ? "" : " to " + clock(b.to)} · ${durationText(len)}${running ? " so far" : ""}</span>`;
+      // the same line as the Log page: the time (its 5-minute block), mode, how long, then buy · sell · SOC
+      const v = logValuesAt(logLines, t);
+      const shown = v.at !== null ? Math.floor(v.at / 300000) * 300000 : t;
+      $("read").innerHTML = `<span class="dot" style="background:${modeColor[b.mode] || "var(--primary-color)"}"></span>${clockDay(shown)} · <b>${esc(b.mode)}</b>`
+        + ` · <span class="dur">${modeLengthText(b.from, b.to, win.t1, win.t0)}</span>`
+        + `<span class="sub">buy ${centsText(v.buy)} · sell ${centsText(v.sell)} · SOC ${percentText(v.soc)}</span>`;
     }
     let dragging = false;
     root.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest("#bar")) { dragging = true; scrub(e); } });

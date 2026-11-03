@@ -7,15 +7,6 @@ export const DEFAULT_RANGE_MIN = 240;
 
 export const rangeLabel = (min) => (min < 60 ? `${min}m` : `${min / 60}h`);
 
-// Hours / minutes: "45s", "12m", "1h 05m".
-export function durationText(ms) {
-  const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 60) return `${s}s`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m`;
-  return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
-}
-
 // The mode blocks that fall in [t0, t1] from the mode entity's history (HA's history/period rows).
 // Each block: { mode, start, end } clipped to the window, and { from, to } its real extent (the first
 // block really began before the window; the last is still running, so its `to` is null).
@@ -49,4 +40,45 @@ export function tickTimes(t0, t1, offsetMs) {
   const out = [];
   for (let t = Math.ceil((t0 + offsetMs) / step) * step - offsetMs; t <= t1; t += step) out.push(t);
   return out;
+}
+
+// ---- the engine log's figures at a point in time (the Log page and the strip show the same ones) ----
+// A log line is "<YYYY-MM-DD HH:MM:SS>|<message>". The 5-minute price sensors aren't kept in the
+// recorder, so buy / sell price and SOC come from the engine log: the line nearest to t, either side.
+// stampMs turns the line's time text into ms (default: the browser's own time zone).
+export function nearestLogLine(lines, t, stampMs = Date.parse) {
+  let best = null, bestDiff = Infinity;
+  for (const l of lines || []) {
+    const p = l.indexOf("|");
+    if (p < 0) continue;
+    const tt = stampMs(l.slice(0, p));
+    if (!Number.isFinite(tt)) continue;
+    const diff = Math.abs(tt - t);
+    if (diff < bestDiff) { bestDiff = diff; best = { line: l, at: tt }; }
+  }
+  return best;
+}
+
+// { at, soc, buy, sell } at t: at = the nearest line's time, the figures null where the line has none.
+// Buy / sell are $/kWh as the engine logs them ("Current:").
+export function logValuesAt(lines, t, stampMs = Date.parse) {
+  const n = nearestLogLine(lines, t, stampMs);
+  if (!n) return { at: null, soc: null, buy: null, sell: null };
+  const pick = (re) => { const m = n.line.match(re); return m ? parseFloat(m[1]) : null; };
+  return {
+    at: n.at,
+    soc: pick(/Battery:\s*(-?[\d.]+)%/),
+    buy: pick(/Buy:\s*\$[^()]*\(Current:\s*\$(-?[\d.]+)\)/),
+    sell: pick(/Sell:\s*\$[^()]*\(Current:\s*\$(-?[\d.]+)\)/),
+  };
+}
+
+export const centsText = (v) => (v === null || v === undefined ? "—" : (v * 100).toFixed(1) + "c");
+export const percentText = (v) => (v === null || v === undefined ? "—" : v.toFixed(1) + "%");
+
+// How long a mode block runs, as the Log page says it: "12 min", "30 min+" (it began before the window),
+// "5 min so far" (still running; `now` is the window's end).
+export function modeLengthText(from, to, now, windowStart) {
+  if (to === null || to === undefined) return Math.max(0, Math.round((now - from) / 60000)) + " min so far";
+  return Math.max(1, Math.round((to - from) / 60000)) + " min" + (from <= windowStart ? "+" : "");
 }

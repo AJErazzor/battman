@@ -245,8 +245,9 @@ inverter whose power sensor doesn't exist isn't drawn, so a one-inverter home ju
 `custom:battman-mode-history-strip` is the Log page's mode timeline as a card of its own: the battery
 mode as one coloured strip over the last 15 minutes, 30 minutes, 1, 2, 4, 8, 12 or 24 hours (the pills;
 4 hours to start, kept per device). It always ends at now, so there are no dates to set.
-Tap or drag along the strip for the mode at that point: a red line marks it, and it says when that mode
-started and how long it ran (or how long so far, if it's still running). It uses the same colours as the
+Tap or drag along the strip for the mode at that point: a red line marks it, and it gives the same line
+as the Log page: the time, the mode, how long it ran (or how long so far, if it's still running), and the
+buy price, sell price and SOC then (from the engine log; a dash where the log has none). It uses the same colours as the
 Log, the Battery mode buttons and the Live Activity, redraws when the mode changes and once a minute, and
 says on the card if the mode entity, the Battman card library or the Battman theme is missing. It has no options.
 
