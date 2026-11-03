@@ -39,68 +39,42 @@ def test_when_a_mode_asks() -> None:
 process.stdout.write(JSON.stringify(cases.map(([o, b, f, x]) => window.BattmanLib.modeWarning(Object.assign({{ option: o, buy: nan(b), fit: nan(f) }}, x)))));""")
     asks = [w is not None for w in out]
     assert asks == [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False, False]
-    assert out[0] == "Feed-in is -4.0c: you would pay to export.\n\nSell anyway?"
-    assert out[4] == "Buy is 0.0c: HOOOOVER is for negative prices.\n\nHOOOOVER anyway?"
-    assert out[8] == "Buy is 42.0c, above your 30.0c limit.\n\nBuy anyway?"
+    assert out[0] == "Feed-in is -4.0c: you would pay to export. Sell anyway?"
+    assert out[4] == "Buy is 0.0c: HOOOOVER is for negative prices. HOOOOVER anyway?"
+    assert out[8] == "Buy is 42.0c, above your 30.0c limit. Buy anyway?"
 
 
 @needs_node
-def test_pressing_a_mode_button() -> None:
+def test_what_the_button_asks() -> None:
+    """The card's confirmation: HA's own dialog text, or false (just switch). Never stops a press it can't judge."""
     out = _node("""
-const calls = []; let asked = [];
-const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
-  'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
-globalThis.document = { querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push([d, s, x.entity_id, x.option]) } }) };
-const press = (option, answer) => { window.confirm = (m) => { asked.push(m); return answer; };
-  window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p' }); };
-press('Discharge', false);       // feed-in is negative: asks, you say no -> nothing happens
-press('Discharge', true);        // ... you say yes -> sells
-press('Self Consume', false);    // never asks
-press('Float', true);            // an override running makes no difference: still asks (and you said yes)
-globalThis.document = { querySelector: () => ({ hass: { get states() { throw new Error('boom'); }, callService: (d, s, x) => calls.push(['fallback', x.option]) } }) };
-press('Charge', false);          // anything failing in the check must not stop the press
-process.stdout.write(JSON.stringify({ calls, asked: asked.length }));""")
-    assert out["calls"] == [["input_select", "select_option", "input_select.m", "Discharge"],
-                            ["input_select", "select_option", "input_select.m", "Self Consume"],
-                            ["input_select", "select_option", "input_select.m", "Float"],
-                            ["fallback", "Charge"]]
-    assert out["asked"] == 3
-
-
-@needs_node
-def test_the_question_is_a_themed_popup() -> None:
-    """With browser_mod the question is a popup with Cancel and '<Mode> anyway'; no box from the browser."""
-    out = _node("""
-const calls = [], popups = [], closed = []; let nativeAsked = 0;
-const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
-  'sensor.p': { attributes: {} } };
-globalThis.document = { body: {}, querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
-globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
-window.confirm = () => { nativeAsked++; return true; };
-window.browser_mod = { service: (n, d) => (n === 'popup' ? popups.push(d) : closed.push(n)) };
-const press = () => window.BattmanLib.setMode({ option: 'Discharge', mode: 'input_select.m', parameters: 'sensor.p' }, {});
-press();                                    // negative feed-in: asks, in a popup
-const first = popups[0];
-window.BattmanLib.answerMode(false);        // Cancel: nothing happens
-press(); window.BattmanLib.answerMode(true);  // "Sell anyway": sells
-process.stdout.write(JSON.stringify({ calls, popups: popups.length, closed, nativeAsked, title: first.title,
-  body: first.content.custom_fields.body.replace(/<[^>]+>/g, '|').replace(/\\|+/g, '|') }));""")
-    assert out["calls"] == ["Discharge"] and out["popups"] == 2 and out["nativeAsked"] == 0
-    assert out["closed"] == ["close_popup", "close_popup"]
-    assert out["title"] == "Sell?"
-    assert "Feed-in is -4.0c: you would pay to export." in out["body"] and "Cancel" in out["body"] and "Sell anyway" in out["body"]
-    assert "[[[" not in out["body"]
+const P = 'sensor.p';
+const states = (buy, fit, attrs) => ({ 'sensor.amber_5min_current_general_price': { state: String(buy) }, 'sensor.amber_5min_current_feed_in_price': { state: String(fit) },
+  [P]: { attributes: attrs } });
+const ask = (st, o) => window.BattmanLib.modeConfirmation(st, o, P);
+process.stdout.write(JSON.stringify({
+  sell: ask(states(0.42, -0.04, {}), 'Discharge'), sellOk: ask(states(0.42, 0.12, {}), 'Discharge'),
+  buy: ask(states(0.42, 0.05, { confirmBuyAbove: 30 }), 'Charge'), buyNever: ask(states(0.42, 0.05, { confirmBuyAbove: 0 }), 'Charge'),
+  party: ask(states(0.08, 0.05, { confirmPriceMismatch: true }), 'Float Solar Off'), partyOff: ask(states(0.08, 0.05, { confirmPriceMismatch: false }), 'Float Solar Off'),
+  noPrice: ask({ [P]: { attributes: {} } }, 'Discharge'), noParams: ask({}, 'Charge'), broken: window.BattmanLib.modeConfirmation(null, 'Discharge', P),
+}));""")
+    assert out["sell"] == {"text": "Feed-in is -4.0c: you would pay to export. Sell anyway?"} and out["sellOk"] is False
+    assert out["buy"] == {"text": "Buy is 42.0c, above your 30.0c limit. Buy anyway?"} and out["buyNever"] is False
+    assert out["party"] == {"text": "Buy is 8.0c: House Party is for negative prices. House Party anyway?"} and out["partyOff"] is False
+    assert out["noPrice"] is False and out["noParams"] is False and out["broken"] is False
 
 
 def test_mode_card_buttons() -> None:
     yml = (ROOT / "cards/batterymode.yaml").read_text()
-    for mode in ("Charge", "Discharge", "Float", "Charge Solar Off", "Float Solar Off"):
-        assert f"battman_mode:" in yml and re.search(rf"battman_mode:[^\n]*\n\s+option: {mode}\n", yml), mode
-        assert f"service: input_select.select_option\n        service_data:\n          entity_id: '[[map:mode]]'\n          option: {mode}\n" not in yml
-    assert yml.count("battman_mode:") == 7                                   # Buy, Sell, Sell Solar, HOOOOVER, House Party (+ the two simple-mode rows)
-    for mode in ("Self Consume", "Drain"):                                   # no price rule: still a plain service call
-        assert re.search(rf"service: input_select.select_option\n\s+service_data:\n\s+entity_id: '\[\[map:mode\]\]'\n\s+option: {mode}\n", yml), mode
-    assert yml.count("confirmation:") == 2 and "Turn Active off?" in yml and "Turn Curtail on?" in yml
+    for mode in ("Charge", "Discharge", "Float", "Charge Solar Off", "Float Solar Off"):   # the five that can go against the price
+        m = re.search(rf"option: {mode}\n +confirmation: '\[\[\[ return window.BattmanLib && window.BattmanLib.modeConfirmation \? "
+                      rf'window.BattmanLib.modeConfirmation\(states, "{mode}", "\[\[map:parameters\]\]"\) : false; \]\]\]\'', yml)
+        assert m, mode
+    assert yml.count("window.BattmanLib.modeConfirmation(states") == 7                     # (Buy, Sell, Sell Solar, HOOOOVER, House Party + the two simple-mode rows)
+    for mode in ("Self Consume", "Drain"):                                                   # no price rule: no confirmation
+        assert not re.search(rf"option: {mode}\n +confirmation:", yml), mode
+    assert "fire-dom-event" in yml and "battman_mode" not in yml                              # (only the info button's popup)
+    assert yml.count("confirmation:") == 9 and "Turn Active off?" in yml and "Turn Curtail on?" in yml
 
 
 async def test_confirmation_settings(hass: HomeAssistant) -> None:

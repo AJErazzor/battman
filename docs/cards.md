@@ -306,6 +306,6 @@ ask only when the press goes against the current price, and just switch otherwis
 | Self Consume, Drain | never | |
 
 It doesn't ask when a price isn't available, and a failure in the check never stops the press: the mode is set.
-A running override makes no difference. The question is a themed popup with Cancel and "<Mode> anyway" (browser_mod, on this device only); without
-browser_mod it falls back to the browser's own confirm box.
+A running override makes no difference. The question is Home Assistant's own confirmation dialog, the same
+one Active and Curtail use, so it needs nothing extra.
 

@@ -734,10 +734,9 @@ window.BattmanLib.themeModeColours = function (themes, name) {
 })();
 
 // ---------------------------------------------------------------------------------------------
-// Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy fire a
-// "battman_mode" dom event (like browser_mod's popups do); this asks when the press goes against the
-// price, then sets the mode. Nothing it can't judge (a missing price, a failure here) stops the press:
-// the mode is set. Active and Curtail use HA's own confirmation on their buttons.
+// Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy ask (in HA's own
+// confirmation dialog, like Active and Curtail) when the press goes against the price, and just switch
+// otherwise. Nothing it can't judge (a missing price, a failure here) stops the press: the mode is set.
 window.BattmanLib.MODE_NAMES = { 'Charge': 'Buy', 'Discharge': 'Sell', 'Float': 'Sell Solar', 'Charge Solar Off': 'HOOOOVER', 'Float Solar Off': 'House Party' };
 window.BattmanLib.centsText = function (c) { return (c < 0 ? '-' : '') + Math.abs(c).toFixed(1) + 'c'; };
 
@@ -749,78 +748,26 @@ window.BattmanLib.modeWarning = function (x) {
   if (!name) return null;
   if (x.confirmPrice !== false) {
     if ((x.option === 'Discharge' || x.option === 'Float') && isFinite(x.fit) && x.fit < 0)
-      return 'Feed-in is ' + T(x.fit) + ': you would pay to export.\n\n' + name + ' anyway?';
+      return 'Feed-in is ' + T(x.fit) + ': you would pay to export. ' + name + ' anyway?';
     if ((x.option === 'Charge Solar Off' || x.option === 'Float Solar Off') && isFinite(x.buy) && x.buy >= 0)
-      return 'Buy is ' + T(x.buy) + ': ' + name + ' is for negative prices.\n\n' + name + ' anyway?';
+      return 'Buy is ' + T(x.buy) + ': ' + name + ' is for negative prices. ' + name + ' anyway?';
   }
   if (x.option === 'Charge' && x.buyAbove > 0 && isFinite(x.buy) && x.buy > x.buyAbove)
-    return 'Buy is ' + T(x.buy) + ', above your ' + T(x.buyAbove) + ' limit.\n\n' + name + ' anyway?';
+    return 'Buy is ' + T(x.buy) + ', above your ' + T(x.buyAbove) + ' limit. ' + name + ' anyway?';
   return null;
 };
 
-window.BattmanLib.setMode = function (d, el) {
-  var hass = document.querySelector('home-assistant').hass;
-  var go = function () { hass.callService('input_select', 'select_option', { entity_id: d.mode, option: d.option }); };
-  var warning = null;
+// What a mode button asks before it switches: { text } for HA's own confirmation dialog, or false to just
+// switch. The card calls this when the button is tapped; anything it can't judge (a missing price, an error
+// here) is false, so the mode is set.
+window.BattmanLib.modeConfirmation = function (states, option, parametersId) {
   try {
-    var st = hass.states, p = (st[d.parameters] || {}).attributes || {};
-    var cents = function (id) { return st[id] ? parseFloat(st[id].state) * 100 : NaN; };
-    warning = window.BattmanLib.modeWarning({
-      option: d.option, buy: cents('sensor.amber_5min_current_general_price'), fit: cents('sensor.amber_5min_current_feed_in_price'),
+    var p = (states[parametersId] || {}).attributes || {};
+    var cents = function (id) { return states[id] ? parseFloat(states[id].state) * 100 : NaN; };
+    var w = window.BattmanLib.modeWarning({
+      option: option, buy: cents('sensor.amber_5min_current_general_price'), fit: cents('sensor.amber_5min_current_feed_in_price'),
       confirmPrice: p.confirmPriceMismatch, buyAbove: parseFloat(p.confirmBuyAbove),
     });
-  } catch (e) { warning = null; }
-  if (!warning) return go();
-  window.BattmanLib.askMode(warning, d.option, go, el);
+    return w ? { text: w } : false;
+  } catch (e) { return false; }
 };
-
-// The question, as a themed popup with Cancel and "<Mode> anyway" (browser_mod, on this device only, as the
-// Correct totals popup). Without browser_mod, or if the popup can't open, the browser's own confirm box.
-window.BattmanLib.askMode = function (message, option, go, el) {
-  var L = window.BattmanLib, name = L.MODE_NAMES[option] || option;
-  try {
-    if (!window.browser_mod) throw new Error('no browser_mod');
-    var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); };
-    var btn = 'flex:1;min-height:44px;border-radius:10px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;';
-    L._pendingMode = go;
-    L.localPopup({
-      title: name + '?',
-      style: L.popupStyle(el || document.body, 'min(92vw,360px)'),
-      content: {
-        type: 'custom:button-card',
-        show_icon: false, show_name: false, show_state: false,
-        tap_action: { action: 'none' },
-        styles: { card: [{ padding: '0' }, { background: 'var(--battman-surface-card)' }, { 'box-shadow': 'none' }, { border: 'none' }],
-                  grid: [{ 'grid-template-areas': '"body"' }, { 'grid-template-columns': '1fr' }], custom_fields: { body: [{ width: '100%' }] } },
-        custom_fields: {
-          body: '<div style="color:var(--battman-text-bright);font-family:var(--primary-font-family,inherit);padding:2px 0 4px">'
-            + '<div style="font-size:15px;line-height:1.5;margin-bottom:16px">' + esc(message) + '</div>'
-            + '<div style="display:flex;gap:10px">'
-            + '<button onclick="event.stopPropagation();window.BattmanLib.answerMode(false)" style="' + btn
-            + 'background:var(--battman-surface-popup);color:var(--battman-text-bright);border:1px solid var(--battman-border-neutral)">Cancel</button>'
-            + '<button onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn
-            + 'background:var(--battman-orange);color:var(--battman-surface-card);border:1px solid var(--battman-orange)">' + esc(name) + ' anyway</button>'
-            + '</div></div>',
-        },
-      },
-    });
-  } catch (e) {
-    L._pendingMode = null;
-    if (window.confirm(message)) go();
-  }
-};
-
-window.BattmanLib.answerMode = function (yes) {
-  var go = window.BattmanLib._pendingMode;
-  window.BattmanLib._pendingMode = null;
-  try { window.browser_mod.service('close_popup', {}); } catch (e) {}
-  if (yes && go) go();
-};
-
-if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {
-  window.BattmanLib._modeListener = true;
-  window.addEventListener('ll-custom', function (ev) {
-    var d = ev.detail && ev.detail.battman_mode;
-    if (d) window.BattmanLib.setMode(d, ev.composedPath ? ev.composedPath()[0] : ev.target);
-  });
-}
