@@ -25,8 +25,8 @@ OLD = [
 def _files(tmp: Path) -> tuple[Path, Path]:
     autos, scripts = tmp / "automations.yaml", tmp / "scripts.yaml"
     autos.write_text(
-        "- id: battman_engine_main_loop\n  alias: Battman engine – main loop\n  description: >-\n    " + OLD[2] + "\n"
-        "  use_blueprint:\n    path: battman/battman_engine_main_loop.yaml\n    input: {}\n"
+        "- id: battman_engine_loop\n  alias: Battman engine – main loop\n  description: >-\n    " + OLD[2] + "\n"
+        "  use_blueprint:\n    path: battman/battman_engine_loop.yaml\n    input: {}\n"
         "- id: battman_engine_watchdog\n  alias: Battman engine – watchdog\n  description: " + OLD[1] + "\n"
         "  use_blueprint:\n    path: battman/battman_engine_watchdog.yaml\n    input: {}\n"
         "- id: battman_engine_curtail\n  alias: mine\n  description: I changed this one myself\n"
@@ -49,16 +49,16 @@ def test_only_exact_old_descriptions_change_and_nothing_else(tmp_path) -> None:
     autos, scripts = _files(tmp_path)
     ids = {a["id"] for a in engine.AUTOMATIONS}
     changed = automation_files.refresh_descriptions(autos, scripts, ids, set(engine.SCRIPTS), engine.NOTE, engine.OLD_NOTE_HASHES)
-    assert sorted(changed) == ["battman_engine", "battman_engine_main_loop", "battman_engine_watchdog"], changed
+    assert sorted(changed) == ["battman_engine", "battman_engine_loop", "battman_engine_watchdog"], changed
     a = {x["id"]: x for x in load_yaml(str(autos))}
     s = load_yaml(str(scripts))
-    assert a["battman_engine_main_loop"]["description"] == engine.NOTE
+    assert a["battman_engine_loop"]["description"] == engine.NOTE
     assert a["battman_engine_watchdog"]["description"] == engine.NOTE
     assert s["battman_engine"]["description"] == engine.NOTE
     assert a["battman_engine_curtail"]["description"] == "I changed this one myself"       # yours: left alone
     assert a["somebody_elses"]["description"] == OLD[0]                                      # not Battman's id
-    assert a["battman_engine_main_loop"]["alias"] == "Battman engine – main loop"             # nothing else touched
-    assert a["battman_engine_main_loop"]["use_blueprint"]["path"] == "battman/battman_engine_main_loop.yaml"
+    assert a["battman_engine_loop"]["alias"] == "Battman engine – main loop"             # nothing else touched
+    assert a["battman_engine_loop"]["use_blueprint"]["path"] == "battman/battman_engine_loop.yaml"
     assert a["battman_engine_curtail"]["alias"] == "mine" and s["battman_engine"]["sequence"] == []
 
 
