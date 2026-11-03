@@ -17,6 +17,7 @@
 // The charts use Chart.js, shipped with Battman (/battmanfiles/vendor/).
 // ---------------------------------------------------------------------------------------------
 
+import { centsText, logValuesAt, modeLengthText, nearestLogLine, percentText } from "./battman-mode-history-data.js";
 import { AMBER, BATTMAN_SENSORS, BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 
 const LOG_EVENT = "battman_engine_log";
@@ -641,28 +642,8 @@ function battmanLogRun(card, root) {
     // price + SOC come from the nearest log line at-or-before t (the 5-min price sensors are
     // recorder-excluded, so their history is empty — the log text is the only surviving
     // contemporaneous source).
-    function nearestLine(t) {
-      let best = null, bestDiff = Infinity;
-      for (let i = 0; i < allLines.length; i++) {
-        const p = allLines[i].indexOf('|'); if (p < 0) continue;
-        const tt = Date.parse(allLines[i].slice(0, p));
-        if (isNaN(tt)) continue;
-        const diff = Math.abs(tt - t);
-        if (diff < bestDiff) { bestDiff = diff; best = allLines[i]; }
-      }
-      return best;   // closest line in time, either side
-    }
-    function valsAt(t) {
-      const line = nearestLine(t); if (!line) return {};
-      const soc = (line.match(/Battery:\s*(-?[\d.]+)%/) || [])[1];
-      const buy = (line.match(/Buy:\s*\$[^()]*\(Current:\s*\$(-?[\d.]+)\)/) || [])[1];
-      const sell = (line.match(/Sell:\s*\$[^()]*\(Current:\s*\$(-?[\d.]+)\)/) || [])[1];
-      return {
-        soc: soc != null ? parseFloat(soc) : null,
-        buy: buy != null ? parseFloat(buy) : null,
-        sell: sell != null ? parseFloat(sell) : null,
-      };
-    }
+    const nearestLine = (t) => { const n = nearestLogLine(allLines, t); return n && n.line; };   // closest line in time, either side
+    const valsAt = (t) => logValuesAt(allLines, t);
 
     // Core scrub: given a wall-clock time, draw the strip marker + the guide line in each chart +
     // the readout. Time-based so the strip OR any chart can drive it, and so it can be re-applied
@@ -696,18 +677,9 @@ function battmanLogRun(card, root) {
       // no next change yet → "so far"; a block whose start sits at the window's left edge may
       // have begun earlier → "+".
       let durTxt = '';
-      if (idx >= 0) {
-        const realStart = pts[idx].t;
-        const realEnd = (idx + 1 < pts.length) ? pts[idx + 1].t : null;
-        if (realEnd == null) {
-          durTxt = Math.max(0, Math.round((t1 - realStart) / 60000)) + ' min so far';
-        } else {
-          durTxt = Math.max(1, Math.round((realEnd - realStart) / 60000)) + ' min' + (realStart <= t0 ? '+' : '');
-        }
-      }
+      if (idx >= 0) durTxt = modeLengthText(pts[idx].t, (idx + 1 < pts.length) ? pts[idx + 1].t : null, t1, t0);
 
-      const cents = v => v == null ? '—' : (v * 100).toFixed(1) + 'c';
-      const pct = v => v == null ? '—' : v.toFixed(1) + '%';
+      const cents = centsText, pct = percentText;
       const v = valsAt(t);
       // show the same 5-min block the tap would filter (anchored to the nearest log line)
       const line = nearestLine(t);
