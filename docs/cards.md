@@ -51,7 +51,7 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-amber5minpricegrid` | SELL / BUY now with sparkline and 5-min countdown, then the next 8 periods | button-card |
 | `battman-amber24hourforecasttable` | Every Amber forecast interval: Sell, SS, Buy, SS, colour banded (built from Amber's forecast sensors) | button-card |
 | `battman-state` | What the engine is doing; tap for the next hours' projection | button-card, browser_mod |
-| `battman-batterymode` | Active / Curtail switches, Engine log popup (info button), battery mode buttons | button-card, card-mod, browser_mod |
+| `battman-batterymode` | Active / Curtail switches (each asks "are you sure?"), Engine log popup (info button), battery mode buttons (Sell, Sell Solar, HOOOOVER, House Party and Buy ask first when the press goes against the price: see [Mode button confirmations](#mode-button-confirmations)) | button-card, card-mod, browser_mod |
 | `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain), control centre (presets, scenes, Net Target), override timer | button-card, card-mod, browser_mod |
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors) | power-pie-card |
@@ -292,3 +292,20 @@ pc1:
   entity: sensor.office_pc_power
   suffix: W
 ```
+
+## Mode button confirmations
+
+Settings → Dashboard options → **Confirmations**. Active and Curtail always ask first. The mode buttons
+ask only when the press goes against the current price, and just switch otherwise:
+
+| Button | Asks when | Setting |
+|---|---|---|
+| Sell, Sell Solar | the feed-in price is negative (you'd pay to export) | Warn when a mode goes against the price (`confirmPriceMismatch`, default on) |
+| HOOOOVER, House Party | the buy price isn't negative (these modes are for negative prices) | the same |
+| Buy | the buy price is above your limit | Warn on Buy above (`confirmBuyAbove`, c/kWh; blank or 0 = never, a negative price never asks) |
+| Self Consume, Drain | never | |
+
+It doesn't ask while an override is running (you chose this), or when a price isn't available, and a
+failure in the check never stops the press: the mode is set. The question is the browser's own
+confirm box, so it works on a phone without browser_mod.
+

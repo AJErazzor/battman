@@ -930,6 +930,38 @@ template:
             {% endif %}
 
           ##################################################################
+          # Mode button confirmations (Settings → Dashboard options): ask before
+          # a mode button goes against the price (confirmPriceMismatch), and before
+          # Buy above a price in c/kWh (confirmBuyAbove; 0 = never). Active and
+          # Curtail always confirm.
+          ##################################################################
+          confirmPriceMismatch: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.confirmPriceMismatch is defined %}
+              {{ trigger.event.data.confirmPriceMismatch | bool }}
+            {% else %}
+              {{ this.attributes.confirmPriceMismatch
+                 if this.attributes.confirmPriceMismatch is defined
+                 else true }}
+            {% endif %}
+
+          confirmBuyAbove: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.confirmBuyAbove is defined
+               and trigger.event.data.confirmBuyAbove | float >= 0
+               and trigger.event.data.confirmBuyAbove | float <= 99 %}
+              {{ trigger.event.data.confirmBuyAbove | float }}
+            {% else %}
+              {{ this.attributes.confirmBuyAbove
+                 if this.attributes.confirmBuyAbove is defined
+                 else 0 }}
+            {% endif %}
+
+          ##################################################################
           # Battman addition: the Live Activity (Settings → Notifications).
           # liveActivity is switch.battman_live_activity's state (a template
           # switch in battman_sensors.yaml); the rest are its settings: the

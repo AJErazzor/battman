@@ -22,6 +22,8 @@ cards:
     show_state: true
     tap_action:
       action: toggle
+      confirmation:
+        text: '[[[ return entity.state === ''on'' ? ''Turn Active off? Battman will stop controlling the battery.'' : ''Turn Active on? Battman will control the battery again.''; ]]]'
     hold_action:
       action: more-info
     styles:
@@ -99,6 +101,8 @@ cards:
     show_state: true
     tap_action:
       action: toggle
+      confirmation:
+        text: '[[[ return entity.state === ''on'' ? ''Turn Curtail off? The grid export limit will be lifted.'' : ''Turn Curtail on? Grid export will be limited.''; ]]]'
     hold_action:
       action: more-info
     styles:
@@ -240,11 +244,12 @@ cards:
       show_name: true
       show_state: false
       tap_action:
-        action: call-service
-        service: input_select.select_option
-        service_data:
-          entity_id: '[[map:mode]]'
+        action: fire-dom-event
+        battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
           option: Charge
+          mode: '[[map:mode]]'
+          parameters: '[[map:parameters]]'
+          override_timer: '[[map:override_timer]]'
       styles:
         card:
         - padding: 0 6px
@@ -315,11 +320,12 @@ cards:
       show_name: true
       show_state: false
       tap_action:
-        action: call-service
-        service: input_select.select_option
-        service_data:
-          entity_id: '[[map:mode]]'
+        action: fire-dom-event
+        battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
           option: Discharge
+          mode: '[[map:mode]]'
+          parameters: '[[map:parameters]]'
+          override_timer: '[[map:override_timer]]'
       styles:
         card:
         - padding: 0 6px
@@ -548,11 +554,12 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Charge
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
+            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -623,11 +630,12 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Discharge
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
+            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -704,11 +712,12 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Float
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
+            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -854,11 +863,12 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Float Solar Off
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
+            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px
@@ -931,11 +941,12 @@ cards:
         show_name: true
         show_state: false
         tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
+          action: fire-dom-event
+          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
             option: Charge Solar Off
+            mode: '[[map:mode]]'
+            parameters: '[[map:parameters]]'
+            override_timer: '[[map:override_timer]]'
         styles:
           card:
           - padding: 0 4px

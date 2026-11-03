@@ -732,3 +732,53 @@ window.BattmanLib.themeModeColours = function (themes, name) {
     if (id && id.unref) id.unref();      // (only outside a browser, e.g. tests: don't keep node running)
   });
 })();
+
+// ---------------------------------------------------------------------------------------------
+// Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy fire a
+// "battman_mode" dom event (like browser_mod's popups do); this asks when the press goes against the
+// price, then sets the mode. Nothing it can't judge (a missing price, a failure here) stops the press:
+// the mode is set. Active and Curtail use HA's own confirmation on their buttons.
+window.BattmanLib.MODE_NAMES = { 'Charge': 'Buy', 'Discharge': 'Sell', 'Float': 'Sell Solar', 'Charge Solar Off': 'HOOOOVER', 'Float Solar Off': 'House Party' };
+window.BattmanLib.centsText = function (c) { return (c < 0 ? '-' : '') + Math.abs(c).toFixed(1) + 'c'; };
+
+// The question to ask before switching to `option`, or null to just switch. x: { option, buy, fit }
+// (c/kWh, NaN when unknown), overridden (an override is running: you chose this), confirmPrice
+// (the "warn when a mode goes against the price" setting), buyAbove (c/kWh; 0 or blank = never).
+window.BattmanLib.modeWarning = function (x) {
+  if (x.overridden) return null;
+  var T = window.BattmanLib.centsText, name = window.BattmanLib.MODE_NAMES[x.option];
+  if (!name) return null;
+  if (x.confirmPrice !== false) {
+    if ((x.option === 'Discharge' || x.option === 'Float') && isFinite(x.fit) && x.fit < 0)
+      return 'Feed-in is ' + T(x.fit) + ': you would pay to export.\n\n' + name + ' anyway?';
+    if ((x.option === 'Charge Solar Off' || x.option === 'Float Solar Off') && isFinite(x.buy) && x.buy >= 0)
+      return 'Buy is ' + T(x.buy) + ': ' + name + ' is for negative prices.\n\n' + name + ' anyway?';
+  }
+  if (x.option === 'Charge' && x.buyAbove > 0 && isFinite(x.buy) && x.buy > x.buyAbove)
+    return 'Buy is ' + T(x.buy) + ', above your ' + T(x.buyAbove) + ' limit.\n\n' + name + ' anyway?';
+  return null;
+};
+
+window.BattmanLib.setMode = function (d) {
+  var hass = document.querySelector('home-assistant').hass;
+  var go = function () { hass.callService('input_select', 'select_option', { entity_id: d.mode, option: d.option }); };
+  var warning = null;
+  try {
+    var st = hass.states, p = (st[d.parameters] || {}).attributes || {}, timer = st[d.override_timer];
+    var cents = function (id) { return st[id] ? parseFloat(st[id].state) * 100 : NaN; };
+    warning = window.BattmanLib.modeWarning({
+      option: d.option, buy: cents('sensor.amber_5min_current_general_price'), fit: cents('sensor.amber_5min_current_feed_in_price'),
+      overridden: !!timer && timer.state === 'active', confirmPrice: p.confirmPriceMismatch, buyAbove: parseFloat(p.confirmBuyAbove),
+    });
+  } catch (e) { warning = null; }
+  if (warning && !window.confirm(warning)) return;
+  go();
+};
+
+if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {
+  window.BattmanLib._modeListener = true;
+  window.addEventListener('ll-custom', function (ev) {
+    var d = ev.detail && ev.detail.battman_mode;
+    if (d) window.BattmanLib.setMode(d);
+  });
+}

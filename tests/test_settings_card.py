@@ -21,7 +21,7 @@ PARAMS = ["buyProrateSOCOffset", "buyHighSOCOffset", "sellProrateSOCOffset", "se
           "billDayOfMonth", "systemCost", "systemInstallDate", "systemIncome", "systemExpenses", "preSystemBillQ1",
           "preSystemBillQ2", "preSystemBillQ3", "preSystemBillQ4", "billInflation", "amberBuyAlertThreshold",
           "alertNotifyTarget", "amberNegativeBuyAlert", "amberBuyAlert", "liveActivitySpikeAlertOn",
-          "offGridAlert", "offGridAlertDelay", "offGridRestoredAlert", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme"]
+          "offGridAlert", "offGridAlertDelay", "offGridRestoredAlert", "confirmPriceMismatch", "confirmBuyAbove", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme"]
 RULE_ITEMS = ["isActive", "allowLastChance", "hours_ahead", "grouping_minutes", "roundTo", "roundtype", "offset"]
 TRACKING = ["buy_trackingA_CutOffKwh", "buy_trackingA_CutOffcKwh", "buy_trackingA_Offset",
             "buy_trackingA_AllowLastChance", "buy_trackingA_ResetHour"]
@@ -53,7 +53,7 @@ def test_limits_match_what_the_parameters_sensor_accepts() -> None:
     yaml_text = (ROOT / "packages/battman_parameters.yaml").read_text()
     table = JS[JS.index("const RANGE"):JS.index("const DEFAULT_KEYS")]
     page = {m[0]: m[1:] for m in re.findall(r"(\w+): \[(\d), (-?[\d.]+), (-?[\d.]+)", table)}
-    assert len(page) == 24
+    assert len(page) == 25
     for key, (is_int, lo, hi) in page.items():
         block = yaml_text[yaml_text.index(f"\n          {key}: >"):]
         block = block[:block.index("{% else %}")]
