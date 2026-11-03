@@ -1,0 +1,224 @@
+# Battman engine.
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman engine – auto curve switcher
+  description: >-
+    Picks a SOC curve preset from today's projected solar (made so far plus the Solcast
+    forecast still to come) and writes it into this month's curve; puts the month's own
+    curve back at the reset hour. Settings are on Battman's Settings page.
+  domain: automation
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+triggers:
+# every hour: the conditions below decide whether it's a check or the reset
+- trigger: time_pattern
+  minutes: '0'
+  id: hour
+# last day of the month, before the 23:55 copy of this month's curves into the next
+- trigger: time
+  at: '23:50:00'
+  id: safety
+# "check now" (fire battman_auto_curve_check)
+- trigger: event
+  event_type: battman_auto_curve_check
+  id: manual
+# asked to put the month's own curve back (a check that found no rule while the curve was switched)
+- trigger: event
+  event_type: battman_auto_curve_restore
+  id: restore
+# the switcher was turned off
+- trigger: template
+  value_template: >-
+    {{ states('[[map:parameters]]') not in ['unknown', 'unavailable']
+       and state_attr('[[map:parameters]]', 'autoCurve') is not none
+       and not (state_attr('[[map:parameters]]', 'autoCurve') | bool(false)) }}
+  id: 'off'
+mode: queued
+max: 5
+variables:
+  trig: '{{ trigger.id }}'
+  mon: "{{ ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][now().month - 1] }}"
+  P: "{{ states['[[map:parameters]]'].attributes if states['[[map:parameters]]'] is not none else {} }}"
+  enabled: "{{ P.autoCurve | default(false) | bool(false) }}"
+  hour_now: '{{ now().hour }}'
+  check_h: '{{ P.autoCurveCheckHour | default(6) | int(6) }}'
+  repeat_h: '{{ P.autoCurveRepeat | default(0) | int(0) }}'
+  reset_h: '{{ P.autoCurveResetHour | default(20) | int(20) }}'
+  orig: "{{ state_attr('[[map:auto_curve]]', 'original') or {} }}"
+  orig_mon: "{{ state_attr('[[map:auto_curve]]', 'originalMonth') or '' }}"
+  has_orig: '{{ orig_mon != '''' and orig | length > 0 }}'
+  last_day: '{{ (now() + timedelta(days=1)).day == 1 }}'
+  # repeat checks run from the check hour up to (not including) the reset hour
+  within: '{{ reset_h < 0 or reset_h <= check_h or hour_now < reset_h }}'
+  due: '{{ hour_now == check_h or (repeat_h > 0 and hour_now > check_h and (hour_now - check_h) % repeat_h == 0) }}'
+  do_restore: >-
+    {{ has_orig and (trig in ['off', 'restore']
+       or (trig == 'safety' and last_day)
+       or (trig == 'hour' and (orig_mon != mon or (reset_h >= 0 and hour_now == reset_h)))) }}
+  do_check: "{{ enabled and not do_restore and (trig == 'manual' or (trig == 'hour' and due and within)) }}"
+conditions: []
+actions:
+- choose:
+  # ---------------------------------------------------------------- put the month's own curve back
+  - conditions:
+    - condition: template
+      value_template: '{{ do_restore }}'
+    sequence:
+    - variables:
+        curves: "{{ state_attr('[[map:soc_curves]]', 'curves') or {} }}"
+        tracking: "{{ state_attr('[[map:soc_curves]]', 'preset_tracking') or {} }}"
+        key: "{{ 'month_' ~ orig_mon }}"
+        new_curves: "{{ dict(curves, **{orig_mon: orig}) }}"
+        new_tracking: >-
+          {% set ns = namespace(r={}) %}
+          {% for k, v in tracking.items() if k != key %}{% set ns.r = dict(ns.r, **{k: v}) %}{% endfor %}
+          {{ ns.r }}
+    - event: battman_soc_curves_update
+      event_data:
+        curves: '{{ new_curves }}'
+        preset_tracking: '{{ new_tracking }}'
+    - event: battman_auto_curve_update
+      event_data:
+        status: restored
+        rule: ''
+        preset: 0
+        originalMonth: ''
+        original: {}
+        lastCheck: '{{ now().isoformat() }}'
+    - action: logbook.log
+      data:
+        name: Battman auto curve
+        message: "{{ orig_mon | upper }} curve put back."
+  # ---------------------------------------------------------------- check the forecast and apply a rule
+  - conditions:
+    - condition: template
+      value_template: '{{ do_check }}'
+    sequence:
+    - variables:
+        basis_key: "{{ {'p10': 'pv_estimate10', 'est': 'pv_estimate', 'p90': 'pv_estimate90'}[P.autoCurveBasis | default('p10')] | default('pv_estimate10') }}"
+        # (the half-hour list holds datetimes, so it's read inside each template, never passed along as a variable)
+        periods_n: "{{ (state_attr('sensor.solcast_pv_forecast_forecast_today', 'detailedForecast') or []) | length }}"
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ periods_n == 0 }}'
+        sequence:
+        - event: battman_auto_curve_update
+          event_data:
+            status: no_forecast
+            lastCheck: '{{ now().isoformat() }}'
+        - stop: No Solcast forecast, so the curve stays as it is.
+    - variables:
+        # kWh still to come today (the half hour we're in counts for what's left of it)
+        remaining: >-
+          {% set ns = namespace(t=0) %}
+          {% for f in state_attr('sensor.solcast_pv_forecast_forecast_today', 'detailedForecast') or [] %}
+            {% set s = as_datetime(f.period_start) | as_local %}
+            {% set e = s + timedelta(minutes=30) %}
+            {% if e > now() %}
+              {% set frac = [1, (e - now()).total_seconds() / 1800] | min %}
+              {% set ns.t = ns.t + (f[basis_key] | float(0)) * 0.5 * frac %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.t | round(2) }}
+        # kWh made so far today: the Sigenergy inverter plus the third-party one (the Solar card's pair)
+        generated: >-
+          {{ ((states('sensor.sigen_inverter_daily_pv_energy') | float(0))
+             + (states('sensor.sigen_plant_daily_third_party_inverter_energy') | float(0))) | round(2) }}
+    - variables:
+        projected: '{{ (generated + remaining) | round(2) }}'
+        today_s: '{{ now().date().isoformat() }}'
+        hf: "{{ P.autoCurveHolidayFrom | default('') | string }}"
+        ht: "{{ P.autoCurveHolidayTo | default('') | string }}"
+        hol_on: "{{ hf != '' and ht != '' and hf <= today_s <= ht and (P.autoCurveHolidayPreset | int(0)) > 0 }}"
+        below_on: "{{ P.autoCurveBelow is number and (P.autoCurveBelowPreset | int(0)) > 0 and projected < P.autoCurveBelow }}"
+        above_on: "{{ P.autoCurveAbove is number and (P.autoCurveAbovePreset | int(0)) > 0 and projected > P.autoCurveAbove }}"
+        other_on: '{{ (P.autoCurveOtherPreset | int(0)) > 0 }}'
+        rule: >-
+          {% if hol_on %}holiday{% elif below_on %}below{% elif above_on %}above{% elif other_on %}other{% else %}none{% endif %}
+        preset_n: >-
+          {{ {'holiday': P.autoCurveHolidayPreset, 'below': P.autoCurveBelowPreset, 'above': P.autoCurveAbovePreset,
+              'other': P.autoCurveOtherPreset, 'none': 0}[rule] | int(0) }}
+        presets: "{{ state_attr('[[map:soc_curves]]', 'presets') or {} }}"
+        pset: "{{ presets[preset_n | string] if (preset_n | string) in presets else none }}"
+        pset_ok: >-
+          {{ pset is not none and (['sell', 'sell_high', 'buy', 'buy_high'] | select('in', pset) | list | length) == 4 }}
+    - choose:
+      # no rule matched: the month's own curve goes back if the switcher had changed it
+      - conditions:
+        - condition: template
+          value_template: "{{ rule == 'none' }}"
+        sequence:
+        - event: battman_auto_curve_update
+          event_data:
+            status: unchanged
+            rule: ''
+            lastCheck: '{{ now().isoformat() }}'
+            generated: '{{ generated }}'
+            remaining: '{{ remaining }}'
+            projected: '{{ projected }}'
+        - if:
+          - condition: template
+            value_template: '{{ has_orig and orig_mon == mon }}'
+          then:
+          - event: battman_auto_curve_restore
+        - stop: No rule matched.
+      # the rule names a preset that's empty or gone
+      - conditions:
+        - condition: template
+          value_template: '{{ not pset_ok }}'
+        sequence:
+        - event: battman_auto_curve_update
+          event_data:
+            status: no_preset
+            rule: '{{ rule }}'
+            preset: '{{ preset_n }}'
+            lastCheck: '{{ now().isoformat() }}'
+            generated: '{{ generated }}'
+            remaining: '{{ remaining }}'
+            projected: '{{ projected }}'
+        - stop: The preset for this rule is empty.
+    - variables:
+        curves: "{{ state_attr('[[map:soc_curves]]', 'curves') or {} }}"
+        cur_m: "{{ curves[mon] if mon in curves else {} }}"
+        same: >-
+          {{ cur_m.sell == pset.sell and cur_m.sell_high == pset.sell_high
+             and cur_m.buy == pset.buy and cur_m.buy_high == pset.buy_high }}
+        # keep a copy of the month's own curve the first time it's changed
+        need_snap: '{{ (not has_orig or orig_mon != mon) and not same }}'
+        snap: "{{ {'sell': cur_m.sell, 'sell_high': cur_m.sell_high, 'buy': cur_m.buy, 'buy_high': cur_m.buy_high} }}"
+        new_m: "{{ {'sell': pset.sell, 'sell_high': pset.sell_high, 'buy': pset.buy, 'buy_high': pset.buy_high} }}"
+        new_curves: "{{ dict(curves, **{mon: new_m}) }}"
+        names: "{{ state_attr('[[map:soc_curves]]', 'preset_names') or {} }}"
+        pname: "{{ names[preset_n | string] if (preset_n | string) in names else 'Preset ' ~ preset_n }}"
+        tracking: "{{ dict(state_attr('[[map:soc_curves]]', 'preset_tracking') or {}, **{'month_' ~ mon: {'preset': pname, 'modified': false}}) }}"
+        why: >-
+          {% if rule == 'holiday' %}holiday dates
+          {% elif rule == 'below' %}projected {{ projected }} kWh, under {{ P.autoCurveBelow }}
+          {% elif rule == 'above' %}projected {{ projected }} kWh, over {{ P.autoCurveAbove }}
+          {% else %}between your limits{% endif %}
+    - if:
+      - condition: template
+        value_template: '{{ not same }}'
+      then:
+      - event: battman_soc_curves_update
+        event_data:
+          curves: '{{ new_curves }}'
+          preset_tracking: '{{ tracking }}'
+      - action: logbook.log
+        data:
+          name: Battman auto curve
+          message: '{{ pname }} applied to {{ mon | upper }} ({{ why | trim }}).'
+    - event: battman_auto_curve_update
+      event_data:
+        status: "{{ 'unchanged' if same else 'applied' }}"
+        rule: '{{ rule }}'
+        preset: '{{ preset_n }}'
+        lastCheck: '{{ now().isoformat() }}'
+        generated: '{{ generated }}'
+        remaining: '{{ remaining }}'
+        projected: '{{ projected }}'
+        originalMonth: "{{ mon if need_snap else orig_mon }}"
+        original: '{{ snap if need_snap else orig }}'

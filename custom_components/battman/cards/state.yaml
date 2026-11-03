@@ -23,6 +23,7 @@ triggers_update:
 - '[[map:mode]]'
 - '[[map:parameters]]'
 - '[[map:override_timer]]'
+- '[[map:auto_curve]]'
 - 'sensor.sigen_plant_grid_connection_status'
 - 'sensor.sigen_plant_consumed_power'
 - 'sensor.sigen_plant_rated_energy_capacity'
@@ -265,9 +266,21 @@ custom_fields:
         `${tail ? ` <span style="display:inline-flex;align-items:center;gap:2px;vertical-align:-2px;color:${c};">${tail}</span>` : ''}</span></div>`;
     };
 
+    // Auto curve switcher indicator: a pill at the top-right (icon = the winning rule, orange when it couldn't act),
+    // only while the switcher is on; icon-only when the centre pill is wide so they don't collide
+    const acPill = (() => {
+      const AP = states['[[map:parameters]]']?.attributes || {}, AW = states['[[map:auto_curve]]']?.attributes || {};
+      if (AP.autoCurve !== true) return '';
+      const bad = ['no_forecast', 'no_preset'].includes(AW.status);
+      const ic = bad ? 'mdi:alert-circle-outline' : ({holiday: 'mdi:umbrella-beach', below: 'mdi:weather-cloudy', above: 'mdi:weather-sunny'}[AW.rule] || 'mdi:auto-fix');
+      const col = bad ? C.orange : st.color, wide = String(st.text).length > 22;
+      return `<div style='position:absolute;top:-9px;right:8px;display:flex;align-items:center;gap:5px;padding:1px ${wide ? 4 : 8}px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(st.color, 70)};'>` +
+        ico(ic, 16, col) + (wide ? '' : `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${col};white-space:nowrap;'>Auto</span>`) + `</div>`;
+    })();
+
     return `<div style='font-family:var(--primary-font-family,var(--battman-font,sans-serif));font-variant-numeric:tabular-nums;font-feature-settings:"tnum";position:relative;margin-top:11px;margin-bottom:${act ? (act.ready ? 10 : 26) : 0}px;padding:16px 6px ${act ? 16 : 6}px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(st.color, 70)};box-shadow:0 0 10px -4px ${st.color};'>` +
       `<div style='position:absolute;top:-9px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(st.color, 70)};'>` +
-      ico(st.icon, 16, st.color) + `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${st.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>${st.text}</span></div>` +
+      ico(st.icon, 16, st.color) + `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${st.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>${st.text}</span></div>` + acPill +
       `<div style='display:flex;gap:6px;'>` + tile(SELL) + tile(BUY) + `</div>` + (act ? pill(act) : '') + `</div>`;
     })();
     ]]]
@@ -619,9 +632,42 @@ tap_action:
           if (isSet(L)) add(L, L.px>0?`Above ${Rp(L.px)}c`+(L.soc>0?` · down to ${R(L.soc)}%`:''):`Down to ${R(L.soc)}%`);
           if (isSet(D)) add(D, `While grid under ${Rp(D.px)}c`+(D.soc>0?` · to ${R(D.soc)}%`:''));
           ovHtml = rows.map(([lbl,t,c])=>`<div style='display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;line-height:1.3;padding:7px 10px;margin-top:6px;border-radius:8px;color:var(--primary-text-color);background:color-mix(in srgb, ${c} 14%, transparent);border:1px solid color-mix(in srgb, ${c} 45%, transparent);'><span style='flex:none;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;color:${c};border:1px solid color-mix(in srgb, ${c} 55%, transparent);'>${lbl}</span><span>${t}</span></div>`).join(''); }
+        // Auto curve switcher: what it did and why (only while it's on)
+        let autoHtml = '';
+        { const AP = states['[[map:parameters]]']?.attributes || {}, AW = states['[[map:auto_curve]]']?.attributes || {};
+          if (AP.autoCurve === true) {
+            const bad = ['no_forecast', 'no_preset'].includes(AW.status);
+            const ic = bad ? 'mdi:alert-circle-outline' : ({holiday: 'mdi:umbrella-beach', below: 'mdi:weather-cloudy', above: 'mdi:weather-sunny'}[AW.rule] || 'mdi:auto-fix');
+            const acCol = bad ? 'var(--battman-orange)' : 'var(--battman-green)';
+            const names = states['[[map:soc_curves]]']?.attributes?.preset_names || {};
+            const pn = n => names[n] || ('Preset ' + n);
+            const proj = (+AW.projected || 0).toFixed(1);
+            const head = AW.status === 'no_forecast' ? "Can't check" : AW.status === 'no_preset' ? 'Preset empty'
+              : (AW.preset > 0 && ['applied', 'unchanged'].includes(AW.status) ? pn(AW.preset) : 'Your own curve');
+            const why = AW.status === 'no_forecast' ? 'No Solcast forecast right now, so the curve stays as it is. It tries again at the next check.'
+              : AW.status === 'no_preset' ? 'The preset for this rule is empty, so the curve stays as it is.'
+              : AW.rule === 'holiday' ? `Holiday dates ${AP.autoCurveHolidayFrom} to ${AP.autoCurveHolidayTo} are active.`
+              : AW.rule === 'below' ? `Projected ${proj} kWh for the day, under your ${AP.autoCurveBelow} kWh limit.`
+              : AW.rule === 'above' ? `Projected ${proj} kWh for the day, over your ${AP.autoCurveAbove} kWh limit.`
+              : AW.rule === 'other' ? `Projected ${proj} kWh for the day, between your limits.`
+              : AW.lastCheck ? `Projected ${proj} kWh for the day. No rule matched, so your own curve stays.` : 'Waiting for the first check.';
+            const hh = iso => { const d = new Date(iso); return isNaN(d) ? '' : ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); };
+            const ck = +AP.autoCurveCheckHour, rp = +AP.autoCurveRepeat, rs = +AP.autoCurveResetHour, nh = new Date().getHours();
+            const due = h => (h === ck || (rp > 0 && h > ck && (h - ck) % rp === 0)) && (rs < 0 || rs <= ck || h < rs);
+            let next = null; for (let h = nh + 1; h < 24; h++) if (due(h)) { next = h; break; }
+            if (next === null && due(ck)) next = ck;
+            const chip = (a, b) => `<span style='padding:3px 9px;border-radius:6px;font-size:12px;color:var(--battman-text-muted);background:var(--battman-green-soft-bg);border:1px solid var(--battman-green-border);'>${a} <b style='color:var(--battman-green);'>${b}</b></span>`;
+            const chips = (AW.lastCheck ? chip('Last check', hh(AW.lastCheck)) : '') + (next !== null ? chip('Next', ('0' + next).slice(-2) + ':00') : '')
+              + (AW.generated != null && AW.lastCheck ? chip('Made', (+AW.generated).toFixed(1) + ' kWh') + chip('To come', (+AW.remaining).toFixed(1) + ' kWh') : '')
+              + (rs >= 0 ? chip('Reset', ('0' + rs).slice(-2) + ':00') : '');
+            autoHtml = `<div style='margin-top:6px;padding:9px 10px;border-radius:8px;background:color-mix(in srgb, ${acCol} 12%, transparent);border:1px solid color-mix(in srgb, ${acCol} 40%, transparent);'>` +
+              `<div style='display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:${acCol};'><ha-icon icon='${ic}' style='display:flex;--mdc-icon-size:20px;width:20px;height:20px;color:${acCol};'></ha-icon>${head}</div>` +
+              `<div style='margin-top:5px;font-size:13px;line-height:1.4;color:var(--primary-text-color);'>${why}</div>` +
+              `<div style='display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;'>${chips}</div></div>`;
+          } }
         const body = sim.length
           ? `<div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;background:color-mix(in srgb, ${stCol} 16%, transparent);border:1px solid color-mix(in srgb, ${stCol} 45%, transparent);'>`+
-              `<span style='color:${stCol};'>${statusTxt}</span><span style='font-weight:600;text-transform:none;letter-spacing:0;'>Next ${horizonH}h · ${dirTxt}</span></div>${ovHtml}${evHtml}`+
+              `<span style='color:${stCol};'>${statusTxt}</span><span style='font-weight:600;text-transform:none;letter-spacing:0;'>Next ${horizonH}h · ${dirTxt}</span></div>${autoHtml}${ovHtml}${evHtml}`+
             `<div style='display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 10px;margin-top:8px;border-radius:8px;background:color-mix(in srgb, ${total>=0?CLR_SELL:CLR_BUY} 16%, transparent);border:1px solid color-mix(in srgb, ${total>=0?CLR_SELL:CLR_BUY} 45%, transparent);'>`+
               `<span style='font-size:15px;font-weight:700;'>Total, next ${horizonH} hours</span><b style='font-size:22px;font-weight:900;color:${total>=0?CLR_SELL:CLR_BUY};'>${money$(total)}</b></div>`
           : `<div style='padding:8px 0;font-size:14px;'>No Amber forecast available.</div>`;

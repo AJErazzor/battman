@@ -1,0 +1,68 @@
+# Battman engine.
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+#
+# The Auto curve switcher's working state: what it last did, and a copy of the month's own
+# SOC curves from before it first changed them (so the reset can put them back exactly).
+# These aren't settings, so Settings' Reset doesn't touch them. The settings themselves are
+# the autoCurve* attributes on sensor.battman_parameters.
+
+template:
+
+  - trigger:
+      - platform: event
+        event_type: battman_auto_curve_update
+      - platform: homeassistant
+        event: start
+        id: start
+      - platform: event
+        event_type: event_template_reloaded
+        id: start
+
+    sensor:
+      - name: "Battman auto curve"
+        unique_id: battman_auto_curve
+        state: "{{ now().isoformat() }}"
+        attributes:
+          # what it did last: applied / unchanged / restored / no_forecast / no_preset / off
+          status: >-
+            {{ trigger.event.data.status
+               if trigger.platform == 'event' and 'status' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'status') | default('off', true) }}
+          # the rule that won: holiday / below / above / other (empty when it didn't change anything)
+          rule: >-
+            {{ trigger.event.data.rule
+               if trigger.platform == 'event' and 'rule' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'rule') | default('', true) }}
+          # the preset number it applied
+          preset: >-
+            {{ trigger.event.data.preset | int(0)
+               if trigger.platform == 'event' and 'preset' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'preset') | default(0, true) }}
+          lastCheck: >-
+            {{ trigger.event.data.lastCheck
+               if trigger.platform == 'event' and 'lastCheck' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'lastCheck') | default('', true) }}
+          # kWh: made so far today, still to come (the chosen forecast), and the two added
+          generated: >-
+            {{ trigger.event.data.generated | float(0)
+               if trigger.platform == 'event' and 'generated' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'generated') | default(0, true) }}
+          remaining: >-
+            {{ trigger.event.data.remaining | float(0)
+               if trigger.platform == 'event' and 'remaining' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'remaining') | default(0, true) }}
+          projected: >-
+            {{ trigger.event.data.projected | float(0)
+               if trigger.platform == 'event' and 'projected' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'projected') | default(0, true) }}
+          # the month ('jan'...) whose curves are saved in `original`, and those curves
+          # ({sell, sell_high, buy, buy_high}); empty when the switcher hasn't changed anything
+          originalMonth: >-
+            {{ trigger.event.data.originalMonth
+               if trigger.platform == 'event' and 'originalMonth' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'originalMonth') | default('', true) }}
+          original: >-
+            {{ trigger.event.data.original
+               if trigger.platform == 'event' and 'original' in trigger.event.data
+               else state_attr('sensor.battman_auto_curve', 'original') | default({}, true) }}

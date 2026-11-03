@@ -1072,3 +1072,191 @@ template:
             {% endif %}
 
  
+
+          ##################################################################
+          # Battman addition: the Auto curve switcher (Settings → Auto curve switcher).
+          # Picks a SOC curve preset from today's projected solar and writes it into the
+          # current month; at the reset hour the month's own curve is put back. A blank
+          # threshold, blank dates or preset 0 means that rule is skipped.
+          # What it did last is on sensor.battman_auto_curve (not a setting).
+          ##################################################################
+          autoCurve: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurve is defined %}
+              {{ trigger.event.data.autoCurve | bool }}
+            {% else %}
+              {{ this.attributes.autoCurve
+                 if this.attributes.autoCurve is defined
+                 else false }}
+            {% endif %}
+
+          autoCurveCheckHour: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveCheckHour is defined
+               and trigger.event.data.autoCurveCheckHour | int(-999) >= 0
+               and trigger.event.data.autoCurveCheckHour | int(-999) <= 23 %}
+              {{ trigger.event.data.autoCurveCheckHour | int }}
+            {% else %}
+              {{ this.attributes.autoCurveCheckHour
+                 if this.attributes.autoCurveCheckHour is defined
+                 else 6 }}
+            {% endif %}
+
+          autoCurveRepeat: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveRepeat is defined
+               and trigger.event.data.autoCurveRepeat | int(-999) >= 0
+               and trigger.event.data.autoCurveRepeat | int(-999) <= 12 %}
+              {{ trigger.event.data.autoCurveRepeat | int }}
+            {% else %}
+              {{ this.attributes.autoCurveRepeat
+                 if this.attributes.autoCurveRepeat is defined
+                 else 0 }}
+            {% endif %}
+
+          autoCurveResetHour: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveResetHour is defined
+               and trigger.event.data.autoCurveResetHour | int(-999) >= -1
+               and trigger.event.data.autoCurveResetHour | int(-999) <= 23 %}
+              {{ trigger.event.data.autoCurveResetHour | int }}
+            {% else %}
+              {{ this.attributes.autoCurveResetHour
+                 if this.attributes.autoCurveResetHour is defined
+                 else 20 }}
+            {% endif %}
+
+          autoCurveBasis: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveBasis is defined
+               and trigger.event.data.autoCurveBasis in ['p10', 'est', 'p90'] %}
+              {{ trigger.event.data.autoCurveBasis }}
+            {% else %}
+              {{ this.attributes.autoCurveBasis
+                 if this.attributes.autoCurveBasis is defined
+                 else 'p10' }}
+            {% endif %}
+
+          autoCurveHolidayFrom: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveHolidayFrom is defined
+               and (trigger.event.data.autoCurveHolidayFrom | string | trim == ''
+                    or as_datetime(trigger.event.data.autoCurveHolidayFrom | string, none) is not none) %}
+              {{ trigger.event.data.autoCurveHolidayFrom | string | trim }}
+            {% else %}
+              {{ this.attributes.autoCurveHolidayFrom
+                 if this.attributes.autoCurveHolidayFrom is defined
+                 else '' }}
+            {% endif %}
+
+          autoCurveHolidayTo: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveHolidayTo is defined
+               and (trigger.event.data.autoCurveHolidayTo | string | trim == ''
+                    or as_datetime(trigger.event.data.autoCurveHolidayTo | string, none) is not none) %}
+              {{ trigger.event.data.autoCurveHolidayTo | string | trim }}
+            {% else %}
+              {{ this.attributes.autoCurveHolidayTo
+                 if this.attributes.autoCurveHolidayTo is defined
+                 else '' }}
+            {% endif %}
+
+          autoCurveHolidayPreset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveHolidayPreset is defined
+               and trigger.event.data.autoCurveHolidayPreset | int(-999) >= 0
+               and trigger.event.data.autoCurveHolidayPreset | int(-999) <= 10 %}
+              {{ trigger.event.data.autoCurveHolidayPreset | int }}
+            {% else %}
+              {{ this.attributes.autoCurveHolidayPreset
+                 if this.attributes.autoCurveHolidayPreset is defined
+                 else 0 }}
+            {% endif %}
+
+          autoCurveBelow: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.autoCurveBelow is defined
+               and trigger.event.data.action == 'SetAttribute'
+               and (trigger.event.data.autoCurveBelow | string | trim == ''
+                    or (trigger.event.data.autoCurveBelow | float(-1) >= 0
+                        and trigger.event.data.autoCurveBelow | float(-1) <= 500)) %}
+              {{ '' if trigger.event.data.autoCurveBelow | string | trim == '' else trigger.event.data.autoCurveBelow | float }}
+            {% else %}
+              {{ this.attributes.autoCurveBelow
+                 if this.attributes.autoCurveBelow is defined
+                 else '' }}
+            {% endif %}
+
+          autoCurveBelowPreset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveBelowPreset is defined
+               and trigger.event.data.autoCurveBelowPreset | int(-999) >= 0
+               and trigger.event.data.autoCurveBelowPreset | int(-999) <= 10 %}
+              {{ trigger.event.data.autoCurveBelowPreset | int }}
+            {% else %}
+              {{ this.attributes.autoCurveBelowPreset
+                 if this.attributes.autoCurveBelowPreset is defined
+                 else 0 }}
+            {% endif %}
+
+          autoCurveAbove: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.autoCurveAbove is defined
+               and trigger.event.data.action == 'SetAttribute'
+               and (trigger.event.data.autoCurveAbove | string | trim == ''
+                    or (trigger.event.data.autoCurveAbove | float(-1) >= 0
+                        and trigger.event.data.autoCurveAbove | float(-1) <= 500)) %}
+              {{ '' if trigger.event.data.autoCurveAbove | string | trim == '' else trigger.event.data.autoCurveAbove | float }}
+            {% else %}
+              {{ this.attributes.autoCurveAbove
+                 if this.attributes.autoCurveAbove is defined
+                 else '' }}
+            {% endif %}
+
+          autoCurveAbovePreset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveAbovePreset is defined
+               and trigger.event.data.autoCurveAbovePreset | int(-999) >= 0
+               and trigger.event.data.autoCurveAbovePreset | int(-999) <= 10 %}
+              {{ trigger.event.data.autoCurveAbovePreset | int }}
+            {% else %}
+              {{ this.attributes.autoCurveAbovePreset
+                 if this.attributes.autoCurveAbovePreset is defined
+                 else 0 }}
+            {% endif %}
+
+          autoCurveOtherPreset: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.autoCurveOtherPreset is defined
+               and trigger.event.data.autoCurveOtherPreset | int(-999) >= 0
+               and trigger.event.data.autoCurveOtherPreset | int(-999) <= 10 %}
+              {{ trigger.event.data.autoCurveOtherPreset | int }}
+            {% else %}
+              {{ this.attributes.autoCurveOtherPreset
+                 if this.attributes.autoCurveOtherPreset is defined
+                 else 0 }}
+            {% endif %}

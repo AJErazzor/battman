@@ -11,7 +11,7 @@ Home Assistant you can open, trace and take control of.
 | Settings, overrides, run data, rules, power provider, cost odometers, curves, engine log sensor, estimated price | Template sensors in `packages/battman/` (written by Battman) |
 | Helpers: enable, no export, mode, high consumption, override timer | `packages/battman/battman_helpers.yaml` |
 | The engine script and the apply-scene script | `scripts.yaml`, made from Battman's blueprints |
-| The automations (main loop, watchdog, Sigen mode, curtail, SAPN override, override timer start, copy curves, armed scene) | `automations.yaml`, made from Battman's blueprints |
+| The automations (main loop, watchdog, Sigen mode, curtail, SAPN override, override timer start, copy curves, armed scene, auto curve switcher) | `automations.yaml`, made from Battman's blueprints |
 | The log file | `<config>/battman/engine.log`, written by Battman itself |
 
 Battman rewrites `packages/battman/` and the blueprints on every update. The automations and
@@ -65,3 +65,28 @@ override and net target) and snapshot its decisions — mode, no-export, the ful
 log text — so any change that moves a decision is caught. Separate tests cover Sigen mode (every
 mode), curtail, SAPN override, override-timer start, watchdog (overrides cleared when the timer
 ends) and apply scene: the Sigen actions and settings changes they produce.
+
+## Auto curve switcher
+
+Picks a SOC curve preset from the day's projected solar and writes it into the current month's curve.
+Switch it on in **Settings → Auto curve switcher** (it starts off). It's a Battman blueprint automation
+(`Battman engine – auto curve switcher`), made once on an install that already has the engine.
+
+- **Projected solar** = what the Sigenergy and third-party inverters have made today (the pair the Solar card
+  adds) plus the Solcast forecast still to come, at the 10% (cautious, default), expected or 90% estimate.
+- **Checks** run at the *Check at* hour, and every *Also check every* hours after it, up to the *Reset at* hour.
+  Hours only; the automation fires on the hour and reads your settings each time.
+- **Rules, first match wins:** Holiday (a date range) → Day total below X kWh → Day total above Y kWh → Otherwise.
+  Each names a preset (1 to 10, from Curvy's Save Preset). A blank threshold or blank dates skips that rule;
+  *Otherwise* "Leave alone" does nothing.
+- **What it does** is what Curvy's Load Preset plus Save does, for the current month only: the preset's four
+  curves replace the month's, and `preset_tracking` is updated. The first time it changes a month it keeps a
+  copy of that month's own curve (on `sensor.battman_auto_curve`, not a setting).
+- **Putting the curve back:** at the *Reset* hour, when the switcher is switched off, when a check matches no
+  rule, and (whatever the reset hour) at 23:50 on the last day of the month, because the copy of this month's
+  curves into next month now runs at 23:55. Editing the month's curve in Curvy while the switcher has
+  changed it is undone at the reset.
+- **Check now** (Settings) fires `battman_auto_curve_check`. `sensor.battman_auto_curve` shows what the last
+  check did (`status`, `rule`, `preset`, `generated` / `remaining` / `projected` kWh). The Chill card shows
+  an *Auto* pill while it's on (icon = the rule that won: umbrella holiday, cloud below, sun above, wand otherwise,
+  orange alert when it couldn't act) and its tap popup says why.
