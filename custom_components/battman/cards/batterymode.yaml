@@ -21,9 +21,12 @@ cards:
     show_name: true
     show_state: true
     tap_action:
-      action: toggle
-      confirmation:
-        text: '[[[ return entity.state === ''on'' ? ''Turn Active off? Battman will stop controlling the battery.'' : ''Turn Active on? Battman will control the battery again.''; ]]]'
+      action: fire-dom-event
+      battman_toggle:
+        entity: '[[map:enable]]'
+        name: Turn Active
+        off: Turn Active off? Battman will stop controlling the battery.
+        on: Turn Active on? Battman will control the battery again.
     hold_action:
       action: more-info
     styles:
@@ -100,9 +103,12 @@ cards:
     show_name: true
     show_state: true
     tap_action:
-      action: toggle
-      confirmation:
-        text: '[[[ return entity.state === ''on'' ? ''Turn Curtail off? The grid export limit will be lifted.'' : ''Turn Curtail on? Grid export will be limited.''; ]]]'
+      action: fire-dom-event
+      battman_toggle:
+        entity: '[[map:no_export]]'
+        name: Turn Curtail
+        off: Turn Curtail off? The grid export limit will be lifted.
+        on: Turn Curtail on? Grid export will be limited.
     hold_action:
       action: more-info
     styles:
@@ -236,6 +242,17 @@ cards:
 - type: vertical-stack
   cards:
   - type: horizontal-stack
+    visibility:
+    - condition: state
+      entity: '[[map:parameters]]'
+      attribute: simpleBatteryMode
+      state: true
+    - condition: state
+      entity: '[[map:mode]]'
+      state:
+      - Charge
+      - Discharge
+      - Self Consume
     cards:
     - type: custom:button-card
       entity: '[[map:mode]]'
@@ -467,6 +484,19 @@ cards:
         .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
         $: '.content { gap: 4px !important; }'
   - type: vertical-stack
+    visibility:
+    - condition: or
+      conditions:
+      - condition: state
+        entity: '[[map:parameters]]'
+        attribute: simpleBatteryMode
+        state_not: true
+      - condition: state
+        entity: '[[map:mode]]'
+        state_not:
+        - Charge
+        - Discharge
+        - Self Consume
     cards:
     - type: horizontal-stack
       cards:

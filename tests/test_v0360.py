@@ -81,6 +81,27 @@ process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, closed, popups
     assert "Feed-in is -4.0c: you would pay to export. Sell anyway?" in out["content"]
 
 
+@needs_node
+def test_active_and_curtail_ask_first() -> None:
+    """Active / Curtail ask in the same popup; only the confirm button flips the switch."""
+    out = _node("""
+const calls = [], popups = [], closed = [];
+const states = { 'input_boolean.a': { state: 'on' } };
+globalThis.document = { body: {}, dispatchEvent: (e) => closed.push(e.key), querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(d + '.' + s + ' ' + x.entity_id) } }) };
+globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+globalThis.KeyboardEvent = class { constructor(t, o) { this.key = o.key; } };
+window.browser_mod = { service: (n, o) => popups.push(o) };
+window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', off: 'Off msg', on: 'On msg' }, {});
+const before = calls.length;
+window.BattmanLib.answerMode(false); const cancelled = calls.length;
+window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', off: 'Off msg', on: 'On msg' }, {});
+window.BattmanLib.answerMode(true);
+process.stdout.write(JSON.stringify({ before, cancelled, calls, content: popups[0].content }));""")
+    assert out["before"] == 0 and out["cancelled"] == 0
+    assert out["calls"] == ["homeassistant.toggle input_boolean.a"]
+    assert "Turn Active?" in out["content"] and "Off msg" in out["content"] and "Turn off" in out["content"]
+
+
 def test_mode_card_buttons() -> None:
     yml = (ROOT / "cards/batterymode.yaml").read_text()
     for mode in ("Charge", "Discharge", "Float", "Charge Solar Off", "Float Solar Off"):
@@ -88,7 +109,9 @@ def test_mode_card_buttons() -> None:
     assert yml.count("battman_mode:") == 7                                   # Buy, Sell, Sell Solar, HOOOOVER, House Party (+ the two simple-mode rows)
     for mode in ("Self Consume", "Drain"):                                   # no price rule: still a plain service call
         assert re.search(rf"service: input_select.select_option\n\s+service_data:\n\s+entity_id: '\[\[map:mode\]\]'\n\s+option: {mode}\n", yml), mode
-    assert yml.count("confirmation:") == 2 and "Turn Active off?" in yml and "Turn Curtail on?" in yml
+    assert yml.count("battman_toggle:") == 2 and "Turn Active off?" in yml and "Turn Curtail on?" in yml   # Active / Curtail ask in the same popup
+    assert "confirmation:" not in yml
+    assert yml.count("visibility:") == 2                                     # the simple row and the full rows leave no gap when hidden
 
 
 async def test_confirmation_settings(hass: HomeAssistant) -> None:

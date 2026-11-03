@@ -789,7 +789,7 @@ window.BattmanLib.popupVars = function (el) {
     return { css: out, n: n };
   };
   var got = read(el);
-  if (got.n < 5) {                       // the tapped element didn't see the theme: find one that does (as the Override panel does)
+  if (got.n < 5) try {                       // the tapped element didn't see the theme: find one that does (as the Override panel does)
     var found = null;
     (function walk(root) {
       var all = root.querySelectorAll('*');
@@ -800,12 +800,18 @@ window.BattmanLib.popupVars = function (el) {
       }
     })(document);
     if (found) got = read(found);
-  }
+  } catch (e) { /* keep what the tapped element gave */ }
   return got.css;
 };
 
 window.BattmanLib.askMode = function (message, option, go, el) {
-  var L = window.BattmanLib, name = L.MODE_NAMES[option] || option;
+  var name = window.BattmanLib.MODE_NAMES[option] || option;
+  window.BattmanLib.askConfirm(name + '?', message, name + ' anyway', go, el);
+};
+
+// Any yes/no question, in the same panel: heading, message, Cancel, and a confirm button.
+window.BattmanLib.askConfirm = function (title, message, okLabel, go, el) {
+  var L = window.BattmanLib;
   try {
     if (!window.browser_mod) throw new Error('no browser_mod');
     var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
@@ -815,11 +821,11 @@ window.BattmanLib.askMode = function (message, option, go, el) {
       title: ' ',
       style: '--mdc-dialog-min-width:340px;--mdc-dialog-max-width:360px;',
       content: '<div style="' + L.popupVars(el || document.body) + 'background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
-        + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(name) + '?</div>'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(title) + '</div>'
         + '<div style="font-size:14px;line-height:1.5;margin-bottom:14px">' + esc(message) + '</div>'
         + '<div style="display:flex;gap:8px">'
         + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(false)" style="' + btn + 'display:flex;align-items:center;justify-content:center;background:transparent;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral)">Cancel</div>'
-        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn + 'flex:1.4;display:flex;align-items:center;justify-content:center;background:var(--battman-orange-wash);color:var(--battman-orange);border:1px solid var(--battman-orange-border-strong)">' + esc(name) + ' anyway</div>'
+        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn + 'flex:1.4;display:flex;align-items:center;justify-content:center;background:var(--battman-orange-wash);color:var(--battman-orange);border:1px solid var(--battman-orange-border-strong)">' + esc(okLabel) + '</div>'
         + '</div></div>',
     });
   } catch (e) {
@@ -838,10 +844,21 @@ window.BattmanLib.answerMode = function (yes) {
   if (yes && go) go();
 };
 
+// Active / Curtail: ask before flipping the switch.
+window.BattmanLib.setToggle = function (d, el) {
+  var hass = document.querySelector('home-assistant').hass;
+  var st = hass.states[d.entity], isOn = st && st.state === 'on';
+  window.BattmanLib.askConfirm(d.name + '?', isOn ? d.off : d.on, isOn ? 'Turn off' : 'Turn on',
+    function () { hass.callService('homeassistant', 'toggle', { entity_id: d.entity }); }, el);
+};
+
 if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {
   window.BattmanLib._modeListener = true;
   window.addEventListener('ll-custom', function (ev) {
     var d = ev.detail && ev.detail.battman_mode;
-    if (d) window.BattmanLib.setMode(d, ev.composedPath ? ev.composedPath()[0] : ev.target);
+    var el = ev.composedPath ? ev.composedPath()[0] : ev.target;
+    if (d) window.BattmanLib.setMode(d, el);
+    var t = ev.detail && ev.detail.battman_toggle;
+    if (t) window.BattmanLib.setToggle(t, el);
   });
 }
