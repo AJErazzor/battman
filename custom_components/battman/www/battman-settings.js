@@ -144,7 +144,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       dailyNetworkCharge: [0, 0, 5], billDayOfMonth: [1, 0, 31, true],
       systemCost: [0, 0, 100000], systemIncome: [0, 0, 50000], systemExpenses: [0, 0, 50000],
       preSystemBillQ1: [0, 0, 5000], preSystemBillQ2: [0, 0, 5000], preSystemBillQ3: [0, 0, 5000], preSystemBillQ4: [0, 0, 5000],
-      billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99], offGridAlertDelay: [1, 0, 30],
+      billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99], confirmBuyAbove: [0, 0, 99], offGridAlertDelay: [1, 0, 30],
     };
     const DEFAULT_KEYS = {   // the defaults each section's Reset restores (parameters' `defaults`)
       gridChargingPositive: ['buyProrateSOCOffset', 'buyHighSOCOffset'], gridDischarging: ['sellProrateSOCOffset', 'sellLowSOCOffset'],
@@ -419,7 +419,10 @@ class BattmanSettingsCard extends BattmanCardBase {
         + '<div class="rows">'
         + row('Simple battery mode', 'Simple buy / sell / self-consume buttons instead of the full mode controls', swHtml('data-pswitch="simpleBatteryMode"', !!p.simpleBatteryMode))
         + row('Always show override timer', 'Keep the override timer visible even when no timer is running', swHtml('data-pswitch="alwaysShowOverrideTimer" data-showhide', p.alwaysShowOverrideTimer === 'show'))
-        + row('Dashboard theme', 'Every view of this dashboard, the Live Activity colours, and theme: battman cards', '<select class="wide" data-theme>' + opts + '</select>')
+        + row('Dashboard theme', '', '<select class="wide" data-theme>' + opts + '</select>')
+        + '<div class="subdiv">Confirmations</div>'
+        + row('Warn when a mode goes against the price', 'Sell at a negative feed-in, HOOOOVER or House Party at a non-negative buy', swHtml('data-pswitch="confirmPriceMismatch"', p.confirmPriceMismatch !== false))
+        + numParam('confirmBuyAbove', 'Warn on Buy above', 'Blank or 0: never', 'c/kWh')
         + '</div>';
     }
 

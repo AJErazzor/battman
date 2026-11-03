@@ -11,327 +11,341 @@
     "card_mod": {
      "style": {
       "$": ".content { gap: 4px !important; }",
-      ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
-     }
-    },
-    "cards": [
-     {
-      "entity": "input_boolean.battman_enable",
-      "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-      "hold_action": {
-       "action": "more-info"
-      },
-      "name": "Active",
-      "show_icon": false,
-      "show_name": true,
-      "show_state": true,
-      "state": [
-       {
-        "styles": {
-         "card": [
-          {
-           "background": "var(--battman-green-soft-bg)"
-          },
-          {
-           "border": "1px solid var(--battman-green-border-strong)"
-          }
-         ],
-         "name": [
-          {
-           "color": "var(--battman-green)"
-          }
-         ],
-         "state": [
-          {
-           "color": "var(--battman-green)"
-          }
-         ]
-        },
-        "value": "on"
-       }
-      ],
-      "styles": {
-       "card": [
-        {
-         "padding": "0 10px"
-        },
-        {
-         "margin": "0"
-        },
-        {
-         "height": "40px"
-        },
-        {
-         "min-height": "40px"
-        },
-        {
-         "max-height": "40px"
-        },
-        {
-         "border-radius": "8px"
-        },
-        {
-         "box-shadow": "none"
-        },
-        {
-         "background": "var(--battman-surface-card)"
-        },
-        {
-         "border": "1px solid var(--battman-border-neutral)"
-        },
-        {
-         "--fx-ring": "[[[ return entity.state === 'on' ? 'var(--fx-enable-chase-display, none)' : 'none'; ]]]"
-        },
-        {
-         "--fx-chase-gradient": "var(--fx-enable-chase-gradient, none)"
-        },
-        {
-         "--fx-chase-duration": "var(--fx-enable-chase-duration, 0s)"
-        },
-        {
-         "--fx-ring-width": "var(--fx-enable-ring-width, 2px)"
-        },
-        {
-         "--fx-glow-name": "[[[ return entity.state === 'on' ? 'var(--fx-enable-glow-name, none)' : 'none'; ]]]"
-        },
-        {
-         "--fx-glow-duration": "var(--fx-enable-glow-duration, 0s)"
-        },
-        {
-         "--fx-glow-color": "var(--fx-enable-glow-color, transparent)"
-        },
-        {
-         "--fx-fill-soft": "var(--battman-green-soft-bg)"
-        },
-        {
-         "--fx-border": "[[[ return entity.state === 'on' ? 'var(--fx-enable-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-        }
-       ],
-       "name": [
-        {
-         "font-size": "11px"
-        },
-        {
-         "font-weight": "700"
-        },
-        {
-         "letter-spacing": "0.06em"
-        },
-        {
-         "text-transform": "uppercase"
-        },
-        {
-         "color": "var(--battman-text-muted)"
-        }
-       ],
-       "state": [
-        {
-         "font-size": "10px"
-        },
-        {
-         "color": "var(--battman-text-dim)"
-        },
-        {
-         "font-weight": "600"
-        }
-       ]
-      },
-      "tap_action": {
-       "action": "toggle"
-      },
-      "type": "custom:button-card"
-     },
-     {
-      "entity": "input_boolean.battman_no_export",
-      "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-      "hold_action": {
-       "action": "more-info"
-      },
-      "name": "Curtail",
-      "show_icon": false,
-      "show_name": true,
-      "show_state": true,
-      "state": [
-       {
-        "styles": {
-         "card": [
-          {
-           "background": "var(--battman-amber-soft-bg)"
-          },
-          {
-           "border": "1px solid var(--battman-amber-border-strong)"
-          }
-         ],
-         "name": [
-          {
-           "color": "var(--battman-amber)"
-          }
-         ],
-         "state": [
-          {
-           "color": "var(--battman-amber)"
-          }
-         ]
-        },
-        "value": "on"
-       }
-      ],
-      "styles": {
-       "card": [
-        {
-         "padding": "0 10px"
-        },
-        {
-         "margin": "0"
-        },
-        {
-         "height": "40px"
-        },
-        {
-         "min-height": "40px"
-        },
-        {
-         "max-height": "40px"
-        },
-        {
-         "border-radius": "8px"
-        },
-        {
-         "box-shadow": "none"
-        },
-        {
-         "background": "var(--battman-surface-card)"
-        },
-        {
-         "border": "1px solid var(--battman-border-neutral)"
-        },
-        {
-         "--fx-ring": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-chase-display, none)' : 'none'; ]]]"
-        },
-        {
-         "--fx-chase-gradient": "var(--fx-curtail-chase-gradient, none)"
-        },
-        {
-         "--fx-chase-duration": "var(--fx-curtail-chase-duration, 0s)"
-        },
-        {
-         "--fx-ring-width": "var(--fx-curtail-ring-width, 2px)"
-        },
-        {
-         "--fx-glow-name": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-glow-name, none)' : 'none'; ]]]"
-        },
-        {
-         "--fx-glow-duration": "var(--fx-curtail-glow-duration, 0s)"
-        },
-        {
-         "--fx-glow-color": "var(--fx-curtail-glow-color, transparent)"
-        },
-        {
-         "--fx-fill-soft": "var(--battman-amber-soft-bg)"
-        },
-        {
-         "--fx-border": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-border, 1px solid var(--battman-amber-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-        }
-       ],
-       "name": [
-        {
-         "font-size": "11px"
-        },
-        {
-         "font-weight": "700"
-        },
-        {
-         "letter-spacing": "0.06em"
-        },
-        {
-         "text-transform": "uppercase"
-        },
-        {
-         "color": "var(--battman-text-muted)"
-        }
-       ],
-       "state": [
-        {
-         "font-size": "10px"
-        },
-        {
-         "color": "var(--battman-text-dim)"
-        },
-        {
-         "font-weight": "600"
-        }
-       ]
-      },
-      "tap_action": {
-       "action": "toggle"
-      },
-      "type": "custom:button-card"
-     },
-     {
-      "icon": "mdi:information-outline",
-      "show_name": false,
-      "styles": {
-       "card": [
-        {
-         "box-shadow": "none"
-        },
-        {
-         "padding": "0"
-        },
-        {
-         "margin": "0"
-        },
-        {
-         "height": "40px"
-        },
-        {
-         "min-height": "40px"
-        },
-        {
-         "max-height": "40px"
-        },
-        {
-         "background": "var(--battman-surface-card) !important"
-        },
-        {
-         "border-radius": "8px !important"
-        },
-        {
-         "border": "1px solid var(--battman-border-neutral) !important"
-        }
-       ],
-       "icon": [
-        {
-         "width": "16px"
-        },
-        {
-         "height": "16px"
-        },
-        {
-         "color": "var(--battman-text-dim) !important"
-        }
-       ]
-      },
-      "tap_action": {
-       "action": "fire-dom-event",
-       "browser_mod": {
-        "data": {},
-        "service": "browser_mod.popup"
-       }
-      },
-      "type": "custom:button-card"
-     }
-    ],
-    "type": "horizontal-stack"
-   },
-   {
-    "card_mod": {
-     "style": {
-      "$": ".content { gap: 4px !important; }",
       ".": ":host { --stack-card-gap: 4px; }"
      }
     },
     "cards": [
+     {
+      "card_mod": {
+       "style": {
+        "$": ".content { gap: 4px !important; }",
+        ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+       }
+      },
+      "cards": [
+       {
+        "entity": "input_boolean.battman_enable",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "hold_action": {
+         "action": "more-info"
+        },
+        "name": "Active",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": true,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-green-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-green-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-green)"
+            }
+           ],
+           "state": [
+            {
+             "color": "var(--battman-green)"
+            }
+           ]
+          },
+          "value": "on"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 10px"
+          },
+          {
+           "margin": "0"
+          },
+          {
+           "height": "40px"
+          },
+          {
+           "min-height": "40px"
+          },
+          {
+           "max-height": "40px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'on' ? 'var(--fx-enable-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-enable-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-enable-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-enable-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'on' ? 'var(--fx-enable-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-enable-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-enable-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-green-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'on' ? 'var(--fx-enable-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "11px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.06em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ],
+         "state": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "color": "var(--battman-text-dim)"
+          },
+          {
+           "font-weight": "600"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_toggle": {
+          "ask_off": "Battman will stop controlling the battery.",
+          "ask_on": "Battman will control the battery again.",
+          "entity": "input_boolean.battman_enable",
+          "name": "Turn Active"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_boolean.battman_no_export",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "hold_action": {
+         "action": "more-info"
+        },
+        "name": "Curtail",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": true,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-amber-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-amber-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-amber)"
+            }
+           ],
+           "state": [
+            {
+             "color": "var(--battman-amber)"
+            }
+           ]
+          },
+          "value": "on"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 10px"
+          },
+          {
+           "margin": "0"
+          },
+          {
+           "height": "40px"
+          },
+          {
+           "min-height": "40px"
+          },
+          {
+           "max-height": "40px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-curtail-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-curtail-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-curtail-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-curtail-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-curtail-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-amber-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'on' ? 'var(--fx-curtail-border, 1px solid var(--battman-amber-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "11px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.06em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ],
+         "state": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "color": "var(--battman-text-dim)"
+          },
+          {
+           "font-weight": "600"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_toggle": {
+          "ask_off": "Exports resume. Curtail stops them while feed-in is negative.",
+          "ask_off_negative": "Feed-in is {price}. Turning off means you pay to export.",
+          "ask_on": "This will stop any exports.",
+          "entity": "input_boolean.battman_no_export",
+          "name": "Turn Curtail",
+          "price": "sensor.amber_5min_current_feed_in_price"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "icon": "mdi:information-outline",
+        "show_name": false,
+        "styles": {
+         "card": [
+          {
+           "box-shadow": "none"
+          },
+          {
+           "padding": "0"
+          },
+          {
+           "margin": "0"
+          },
+          {
+           "height": "40px"
+          },
+          {
+           "min-height": "40px"
+          },
+          {
+           "max-height": "40px"
+          },
+          {
+           "background": "var(--battman-surface-card) !important"
+          },
+          {
+           "border-radius": "8px !important"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral) !important"
+          }
+         ],
+         "icon": [
+          {
+           "width": "16px"
+          },
+          {
+           "height": "16px"
+          },
+          {
+           "color": "var(--battman-text-dim) !important"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "browser_mod": {
+          "data": {},
+          "service": "browser_mod.popup"
+         }
+        },
+        "type": "custom:button-card"
+       }
+      ],
+      "type": "horizontal-stack"
+     },
      {
       "card_mod": {
        "style": {
@@ -449,11 +463,11 @@
          ]
         },
         "tap_action": {
-         "action": "call-service",
-         "service": "input_select.select_option",
-         "service_data": {
-          "entity_id": "input_select.battman_mode",
-          "option": "Charge"
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Charge",
+          "parameters": "sensor.battman_parameters"
          }
         },
         "type": "custom:button-card"
@@ -567,11 +581,11 @@
          ]
         },
         "tap_action": {
-         "action": "call-service",
-         "service": "input_select.select_option",
-         "service_data": {
-          "entity_id": "input_select.battman_mode",
-          "option": "Discharge"
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Discharge",
+          "parameters": "sensor.battman_parameters"
          }
         },
         "type": "custom:button-card"
@@ -695,7 +709,24 @@
         "type": "custom:button-card"
        }
       ],
-      "type": "horizontal-stack"
+      "type": "horizontal-stack",
+      "visibility": [
+       {
+        "attribute": "simpleBatteryMode",
+        "condition": "state",
+        "entity": "sensor.battman_parameters",
+        "state": true
+       },
+       {
+        "condition": "state",
+        "entity": "input_select.battman_mode",
+        "state": [
+         "Charge",
+         "Discharge",
+         "Self Consume"
+        ]
+       }
+      ]
      },
      {
       "card_mod": {
@@ -706,867 +737,900 @@
       },
       "cards": [
        {
-        "card_mod": {
-         "style": {
-          "$": ".content { gap: 4px !important; }",
-          ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
-         }
-        },
-        "cards": [
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Self Consume",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
          {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "Self Consume",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-blue-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-blue-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-blue)"
-              }
-             ]
-            },
-            "value": "Self Consume"
-           }
-          ],
           "styles": {
            "card": [
             {
-             "padding": "0 4px"
+             "background": "var(--battman-blue-soft-bg)"
             },
             {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-selfconsume-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-selfconsume-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-selfconsume-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-selfconsume-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-selfconsume-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-blue-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+             "border": "1px solid var(--battman-blue-border-strong)"
             }
            ],
            "name": [
             {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
+             "color": "var(--battman-blue)"
             }
            ]
           },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Self Consume"
-           }
-          },
-          "type": "custom:button-card"
-         },
-         {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "Buy",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-yellow-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-yellow-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-yellow)"
-              }
-             ]
-            },
-            "value": "Charge"
-           }
-          ],
-          "styles": {
-           "card": [
-            {
-             "padding": "0 4px"
-            },
-            {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-buy-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-buy-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-buy-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-buy-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-buy-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-            }
-           ],
-           "name": [
-            {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
-            }
-           ]
-          },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Charge"
-           }
-          },
-          "type": "custom:button-card"
-         },
-         {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "Sell",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-green-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-green-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-green)"
-              }
-             ]
-            },
-            "value": "Discharge"
-           }
-          ],
-          "styles": {
-           "card": [
-            {
-             "padding": "0 4px"
-            },
-            {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-sell-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-sell-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-sell-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-sell-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-sell-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-green-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-            }
-           ],
-           "name": [
-            {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
-            }
-           ]
-          },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Discharge"
-           }
-          },
-          "type": "custom:button-card"
+          "value": "Self Consume"
          }
         ],
-        "type": "horizontal-stack"
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-selfconsume-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-selfconsume-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-selfconsume-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-selfconsume-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-selfconsume-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-blue-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Self Consume' ? 'var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "call-service",
+         "service": "input_select.select_option",
+         "service_data": {
+          "entity_id": "input_select.battman_mode",
+          "option": "Self Consume"
+         }
+        },
+        "type": "custom:button-card"
        },
        {
-        "card_mod": {
-         "style": {
-          "$": ".content { gap: 4px !important; }",
-          ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
-         }
-        },
-        "cards": [
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Buy",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
          {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "Sell Solar",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-orange-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-orange-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-orange)"
-              }
-             ]
-            },
-            "value": "Float"
-           }
-          ],
           "styles": {
            "card": [
             {
-             "padding": "0 4px"
+             "background": "var(--battman-yellow-soft-bg)"
             },
             {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-sellsolar-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-sellsolar-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-sellsolar-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-sellsolar-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-sellsolar-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-orange-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-border, 1px solid var(--battman-orange-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+             "border": "1px solid var(--battman-yellow-border-strong)"
             }
            ],
            "name": [
             {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
+             "color": "var(--battman-yellow)"
             }
            ]
           },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Float"
-           }
-          },
-          "type": "custom:button-card"
-         },
-         {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "Drain",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-red-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-red-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-red)"
-              }
-             ]
-            },
-            "value": "Drain"
-           }
-          ],
-          "styles": {
-           "card": [
-            {
-             "padding": "0 4px"
-            },
-            {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-drain-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-drain-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-drain-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-drain-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-drain-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-red-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-border, 1px solid var(--battman-red-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-            }
-           ],
-           "name": [
-            {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
-            }
-           ]
-          },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Drain"
-           }
-          },
-          "type": "custom:button-card"
-         },
-         {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "House Party",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-yellow-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-yellow-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-yellow)"
-              }
-             ]
-            },
-            "value": "Float Solar Off"
-           }
-          ],
-          "styles": {
-           "card": [
-            {
-             "padding": "0 4px"
-            },
-            {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-houseparty-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-houseparty-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-houseparty-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-houseparty-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-houseparty-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-            }
-           ],
-           "name": [
-            {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
-            },
-            {
-             "white-space": "normal"
-            },
-            {
-             "line-height": "1.2"
-            }
-           ]
-          },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Float Solar Off"
-           }
-          },
-          "type": "custom:button-card"
-         },
-         {
-          "entity": "input_select.battman_mode",
-          "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
-          "name": "HOOOOVER",
-          "show_icon": false,
-          "show_name": true,
-          "show_state": false,
-          "state": [
-           {
-            "styles": {
-             "card": [
-              {
-               "background": "var(--battman-green-soft-bg)"
-              },
-              {
-               "border": "1px solid var(--battman-green-border-strong)"
-              }
-             ],
-             "name": [
-              {
-               "color": "var(--battman-green)"
-              }
-             ]
-            },
-            "value": "Charge Solar Off"
-           }
-          ],
-          "styles": {
-           "card": [
-            {
-             "padding": "0 4px"
-            },
-            {
-             "height": "48px"
-            },
-            {
-             "min-height": "48px"
-            },
-            {
-             "max-height": "48px"
-            },
-            {
-             "border-radius": "8px"
-            },
-            {
-             "box-shadow": "none"
-            },
-            {
-             "background": "var(--battman-surface-card)"
-            },
-            {
-             "border": "1px solid var(--battman-border-neutral)"
-            },
-            {
-             "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
-            },
-            {
-             "align-items": "center"
-            },
-            {
-             "justify-content": "center"
-            },
-            {
-             "--fx-ring": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-chase-display, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-chase-gradient": "var(--fx-hooover-chase-gradient, none)"
-            },
-            {
-             "--fx-chase-duration": "var(--fx-hooover-chase-duration, 0s)"
-            },
-            {
-             "--fx-ring-width": "var(--fx-hooover-ring-width, 2px)"
-            },
-            {
-             "--fx-glow-name": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-glow-name, none)' : 'none'; ]]]"
-            },
-            {
-             "--fx-glow-duration": "var(--fx-hooover-glow-duration, 0s)"
-            },
-            {
-             "--fx-glow-color": "var(--fx-hooover-glow-color, transparent)"
-            },
-            {
-             "--fx-fill-soft": "var(--battman-green-soft-bg)"
-            },
-            {
-             "--fx-border": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
-            }
-           ],
-           "name": [
-            {
-             "font-size": "10px"
-            },
-            {
-             "font-weight": "700"
-            },
-            {
-             "letter-spacing": "0.04em"
-            },
-            {
-             "text-transform": "uppercase"
-            },
-            {
-             "color": "var(--battman-text-muted)"
-            },
-            {
-             "white-space": "normal"
-            },
-            {
-             "line-height": "1.2"
-            }
-           ]
-          },
-          "tap_action": {
-           "action": "call-service",
-           "service": "input_select.select_option",
-           "service_data": {
-            "entity_id": "input_select.battman_mode",
-            "option": "Charge Solar Off"
-           }
-          },
-          "type": "custom:button-card"
+          "value": "Charge"
          }
         ],
-        "type": "horizontal-stack"
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-buy-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-buy-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-buy-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-buy-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-buy-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Charge' ? 'var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Charge",
+          "parameters": "sensor.battman_parameters"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Sell",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-green-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-green-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-green)"
+            }
+           ]
+          },
+          "value": "Discharge"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-sell-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-sell-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-sell-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-sell-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-sell-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-green-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Discharge' ? 'var(--fx-sell-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Discharge",
+          "parameters": "sensor.battman_parameters"
+         }
+        },
+        "type": "custom:button-card"
        }
       ],
-      "type": "vertical-stack"
+      "type": "horizontal-stack",
+      "visibility": [
+       {
+        "condition": "or",
+        "conditions": [
+         {
+          "attribute": "simpleBatteryMode",
+          "condition": "state",
+          "entity": "sensor.battman_parameters",
+          "state_not": true
+         },
+         {
+          "condition": "state",
+          "entity": "input_select.battman_mode",
+          "state_not": [
+           "Charge",
+           "Discharge",
+           "Self Consume"
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "card_mod": {
+       "style": {
+        "$": ".content { gap: 4px !important; }",
+        ".": ":host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }"
+       }
+      },
+      "cards": [
+       {
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Sell Solar",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-orange-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-orange-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-orange)"
+            }
+           ]
+          },
+          "value": "Float"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-sellsolar-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-sellsolar-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-sellsolar-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-sellsolar-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-sellsolar-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-orange-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Float' ? 'var(--fx-sellsolar-border, 1px solid var(--battman-orange-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Float",
+          "parameters": "sensor.battman_parameters"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "Drain",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-red-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-red-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-red)"
+            }
+           ]
+          },
+          "value": "Drain"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-drain-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-drain-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-drain-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-drain-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-drain-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-red-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Drain' ? 'var(--fx-drain-border, 1px solid var(--battman-red-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "call-service",
+         "service": "input_select.select_option",
+         "service_data": {
+          "entity_id": "input_select.battman_mode",
+          "option": "Drain"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "House Party",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-yellow-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-yellow-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-yellow)"
+            }
+           ]
+          },
+          "value": "Float Solar Off"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-houseparty-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-houseparty-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-houseparty-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-houseparty-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-houseparty-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-yellow-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Float Solar Off' ? 'var(--fx-houseparty-border, 1px solid var(--battman-yellow-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          },
+          {
+           "white-space": "normal"
+          },
+          {
+           "line-height": "1.2"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Float Solar Off",
+          "parameters": "sensor.battman_parameters"
+         }
+        },
+        "type": "custom:button-card"
+       },
+       {
+        "entity": "input_select.battman_mode",
+        "extra_styles": "@keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }\n@keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }\n@keyframes fx-glow-rainbow {\n  0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}\n  33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}\n  66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}\n  100%{box-shadow:0 0 16px 4px var(--battman-red);}\n}\nha-card {\n  position: relative !important; overflow: hidden !important;\n  border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;\n  animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;\n}\nha-card::before {\n  content:''; position:absolute; z-index:0; top:50%; left:50%;\n  width:360px; height:360px; transform: translate(-50%,-50%);\n  background: var(--fx-chase-gradient, none);\n  animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;\n  display: var(--fx-ring, none);\n}\nha-card::after {\n  content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;\n  background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);\n}\nha-card > * { position: relative !important; z-index: 2 !important; }\n@media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }",
+        "name": "HOOOOVER",
+        "show_icon": false,
+        "show_name": true,
+        "show_state": false,
+        "state": [
+         {
+          "styles": {
+           "card": [
+            {
+             "background": "var(--battman-green-soft-bg)"
+            },
+            {
+             "border": "1px solid var(--battman-green-border-strong)"
+            }
+           ],
+           "name": [
+            {
+             "color": "var(--battman-green)"
+            }
+           ]
+          },
+          "value": "Charge Solar Off"
+         }
+        ],
+        "styles": {
+         "card": [
+          {
+           "padding": "0 4px"
+          },
+          {
+           "height": "48px"
+          },
+          {
+           "min-height": "48px"
+          },
+          {
+           "max-height": "48px"
+          },
+          {
+           "border-radius": "8px"
+          },
+          {
+           "box-shadow": "none"
+          },
+          {
+           "background": "var(--battman-surface-card)"
+          },
+          {
+           "border": "1px solid var(--battman-border-neutral)"
+          },
+          {
+           "display": "[[[ const m=states['input_select.battman_mode']?.state; const simple=['Charge','Discharge','Self Consume'].includes(m); return (!states['sensor.battman_parameters']?.attributes?.simpleBatteryMode || !simple) ? 'flex' : 'none'; ]]]"
+          },
+          {
+           "align-items": "center"
+          },
+          {
+           "justify-content": "center"
+          },
+          {
+           "--fx-ring": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-chase-display, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-chase-gradient": "var(--fx-hooover-chase-gradient, none)"
+          },
+          {
+           "--fx-chase-duration": "var(--fx-hooover-chase-duration, 0s)"
+          },
+          {
+           "--fx-ring-width": "var(--fx-hooover-ring-width, 2px)"
+          },
+          {
+           "--fx-glow-name": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-glow-name, none)' : 'none'; ]]]"
+          },
+          {
+           "--fx-glow-duration": "var(--fx-hooover-glow-duration, 0s)"
+          },
+          {
+           "--fx-glow-color": "var(--fx-hooover-glow-color, transparent)"
+          },
+          {
+           "--fx-fill-soft": "var(--battman-green-soft-bg)"
+          },
+          {
+           "--fx-border": "[[[ return entity.state === 'Charge Solar Off' ? 'var(--fx-hooover-border, 1px solid var(--battman-green-border-strong))' : '1px solid var(--battman-border-neutral)'; ]]]"
+          }
+         ],
+         "name": [
+          {
+           "font-size": "10px"
+          },
+          {
+           "font-weight": "700"
+          },
+          {
+           "letter-spacing": "0.04em"
+          },
+          {
+           "text-transform": "uppercase"
+          },
+          {
+           "color": "var(--battman-text-muted)"
+          },
+          {
+           "white-space": "normal"
+          },
+          {
+           "line-height": "1.2"
+          }
+         ]
+        },
+        "tap_action": {
+         "action": "fire-dom-event",
+         "battman_mode": {
+          "mode": "input_select.battman_mode",
+          "option": "Charge Solar Off",
+          "parameters": "sensor.battman_parameters"
+         }
+        },
+        "type": "custom:button-card"
+       }
+      ],
+      "type": "horizontal-stack",
+      "visibility": [
+       {
+        "condition": "or",
+        "conditions": [
+         {
+          "attribute": "simpleBatteryMode",
+          "condition": "state",
+          "entity": "sensor.battman_parameters",
+          "state_not": true
+         },
+         {
+          "condition": "state",
+          "entity": "input_select.battman_mode",
+          "state_not": [
+           "Charge",
+           "Discharge",
+           "Self Consume"
+          ]
+         }
+        ]
+       }
+      ]
      }
     ],
     "type": "vertical-stack"
@@ -1579,20 +1643,6 @@
    "input_select.select_option",
    {
     "entity_id": "input_select.battman_mode",
-    "option": "Charge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Discharge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
     "option": "Self Consume"
    }
   ],
@@ -1601,27 +1651,6 @@
    {
     "entity_id": "input_select.battman_mode",
     "option": "Self Consume"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Charge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Discharge"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Float"
    }
   ],
   [
@@ -1629,20 +1658,6 @@
    {
     "entity_id": "input_select.battman_mode",
     "option": "Drain"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Float Solar Off"
-   }
-  ],
-  [
-   "input_select.select_option",
-   {
-    "entity_id": "input_select.battman_mode",
-    "option": "Charge Solar Off"
    }
   ]
  ],

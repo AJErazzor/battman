@@ -37,3 +37,17 @@ def test_card_parses_as_a_module() -> None:
     src = CARD.read_text()
     assert re.search(r'from "\./battman-card-base\.js"', src)
     subprocess.run(["node", "--check", "--input-type=module"], input=src, text=True, check=True)
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="needs node")
+def test_today_never_comes_from_another_inverters_default_sensor() -> None:
+    """#60: picking your own power sensors (and not an energy sensor) must not leave Today reading the
+    card's default Sigenergy energy sensors. Runs the real card against dummy states, no browser."""
+    out = subprocess.run(["node", str(ROOT / "tests/js/solar_today_check.mjs"), str(CARD)],
+                         capture_output=True, text=True, check=True).stdout.strip().splitlines()[-1]
+    import json
+    r = json.loads(out)
+    assert r["powerOnly"] == ["– kWh"] * 4                                # no energy sensor chosen: blank, not 22.2
+    assert r["withEnergy"] == ["8.7 kWh", "5.5 kWh", "3.2 kWh", "8.7 kWh"]  # hero, each inverter, total
+    assert r["oneEnergy"] == ["– kWh", "5.5 kWh", "– kWh", "– kWh"]        # a total needs every inverter's figure
+    assert r["defaults"][0] == "22.2 kWh"                                   # the defaults, together, still work

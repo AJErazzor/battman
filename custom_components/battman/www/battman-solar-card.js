@@ -81,8 +81,16 @@ class BattmanSolarCard extends BattmanCardBase {
   setConfig(config) {
     const extra = Object.keys(config || {}).filter((k) => !CONFIG_KEYS.includes(k));
     if (extra.length) throw new Error(`${this.constructor.cardName} has no options (found: ${extra.join(", ")}).`);
-    const c = { ...DEFAULTS, ...config, symo: { ...DEFAULTS.symo, ...(config.symo || {}) },
-      sig: { ...DEFAULTS.sig, ...(config.sig || {}) } };
+    // An inverter's defaults go together: a default energy sensor belongs to the default power sensor.
+    // Pick your own power sensor and leave the energy one blank and Today is blank ("–"), not some
+    // other inverter's figure from the defaults.
+    const row = (k) => {
+      const own = (config && config[k]) || {};
+      const r = { ...DEFAULTS[k], ...own };
+      if (own.power && own.power !== DEFAULTS[k].power && own.today === undefined) r.today = "";
+      return r;
+    };
+    const c = { ...DEFAULTS, ...config, symo: row("symo"), sig: row("sig") };
     if (!["total", "rows", "both", "off"].includes(c.sparkline)) throw new Error("sparkline must be one of: total, rows, both, off");
     if (!VIEWS.includes(c.view)) throw new Error(`view must be one of: ${VIEWS.join(", ")}`);
     this._config = c;
@@ -273,17 +281,19 @@ class BattmanSolarCard extends BattmanCardBase {
           <div class="foot"><span>Today <b>${f1(g)} kWh</b></span>
             <span>${left != null ? `To go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` · ${other} ${f1(lo)}` : ""} kWh` : ""}</span></div></div>`;
       }).join("");
+      // the total is only a total when every inverter's energy is known: a partial sum would be wrong, and none is not 0
+      const totG = rows.every((r) => kwh(r.today) != null) ? tot.g : null;
       const tEst = fc(c.forecast_remaining, "estimate"), tP10 = fc(c.forecast_remaining, "estimate10");
       const left = basis === "p10" && tP10 != null ? tP10 : tEst, lo = basis === "p10" ? tEst : tP10;
       const sers = rows.map((r) => series(r.power)).filter(Boolean);
       const sum = sers.length ? sers[0].map((_, i) => sers.reduce((a, x) => a + (x[i] || 0), 0)) : null;
       const heroSpark = c.sparkline === "total" || c.sparkline === "both" ? sparkSvg(sum, colour("--battman-green"), "big", fcCurve(c, "")) : "";
       const hero = `<div class="hero"><div class="big">${f1(tot.p)}<small>kW</small></div>
-        <div class="side">Today <b>${f1(tot.g)} kWh</b>${left != null ? ` · to go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` (${other} ${f1(lo)})` : ""} kWh` : ""}</div></div>${heroSpark}`;
+        <div class="side">Today <b>${f1(totG)} kWh</b>${left != null ? ` · to go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` (${other} ${f1(lo)})` : ""} kWh` : ""}</div></div>${heroSpark}`;
       const totalRow = c.show_total && rows.length > 1 ? `<div class="row total"><div class="line"><span class="dot" style="background:${colour("--battman-green")}"></span>
           <span class="name">Total</span><span class="num">${f1(tot.p)}<small>kW</small></span></div>
-          ${c.show_progress && left != null && tot.g + left > 0 ? `<div class="bar"><i style="width:${Math.min(100, tot.g / (tot.g + left) * 100)}%;background:${colour("--battman-green")}"></i></div>` : `<div style="height:6px"></div>`}
-          <div class="foot"><span>Today <b>${f1(tot.g)} kWh</b></span><span>${left != null ? `To go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` · ${other} ${f1(lo)}` : ""} kWh` : ""}</span></div></div>` : "";
+          ${c.show_progress && left != null && totG != null && totG + left > 0 ? `<div class="bar"><i style="width:${Math.min(100, totG / (totG + left) * 100)}%;background:${colour("--battman-green")}"></i></div>` : `<div style="height:6px"></div>`}
+          <div class="foot"><span>Today <b>${f1(totG)} kWh</b></span><span>${left != null ? `To go <b>${f1(left)}</b>${c.show_10 && lo != null ? ` · ${other} ${f1(lo)}` : ""} kWh` : ""}</span></div></div>` : "";
       return (withSub ? `<div class="sub">Now</div>` : "") + hero + rowHtml + totalRow;
     }
 

@@ -33,7 +33,7 @@ async def _card(hass, hass_client, cid):
 
 
 def _popup(cfg):
-    return cfg["cards"][0]["cards"][2]["tap_action"]["browser_mod"]["data"]
+    return cfg["cards"][0]["cards"][0]["cards"][2]["tap_action"]["browser_mod"]["data"]
 
 
 async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
@@ -58,9 +58,10 @@ async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
                 calls(v, out)
         return out
     got = calls(card["config"], [])
-    assert len(got) == 10 and all(s == "input_select.select_option" for s, _ in got)
-    assert {json.loads(d)["option"] for _, d in got} == {"Charge", "Discharge", "Self Consume", "Float", "Drain",
-                                                          "Float Solar Off", "Charge Solar Off"}
+    # Self Consume and Drain are plain service calls; the five that can go against the price fire Battman's
+    # "battman_mode" event instead (battman-lib.js asks when needed, then sets the mode: see test_v0360.py)
+    assert len(got) == 3 and all(s == "input_select.select_option" for s, _ in got)
+    assert {json.loads(d)["option"] for _, d in got} == {"Self Consume", "Drain"}
     # Battman's side, recorded so the comparison survives Smiggles' removal (popup emptied, as compared)
     assert_snapshot(__file__, "batterymode-config", m)
     assert_snapshot(__file__, "batterymode-service-calls", [[s, json.loads(d)] for s, d in got])

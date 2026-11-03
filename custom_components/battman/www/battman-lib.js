@@ -732,3 +732,138 @@ window.BattmanLib.themeModeColours = function (themes, name) {
     if (id && id.unref) id.unref();      // (only outside a browser, e.g. tests: don't keep node running)
   });
 })();
+
+// ---------------------------------------------------------------------------------------------
+// Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy ask (in HA's own
+// popup, as the info buttons use, when the press goes against the price, and just switch otherwise. The buttons
+// fire a "battman_mode" dom event (as browser_mod's popups do); the listener below decides. Nothing it can't
+// judge (a missing price, a failure here) stops the press: the mode is set. Active and Curtail use HA's own
+// confirmation on their buttons.
+window.BattmanLib.MODE_NAMES = { 'Charge': 'Buy', 'Discharge': 'Sell', 'Float': 'Sell Solar', 'Charge Solar Off': 'HOOOOVER', 'Float Solar Off': 'House Party' };
+window.BattmanLib.centsText = function (c) { return (c < 0 ? '-' : '') + Math.abs(c).toFixed(1) + 'c'; };
+
+// The question to ask before switching to `option`, or null to just switch. x: { option, buy, fit }
+// (c/kWh, NaN when unknown), confirmPrice
+// (the "warn when a mode goes against the price" setting), buyAbove (c/kWh; 0 or blank = never).
+window.BattmanLib.modeWarning = function (x) {
+  var T = window.BattmanLib.centsText, name = window.BattmanLib.MODE_NAMES[x.option];
+  if (!name) return null;
+  if (x.confirmPrice !== false) {
+    if ((x.option === 'Discharge' || x.option === 'Float') && isFinite(x.fit) && x.fit < 0)
+      return 'Feed-in is ' + T(x.fit) + ': you would pay to export. ' + name + ' anyway?';
+    if ((x.option === 'Charge Solar Off' || x.option === 'Float Solar Off') && isFinite(x.buy) && x.buy >= 0)
+      return 'Buy is ' + T(x.buy) + ': ' + name + ' is for negative prices. ' + name + ' anyway?';
+  }
+  if (x.option === 'Charge' && x.buyAbove > 0 && isFinite(x.buy) && x.buy > x.buyAbove)
+    return 'Buy is ' + T(x.buy) + ', above your ' + T(x.buyAbove) + ' limit. ' + name + ' anyway?';
+  return null;
+};
+
+window.BattmanLib.setMode = function (d, el) {
+  var hass = document.querySelector('home-assistant').hass;
+  var go = function () { hass.callService('input_select', 'select_option', { entity_id: d.mode, option: d.option }); };
+  var warning = null;
+  try {
+    var st = hass.states, p = (st[d.parameters] || {}).attributes || {};
+    var cents = function (id) { return st[id] ? parseFloat(st[id].state) * 100 : NaN; };
+    warning = window.BattmanLib.modeWarning({
+      option: d.option, buy: cents('sensor.amber_5min_current_general_price'), fit: cents('sensor.amber_5min_current_feed_in_price'),
+      confirmPrice: p.confirmPriceMismatch, buyAbove: parseFloat(p.confirmBuyAbove),
+    });
+  } catch (e) { warning = null; }
+  if (!warning) return go();
+  window.BattmanLib.askMode(warning, d.option, go, el);
+};
+
+// The question, in the same kind of Battman panel as the info popups (browser_mod popup, no title bar text,
+// themed card with an uppercase heading). Without browser_mod, or if it can't open, the browser's confirm box.
+// The Battman colours the panel uses, read off the tapped element (the popup sits outside the themed view).
+window.BattmanLib.popupVars = function (el) {
+  var KEYS = ['surface-popup', 'surface-card', 'text-bright', 'text-muted', 'orange', 'orange-wash', 'orange-border', 'orange-border-strong', 'border-neutral', 'font'];
+  var read = function (node) {
+    var cs = getComputedStyle(node), out = '', n = 0;
+    KEYS.forEach(function (k) {
+      var v = String(cs.getPropertyValue('--battman-' + k) || '').trim().replace(/"/g, "'");
+      if (v) { out += '--battman-' + k + ':' + v + ';'; n++; }
+    });
+    return { css: out, n: n };
+  };
+  var got = read(el);
+  if (got.n < 5) try {                       // the tapped element didn't see the theme: find one that does (as the Override panel does)
+    var found = null;
+    (function walk(root) {
+      var all = root.querySelectorAll('*');
+      for (var i = 0; i < all.length && !found; i++) {
+        var x = all[i];
+        if (getComputedStyle(x).getPropertyValue('--battman-surface-popup').trim()) { found = x; return; }
+        if (x.shadowRoot) walk(x.shadowRoot);
+      }
+    })(document);
+    if (found) got = read(found);
+  } catch (e) { /* keep what the tapped element gave */ }
+  return got.css;
+};
+
+window.BattmanLib.askMode = function (message, option, go, el) {
+  var name = window.BattmanLib.MODE_NAMES[option] || option;
+  window.BattmanLib.askConfirm(name + '?', message, name + ' anyway', go, el);
+};
+
+// Any yes/no question, in the same panel: heading, message, Cancel, and a confirm button.
+window.BattmanLib.askConfirm = function (title, message, okLabel, go, el) {
+  var L = window.BattmanLib;
+  try {
+    if (!window.browser_mod) throw new Error('no browser_mod');
+    var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+    var btn = 'flex:1;min-height:42px;border-radius:8px;font-family:var(--battman-font,inherit);font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;';
+    L._pendingMode = go;
+    L.localPopup({
+      title: ' ',
+      style: '--mdc-dialog-min-width:340px;--mdc-dialog-max-width:360px;',
+      content: '<div style="' + L.popupVars(el || document.body) + 'background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(title) + '</div>'
+        + '<div style="font-size:14px;line-height:1.5;margin-bottom:14px">' + esc(message) + '</div>'
+        + '<div style="display:flex;gap:8px">'
+        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(false)" style="' + btn + 'display:flex;align-items:center;justify-content:center;background:transparent;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral)">Cancel</div>'
+        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn + 'flex:1.4;display:flex;align-items:center;justify-content:center;background:var(--battman-orange-wash);color:var(--battman-orange);border:1px solid var(--battman-orange-border-strong)">' + esc(okLabel) + '</div>'
+        + '</div></div>',
+    });
+  } catch (e) {
+    L._pendingMode = null;
+    if (window.confirm(message)) go();
+  }
+};
+
+// Closes the popup the way the Override panel does (its own bmClose): Escape.
+function L_close() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true, cancelable: true })); }
+
+window.BattmanLib.answerMode = function (yes) {
+  var go = window.BattmanLib._pendingMode;
+  window.BattmanLib._pendingMode = null;
+  L_close();
+  if (yes && go) go();
+};
+
+// Active / Curtail: ask before flipping the switch.
+window.BattmanLib.setToggle = function (d, el) {
+  var hass = document.querySelector('home-assistant').hass;
+  var st = hass.states[d.entity], isOn = st && st.state === 'on';
+  var msg = isOn ? d.ask_off : d.ask_on;
+  if (isOn && d.ask_off_negative && d.price && hass.states[d.price]) {      // turning off while feed-in is negative: say so
+    var c = parseFloat(hass.states[d.price].state) * 100;
+    if (isFinite(c) && c < 0) msg = d.ask_off_negative.replace('{price}', window.BattmanLib.centsText(c));
+  }
+  window.BattmanLib.askConfirm(d.name + '?', msg, isOn ? 'Turn off' : 'Turn on',
+    function () { hass.callService('homeassistant', 'toggle', { entity_id: d.entity }); }, el);
+};
+
+if (typeof window.addEventListener === 'function' && !window.BattmanLib._modeListener) {
+  window.BattmanLib._modeListener = true;
+  window.addEventListener('ll-custom', function (ev) {
+    var d = ev.detail && ev.detail.battman_mode;
+    var el = ev.composedPath ? ev.composedPath()[0] : ev.target;
+    if (d) window.BattmanLib.setMode(d, el);
+    var t = ev.detail && ev.detail.battman_toggle;
+    if (t) window.BattmanLib.setToggle(t, el);
+  });
+}
