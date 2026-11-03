@@ -139,10 +139,10 @@
       "tap_action": {
        "action": "fire-dom-event",
        "battman_toggle": {
+        "ask_off": "Turn Active off? Battman will stop controlling the battery.",
+        "ask_on": "Turn Active on? Battman will control the battery again.",
         "entity": "input_boolean.battman_enable",
-        "name": "Turn Active",
-        "off": "Turn Active off? Battman will stop controlling the battery.",
-        "on": "Turn Active on? Battman will control the battery again."
+        "name": "Turn Active"
        }
       },
       "type": "custom:button-card"
@@ -271,10 +271,10 @@
       "tap_action": {
        "action": "fire-dom-event",
        "battman_toggle": {
+        "ask_off": "Turn Curtail off? The grid export limit will be lifted.",
+        "ask_on": "Turn Curtail on? Grid export will be limited.",
         "entity": "input_boolean.battman_no_export",
-        "name": "Turn Curtail",
-        "off": "Turn Curtail off? The grid export limit will be lifted.",
-        "on": "Turn Curtail on? Grid export will be limited."
+        "name": "Turn Curtail"
        }
       },
       "type": "custom:button-card"

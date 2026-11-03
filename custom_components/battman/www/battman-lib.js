@@ -848,7 +848,7 @@ window.BattmanLib.answerMode = function (yes) {
 window.BattmanLib.setToggle = function (d, el) {
   var hass = document.querySelector('home-assistant').hass;
   var st = hass.states[d.entity], isOn = st && st.state === 'on';
-  window.BattmanLib.askConfirm(d.name + '?', isOn ? d.off : d.on, isOn ? 'Turn off' : 'Turn on',
+  window.BattmanLib.askConfirm(d.name + '?', isOn ? d.ask_off : d.ask_on, isOn ? 'Turn off' : 'Turn on',
     function () { hass.callService('homeassistant', 'toggle', { entity_id: d.entity }); }, el);
 };
 

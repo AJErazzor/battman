@@ -91,10 +91,10 @@ globalThis.document = { body: {}, dispatchEvent: (e) => closed.push(e.key), quer
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
 globalThis.KeyboardEvent = class { constructor(t, o) { this.key = o.key; } };
 window.browser_mod = { service: (n, o) => popups.push(o) };
-window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', off: 'Off msg', on: 'On msg' }, {});
+window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' }, {});
 const before = calls.length;
 window.BattmanLib.answerMode(false); const cancelled = calls.length;
-window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', off: 'Off msg', on: 'On msg' }, {});
+window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' }, {});
 window.BattmanLib.answerMode(true);
 process.stdout.write(JSON.stringify({ before, cancelled, calls, content: popups[0].content }));""")
     assert out["before"] == 0 and out["cancelled"] == 0
