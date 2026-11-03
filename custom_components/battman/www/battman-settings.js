@@ -105,15 +105,21 @@ class BattmanSettingsCard extends BattmanCardBase {
                     background: var(--battman-text-muted); transition: transform .15s, background .15s; }
   .sw input:checked + span { background: var(--battman-green-border-strong); border-color: var(--battman-green-border-strong); }
   .sw input:checked + span::after { transform: translateX(20px); background: var(--battman-green); }
-  .defs { display: none; }
-  .defs.open { display: block; }
-  .dhead { display: flex; align-items: center; gap: 10px; padding: 12px 16px 0; cursor: pointer; user-select: none;
-           font-size: 13px; color: var(--battman-text-muted); }
-  .dhead .chev { margin-left: auto; transition: transform .15s; }
-  .dhead.open .chev { transform: rotate(90deg); }
+  .bar { display: flex; justify-content: flex-end; gap: 8px; margin: -4px 0 12px; }
+  button.fold { display: flex; align-items: center; gap: 7px; background: none; border: none; padding: 0; font: inherit;
+                color: inherit; cursor: pointer; letter-spacing: inherit; text-align: left; min-height: 28px; }
+  button.chevs { background: none; border: none; padding: 0 2px; cursor: pointer; display: flex; align-items: center; min-height: 28px; }
+  button.chevs svg { width: 18px; height: 18px; fill: none; stroke: var(--battman-text-muted); stroke-width: 2.2;
+                     stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+  button.chevs:hover svg { stroke: var(--battman-green); }
+  .sec.folded button.chevs svg { transform: rotate(180deg); }
+  .sec.folded .body, .sec.folded .gmsg, .sec.folded button.rst { display: none; }
+  .sec.folded { padding-bottom: 0; }
+  .sec.folded .glabel { padding-bottom: 10px; }
 `;
   static html = `<ha-card><div class="frame"><div class="page">
 <h2 class="hdr"><img src="${FILES}/images/battman-wrench.webp" alt="Battman" class="who"><img src="${FILES}/images/settings-line.webp" alt="Settings" class="word"></h2>
+<div class="bar"><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></div>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
 </div></div></ha-card>`;
 
@@ -152,8 +158,20 @@ class BattmanSettingsCard extends BattmanCardBase {
     const HOURS = ['12am','1am','2am','3am','4am','5am','6am','7am','8am','9am','10am','11am',
                    '12pm','1pm','2pm','3pm','4pm','5pm','6pm','7pm','8pm','9pm','10pm','11pm'];
     const ORDER_KEY = 'battman.settingsOrder';
+    const FOLD_KEY = 'battman.settingsFolded';   // the ids of the sections folded away, kept per device
+    function loadFolded() {
+      let saved = null; try { saved = JSON.parse(localStorage.getItem(FOLD_KEY) || 'null'); } catch (e) {}
+      return new Set(Array.isArray(saved) ? saved : ['defaults']);   // nothing saved: every section open except Reset defaults
+    }
+    const FOLDED = loadFolded();
+    function saveFolded() { try { localStorage.setItem(FOLD_KEY, JSON.stringify(Array.from(FOLDED))); } catch (e) {} }
+    function setFolded(secEl, folded) {
+      secEl.classList.toggle('folded', folded);
+      secEl.querySelectorAll('button[data-fold]').forEach((b) => b.setAttribute('aria-expanded', String(!folded)));
+      if (folded) FOLDED.add(secEl.dataset.sec); else FOLDED.delete(secEl.dataset.sec);
+    }
     const UI = { rulesHour: { buy: new Date().getHours(), sell: new Date().getHours() }, rulesTab: { buy: 'single', sell: 'single' },
-                 ppHour: new Date().getHours(), ppTab: 'buy', defsOpen: false, cascade: { buy: null, sell: null } };
+                 ppHour: new Date().getHours(), ppTab: 'buy', cascade: { buy: null, sell: null } };
     let M = null;
 
     // ---------------------------------------------------------------- basics
@@ -426,8 +444,8 @@ class BattmanSettingsCard extends BattmanCardBase {
         const v = (d[sec] || {})[k];
         rows += row(LABEL[k][0], '', '<div class="field"><input inputmode="decimal" data-def="' + sec + '" data-k="' + k + '" value="' + esc(has(v) ? v : '') + '"><span class="sfx">' + LABEL[k][1] + '</span></div>', has(v) ? '' : 'Not set');
       }));
-      return '<div class="dhead' + (UI.defsOpen ? ' open' : '') + '" data-defs-toggle><span>The values each &#8635; Reset button puts back</span><span class="chev">&#8250;</span></div>'
-        + '<div class="defs' + (UI.defsOpen ? ' open' : '') + '"><div class="rows">' + rows + '</div><button class="act" data-defs-save>Save defaults</button><div class="lbl" style="padding:0 16px"></div></div>';
+      return note('The values each &#8635; Reset button puts back.')
+        + '<div class="rows">' + rows + '</div><button class="act" data-defs-save>Save defaults</button><div class="lbl" style="padding:0 16px"></div>';
     }
 
     function systemSection() {
@@ -550,9 +568,11 @@ class BattmanSettingsCard extends BattmanCardBase {
           const def = SECTIONS[id];
           const sec = document.createElement('div');
           sec.className = 'sec'; sec.dataset.sec = id;
-          sec.innerHTML = '<div class="glabel"><div class="glabel-left">' + icon(id) + def.title + '</div><div class="gright">'
-            + (def.reset ? resetBtn(def.reset) : '') + '<span class="grip" data-grip title="Drag to move"></span></div></div><div class="body"></div>';
+          sec.innerHTML = '<div class="glabel"><div class="glabel-left"><button class="fold" data-fold aria-expanded="true" title="Fold or unfold">'
+            + icon(id) + def.title + '</button></div><div class="gright">'
+            + (def.reset ? resetBtn(def.reset) : '') + '<button class="chevs" data-fold aria-label="Fold or unfold" title="Fold or unfold"><svg viewBox="0 0 24 24"><path d="M7 11l5-5 5 5M7 18l5-5 5 5"/></svg></button><span class="grip" data-grip title="Drag to move"></span></div></div><div class="body"></div>';
           col.appendChild(sec);
+          setFolded(sec, FOLDED.has(id));
           draw(id, true);
         });
       });
@@ -647,8 +667,14 @@ class BattmanSettingsCard extends BattmanCardBase {
     }
 
     async function onClick(e) {
-      const t = e.target.closest('button, .dhead');
+      const t = e.target.closest('button');
       if (!t) return;
+      if ('fold' in t.dataset) { const s = t.closest('.sec'); setFolded(s, !s.classList.contains('folded')); return saveFolded(); }
+      if ('foldall' in t.dataset) {
+        const fold = t.dataset.foldall === '1';
+        root.querySelectorAll('.sec').forEach((s) => setFolded(s, fold));
+        return saveFolded();
+      }
       if (t.dataset.reset) {
         const sec = t.dataset.reset, defs = (attrs('parameters').defaults || {})[sec];
         if (!defs || !Object.keys(defs).length) return say(t, 'No defaults saved for this section (see Reset defaults)', 'bad');
@@ -662,7 +688,6 @@ class BattmanSettingsCard extends BattmanCardBase {
       if (t.dataset.pphour) { UI.ppHour = (UI.ppHour + Number(t.dataset.pphour) + 24) % 24; return draw('provider', true); }
       if (t.dataset.pptab) { UI.ppTab = t.dataset.pptab; return draw('provider', true); }
       if (t.dataset.cascade) return applyCascade(t, t.dataset.cascade);
-      if ('defsToggle' in t.dataset) { UI.defsOpen = !UI.defsOpen; return draw('defaults', true); }
       if ('defsSave' in t.dataset) return saveDefaults(t);
       if ('laCreate' in t.dataset) {
         return apply(t, () => getHass().callService('battman', 'create_live_activity', {}), () => LA_MADE.every((id) => st(id)), "Battman's automations");

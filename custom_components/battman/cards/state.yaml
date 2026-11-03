@@ -58,7 +58,7 @@ custom_fields:
     // engine reason labels — newer engines publish Drain as 'Battery Only' and add 'Solar -ve' / 'Solar Only'
     const DRAIN = ['Drain', 'Battery Only', 'No, Draining'], SOLAR = ['Solar', 'Solar -ve', 'Solar Only'];
     // negative-price modes: no rule numbers — the BUY tile shows the live price it's buying at
-    const SOAK = {'Charge Solar Off': ['Hooover', 'Filling up'], 'Float Solar Off': ['House Party', 'Paid to use']};
+    const SOAK = {'Charge Solar Off': ['Hoooover', 'Filling up'], 'Float Solar Off': ['House Party', 'Paid to use']};
 
     const st = attr.needSun   ? {text: 'Needy Curve, No Sun, Panic!', icon: 'mdi:weather-cloudy-alert', color: C.orange}
              : attr.needPower ? {text: 'Needy Curve, High Consumption, Panic!', icon: 'mdi:kettle-alert', color: C.darkred}
@@ -518,7 +518,7 @@ tap_action:
           const s0=Math.round(f.socIn), s1=Math.round(l.soc);
           const holdCol = m<-0.005 ? 'var(--battman-orange)' : (s1>s0 ? 'var(--battman-green)' : 'var(--battman-blue)');  // grid use / solar filling / draining
           const neg = g.act==='buy' && g.items.reduce((p,s)=>p+(s.buy||0),0)/g.items.length < 0;   // Amber pays you to take power → Hooover (battery rising) / House Party (not)
-          const negMode = neg ? (g.items[0].code==='houseparty' ? ['House Party','var(--battman-purple)'] : ['Hooover','var(--battman-purple)']) : null;
+          const negMode = neg ? (g.items[0].code==='houseparty' ? ['House Party','var(--battman-purple)'] : ['Hoooover','var(--battman-purple)']) : null;
           const cc = (g.act==='sell'&&g.items[0].code==='drain')?'var(--battman-red)':g.act==='sell'?CLR_SELL:(g.act==='buy'?(neg?negMode[1]:CLR_BUY):holdCol);
           const avg=k=>g.items.reduce((p,s)=>p+(s[k]||0),0)/g.items.length;
           const code=g.items[0].code;
