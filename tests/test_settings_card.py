@@ -20,7 +20,7 @@ PARAMS = ["buyProrateSOCOffset", "buyHighSOCOffset", "sellProrateSOCOffset", "se
           "watchdogScriptNotRunLimit", "watchdogScriptDisabledLimit", "watchdogResetOverridesAt", "dailyNetworkCharge",
           "billDayOfMonth", "systemCost", "systemInstallDate", "systemIncome", "systemExpenses", "preSystemBillQ1",
           "preSystemBillQ2", "preSystemBillQ3", "preSystemBillQ4", "billInflation", "amberBuyAlertThreshold",
-          "alertNotifyTarget", "amberNegativeBuyAlert", "amberBuyAlert", "amberBuyAlertMaxSoc", "liveActivitySpikeAlertOn",
+          "alertNotifyTarget", "amberNegativeBuyAlert", "amberBuyAlert", "liveActivitySpikeAlertOn",
           "offGridAlert", "offGridAlertDelay", "offGridRestoredAlert", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme"]
 RULE_ITEMS = ["isActive", "allowLastChance", "hours_ahead", "grouping_minutes", "roundTo", "roundtype", "offset"]
 TRACKING = ["buy_trackingA_CutOffKwh", "buy_trackingA_CutOffcKwh", "buy_trackingA_Offset",

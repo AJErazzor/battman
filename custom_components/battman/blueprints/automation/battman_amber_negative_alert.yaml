@@ -3,7 +3,7 @@ blueprint:
   author: Battman
   description: >-
     Sends a notification when the buy price goes below zero (you're paid to import), with
-    buttons to charge the battery for 5, 10 or 15 minutes. Skipped at or above the SOC limit.
+    buttons to charge the battery for 5, 10 or 15 minutes.
 
 
     Battman creates this automation for you; settings are on the Battman dashboard
@@ -15,12 +15,6 @@ blueprint:
     buy_price:
       name: Buy price ($/kWh)
       default: sensor.amber_5min_current_general_price
-      selector:
-        entity:
-          domain: sensor
-    battery_soc:
-      name: Battery state of charge (%)
-      default: sensor.sigen_plant_battery_state_of_charge
       selector:
         entity:
           domain: sensor
@@ -44,13 +38,9 @@ conditions:
     value_template: "{{ state_attr(settings, 'amberNegativeBuyAlert') | bool(false) }}"
   - condition: template
     value_template: "{{ (state_attr(settings, 'alertNotifyTarget') or '') | trim | length > 0 }}"
-  - condition: template
-    value_template: >-
-      {{ is_number(states(soc_e)) and states(soc_e) | float < state_attr(settings, 'amberBuyAlertMaxSoc') | float(0) }}
 
 variables:
   settings: !input settings
-  soc_e: !input battery_soc
   buy_e: !input buy_price
 
 actions:

@@ -8,13 +8,12 @@
 | Notify target | `alertNotifyTarget` | Off |
 | Cheap-price alert | `amberBuyAlert`; fires when the buy price is below `amberBuyAlertThreshold` (c/kWh) | off, 8 |
 | Negative-price alert | `amberNegativeBuyAlert` | off |
-| Skip both above SOC | `amberBuyAlertMaxSoc` (%) | 90 |
 | Live Activity | `liveActivity` (see [live-activity.md](live-activity.md)) | off |
 | Spike alert | `liveActivitySpikeAlertOn`, above `liveActivitySpikeAlert` ($/kWh) | off |
 | Off-grid alert | `offGridAlert`, after `offGridAlertDelay` minutes (0–30) | off, 1 |
 | Grid-restored alert | `offGridRestoredAlert` | off |
 
-The Amber alerts carry 5, 10 and 15 minute **Charge** buttons: tapping one sets Charge mode and
+The Amber alerts carry **Charge** buttons (5 and 10 minutes; the negative-price one also 15): tapping one sets Charge mode and
 starts the override timer for that long.
 
 The **off-grid alert** is a time-sensitive push (it gets through iPhone Focus modes). It uses

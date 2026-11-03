@@ -103,20 +103,6 @@ template:
                  else false }}
             {% endif %}
 
-          amberBuyAlertMaxSoc: >
-            {% if trigger is defined
-               and trigger.platform == 'event'
-               and trigger.event.data.action == 'SetAttribute'
-               and trigger.event.data.amberBuyAlertMaxSoc is defined
-               and trigger.event.data.amberBuyAlertMaxSoc | int(-1) >= 0
-               and trigger.event.data.amberBuyAlertMaxSoc | int(-1) <= 100 %}
-              {{ trigger.event.data.amberBuyAlertMaxSoc | int }}
-            {% else %}
-              {{ this.attributes.amberBuyAlertMaxSoc
-                 if this.attributes.amberBuyAlertMaxSoc is defined
-                 else 90 }}
-            {% endif %}
-
           alertNotifyTarget: >
             {% if trigger is defined
                and trigger.platform == 'event'

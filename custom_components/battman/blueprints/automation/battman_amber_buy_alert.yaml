@@ -3,8 +3,7 @@ blueprint:
   author: Battman
   description: >-
     Sends a notification when the live buy price drops below the alert threshold, with
-    buttons to charge the battery for 5, 10 or 15 minutes. Skipped while the battery is at or
-    above the SOC limit, or already charging.
+    buttons to charge the battery for 5 or 10 minutes. Skipped while the battery is already charging.
 
 
     Battman creates this automation for you; settings are on the Battman dashboard
@@ -56,9 +55,6 @@ conditions:
     value_template: "{{ state_attr(settings, 'amberBuyAlert') | bool(false) }}"
   - condition: template
     value_template: "{{ (state_attr(settings, 'alertNotifyTarget') or '') | trim | length > 0 }}"
-  - condition: template
-    value_template: >-
-      {{ is_number(states(soc_e)) and states(soc_e) | float < state_attr(settings, 'amberBuyAlertMaxSoc') | float(0) }}
   - condition: template
     value_template: "{{ states(mode_e) != 'Charge' }}"
 

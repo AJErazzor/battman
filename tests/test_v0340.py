@@ -22,10 +22,9 @@ async def test_every_notification_starts_off(hass: HomeAssistant) -> None:
     for key in SWITCHES:
         assert _la(hass, key) is False, key
     assert _la(hass, "alertNotifyTarget") == ""                     # the shared target is Off
-    assert (_la(hass, "amberBuyAlertMaxSoc"), _la(hass, "offGridAlertDelay")) == (90, 1)
-    # out-of-range numbers are ignored
-    await _set(hass, amberBuyAlertMaxSoc=101, offGridAlertDelay=31)
-    assert (_la(hass, "amberBuyAlertMaxSoc"), _la(hass, "offGridAlertDelay")) == (90, 1)
+    assert _la(hass, "offGridAlertDelay") == 1
+    await _set(hass, offGridAlertDelay=31)                          # out-of-range numbers are ignored
+    assert _la(hass, "offGridAlertDelay") == 1
 
 
 async def test_blueprint_automations_are_made_and_loaded(hass: HomeAssistant) -> None:

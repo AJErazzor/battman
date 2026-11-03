@@ -144,7 +144,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       dailyNetworkCharge: [0, 0, 5], billDayOfMonth: [1, 0, 31, true],
       systemCost: [0, 0, 100000], systemIncome: [0, 0, 50000], systemExpenses: [0, 0, 50000],
       preSystemBillQ1: [0, 0, 5000], preSystemBillQ2: [0, 0, 5000], preSystemBillQ3: [0, 0, 5000], preSystemBillQ4: [0, 0, 5000],
-      billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99], amberBuyAlertMaxSoc: [1, 0, 100], offGridAlertDelay: [1, 0, 30],
+      billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99], offGridAlertDelay: [1, 0, 30],
     };
     const DEFAULT_KEYS = {   // the defaults each section's Reset restores (parameters' `defaults`)
       gridChargingPositive: ['buyProrateSOCOffset', 'buyHighSOCOffset'], gridDischarging: ['sellProrateSOCOffset', 'sellLowSOCOffset'],
@@ -392,7 +392,6 @@ class BattmanSettingsCard extends BattmanCardBase {
         + numParam('amberBuyAlertThreshold', 'Below', '', 'c/kWh')
         + '<div class="subdiv">Negative price</div>'
         + sw('amberNegativeBuyAlert', 'Negative-price alert', "Push when you're paid to import")
-        + numParam('amberBuyAlertMaxSoc', 'Skip at SOC above', 'Also applies to the cheap-price alert', '%')
         + '<div class="subdiv">Live Activity</div>'
         + row('Live Activity', "Your battery on the phone's lock screen", swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
         + row('Follow entity', followNow, txt('liveActivityFollow', true), f && !fe ? '⚠ ' + esc(f) + ' not found' : '')
