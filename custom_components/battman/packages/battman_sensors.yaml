@@ -94,7 +94,6 @@ template:
               action: SetAttribute
               liveActivity: false
 
-  # ── ported from packages/solarsystemcontrolmodule.yaml v1.0.14 ──
   - binary_sensor:
       # Unavailable (not an error every update) when the feed-in price has no start / end time,
       # e.g. while Amber's sensor is down.
