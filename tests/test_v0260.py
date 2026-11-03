@@ -121,8 +121,9 @@ async def _updated_from_v025(hass):
 async def test_live_activity_settings_carried_over(hass: HomeAssistant) -> None:
     await _updated_from_v025(hass)
     a = hass.states.get("sensor.battman_parameters").attributes
-    assert {k: a[k] for k in a if k.startswith("liveActivity")} == {
-        "liveActivity": True, "liveActivityPhone": "mobile_app_ajs_iphone",
+    assert a["alertNotifyTarget"] == "mobile_app_ajs_iphone"          # the old phone is now the shared notify target
+    assert {k: a[k] for k in a if k.startswith("liveActivity") and k != "liveActivitySpikeAlertOn"} == {
+        "liveActivity": True,
         "liveActivityFollow": "binary_sensor.car_ignition", "liveActivityFollowOn": "on", "liveActivityFollowOff": "off",
         "liveActivityFollowDelay": 3, "liveActivitySpikeAlert": 0.55}
     reg = er.async_get(hass)
@@ -140,7 +141,7 @@ async def test_battman_device_now(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
     on = sorted(e.entity_id for e in er.async_entries_for_device(er.async_get(hass), device.id))
-    assert on == ["button.battman_create_dashboard", "button.battman_create_live_activity_automations"], on
+    assert on == ["button.battman_create_automations", "button.battman_create_dashboard"], on
 
 
 

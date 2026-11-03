@@ -1,0 +1,128 @@
+blueprint:
+  name: Battman Off-grid alert
+  author: Battman
+  description: >-
+    Sends a time-sensitive notification when the plant goes off-grid (and stays that way for
+    the delay set), saying roughly how long the battery will last at the current load.
+    Optionally tells you when the grid is back.
+
+
+    Battman creates this automation for you; settings are on the Battman dashboard
+    (Settings → Notifications). Installed and updated by the Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    grid_status:
+      name: Grid connection status
+      description: "States: On Grid, Off Grid (Auto), Off Grid (Manual)."
+      default: sensor.sigen_plant_grid_connection_status
+      selector:
+        entity:
+          domain: sensor
+    battery_soc:
+      name: Battery state of charge (%)
+      default: sensor.sigen_plant_battery_state_of_charge
+      selector:
+        entity:
+          domain: sensor
+    battery_capacity:
+      name: Battery capacity (kWh)
+      default: sensor.sigen_plant_rated_energy_capacity
+      selector:
+        entity:
+          domain: sensor
+    home_power:
+      name: House power (kW)
+      default: sensor.sigen_plant_consumed_power
+      selector:
+        entity:
+          domain: sensor
+    settings:
+      name: Battman settings
+      description: The sensor holding Battman's settings (the off-grid ones among them).
+      default: [[map:parameters]]
+      selector:
+        entity:
+          domain: sensor
+
+mode: queued
+max: 5
+
+trigger_variables:
+  settings: !input settings
+
+triggers:
+  - trigger: state
+    entity_id: !input grid_status
+    to:
+      - Off Grid (Auto)
+      - Off Grid (Manual)
+    for:
+      minutes: "{{ state_attr(settings, 'offGridAlertDelay') | int(1) }}"
+    id: "off"
+  - trigger: state
+    entity_id: !input grid_status
+    from:
+      - Off Grid (Auto)
+      - Off Grid (Manual)
+    to: On Grid
+    id: restored
+
+conditions:
+  - condition: template
+    value_template: "{{ state_attr(settings, 'offGridAlert') | bool(false) }}"
+  - condition: template
+    value_template: "{{ (state_attr(settings, 'alertNotifyTarget') or '') | trim | length > 0 }}"
+  - condition: or
+    conditions:
+      - condition: trigger
+        id: "off"
+      - condition: template
+        value_template: "{{ state_attr(settings, 'offGridRestoredAlert') | bool(false) }}"
+
+variables:
+  settings: !input settings
+  soc_e: !input battery_soc
+  cap_e: !input battery_capacity
+  load_e: !input home_power
+  status_e: !input grid_status
+
+actions:
+  - variables:
+      soc: "{{ states(soc_e) | float(none) }}"
+      kwh: "{{ (states(cap_e) | float(0)) * (states(soc_e) | float(0)) / 100 }}"
+      load: "{{ states(load_e) | float(0) }}"
+      hours: "{{ (kwh / load) if load >= 0.05 else none }}"
+      left: >-
+        {% if soc is none %}—
+        {%- elif hours is none %}Battery {{ soc | round(0) }}%
+        {%- elif hours >= 1 %}Battery {{ soc | round(0) }}% · about {{ hours | round(0) | int }} h at {{ load | round(1) }} kW
+        {%- else %}Battery {{ soc | round(0) }}% · about {{ (hours * 60) | round(0) | int }} min at {{ load | round(1) }} kW
+        {%- endif %}
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: "off"
+        sequence:
+          - action: "notify.{{ state_attr(settings, 'alertNotifyTarget') | trim }}"
+            data:
+              title: >-
+                {{ '🔌 Power outage' if states(status_e) == 'Off Grid (Auto)' else '🔌 Switched to off-grid' }}
+              message: "{{ left }}"
+              data:
+                tag: battman_offgrid
+                ttl: 0
+                priority: high
+                push:
+                  interruption-level: time-sensitive
+      - conditions:
+          - condition: trigger
+            id: restored
+        sequence:
+          - action: "notify.{{ state_attr(settings, 'alertNotifyTarget') | trim }}"
+            data:
+              title: "✅ Grid is back"
+              message: "Battery {{ states(soc_e) | float(0) | round(0) | int }}%"
+              data:
+                tag: battman_offgrid

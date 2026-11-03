@@ -1,0 +1,57 @@
+blueprint:
+  name: Battman Amber – charge from the alert
+  author: Battman
+  description: >-
+    Handles the 5, 10 and 15 minute buttons on the Amber price alerts: sets Charge mode and
+    starts the override timer for that long.
+
+
+    Battman creates this automation for you. Installed and updated by the Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    battery_mode:
+      name: Battery mode
+      default: [[map:mode]]
+      selector:
+        entity:
+          domain: input_select
+    override_timer:
+      name: Override timer
+      default: [[map:override_timer]]
+      selector:
+        entity:
+          domain: timer
+
+mode: single
+
+triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: AMBER_CHARGE_5
+    id: "5"
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: AMBER_CHARGE_10
+    id: "10"
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: AMBER_CHARGE_15
+    id: "15"
+
+actions:
+  - action: input_select.select_option
+    target:
+      entity_id: !input battery_mode
+    data:
+      option: Charge
+  - action: timer.start
+    target:
+      entity_id: !input override_timer
+    data:
+      duration:
+        minutes: "{{ trigger.id | int }}"

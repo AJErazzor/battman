@@ -19,12 +19,12 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from . import automation_files, blueprint_install, engine, live_activity, package_files, themes
+from . import automation_files, blueprint_install, engine, notifications, package_files, themes
 
 _LOGGER = logging.getLogger(__name__)
 
-AUTOMATION_IDS = {a["id"] for a in (*engine.AUTOMATIONS, *live_activity.AUTOMATIONS)}
-SCRIPT_IDS = {*engine.SCRIPTS, *live_activity.SCRIPTS}
+AUTOMATION_IDS = {a["id"] for a in (*engine.AUTOMATIONS, *notifications.AUTOMATIONS)}
+SCRIPT_IDS = {*engine.SCRIPTS, *notifications.SCRIPTS}
 
 
 async def _reload(hass: HomeAssistant, domain: str) -> None:

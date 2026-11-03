@@ -7,11 +7,11 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.helpers import issue_registry as ir
 
-from . import dashboard, live_activity
+from . import dashboard, engine, notifications
 from .const import DOMAIN
 
 SERVICE_CREATE_DASHBOARD = "create_dashboard"
-SERVICE_CREATE_LIVE_ACTIVITY = "create_live_activity"
+SERVICE_CREATE_AUTOMATIONS = "create_automations"
 ISSUE_DASHBOARD = "dashboard_unavailable"
 ISSUES_URL = "https://github.com/AJErazzor/battman/issues"
 
@@ -47,20 +47,28 @@ async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -
     return result
 
 
-async def async_create_live_activity_and_report(hass: HomeAssistant, notify: bool) -> dict:
-    """Create any missing Live Activity automations/script and say what happened."""
+async def async_create_automations_and_report(hass: HomeAssistant, notify: bool) -> dict:
+    """Create any missing Battman automations and scripts (notifications, then the engine) and say what happened."""
+    created: list[str] = []
+    problems: list[str] = []
     try:
-        result = await live_activity.async_create_missing(hass)
-    except live_activity.LiveActivityError as err:
-        result = {"created": [], "existing": [], "message": f"Could not create the Live Activity automations: {err}"}
+        created += (await notifications.async_create_missing(hass))["created"]
+    except notifications.NotificationsError as err:
+        problems.append(str(err))
+    try:
+        created += await engine.async_create_missing(hass)
+    except engine.EngineError as err:
+        problems.append(str(err))
+    if problems:
+        message = "Could not create the Battman automations: " + "; ".join(problems)
+    elif created:
+        message = "Created: " + ", ".join(created) + "."
     else:
-        if result["created"]:
-            result["message"] = "Created: " + ", ".join(result["created"]) + "."
-        else:
-            result["message"] = "All Live Activity automations and the script already exist; nothing changed."
+        message = "All Battman automations and scripts already exist; nothing changed."
+    result = {"created": created, "message": message}
     if notify:
         persistent_notification.async_create(
-            hass, result["message"], title="Battman Live Activity", notification_id="battman_live_activity"
+            hass, message, title="Battman automations", notification_id="battman_automations"
         )
     return result
 
@@ -74,10 +82,10 @@ def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN, SERVICE_CREATE_DASHBOARD, _create, supports_response=SupportsResponse.OPTIONAL
     )
 
-    async def _create_live(call: ServiceCall) -> ServiceResponse:
-        result = await async_create_live_activity_and_report(hass, notify=not call.return_response)
+    async def _create_automations(call: ServiceCall) -> ServiceResponse:
+        result = await async_create_automations_and_report(hass, notify=not call.return_response)
         return result if call.return_response else None
 
     hass.services.async_register(
-        DOMAIN, SERVICE_CREATE_LIVE_ACTIVITY, _create_live, supports_response=SupportsResponse.OPTIONAL
+        DOMAIN, SERVICE_CREATE_AUTOMATIONS, _create_automations, supports_response=SupportsResponse.OPTIONAL
     )

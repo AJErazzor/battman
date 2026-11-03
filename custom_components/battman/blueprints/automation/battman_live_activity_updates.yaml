@@ -9,7 +9,7 @@ blueprint:
 
     Uses the script made from the "Battman Live Activity – push" blueprint. Battman
     creates this automation and that script for you; settings are on the Battman
-    dashboard (Settings → Live Activity). Installed and updated by the Battman integration.
+    dashboard (Settings → Notifications). Installed and updated by the Battman integration.
   domain: automation
   homeassistant:
     min_version: "2024.10.0"

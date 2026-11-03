@@ -3,8 +3,8 @@
     "create_dashboard": {
       "service": "mdi:view-dashboard-edit"
     },
-    "create_live_activity": {
-      "service": "mdi:cellphone-cog"
+    "create_automations": {
+      "service": "mdi:robot-outline"
     }
   }
 }

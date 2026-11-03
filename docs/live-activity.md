@@ -17,29 +17,31 @@ Nothing to build by hand. On first start Battman creates, from its own blueprint
 | `automation.battman_live_activity_follow` | Flip the switch from another entity (e.g. a car's ignition), if you set one |
 
 They read their settings from Battman's settings sensor (`sensor.battman_parameters`), like every
-other Battman setting. You set them on the Battman dashboard under **Settings → Live Activity**:
+other Battman setting. You set them on the Battman dashboard under **Settings → Notifications**. It goes to the shared notify target (see
+[docs/notifications.md](notifications.md)):
 
 | Setting | Where | Default |
 |---|---|---|
 | On/off | `switch.battman_live_activity` (a template switch: its state is `liveActivity`) | off |
-| Phone | `liveActivityPhone` (one of HA's notify services, or Off) | **Off** |
 | Follow entity | `liveActivityFollow` (blank = don't follow) | blank |
 | On / off states | `liveActivityFollowOn` / `liveActivityFollowOff` | `ON` / `OFF` |
 | Off after | `liveActivityFollowDelay` (minutes, 0–60) | 2 |
-| Feed-in spike alert | `liveActivitySpikeAlert` ($/kWh, 0–20) | 0.30 |
+| Spike alert | `liveActivitySpikeAlertOn` | off |
+| Spike alert above | `liveActivitySpikeAlert` ($/kWh, 0–20) | 0.30 |
 
 Before v0.26.0 these were separate Battman
-entities; updating carries their values over.
+entities; updating carries their values over. Before v0.34.0 the phone was its own setting
+(`liveActivityPhone`); it is now the shared notify target.
 
-With the phone on **Off** nothing is sent, so a new install is harmless until you pick one.
+With the notify target on **Off** nothing is sent, so a new install is harmless until you pick one.
 
 ## Yours to edit; getting Battman's version back
 
 - They're normal automations and a script (in `automations.yaml` / `scripts.yaml`).
   Edit them if you like: Battman never overwrites one that exists.
-- **Create Live Activity automations** (button on the Battman device, or the action
-  `battman.create_live_activity`) creates any that are **missing**. To reset one to
-  Battman's version: delete it, then press the button. The Settings card shows if any are missing.
+- **Create automations** (button on the Battman device, or the action
+  `battman.create_automations`) creates any that are **missing**. To reset one to
+  Battman's version: delete it, then press the button.
 - Because they're made from Battman's blueprints, fixes in a Battman release reach them
   automatically (Battman updates the blueprints and reloads). If you **take control** of
   one, it stops following the blueprint.
@@ -54,7 +56,7 @@ mode shows a red "?" icon, and with no dashboard theme picked the bar is grey
 
 1. Update Battman and restart. Check Settings → Automations: the three
    "Battman Live Activity" automations and the script are there.
-2. Battman dashboard → **Settings → Live Activity**: pick your phone, set Follow to your
+2. Battman dashboard → **Settings → Notifications**: pick the notify target, set Follow to your
    car's ignition sensor (`ON` / `OFF`, 2 min).
 3. **Disable** (don't delete) the old ones: *Battery Live Activity – car, start, stop,
    update, keep-alive, FIT spike alert* and the script *Battery Live Activity – push*.

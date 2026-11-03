@@ -91,6 +91,18 @@ template:
                  else 8 }}
             {% endif %}
 
+          amberBuyAlert: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.amberBuyAlert is defined %}
+              {{ trigger.event.data.amberBuyAlert | bool }}
+            {% else %}
+              {{ this.attributes.amberBuyAlert
+                 if this.attributes.amberBuyAlert is defined
+                 else false }}
+            {% endif %}
+
           alertNotifyTarget: >
             {% if trigger is defined
                and trigger.platform == 'event'
@@ -112,6 +124,49 @@ template:
             {% else %}
               {{ this.attributes.amberNegativeBuyAlert
                  if this.attributes.amberNegativeBuyAlert is defined
+                 else false }}
+            {% endif %}
+
+          ##################################################################
+          # Off-grid alert (Settings → Notifications): a time-sensitive push to
+          # the shared notify target when the plant goes off-grid for longer
+          # than the delay (minutes), and optionally when the grid is back.
+          ##################################################################
+          offGridAlert: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.offGridAlert is defined %}
+              {{ trigger.event.data.offGridAlert | bool }}
+            {% else %}
+              {{ this.attributes.offGridAlert
+                 if this.attributes.offGridAlert is defined
+                 else false }}
+            {% endif %}
+
+          offGridAlertDelay: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.offGridAlertDelay is defined
+               and trigger.event.data.offGridAlertDelay | int >= 0
+               and trigger.event.data.offGridAlertDelay | int <= 30 %}
+              {{ trigger.event.data.offGridAlertDelay | int }}
+            {% else %}
+              {{ this.attributes.offGridAlertDelay
+                 if this.attributes.offGridAlertDelay is defined
+                 else 1 }}
+            {% endif %}
+
+          offGridRestoredAlert: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.offGridRestoredAlert is defined %}
+              {{ trigger.event.data.offGridRestoredAlert | bool }}
+            {% else %}
+              {{ this.attributes.offGridRestoredAlert
+                 if this.attributes.offGridRestoredAlert is defined
                  else false }}
             {% endif %}
 
@@ -875,12 +930,12 @@ template:
             {% endif %}
 
           ##################################################################
-          # Battman addition: the Live Activity (Settings → Live Activity).
+          # Battman addition: the Live Activity (Settings → Notifications).
           # liveActivity is switch.battman_live_activity's state (a template
           # switch in battman_sensors.yaml); the rest are its settings: the
-          # phone (a notify service, or Off), the entity to follow and its
-          # on / off states, how long it has to be off, and the feed-in spike
-          # alert ($/kWh).
+          # entity to follow and its on / off states, how long it has to be
+          # off, and the feed-in spike alert ($/kWh) with its switch. It goes
+          # to the shared notify target (alertNotifyTarget).
           ##################################################################
           liveActivity: >
             {% if trigger is defined
@@ -892,18 +947,6 @@ template:
               {{ this.attributes.liveActivity
                  if this.attributes.liveActivity is defined
                  else false }}
-            {% endif %}
-
-          liveActivityPhone: >
-            {% if trigger is defined
-               and trigger.platform == 'event'
-               and trigger.event.data.action == 'SetAttribute'
-               and trigger.event.data.liveActivityPhone is defined %}
-              {{ (trigger.event.data.liveActivityPhone or 'Off') | string | trim }}
-            {% else %}
-              {{ this.attributes.liveActivityPhone
-                 if this.attributes.liveActivityPhone is defined
-                 else 'Off' }}
             {% endif %}
 
           liveActivityFollow: >
@@ -968,6 +1011,18 @@ template:
               {{ this.attributes.liveActivitySpikeAlert
                  if this.attributes.liveActivitySpikeAlert is defined
                  else 0.3 }}
+            {% endif %}
+
+          liveActivitySpikeAlertOn: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivitySpikeAlertOn is defined %}
+              {{ trigger.event.data.liveActivitySpikeAlertOn | bool }}
+            {% else %}
+              {{ this.attributes.liveActivitySpikeAlertOn
+                 if this.attributes.liveActivitySpikeAlertOn is defined
+                 else false }}
             {% endif %}
 
           pinnedOverrides: >
