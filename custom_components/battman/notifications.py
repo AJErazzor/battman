@@ -1,15 +1,16 @@
-"""Create the Battman Live Activity automations and script.
+"""Create Battman's notification automations and the Live Activity script.
 
 They're made from Battman's blueprints and written into automations.yaml and
 scripts.yaml, exactly as if you'd made them from the blueprints in HA's editor.
-Their settings live in Battman entities (Settings → Live Activity on the Battman
+Their settings live in Battman's parameters (Settings → Notifications on the Battman
 dashboard), so nothing personal is in them.
 
 Rules:
-- Battman creates them once, on first start after installing/updating.
+- Battman creates each one once: on the first start after installing or updating to a version that
+  has it. A new version's new automations arrive by themselves; one you delete stays deleted.
 - After that they're yours: Battman never edits or overwrites one that exists.
-- "Create Live Activity automations" (button / battman.create_live_activity)
-  creates any that are missing. To reset one: delete it, then press the button.
+- "Create automations" (button / battman.create_automations) creates any that are missing.
+  To reset one: delete it, then press the button.
 
 They're written into automations.yaml / scripts.yaml (automation_files.py), then
 reloaded. If they don't load (e.g. automations.yaml isn't included in
@@ -39,11 +40,11 @@ from .const import DOMAIN, ENGINE_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
-ISSUE_NOT_LOADED = "live_activity_not_loaded"
+ISSUE_NOT_LOADED = "notifications_not_loaded"
 NOTE = (
     "Made by Battman from its blueprint. Settings are on the Battman dashboard "
-    "(Settings → Live Activity). Edit freely: Battman won't overwrite it. "
-    "Delete it and press 'Create Live Activity automations' on the Battman device to get Battman's version back."
+    "(Settings → Notifications). Edit freely: Battman won't overwrite it. "
+    "Delete it and press 'Create automations' on the Battman device to get Battman's version back."
 )
 
 SCRIPTS: dict[str, dict[str, Any]] = {
@@ -64,7 +65,7 @@ AUTOMATIONS: list[dict[str, Any]] = [
 ]
 
 
-class LiveActivityError(Exception):
+class NotificationsError(Exception):
     """automations.yaml / scripts.yaml couldn't be read or written."""
 
 
@@ -97,18 +98,27 @@ async def _reload_and_check(hass: HomeAssistant, added: list[str]) -> None:
         ir.async_delete_issue(hass, DOMAIN, ISSUE_NOT_LOADED)
 
 
-async def async_create_missing(hass: HomeAssistant) -> dict[str, list[str]]:
-    """Create any missing Live Activity automations/script. {"created": [...], "existing": [...]}."""
+# the Live Activity script and automations (before v0.34 these were all Battman made)
+LIVE_ACTIVITY_IDS = ["battman_live_activity_push", "battman_live_activity_on_off", "battman_live_activity_updates",
+                     "battman_live_activity_follow"]
+ALL_IDS = [*SCRIPTS, *(a["id"] for a in AUTOMATIONS)]
+
+
+async def async_create_missing(hass: HomeAssistant, only: set[str] | None = None) -> dict[str, list[str]]:
+    """Create any missing notification automations/script (only those ids, if given).
+    {"created": [...], "existing": [...]}."""
     auto_path, script_path = automation_files.paths(hass)
+    autos = [a for a in AUTOMATIONS if only is None or a["id"] in only]
+    scripts = {k: v for k, v in SCRIPTS.items() if only is None or k in only}
     try:
         added = await hass.async_add_executor_job(
-            automation_files.write_missing, auto_path, script_path, AUTOMATIONS, SCRIPTS
+            automation_files.write_missing, auto_path, script_path, autos, scripts
         )
     except automation_files.AutomationFileError as err:
-        raise LiveActivityError(str(err)) from err
-    every = [*SCRIPTS, *(a["id"] for a in AUTOMATIONS)]
+        raise NotificationsError(str(err)) from err
+    every = [i for i in ALL_IDS if only is None or i in only]
     if added:
-        _LOGGER.info("Battman created Live Activity automations/script: %s", ", ".join(added))
+        _LOGGER.info("Battman created notification automations/script: %s", ", ".join(added))
         if hass.state is CoreState.running:
             await _reload_and_check(hass, added)
         else:

@@ -39,7 +39,7 @@ def test_every_old_setting_is_on_the_page() -> None:
     for ent in LIVE_ACTIVITY:
         assert ent in JS, ent
     for marker in ("attribute: 'rules'", "attribute: 'state'", "action: 'SetValue', provider", "'tariffBuy' : 'tariffSell'",
-                   "action: 'SetDefaults'", "create_live_activity", "data-cascade", "lovelace/config/save"):
+                   "action: 'SetDefaults'", "data-cascade", "lovelace/config/save"):
         assert marker in JS, marker
     for sec in ("buy", "buyRules", "needy", "watchdog", "billing", "system", "sell", "sellRules", "spike", "protection",
                 "provider", "alert", "liveActivity", "dashboard", "defaults"):

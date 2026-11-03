@@ -15,8 +15,8 @@
       "create_dashboard": {
         "name": "Create dashboard"
       },
-      "create_live_activity": {
-        "name": "Create Live Activity automations"
+      "create_automations": {
+        "name": "Create automations"
       }
     },
     "sensor": {
@@ -69,9 +69,9 @@
       "name": "Create dashboard",
       "description": "Creates the Battman dashboard at /battman, with all of Battman's views, as a normal dashboard you can edit. Does nothing if something is already at /battman: delete it first for a fresh copy."
     },
-    "create_live_activity": {
-      "name": "Create Live Activity automations",
-      "description": "Creates any missing Battman Live Activity automations and script from Battman's blueprints. Never changes ones that exist."
+    "create_automations": {
+      "name": "Create automations",
+      "description": "Creates any missing Battman automations and scripts (engine, notifications, Live Activity) from Battman's blueprints. Never changes ones that exist."
     }
   },
   "issues": {
@@ -114,9 +114,9 @@
         }
       }
     },
-    "live_activity_not_loaded": {
-      "title": "Battman Live Activity automations didn't load",
-      "description": "Battman added {missing} to automations.yaml / scripts.yaml, but Home Assistant didn't load them. Check that configuration.yaml has `automation: !include automations.yaml` and `script: !include scripts.yaml` (they're there by default), then press Create Live Activity automations on the Battman device again."
+    "notifications_not_loaded": {
+      "title": "Battman automations didn't load",
+      "description": "Battman added {missing} to automations.yaml / scripts.yaml, but Home Assistant didn't load them. Check that configuration.yaml has `automation: !include automations.yaml` and `script: !include scripts.yaml` (they're there by default), then press Create automations on the Battman device again."
     },
     "local_cards": {
       "title": "Battman is using your own card files",

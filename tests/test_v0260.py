@@ -140,7 +140,7 @@ async def test_battman_device_now(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
     on = sorted(e.entity_id for e in er.async_entries_for_device(er.async_get(hass), device.id))
-    assert on == ["button.battman_create_dashboard", "button.battman_create_live_activity_automations"], on
+    assert on == ["button.battman_create_dashboard", "button.battman_create_automations"], on
 
 
 

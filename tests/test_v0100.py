@@ -79,26 +79,26 @@ async def test_created_on_start_and_regenerate(hass: HomeAssistant) -> None:
         assert hass.states.get(i) is not None, i               # Battman made them, HA loaded them
     autos = yaml.safe_load(Path(hass.config.path("automations.yaml")).read_text())
     assert all(a["use_blueprint"]["input"] == {} for a in autos)  # nothing personal in them
-    assert entry.data["live_activity_created_on_install"] is True
+    assert set(entry.data["automations_offered"]) >= {i.split(".", 1)[1] for i in IDS}   # made once, then remembered
 
     # edit one (it's yours now), delete another, press the button
     autos[0]["alias"] = "My on/off"
     autos = [a for a in autos if a["id"] != "battman_live_activity_updates"]
     Path(hass.config.path("automations.yaml")).write_text(yaml.safe_dump(autos, allow_unicode=True))
     await hass.services.async_call("automation", "reload", blocking=True)
-    result = await hass.services.async_call(DOMAIN, "create_live_activity", {}, blocking=True, return_response=True)
+    result = await hass.services.async_call(DOMAIN, "create_automations", {}, blocking=True, return_response=True)
     assert result["created"] == ["battman_live_activity_updates"]
     autos = yaml.safe_load(Path(hass.config.path("automations.yaml")).read_text())
     assert [a["alias"] for a in autos if a["id"] == "battman_live_activity_on_off"] == ["My on/off"]  # untouched
     await hass.async_block_till_done()
     assert hass.states.get("automation.battman_live_activity_updates") is not None
-    again = await hass.services.async_call(DOMAIN, "create_live_activity", {}, blocking=True, return_response=True)
+    again = await hass.services.async_call(DOMAIN, "create_automations", {}, blocking=True, return_response=True)
     assert again["created"] == [] and "nothing changed" in again["message"]
 
 
 async def test_not_loaded_repair(hass: HomeAssistant) -> None:
     await _setup(hass, include=False)                          # configuration.yaml doesn't include them
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, "live_activity_not_loaded")
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "notifications_not_loaded")
     assert issue is not None and "battman_live_activity_push" in issue.translation_placeholders["missing"]
 
 

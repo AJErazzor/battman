@@ -37,9 +37,9 @@ With the phone on **Off** nothing is sent, so a new install is harmless until yo
 
 - They're normal automations and a script (in `automations.yaml` / `scripts.yaml`).
   Edit them if you like: Battman never overwrites one that exists.
-- **Create Live Activity automations** (button on the Battman device, or the action
-  `battman.create_live_activity`) creates any that are **missing**. To reset one to
-  Battman's version: delete it, then press the button. The Settings card shows if any are missing.
+- **Create automations** (button on the Battman device, or the action
+  `battman.create_automations`) creates any that are **missing**. To reset one to
+  Battman's version: delete it, then press the button.
 - Because they're made from Battman's blueprints, fixes in a Battman release reach them
   automatically (Battman updates the blueprints and reloads). If you **take control** of
   one, it stops following the blueprint.

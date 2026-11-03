@@ -8,13 +8,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .entity import device_info
-from .services import async_create_dashboard_and_report, async_create_live_activity_and_report
+from .services import async_create_automations_and_report, async_create_dashboard_and_report
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities([BattmanCreateDashboardButton(entry), BattmanCreateLiveActivityButton(entry)])
+    async_add_entities([BattmanCreateDashboardButton(entry), BattmanCreateAutomationsButton(entry)])
 
 
 class BattmanCreateDashboardButton(ButtonEntity):
@@ -32,16 +32,16 @@ class BattmanCreateDashboardButton(ButtonEntity):
         await async_create_dashboard_and_report(self.hass, notify=True)
 
 
-class BattmanCreateLiveActivityButton(ButtonEntity):
-    """Create any missing Live Activity automations/script (never touches existing ones)."""
+class BattmanCreateAutomationsButton(ButtonEntity):
+    """Create any missing Battman automations and scripts (never touches existing ones)."""
 
     _attr_has_entity_name = True
-    _attr_translation_key = "create_live_activity"
-    _attr_icon = "mdi:cellphone-cog"
+    _attr_translation_key = "create_automations"
+    _attr_icon = "mdi:robot-outline"
 
     def __init__(self, entry: ConfigEntry) -> None:
-        self._attr_unique_id = f"{entry.entry_id}_create_live_activity"
+        self._attr_unique_id = f"{entry.entry_id}_create_automations"
         self._attr_device_info = device_info(entry)
 
     async def async_press(self) -> None:
-        await async_create_live_activity_and_report(self.hass, notify=True)
+        await async_create_automations_and_report(self.hass, notify=True)

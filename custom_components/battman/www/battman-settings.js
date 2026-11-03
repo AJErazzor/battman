@@ -6,6 +6,9 @@
 
 import { BattmanCardBase, FILES, battmanDefine, battmanMap, battmanPicker, missingEntities, missingThemeVars } from "./battman-card-base.js";
 
+// the Battman version this page was served as (HA serves it under /battmanfiles-v<version>/); blank if not
+const VERSION = (import.meta.url.match(/battmanfiles-v([^/]+)\//) || [])[1] || '';
+
 class BattmanSettingsCard extends BattmanCardBase {
   static cardName = "Battman Settings";
   static preview = "settings.webp";
@@ -27,6 +30,8 @@ class BattmanSettingsCard extends BattmanCardBase {
 
   .hdr { margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
   .hdr .who { height: 44px; width: auto; flex: none; }
+  .hdr .ver { margin-left: auto; flex: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+              text-transform: uppercase; color: var(--battman-text-muted); white-space: nowrap; }
   .hdr .word { width: 230px; max-width: 100%; min-width: 0; height: auto; flex: 0 1 auto; }
   .cols { display: flex; gap: 16px; align-items: flex-start; position: relative; }
   .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; min-height: 60px; }
@@ -118,7 +123,7 @@ class BattmanSettingsCard extends BattmanCardBase {
   .sec.folded .glabel { padding-bottom: 10px; }
 `;
   static html = `<ha-card><div class="frame"><div class="page">
-<h2 class="hdr"><img src="${FILES}/images/battman-wrench.webp" alt="Battman" class="who"><img src="${FILES}/images/settings-line.webp" alt="Settings" class="word"></h2>
+<h2 class="hdr"><img src="${FILES}/images/battman-wrench.webp" alt="Battman" class="who"><img src="${FILES}/images/settings-line.webp" alt="Settings" class="word">${VERSION ? `<span class="ver">Battman v${VERSION}</span>` : ''}</h2>
 <div class="bar"><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></div>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
 </div></div></ha-card>`;
@@ -153,8 +158,6 @@ class BattmanSettingsCard extends BattmanCardBase {
                  event: 'battman_parameters_update' };
     const LA_RANGE = { liveActivityFollowDelay: [true, 0, 60], liveActivitySpikeAlert: [false, 0, 20] };   // parseNum: [whole number, min, max]
     const NOT_PHONES = ['send_message', 'persistent_notification'];   // notify services that aren't a device
-    const LA_MADE = ['script.battman_live_activity_push', 'automation.battman_live_activity_on_off',
-                     'automation.battman_live_activity_updates', 'automation.battman_live_activity_follow'];
     const HOURS = ['12am','1am','2am','3am','4am','5am','6am','7am','8am','9am','10am','11am',
                    '12pm','1pm','2pm','3pm','4pm','5pm','6pm','7pm','8pm','9pm','10pm','11pm'];
     const ORDER_KEY = 'battman.settingsOrder';
@@ -396,7 +399,6 @@ class BattmanSettingsCard extends BattmanCardBase {
       const num = (key, unit) => '<div class="field"><input inputmode="decimal" data-la-num="' + key + '" value="' + esc(A[key] == null ? '' : A[key]) + '"><span class="sfx">' + unit + '</span></div>';
       const f = String(A.liveActivityFollow || '').trim(), fe = f ? h.states[f] : null;
       const followNow = !f ? 'Blank: not following anything (use the switch)' : fe ? 'Now: ' + esc((fe.attributes && fe.attributes.friendly_name) || f) + ' is ' + esc(fe.state) : '';
-      const notMade = LA_MADE.filter((id) => !h.states[id]);
       return note("Your battery on your phone's lock screen. Pick a phone, then switch it on, or let it follow something like your car's ignition.")
         + '<div class="rows">'
         + row('Live Activity', 'On shows it, off clears it', swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
@@ -409,9 +411,6 @@ class BattmanSettingsCard extends BattmanCardBase {
         + row('Off after', "So a quick stop doesn't restart it", num('liveActivityFollowDelay', 'min'))
         + '<div class="subdiv">Alerts</div>'
         + row('Feed-in spike alert', 'Push with a sound when feed-in rises above this', num('liveActivitySpikeAlert', '$/kWh'))
-        + '<div class="subdiv">Automations</div>'
-        + row("Battman's automations", notMade.length ? '<span style="color:var(--battman-red)">Not found: ' + esc(notMade.join(', ')) + '</span>' : 'The script and 3 automations Battman made are all there',
-              '<button class="rst" data-la-create>Create missing</button>')
         + '</div>';
     }
 
@@ -503,7 +502,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       protection: { title: 'Sell price protection', deps: ['buy_total'], render: protectionSection },
       provider:   { title: 'Power provider', deps: ['power_provider_buy', 'power_provider_sell'], render: providerSection },
       alert:      { title: 'Amber buy alert', deps: ['parameters'], render: alertSection, services: true },
-      liveActivity: { title: 'Live Activity', deps: [], extra: () => [LA.sw, LA.params, LA.inCharge].concat(LA_MADE), render: liveActivitySection, services: true },
+      liveActivity: { title: 'Live Activity', deps: [], extra: () => [LA.sw, LA.params, LA.inCharge], render: liveActivitySection, services: true },
       dashboard:  { title: 'Dashboard options', deps: ['parameters'], render: dashboardSection, themes: true },
       defaults:   { title: 'Reset defaults', deps: ['parameters'], render: defaultsSection },
     };
@@ -689,9 +688,6 @@ class BattmanSettingsCard extends BattmanCardBase {
       if (t.dataset.pptab) { UI.ppTab = t.dataset.pptab; return draw('provider', true); }
       if (t.dataset.cascade) return applyCascade(t, t.dataset.cascade);
       if ('defsSave' in t.dataset) return saveDefaults(t);
-      if ('laCreate' in t.dataset) {
-        return apply(t, () => getHass().callService('battman', 'create_live_activity', {}), () => LA_MADE.every((id) => st(id)), "Battman's automations");
-      }
     }
 
     async function applyCascade(btn, side) {

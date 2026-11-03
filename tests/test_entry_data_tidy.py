@@ -5,9 +5,11 @@ import pytest
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.battman import DASHBOARD_DONE, ENGINE_DONE, ENTRY_DATA_KEYS, LIVE_ACTIVITY_DONE
+from custom_components.battman import AUTOMATIONS_OFFERED, DASHBOARD_DONE, ENGINE_DONE, ENTRY_DATA_KEYS
 
-DONE = {DASHBOARD_DONE: True, LIVE_ACTIVITY_DONE: True, ENGINE_DONE: True}
+DONE = {DASHBOARD_DONE: True, ENGINE_DONE: True}
+# before v0.34 the Live Activity automations had their own once-flag
+LEGACY_LA = {"live_activity_created_on_install": True}
 # what the 0.29.x Migrate action stored in the entry
 LEGACY = {
     "migrated_from_smiggles": True,
@@ -26,7 +28,7 @@ async def _setup(hass, data):
     return entry
 
 
-@pytest.mark.parametrize("data", [{**DONE, **LEGACY}, {**LEGACY}, dict(DONE), {}])
+@pytest.mark.parametrize("data", [{**DONE, **LEGACY, **LEGACY_LA}, {**LEGACY}, dict(DONE), {}])
 async def test_every_starting_state_ends_the_same(hass, data) -> None:
     entry = await _setup(hass, data)
     assert set(entry.data) <= ENTRY_DATA_KEYS
