@@ -135,6 +135,7 @@
    "input_select.battman_mode",
    "sensor.battman_parameters",
    "timer.battman_override_timer",
+   "sensor.battman_auto_curve",
    "sensor.sigen_plant_grid_connection_status",
    "sensor.sigen_plant_consumed_power",
    "sensor.sigen_plant_rated_energy_capacity",

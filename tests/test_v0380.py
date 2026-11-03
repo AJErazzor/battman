@@ -41,6 +41,12 @@ async def _scene(hass: HomeAssistant, kwh_per_period: float = 2.0, periods: int 
     return mon, hass.states.get("sensor.battman_soc_curves").attributes["curves"][mon]
 
 
+async def _arm(hass: HomeAssistant) -> None:
+    """_setup turns every battman_engine* automation off; the switcher needs to be on to act."""
+    await hass.services.async_call("automation", "turn_on", {"entity_id": SW}, blocking=True)
+    await _settle_all(hass)
+
+
 async def _check(hass: HomeAssistant) -> None:
     hass.bus.async_fire("battman_auto_curve_check")
     await _settle_all(hass)
@@ -98,6 +104,7 @@ async def test_an_existing_install_gets_it_once(hass: HomeAssistant) -> None:
 
 async def test_below_rule_applies_a_preset_and_off_puts_the_curve_back(hass: HomeAssistant) -> None:
     await _setup(hass)
+    await _arm(hass)
     mon, original = await _scene(hass)                                           # 4 x 2 kW x 0.5 h = 4 kWh to come
     await _set(hass, autoCurve=True, autoCurveBelow=12, autoCurveBelowPreset=1, autoCurveAbove=30, autoCurveAbovePreset=2)
     await _check(hass)
@@ -118,6 +125,7 @@ async def test_below_rule_applies_a_preset_and_off_puts_the_curve_back(hass: Hom
 
 async def test_blank_rules_are_skipped_and_the_projection_adds_what_was_made(hass: HomeAssistant) -> None:
     await _setup(hass)
+    await _arm(hass)
     mon, original = await _scene(hass)
     hass.states.async_set("sensor.sigen_inverter_daily_pv_energy", "5.5")
     hass.states.async_set("sensor.sigen_plant_daily_third_party_inverter_energy", "2.5")   # + the third-party inverter
@@ -134,6 +142,7 @@ async def test_blank_rules_are_skipped_and_the_projection_adds_what_was_made(has
 
 async def test_no_forecast_or_empty_preset_changes_nothing(hass: HomeAssistant) -> None:
     await _setup(hass)
+    await _arm(hass)
     mon, original = await _scene(hass)
     await _set(hass, autoCurve=True, autoCurveBelow=12, autoCurveBelowPreset=7)   # preset 7 was never saved
     await _check(hass)
@@ -145,6 +154,7 @@ async def test_no_forecast_or_empty_preset_changes_nothing(hass: HomeAssistant) 
 
 async def test_a_disabled_switcher_does_nothing(hass: HomeAssistant) -> None:
     await _setup(hass)
+    await _arm(hass)
     mon, original = await _scene(hass)
     await _set(hass, autoCurveBelow=12, autoCurveBelowPreset=1)                  # autoCurve is still off
     await _check(hass)
