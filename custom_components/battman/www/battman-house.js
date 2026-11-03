@@ -127,6 +127,13 @@ function houseNum(hass, id) {
 }
 // Like Jinja's round(): no trailing zeros forced.
 const houseRound = (n, d) => String(Number(n.toFixed(d)));
+// The grid, like Battman's grid power sensor and the gauges card: whichever side flows over 50 W wins, and
+// anything smaller is 0 (so the import/export flicker around zero doesn't show, or flip the flow line).
+const HOUSE_GRID_DEADBAND = 0.05;
+const houseGrid = (imp, exp) => {
+  const i = imp || 0, e = exp || 0;
+  return i > HOUSE_GRID_DEADBAND && i >= e ? { dir: "import", kw: i } : e > HOUSE_GRID_DEADBAND && e > i ? { dir: "export", kw: e } : { dir: "", kw: 0 };
+};
 
 const HOUSE_CSS = `
   :host { display: block; }
@@ -337,17 +344,15 @@ class BattmanHouseCard extends HTMLElement {
           + (lines ? `<div class="small muted">${lines}</div>` : "");
       }
       case "grid": {
-        const imp = num(st.import) || 0;
-        const exp = num(st.export) || 0;
-        const t = imp > 0 ? houseRound(imp, 2) : exp > 0 ? houseRound(-exp, 2) : "0";
+        const g = houseGrid(num(st.import), num(st.export));
+        const t = g.dir === "import" ? houseRound(g.kw, 2) : g.dir === "export" ? houseRound(-g.kw, 2) : "0";
         return two(`${t} kW`, st.label, "blend", "blend");
       }
       case "grid_flow": {
-        const imp = num(st.import) || 0;
-        const exp = num(st.export) || 0;
-        const word = imp > 0 ? "Import" : exp > 0 ? "Export" : "";
-        const colour = imp > 0 ? "var(--battman-darkred)" : exp > 0 ? "var(--battman-green)" : "var(--battman-text-muted)";
-        const todayId = imp > 0 ? st.import_today : exp > 0 ? st.export_today : "";
+        const g = houseGrid(num(st.import), num(st.export));
+        const word = g.dir === "import" ? "Import" : g.dir === "export" ? "Export" : "";
+        const colour = g.dir === "import" ? "var(--battman-darkred)" : g.dir === "export" ? "var(--battman-green)" : "var(--battman-text-muted)";
+        const todayId = g.dir === "import" ? st.import_today : g.dir === "export" ? st.export_today : "";
         const today = todayId && has(todayId) ? num(todayId) : null;
         const sec = word ? (today !== null ? `Today:\n${houseRound(today, 2)} kWh` : "") : "—";
         return `<div class="p" style="font-size:clamp(12px,3.8cqw,16px);color:${colour}">${word || " "}</div>`
@@ -379,7 +384,8 @@ class BattmanHouseCard extends HTMLElement {
     const fwd = (batt !== null && batt < 0) || solarOn;
     const flow = (batt !== null && batt !== 0) || (pv !== null && pv !== 0);
     set("sig_gw", flow ? (fwd ? "fwd" : "rev") : "", fwd ? "1.3s" : "0s");
-    const gridDir = exp !== null && exp > 0 ? "fwd" : imp !== null && imp > 0 ? "rev" : "";
+    const g = houseGrid(imp, exp);
+    const gridDir = g.dir === "export" ? "fwd" : g.dir === "import" ? "rev" : "";
     set("gw_grid_01", gridDir, gridDir === "rev" ? "1.3s" : "0s");
     set("gw_grid_02", gridDir, gridDir === "fwd" ? "1.3s" : "0s");
   }
