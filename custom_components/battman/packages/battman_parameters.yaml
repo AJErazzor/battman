@@ -149,8 +149,8 @@ template:
                and trigger.platform == 'event'
                and trigger.event.data.action == 'SetAttribute'
                and trigger.event.data.offGridAlertDelay is defined
-               and trigger.event.data.offGridAlertDelay | int(-1) >= 0
-               and trigger.event.data.offGridAlertDelay | int(-1) <= 30 %}
+               and trigger.event.data.offGridAlertDelay | int >= 0
+               and trigger.event.data.offGridAlertDelay | int <= 30 %}
               {{ trigger.event.data.offGridAlertDelay | int }}
             {% else %}
               {{ this.attributes.offGridAlertDelay

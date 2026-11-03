@@ -11,8 +11,10 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from .test_v0100 import PARAMS, _la, _phone, _set, _settle, _setup
 
-NEW = ["automation.battman_amber_buy_alert", "automation.battman_amber_negative_alert",
-       "automation.battman_amber_charge_action", "automation.battman_offgrid_alert"]
+NEW = ["automation.battman_amber_cheap_price_alert", "automation.battman_amber_negative_price_alert",
+       "automation.battman_amber_charge_from_the_alert", "automation.battman_off_grid_alert"]
+NEW_IDS = ["battman_amber_buy_alert", "battman_amber_negative_alert", "battman_amber_charge_action",
+           "battman_offgrid_alert"]
 SWITCHES = ["liveActivity", "liveActivitySpikeAlertOn", "amberBuyAlert", "amberNegativeBuyAlert", "offGridAlert",
             "offGridRestoredAlert"]
 
@@ -32,7 +34,7 @@ async def test_blueprint_automations_are_made_and_loaded(hass: HomeAssistant) ->
     for i in NEW:
         assert hass.states.get(i) is not None, i
         assert hass.states.get(i).state != "unavailable", i          # the blueprint made a valid automation
-    assert set(entry.data["automations_offered"]) >= {i.split(".", 1)[1] for i in NEW}
+    assert set(entry.data["automations_offered"]) >= set(NEW_IDS)
 
 
 async def test_each_is_made_once(hass: HomeAssistant) -> None:

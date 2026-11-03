@@ -53,7 +53,7 @@ def test_limits_match_what_the_parameters_sensor_accepts() -> None:
     yaml_text = (ROOT / "packages/battman_parameters.yaml").read_text()
     table = JS[JS.index("const RANGE"):JS.index("const DEFAULT_KEYS")]
     page = {m[0]: m[1:] for m in re.findall(r"(\w+): \[(\d), (-?[\d.]+), (-?[\d.]+)", table)}
-    assert len(page) == 23
+    assert len(page) == 24
     for key, (is_int, lo, hi) in page.items():
         block = yaml_text[yaml_text.index(f"\n          {key}: >"):]
         block = block[:block.index("{% else %}")]
