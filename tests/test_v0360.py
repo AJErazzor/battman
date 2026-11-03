@@ -111,7 +111,7 @@ def test_mode_card_buttons() -> None:
         assert re.search(rf"service: input_select.select_option\n\s+service_data:\n\s+entity_id: '\[\[map:mode\]\]'\n\s+option: {mode}\n", yml), mode
     assert yml.count("battman_toggle:") == 2 and "Turn Active off?" in yml and "Turn Curtail on?" in yml   # Active / Curtail ask in the same popup
     assert "confirmation:" not in yml
-    assert yml.count("visibility:") == 2                                     # the simple row and the full rows leave no gap when hidden
+    assert yml.count("visibility:") == 3                                     # the simple row and the two full rows are rows of the one stack, so hiding leaves no gap
 
 
 async def test_confirmation_settings(hass: HomeAssistant) -> None:

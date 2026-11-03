@@ -239,813 +239,814 @@ cards:
     style:
       .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
       $: '.content { gap: 4px !important; }'
-- type: vertical-stack
+- type: horizontal-stack
+  visibility:
+  - condition: state
+    entity: '[[map:parameters]]'
+    attribute: simpleBatteryMode
+    state: true
+  - condition: state
+    entity: '[[map:mode]]'
+    state:
+    - Charge
+    - Discharge
+    - Self Consume
   cards:
-  - type: horizontal-stack
-    visibility:
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Buy
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Charge
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 6px
+      - height: 40px
+      - min-height: 40px
+      - max-height: 40px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-buy-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-buy-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-yellow-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 11px
+      - font-weight: '700'
+      - letter-spacing: 0.06em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Charge
+      styles:
+        card:
+        - background: var(--battman-yellow-soft-bg)
+        - border: 1px solid var(--battman-yellow-border-strong)
+        name:
+        - color: var(--battman-yellow)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Sell
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Discharge
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 6px
+      - height: 40px
+      - min-height: 40px
+      - max-height: 40px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-sell-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-sell-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-green-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 11px
+      - font-weight: '700'
+      - letter-spacing: 0.06em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Discharge
+      styles:
+        card:
+        - background: var(--battman-green-soft-bg)
+        - border: 1px solid var(--battman-green-border-strong)
+        name:
+        - color: var(--battman-green)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Self Consume
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[map:mode]]'
+        option: Self Consume
+    styles:
+      card:
+      - padding: 0 6px
+      - height: 40px
+      - min-height: 40px
+      - max-height: 40px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-blue-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 11px
+      - font-weight: '700'
+      - letter-spacing: 0.06em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Self Consume
+      styles:
+        card:
+        - background: var(--battman-blue-soft-bg)
+        - border: 1px solid var(--battman-blue-border-strong)
+        name:
+        - color: var(--battman-blue)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  card_mod:
+    style:
+      .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+      $: '.content { gap: 4px !important; }'
+- type: horizontal-stack
+  visibility:
+  - condition: or
+    conditions:
     - condition: state
       entity: '[[map:parameters]]'
       attribute: simpleBatteryMode
-      state: true
+      state_not: true
     - condition: state
       entity: '[[map:mode]]'
-      state:
+      state_not:
       - Charge
       - Discharge
       - Self Consume
-    cards:
-    - type: custom:button-card
-      entity: '[[map:mode]]'
-      name: Buy
-      show_icon: false
-      show_name: true
-      show_state: false
-      tap_action:
-        action: fire-dom-event
-        battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-          option: Charge
-          mode: '[[map:mode]]'
-          parameters: '[[map:parameters]]'
+  cards:
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Self Consume
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[map:mode]]'
+        option: Self Consume
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-blue-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Self Consume
       styles:
         card:
-        - padding: 0 6px
-        - height: 40px
-        - min-height: 40px
-        - max-height: 40px
-        - border-radius: 8px
-        - box-shadow: none
-        - background: var(--battman-surface-card)
-        - border: 1px solid var(--battman-border-neutral)
-        - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
-        - align-items: center
-        - justify-content: center
-        - --fx-ring: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-chase-display, none)'' : ''none''; ]]]'
-        - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
-        - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
-        - --fx-ring-width: var(--fx-buy-ring-width, 2px)
-        - --fx-glow-name: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-glow-name, none)'' : ''none''; ]]]'
-        - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
-        - --fx-glow-color: var(--fx-buy-glow-color, transparent)
-        - --fx-fill-soft: var(--battman-yellow-soft-bg)
-        - --fx-border: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+        - background: var(--battman-blue-soft-bg)
+        - border: 1px solid var(--battman-blue-border-strong)
         name:
-        - font-size: 11px
-        - font-weight: '700'
-        - letter-spacing: 0.06em
-        - text-transform: uppercase
-        - color: var(--battman-text-muted)
-      state:
-      - value: Charge
-        styles:
-          card:
-          - background: var(--battman-yellow-soft-bg)
-          - border: 1px solid var(--battman-yellow-border-strong)
-          name:
-          - color: var(--battman-yellow)
-      extra_styles: |-
-        @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-        @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-        @keyframes fx-glow-rainbow {
-          0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-          33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-          66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-          100%{box-shadow:0 0 16px 4px var(--battman-red);}
-        }
-        ha-card {
-          position: relative !important; overflow: hidden !important;
-          border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-          animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-        }
-        ha-card::before {
-          content:''; position:absolute; z-index:0; top:50%; left:50%;
-          width:360px; height:360px; transform: translate(-50%,-50%);
-          background: var(--fx-chase-gradient, none);
-          animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-          display: var(--fx-ring, none);
-        }
-        ha-card::after {
-          content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-          background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-        }
-        ha-card > * { position: relative !important; z-index: 2 !important; }
-        @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-    - type: custom:button-card
-      entity: '[[map:mode]]'
-      name: Sell
-      show_icon: false
-      show_name: true
-      show_state: false
-      tap_action:
-        action: fire-dom-event
-        battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-          option: Discharge
-          mode: '[[map:mode]]'
-          parameters: '[[map:parameters]]'
+        - color: var(--battman-blue)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Buy
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Charge
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-buy-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-buy-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-yellow-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Charge
       styles:
         card:
-        - padding: 0 6px
-        - height: 40px
-        - min-height: 40px
-        - max-height: 40px
-        - border-radius: 8px
-        - box-shadow: none
-        - background: var(--battman-surface-card)
-        - border: 1px solid var(--battman-border-neutral)
-        - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
-        - align-items: center
-        - justify-content: center
-        - --fx-ring: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-chase-display, none)'' : ''none''; ]]]'
-        - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
-        - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
-        - --fx-ring-width: var(--fx-sell-ring-width, 2px)
-        - --fx-glow-name: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-glow-name, none)'' : ''none''; ]]]'
-        - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
-        - --fx-glow-color: var(--fx-sell-glow-color, transparent)
-        - --fx-fill-soft: var(--battman-green-soft-bg)
-        - --fx-border: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+        - background: var(--battman-yellow-soft-bg)
+        - border: 1px solid var(--battman-yellow-border-strong)
         name:
-        - font-size: 11px
-        - font-weight: '700'
-        - letter-spacing: 0.06em
-        - text-transform: uppercase
-        - color: var(--battman-text-muted)
-      state:
-      - value: Discharge
-        styles:
-          card:
-          - background: var(--battman-green-soft-bg)
-          - border: 1px solid var(--battman-green-border-strong)
-          name:
-          - color: var(--battman-green)
-      extra_styles: |-
-        @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-        @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-        @keyframes fx-glow-rainbow {
-          0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-          33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-          66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-          100%{box-shadow:0 0 16px 4px var(--battman-red);}
-        }
-        ha-card {
-          position: relative !important; overflow: hidden !important;
-          border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-          animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-        }
-        ha-card::before {
-          content:''; position:absolute; z-index:0; top:50%; left:50%;
-          width:360px; height:360px; transform: translate(-50%,-50%);
-          background: var(--fx-chase-gradient, none);
-          animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-          display: var(--fx-ring, none);
-        }
-        ha-card::after {
-          content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-          background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-        }
-        ha-card > * { position: relative !important; z-index: 2 !important; }
-        @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-    - type: custom:button-card
-      entity: '[[map:mode]]'
-      name: Self Consume
-      show_icon: false
-      show_name: true
-      show_state: false
-      tap_action:
-        action: call-service
-        service: input_select.select_option
-        service_data:
-          entity_id: '[[map:mode]]'
-          option: Self Consume
+        - color: var(--battman-yellow)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Sell
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Discharge
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-sell-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-sell-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-green-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Discharge
       styles:
         card:
-        - padding: 0 6px
-        - height: 40px
-        - min-height: 40px
-        - max-height: 40px
-        - border-radius: 8px
-        - box-shadow: none
-        - background: var(--battman-surface-card)
-        - border: 1px solid var(--battman-border-neutral)
-        - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode && simple) ? ''flex'' : ''none''; ]]]'
-        - align-items: center
-        - justify-content: center
-        - --fx-ring: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-chase-display, none)'' : ''none''; ]]]'
-        - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
-        - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
-        - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
-        - --fx-glow-name: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-glow-name, none)'' : ''none''; ]]]'
-        - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
-        - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
-        - --fx-fill-soft: var(--battman-blue-soft-bg)
-        - --fx-border: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+        - background: var(--battman-green-soft-bg)
+        - border: 1px solid var(--battman-green-border-strong)
         name:
-        - font-size: 11px
-        - font-weight: '700'
-        - letter-spacing: 0.06em
-        - text-transform: uppercase
-        - color: var(--battman-text-muted)
-      state:
-      - value: Self Consume
-        styles:
-          card:
-          - background: var(--battman-blue-soft-bg)
-          - border: 1px solid var(--battman-blue-border-strong)
-          name:
-          - color: var(--battman-blue)
-      extra_styles: |-
-        @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-        @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-        @keyframes fx-glow-rainbow {
-          0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-          33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-          66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-          100%{box-shadow:0 0 16px 4px var(--battman-red);}
-        }
-        ha-card {
-          position: relative !important; overflow: hidden !important;
-          border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-          animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-        }
-        ha-card::before {
-          content:''; position:absolute; z-index:0; top:50%; left:50%;
-          width:360px; height:360px; transform: translate(-50%,-50%);
-          background: var(--fx-chase-gradient, none);
-          animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-          display: var(--fx-ring, none);
-        }
-        ha-card::after {
-          content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-          background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-        }
-        ha-card > * { position: relative !important; z-index: 2 !important; }
-        @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-    card_mod:
-      style:
-        .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
-        $: '.content { gap: 4px !important; }'
-  - type: vertical-stack
-    visibility:
-    - condition: or
-      conditions:
-      - condition: state
-        entity: '[[map:parameters]]'
-        attribute: simpleBatteryMode
-        state_not: true
-      - condition: state
-        entity: '[[map:mode]]'
-        state_not:
-        - Charge
-        - Discharge
-        - Self Consume
-    cards:
-    - type: horizontal-stack
-      cards:
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: Self Consume
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
-            option: Self Consume
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-selfconsume-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-selfconsume-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-selfconsume-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-selfconsume-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-selfconsume-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-blue-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Self Consume'' ? ''var(--fx-selfconsume-border, 1px solid var(--battman-blue-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-        state:
-        - value: Self Consume
-          styles:
-            card:
-            - background: var(--battman-blue-soft-bg)
-            - border: 1px solid var(--battman-blue-border-strong)
-            name:
-            - color: var(--battman-blue)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: Buy
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: fire-dom-event
-          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-            option: Charge
-            mode: '[[map:mode]]'
-            parameters: '[[map:parameters]]'
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-buy-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-buy-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-buy-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-buy-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-buy-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-yellow-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Charge'' ? ''var(--fx-buy-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-        state:
-        - value: Charge
-          styles:
-            card:
-            - background: var(--battman-yellow-soft-bg)
-            - border: 1px solid var(--battman-yellow-border-strong)
-            name:
-            - color: var(--battman-yellow)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: Sell
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: fire-dom-event
-          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-            option: Discharge
-            mode: '[[map:mode]]'
-            parameters: '[[map:parameters]]'
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-sell-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-sell-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-sell-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-sell-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-sell-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-green-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Discharge'' ? ''var(--fx-sell-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-        state:
-        - value: Discharge
-          styles:
-            card:
-            - background: var(--battman-green-soft-bg)
-            - border: 1px solid var(--battman-green-border-strong)
-            name:
-            - color: var(--battman-green)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      card_mod:
-        style:
-          .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
-          $: '.content { gap: 4px !important; }'
-    - type: horizontal-stack
-      cards:
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: Sell Solar
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: fire-dom-event
-          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-            option: Float
-            mode: '[[map:mode]]'
-            parameters: '[[map:parameters]]'
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-sellsolar-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-sellsolar-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-sellsolar-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-sellsolar-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-sellsolar-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-orange-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-border, 1px solid var(--battman-orange-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-        state:
-        - value: Float
-          styles:
-            card:
-            - background: var(--battman-orange-soft-bg)
-            - border: 1px solid var(--battman-orange-border-strong)
-            name:
-            - color: var(--battman-orange)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: Drain
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: call-service
-          service: input_select.select_option
-          service_data:
-            entity_id: '[[map:mode]]'
-            option: Drain
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-drain-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-drain-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-drain-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-drain-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-drain-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-red-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-border, 1px solid var(--battman-red-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-        state:
-        - value: Drain
-          styles:
-            card:
-            - background: var(--battman-red-soft-bg)
-            - border: 1px solid var(--battman-red-border-strong)
-            name:
-            - color: var(--battman-red)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: House Party
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: fire-dom-event
-          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-            option: Float Solar Off
-            mode: '[[map:mode]]'
-            parameters: '[[map:parameters]]'
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-houseparty-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-houseparty-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-houseparty-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-houseparty-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-houseparty-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-yellow-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-          - white-space: normal
-          - line-height: '1.2'
-        state:
-        - value: Float Solar Off
-          styles:
-            card:
-            - background: var(--battman-yellow-soft-bg)
-            - border: 1px solid var(--battman-yellow-border-strong)
-            name:
-            - color: var(--battman-yellow)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      - type: custom:button-card
-        entity: '[[map:mode]]'
-        name: HOOOOVER
-        show_icon: false
-        show_name: true
-        show_state: false
-        tap_action:
-          action: fire-dom-event
-          battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
-            option: Charge Solar Off
-            mode: '[[map:mode]]'
-            parameters: '[[map:parameters]]'
-        styles:
-          card:
-          - padding: 0 4px
-          - height: 48px
-          - min-height: 48px
-          - max-height: 48px
-          - border-radius: 8px
-          - box-shadow: none
-          - background: var(--battman-surface-card)
-          - border: 1px solid var(--battman-border-neutral)
-          - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
-          - align-items: center
-          - justify-content: center
-          - --fx-ring: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-chase-display, none)'' : ''none''; ]]]'
-          - --fx-chase-gradient: var(--fx-hooover-chase-gradient, none)
-          - --fx-chase-duration: var(--fx-hooover-chase-duration, 0s)
-          - --fx-ring-width: var(--fx-hooover-ring-width, 2px)
-          - --fx-glow-name: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-glow-name, none)'' : ''none''; ]]]'
-          - --fx-glow-duration: var(--fx-hooover-glow-duration, 0s)
-          - --fx-glow-color: var(--fx-hooover-glow-color, transparent)
-          - --fx-fill-soft: var(--battman-green-soft-bg)
-          - --fx-border: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
-          name:
-          - font-size: 10px
-          - font-weight: '700'
-          - letter-spacing: 0.04em
-          - text-transform: uppercase
-          - color: var(--battman-text-muted)
-          - white-space: normal
-          - line-height: '1.2'
-        state:
-        - value: Charge Solar Off
-          styles:
-            card:
-            - background: var(--battman-green-soft-bg)
-            - border: 1px solid var(--battman-green-border-strong)
-            name:
-            - color: var(--battman-green)
-        extra_styles: |-
-          @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-          @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
-          @keyframes fx-glow-rainbow {
-            0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
-            33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
-            66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
-            100%{box-shadow:0 0 16px 4px var(--battman-red);}
-          }
-          ha-card {
-            position: relative !important; overflow: hidden !important;
-            border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
-            animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
-          }
-          ha-card::before {
-            content:''; position:absolute; z-index:0; top:50%; left:50%;
-            width:360px; height:360px; transform: translate(-50%,-50%);
-            background: var(--fx-chase-gradient, none);
-            animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
-            display: var(--fx-ring, none);
-          }
-          ha-card::after {
-            content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
-            background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
-          }
-          ha-card > * { position: relative !important; z-index: 2 !important; }
-          @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
-      card_mod:
-        style:
-          .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
-          $: '.content { gap: 4px !important; }'
-    card_mod:
-      style:
-        .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
-        $: '.content { gap: 4px !important; }'
+        - color: var(--battman-green)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
   card_mod:
     style:
-      .: ':host { --stack-card-gap: 4px; }'
+      .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
+      $: '.content { gap: 4px !important; }'
+- type: horizontal-stack
+  visibility:
+  - condition: or
+    conditions:
+    - condition: state
+      entity: '[[map:parameters]]'
+      attribute: simpleBatteryMode
+      state_not: true
+    - condition: state
+      entity: '[[map:mode]]'
+      state_not:
+      - Charge
+      - Discharge
+      - Self Consume
+  cards:
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Sell Solar
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Float
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-sellsolar-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-sellsolar-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-sellsolar-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-sellsolar-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-sellsolar-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-orange-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Float'' ? ''var(--fx-sellsolar-border, 1px solid var(--battman-orange-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Float
+      styles:
+        card:
+        - background: var(--battman-orange-soft-bg)
+        - border: 1px solid var(--battman-orange-border-strong)
+        name:
+        - color: var(--battman-orange)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: Drain
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[map:mode]]'
+        option: Drain
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-drain-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-drain-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-drain-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-drain-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-drain-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-red-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Drain'' ? ''var(--fx-drain-border, 1px solid var(--battman-red-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+    state:
+    - value: Drain
+      styles:
+        card:
+        - background: var(--battman-red-soft-bg)
+        - border: 1px solid var(--battman-red-border-strong)
+        name:
+        - color: var(--battman-red)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: House Party
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Float Solar Off
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-houseparty-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-houseparty-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-houseparty-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-houseparty-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-houseparty-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-yellow-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Float Solar Off'' ? ''var(--fx-houseparty-border, 1px solid var(--battman-yellow-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+      - white-space: normal
+      - line-height: '1.2'
+    state:
+    - value: Float Solar Off
+      styles:
+        card:
+        - background: var(--battman-yellow-soft-bg)
+        - border: 1px solid var(--battman-yellow-border-strong)
+        name:
+        - color: var(--battman-yellow)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  - type: custom:button-card
+    entity: '[[map:mode]]'
+    name: HOOOOVER
+    show_icon: false
+    show_name: true
+    show_state: false
+    tap_action:
+      action: fire-dom-event
+      battman_mode:   # Battman's library asks first when the press goes against the price, then sets the mode
+        option: Charge Solar Off
+        mode: '[[map:mode]]'
+        parameters: '[[map:parameters]]'
+    styles:
+      card:
+      - padding: 0 4px
+      - height: 48px
+      - min-height: 48px
+      - max-height: 48px
+      - border-radius: 8px
+      - box-shadow: none
+      - background: var(--battman-surface-card)
+      - border: 1px solid var(--battman-border-neutral)
+      - display: '[[[ const m=states[''[[map:mode]]'']?.state; const simple=[''Charge'',''Discharge'',''Self Consume''].includes(m); return (!states[''[[map:parameters]]'']?.attributes?.simpleBatteryMode || !simple) ? ''flex'' : ''none''; ]]]'
+      - align-items: center
+      - justify-content: center
+      - --fx-ring: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-chase-display, none)'' : ''none''; ]]]'
+      - --fx-chase-gradient: var(--fx-hooover-chase-gradient, none)
+      - --fx-chase-duration: var(--fx-hooover-chase-duration, 0s)
+      - --fx-ring-width: var(--fx-hooover-ring-width, 2px)
+      - --fx-glow-name: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-glow-name, none)'' : ''none''; ]]]'
+      - --fx-glow-duration: var(--fx-hooover-glow-duration, 0s)
+      - --fx-glow-color: var(--fx-hooover-glow-color, transparent)
+      - --fx-fill-soft: var(--battman-green-soft-bg)
+      - --fx-border: '[[[ return entity.state === ''Charge Solar Off'' ? ''var(--fx-hooover-border, 1px solid var(--battman-green-border-strong))'' : ''1px solid var(--battman-border-neutral)''; ]]]'
+      name:
+      - font-size: 10px
+      - font-weight: '700'
+      - letter-spacing: 0.04em
+      - text-transform: uppercase
+      - color: var(--battman-text-muted)
+      - white-space: normal
+      - line-height: '1.2'
+    state:
+    - value: Charge Solar Off
+      styles:
+        card:
+        - background: var(--battman-green-soft-bg)
+        - border: 1px solid var(--battman-green-border-strong)
+        name:
+        - color: var(--battman-green)
+    extra_styles: |-
+      @keyframes fx-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes fx-glow-mono { 0%,100% { box-shadow: 0 0 5px 0 var(--fx-glow-color, transparent); } 50% { box-shadow: 0 0 18px 4px var(--fx-glow-color, transparent); } }
+      @keyframes fx-glow-rainbow {
+        0%{box-shadow:0 0 16px 4px var(--battman-red);}16%{box-shadow:0 0 16px 4px var(--battman-orange);}
+        33%{box-shadow:0 0 16px 4px var(--battman-yellow);}50%{box-shadow:0 0 16px 4px var(--battman-green);}
+        66%{box-shadow:0 0 16px 4px var(--battman-blue);}83%{box-shadow:0 0 16px 4px var(--battman-purple);}
+        100%{box-shadow:0 0 16px 4px var(--battman-red);}
+      }
+      ha-card {
+        position: relative !important; overflow: hidden !important;
+        border: var(--fx-border, 1px solid var(--battman-border-neutral)) !important;
+        animation: var(--fx-glow-name, none) var(--fx-glow-duration, 0s) ease-in-out infinite;
+      }
+      ha-card::before {
+        content:''; position:absolute; z-index:0; top:50%; left:50%;
+        width:360px; height:360px; transform: translate(-50%,-50%);
+        background: var(--fx-chase-gradient, none);
+        animation: fx-spin var(--fx-chase-duration, 0s) linear infinite;
+        display: var(--fx-ring, none);
+      }
+      ha-card::after {
+        content:''; position:absolute; z-index:1; inset: var(--fx-ring-width, 2px); border-radius:6px;
+        background: linear-gradient(var(--fx-fill-soft, var(--battman-surface-card)),var(--fx-fill-soft, var(--battman-surface-card))), var(--battman-surface-card); display: var(--fx-ring, none);
+      }
+      ha-card > * { position: relative !important; z-index: 2 !important; }
+      @media (prefers-reduced-motion: reduce) { ha-card, ha-card::before { animation: none !important; } }
+  card_mod:
+    style:
+      .: ':host { --stack-card-gap: 4px; --horizontal-stack-card-gap: 4px; }'
       $: '.content { gap: 4px !important; }'
 card_mod:
   style:
