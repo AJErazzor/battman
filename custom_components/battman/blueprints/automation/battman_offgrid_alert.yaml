@@ -60,7 +60,7 @@ triggers:
       - Off Grid (Manual)
     for:
       minutes: "{{ state_attr(settings, 'offGridAlertDelay') | int(1) }}"
-    id: off
+    id: "off"
   - trigger: state
     entity_id: !input grid_status
     from:
@@ -77,7 +77,7 @@ conditions:
   - condition: or
     conditions:
       - condition: trigger
-        id: off
+        id: "off"
       - condition: template
         value_template: "{{ state_attr(settings, 'offGridRestoredAlert') | bool(false) }}"
 
@@ -103,7 +103,7 @@ actions:
   - choose:
       - conditions:
           - condition: trigger
-            id: off
+            id: "off"
         sequence:
           - action: "notify.{{ state_attr(settings, 'alertNotifyTarget') | trim }}"
             data:

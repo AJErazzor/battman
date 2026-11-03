@@ -31,6 +31,7 @@ async def test_blueprint_automations_are_made_and_loaded(hass: HomeAssistant) ->
     entry = await _setup(hass)
     for i in NEW:
         assert hass.states.get(i) is not None, i
+        assert hass.states.get(i).state != "unavailable", i          # the blueprint made a valid automation
     assert set(entry.data["automations_offered"]) >= {i.split(".", 1)[1] for i in NEW}
 
 
