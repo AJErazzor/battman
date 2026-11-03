@@ -15,7 +15,7 @@ const DEFAULTS = {
   forecast_remaining: "sensor.solcast_pv_forecast_forecast_remaining_today",
   forecast_today: "sensor.solcast_pv_forecast_forecast_today",
   forecast_tomorrow: "sensor.solcast_pv_forecast_forecast_tomorrow",
-  no_export_entity: "input_boolean.solarsystemcontrolnoexport",
+  no_export_entity: "input_boolean.battman_no_export",
   soft_limit_entity: "",
   symo: { show: true, label: "Symo", power: "sensor.sigen_plant_third_party_pv_power",
     today: "sensor.sigen_plant_daily_third_party_inverter_energy", site: "", color: "--battman-orange" },
