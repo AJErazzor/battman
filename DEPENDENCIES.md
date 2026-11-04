@@ -8,7 +8,6 @@ Battman checks for the dashboard cards and browser_mod at startup and raises a *
 | button-card | Dashboard card | Billing and Solar System cards; every Battman card on the Power view | https://github.com/custom-cards/button-card |
 | card-mod | Dashboard card | Battery mode, Limits and Overrides cards | https://github.com/thomasloven/lovelace-card-mod |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
-| power-pie-card | Dashboard card | NEM mix card | HACS → Frontend → power-pie-card |
 | browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup), Billing card (Correct totals popup) | https://github.com/thomasloven/hass-browser_mod |
 
 
@@ -17,7 +16,8 @@ compare, Curvy and Pricy cards work without the internet. The only
 thing loaded from the internet is **Google Fonts**: the theme studio's font browser, and themes that
 turn on a custom font.
 
-The Log, Curvy, Pricy, Cost chart, Cost compare, Settings and Theme studio cards draw themselves.
+The Log, Curvy, Pricy, Cost chart, Cost compare, Settings, Theme studio and NEM mix cards draw themselves
+(NEM mix uses `battman-pie-card`, Battman's copy of [power-pie-card](https://github.com/stefanschaedeli/power-pie-card) with MW support, so you don't install that one).
 None of them need extra cards.
 
 Other integrations Battman reads (all by name):
@@ -48,7 +48,7 @@ Battman's own pieces that other parts rely on:
   Without it, those graphs are empty.
 - **Engine log**: `<config>/battman/engine.log`, written by Battman; the Log card reads it.
 - **NEM sensors** (`sensor.battman_nem_*`, 14 of them, MW): made by Battman from the OpenNEM sensor's
-  attributes, because power-pie-card can only read states. They replace hand-made template sensors
+  attributes, because dashboard cards can only read states. They replace hand-made template sensors
   (`sensor.opennem_sa_*`, `sensor.sa_*`): once the NEM mix card checks out, those can go.
 - **Battman theme** (`--battman-*` colours): every Battman page shows an error without one.
 - **`battman-lib.js`** (`window.BattmanLib`): the Overrides card's rows and popups, the theme studio's dock previews,

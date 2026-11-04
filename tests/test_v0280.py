@@ -1,7 +1,7 @@
 """v0.28.0: OpenNEM not installed raises a Repair.
 
-The NEM mix card (on the default Power view) needs the OpenNEM integration and power-pie-card.
-power-pie-card already had a Repair; OpenNEM now has one too, so a new user isn't left with an
+The NEM mix card (on the default Power view) needs the OpenNEM integration (and draws its pies with battman-pie-card, which Battman ships).
+OpenNEM has a Repair, so a new user isn't left with an
 empty card and no reason. It's optional, so the Repair can be ignored (and stays ignored across
 restarts), and it goes as soon as OpenNEM is installed. The card itself says OpenNEM is needed
 when Battman's NEM sensors don't exist.
