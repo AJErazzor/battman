@@ -50,6 +50,7 @@ async def _arm(hass: HomeAssistant) -> None:
 
 
 async def _check(hass: HomeAssistant) -> None:
+    await _settle_all(hass)                                                      # let the settings just saved reach the sensor first
     hass.bus.async_fire("battman_auto_curve_check")
     await _settle_all(hass)
 
