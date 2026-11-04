@@ -106,6 +106,27 @@ class BattmanSettingsCard extends BattmanCardBase {
   .ctl select { flex: 1; min-width: 0; width: auto; }
   .ctl .field { flex: none; width: 120px; }
   .ctl input[type=date] { flex: 1; min-width: 0; width: auto; }
+  .ctls { display: flex; gap: 8px; align-items: center; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+  .pickbtn { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; width: 220px; max-width: 50%; flex: none;
+             background: var(--battman-surface-popup); border: 1px solid var(--battman-border-neutral); border-radius: 8px; min-height: 40px;
+             padding: 6px 8px; color: var(--battman-text-bright); font-size: 14px; font-family: inherit; cursor: pointer; text-align: left; }
+  .pickbtn:hover, .pickbtn.on { border-color: var(--battman-green); }
+  .pickbtn .pv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .pickbtn .pv.none { color: var(--battman-text-muted); }
+  .pickbtn .car { color: var(--battman-text-muted); font-size: 12px; flex: none; }
+  .pickpanel { padding: 12px 16px; border-bottom: 1px solid var(--battman-border-neutral); background: var(--battman-surface-popup); }
+  .pickpanel .cur { font-size: 12px; color: var(--battman-text-muted); margin-bottom: 8px; word-break: break-all; }
+  .pickpanel .cur b { color: var(--battman-text-bright); font-weight: 500; }
+  .pickpanel ha-entity-picker { display: block; width: 100%; }
+  .stk { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
+  .stk .field { width: 150px; }
+  .stk .field input { text-align: left; }
+  @container (max-width: 600px) {
+    .row:has(> .ctls), .row:has(> .pickbtn) { flex-direction: column; align-items: stretch; gap: 8px; }
+    .row > .ctls { justify-content: flex-start; }
+    .row > .ctls > * { flex: 1 1 130px; width: auto; min-width: 0; }
+    .row > .pickbtn { width: 100%; max-width: none; }
+  }
   .qdaily { font-size: 11px; color: var(--battman-text-muted); text-align: right; }
   .sw { position: relative; width: 46px; height: 26px; flex: none; cursor: pointer; }
   .sw input { opacity: 0; width: 0; height: 0; position: absolute; }
@@ -139,7 +160,7 @@ class BattmanSettingsCard extends BattmanCardBase {
     const ICON = {"buy": "M11.39 5.45L9.61 4.55L10.87 2H19.34L20.61 4.55L18.83 5.44L18.11 4H12.11L11.39 5.45M21.73 8H17.2L16.41 5H13.81L13 8H8.5L7.21 10.55L9 11.44L9.73 10H20.5L21.21 11.45L23 10.56L21.73 8M20.88 22H18.81L18.57 21.1L15.11 15.9L11.64 21.1L11.41 22H9.34L12.23 11H14.3L13.94 12.35L15.11 14.1L16.27 12.35L15.92 11H18L20.88 22M14.5 15L13.61 13.65L12.43 18.13L14.5 15M17.79 18.12L16.61 13.64L15.71 15L17.79 18.12M9 16L5 12V15H1V17H5V20L9 16Z", "buyRules": "M11 15H6L13 1V9H18L11 23V15Z", "needy": "M20 13C20.6 13 21.1 13.2 21.5 13.6C21.8 14 22 14.5 22 15L14 18L7 16V7H8.9L16.2 9.7C16.7 9.9 17 10.3 17 10.8C17 11.1 16.9 11.4 16.7 11.6S16.1 12 15.8 12H13L11.2 11.3L10.9 12.2L13 13H20M1 7H5V18H1V7Z", "watchdog": "M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z", "billing": "M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9M1,10H3V20H19V22H1V10Z", "system": "M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z", "sell": "M5.18 5.45L3.4 4.55L4.66 2H13.13L14.4 4.55L12.62 5.44L11.9 4H5.9L5.18 5.45M15.5 8H11L10.2 5H7.6L6.81 8H2.28L1 10.55L2.79 11.44L3.5 10H14.28L15 11.45L16.79 10.56L15.5 8M14.67 22H12.6L12.36 21.1L8.9 15.9L5.43 21.1L5.2 22H3.13L6 11H8.09L7.73 12.35L8.9 14.1L10.06 12.35L9.71 11H11.78L14.67 22M8.3 15L7.4 13.65L6.22 18.13L8.3 15M11.58 18.12L10.4 13.64L9.5 15L11.58 18.12M23 16L19 12V15H15V17H19V20L23 16Z", "sellRules": "M2.3,20.28L11.9,10.68L10.5,9.26L9.78,9.97C9.39,10.36 8.76,10.36 8.37,9.97L7.66,9.26C7.27,8.87 7.27,8.24 7.66,7.85L13.32,2.19C13.71,1.8 14.34,1.8 14.73,2.19L15.44,2.9C15.83,3.29 15.83,3.92 15.44,4.31L14.73,5L16.15,6.43C16.54,6.04 17.17,6.04 17.56,6.43C17.95,6.82 17.95,7.46 17.56,7.85L18.97,9.26L19.68,8.55C20.07,8.16 20.71,8.16 21.1,8.55L21.8,9.26C22.19,9.65 22.19,10.29 21.8,10.68L16.15,16.33C15.76,16.72 15.12,16.72 14.73,16.33L14.03,15.63C13.63,15.24 13.63,14.6 14.03,14.21L14.73,13.5L13.32,12.09L3.71,21.7C3.32,22.09 2.69,22.09 2.3,21.7C1.91,21.31 1.91,20.67 2.3,20.28M20,19A2,2 0 0,1 22,21V22H12V21A2,2 0 0,1 14,19H20Z", "spike": "M7,2V13H10V22L17,10H13L17,2H7Z", "protection": "M10 12C10 10.9 10.9 10 12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12M7.8 17.7L6.3 16.3L7.8 14.8C7.3 14 7 13 7 12C7 11 7.3 10 7.8 9.3L6.3 7.8L7.8 6.3L9.2 7.8C10 7.3 11 7 12 7C13 7 14 7.3 14.8 7.8L16.3 6.3L17.7 7.7L16.2 9.2C16.7 10 17 11 17 12C17 13 16.7 14 16.2 14.8L17.7 16.3L16.3 17.7L14.8 16.2C14 16.7 13 17 12 17C11 17 10 16.7 9.3 16.2L7.8 17.7M12 9C10.3 9 9 10.3 9 12C9 13.7 10.3 15 12 15C13.7 15 15 13.7 15 12C15 10.3 13.7 9 12 9M20 2C21.1 2 22 2.9 22 4V20C22 21.1 21.1 22 20 22H19V23H15V22H9V23H5V22H4C2.9 22 2 21.1 2 20V4C2 2.9 2.9 2 4 2H20M20 20V4H4V20H20Z", "provider": "M8.28,5.45L6.5,4.55L7.76,2H16.23L17.5,4.55L15.72,5.44L15,4H9L8.28,5.45M18.62,8H14.09L13.3,5H10.7L9.91,8H5.38L4.1,10.55L5.89,11.44L6.62,10H17.38L18.1,11.45L19.89,10.56L18.62,8M17.77,22H15.7L15.46,21.1L12,15.9L8.53,21.1L8.3,22H6.23L9.12,11H11.19L10.83,12.35L12,14.1L13.16,12.35L12.81,11H14.88L17.77,22M11.4,15L10.5,13.65L9.32,18.13L11.4,15M14.68,18.12L13.5,13.64L12.6,15L14.68,18.12Z", "autoCurve": "M9.96,11.31C10.82,8.1 11.5,6 13,6C14.5,6 15.18,8.1 16.04,11.31C17,14.92 18.1,19 22,19V17C19.8,17 19,14.54 17.97,10.8C17.08,7.46 16.15,4 13,4C9.85,4 8.92,7.46 8.03,10.8C7.03,14.54 6.2,17 4,17V2H2V22H22V20H4V19C7.9,19 9,14.92 9.96,11.31Z", "notifications": "M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21M19.75,3.19L18.33,4.61C20.04,6.3 21,8.6 21,11H23C23,8.07 21.84,5.25 19.75,3.19M1,11H3C3,8.6 3.96,6.3 5.67,4.61L4.25,3.19C2.16,5.25 1,8.07 1,11Z", "dashboard": "M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z", "defaults": "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"};
     const NEEDS = ['parameters', 'parameters_update_event', 'buy_rules', 'buy_rules_event', 'sell_rules', 'sell_rules_event',
                    'buy_total', 'totals_update_event', 'power_provider_buy', 'power_provider_sell', 'power_provider_event',
-                   'soc_curves', 'auto_curve', 'auto_curve_check_event'];
+                   'soc_curves', 'auto_curve'];
     const NEED_ENTITIES = ['parameters', 'buy_rules', 'sell_rules', 'buy_total', 'power_provider_buy', 'power_provider_sell'];
     // what the parameters sensor accepts (packages/battman_parameters.yaml): [int?, min, max, min exclusive?]
     const RANGE = {
@@ -179,7 +200,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       if (folded) FOLDED.add(secEl.dataset.sec); else FOLDED.delete(secEl.dataset.sec);
     }
     const UI = { rulesHour: { buy: new Date().getHours(), sell: new Date().getHours() }, rulesTab: { buy: 'single', sell: 'single' },
-                 ppHour: new Date().getHours(), ppTab: 'buy', cascade: { buy: null, sell: null } };
+                 ppHour: new Date().getHours(), ppTab: 'buy', cascade: { buy: null, sell: null }, laOther: {}, laPick: false };
     let M = null;
 
     // ---------------------------------------------------------------- basics
@@ -237,7 +258,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       }, 3000);
     }
     function reapplyMessages(container) {
-      container.querySelectorAll('input, select, button').forEach((el) => {
+      container.querySelectorAll('input, select, button, ha-entity-picker').forEach((el) => {
         const m = MSGS[ctlKey(el)];
         if (m && (m.cls !== 'ok' || Date.now() - m.at < 3000)) show(el, m.text, m.cls);
       });
@@ -374,6 +395,83 @@ class BattmanSettingsCard extends BattmanCardBase {
       return title(svc);
     }
 
+    // ---- the Live Activity's "follow" entity: HA's own entity picker, and the states to choose from
+    let PICKER = false;                       // is HA's picker available on this page? (else a text box)
+    const FOLLOW_DOMAINS = ['person', 'device_tracker', 'binary_sensor', 'switch', 'input_boolean', 'sensor', 'lock', 'cover'];
+    const FIXED_STATES = { binary_sensor: ['on', 'off'], switch: ['on', 'off'], input_boolean: ['on', 'off'], lock: ['locked', 'unlocked'], cover: ['open', 'closed'] };
+    const SEEN = {}, SEEN_LOADING = {};       // entity id -> states it has reported lately
+    const followNowId = () => String(laAttr('liveActivityFollow') || '').trim();
+    // the picker offers things that can sensibly switch the Live Activity: not Battman's own, not unavailable, not number sensors
+    function followFilter(s) {
+      const id = s.entity_id, d = id.split('.')[0], a = s.attributes || {};
+      if (id === followNowId()) return true;
+      if (id.indexOf('battman') >= 0 || s.state === 'unavailable' || s.state === 'unknown') return false;
+      if (d === 'sensor') {
+        if (s.state === '' || isFinite(Number(s.state)) || a.unit_of_measurement || a.state_class) return false;
+        if (['timestamp', 'date', 'duration'].indexOf(a.device_class) >= 0) return false;
+      }
+      return true;
+    }
+    async function loadSeen(id) {
+      if (SEEN[id] || SEEN_LOADING[id]) return;
+      SEEN_LOADING[id] = true;
+      const list = [];
+      try {
+        const r = await getHass().callWS({ type: 'history/history_during_period', start_time: new Date(Date.now() - 9 * 864e5).toISOString(),
+          end_time: new Date().toISOString(), entity_ids: [id], minimal_response: true, no_attributes: true });
+        (r[id] || []).forEach((x) => { const v = x.s !== undefined ? x.s : x.state; if (v && v !== 'unavailable' && v !== 'unknown' && list.indexOf(v) < 0) list.push(v); });
+      } catch (e) {}
+      const s = st(id); if (s && s.state !== 'unavailable' && s.state !== 'unknown' && list.indexOf(s.state) < 0) list.unshift(s.state);
+      SEEN[id] = list; delete SEEN_LOADING[id];
+      draw('notifications', true);
+    }
+    // the states to offer for an entity: fixed by its type, declared by it, or ones it has been seen in
+    function followStates(id) {
+      const h = getHass(), s = h.states[id]; if (!s) return { list: [], tag: '' };
+      const d = id.split('.')[0], a = s.attributes || {};
+      if (FIXED_STATES[d]) return { list: FIXED_STATES[d], tag: '' };
+      if (d === 'person' || d === 'device_tracker') {
+        const zones = Object.keys(h.states).filter((z) => z.indexOf('zone.') === 0 && z !== 'zone.home').map((z) => h.states[z].attributes.friendly_name || z);
+        return { list: ['home', 'not_home'].concat(zones), tag: '' };
+      }
+      if (Array.isArray(a.options) && a.options.length) return { list: a.options.slice(), tag: '', other: true };
+      if (SEEN[id]) return { list: SEEN[id], tag: "It doesn't declare its states, so these are ones it has reported lately.", other: true };
+      loadSeen(id);
+      return { list: [], tag: 'Looking up its states…', other: true };
+    }
+    // give the picker elements their data after a section is drawn (they can't take it from the HTML)
+    function wirePickers(el) {
+      el.querySelectorAll('ha-entity-picker').forEach((p) => {
+        p.hass = getHass(); p.includeDomains = FOLLOW_DOMAINS; p.entityFilter = followFilter; p.value = p.dataset.value || '';
+        if (p.dataset.autoopen) requestAnimationFrame(() => { try { if (p.open) p.open(); else if (p.focus) p.focus(); } catch (e) {} });
+      });
+    }
+    // HA's picker is loaded on demand: open a card editor once so it exists
+    async function ensurePicker() {
+      if (customElements.get('ha-entity-picker')) return true;
+      try {
+        const helpers = await window.loadCardHelpers();
+        const c = await helpers.createCardElement({ type: 'entities', entities: [] });
+        if (c && c.constructor && c.constructor.getConfigElement) await c.constructor.getConfigElement();
+      } catch (e) {}
+      try { await Promise.race([customElements.whenDefined('ha-entity-picker'), new Promise((_, no) => setTimeout(no, 4000))]); return true; } catch (e) { return false; }
+    }
+    // a new entity picked (or cleared): save it, and start the two states off sensibly
+    async function onFollow(el, id) {
+      id = (id || '').trim();
+      UI.laPick = false;
+      if (id === followNowId()) return draw('notifications', true);
+      const ok = await setLA(el, 'liveActivityFollow', id, () => followNowId() === id, 'the setting');
+      if (ok && id) {
+        const d = id.split('.')[0];
+        const [on, off] = FIXED_STATES[d] ? FIXED_STATES[d] : (d === 'person' || d === 'device_tracker') ? ['home', 'not_home'] : ['', ''];
+        UI.laOther = {};
+        await setLA(el, 'liveActivityFollowOn', on, () => String(laAttr('liveActivityFollowOn') || '') === on, 'the setting');
+        await setLA(el, 'liveActivityFollowOff', off, () => String(laAttr('liveActivityFollowOff') || '') === off, 'the setting');
+      }
+      draw('notifications', true);
+    }
+
     function notificationsSection() {
       const h = getHass(), p = attrs('parameters');
       const gone = [LA.sw, LA.params].filter((id) => !h.states[id]);
@@ -390,6 +488,28 @@ class BattmanSettingsCard extends BattmanCardBase {
       const f = String(A.liveActivityFollow || '').trim(), fe = f ? h.states[f] : null;
       const followNow = !f ? 'Blank: not following anything' : fe ? 'Now: ' + esc((fe.attributes && fe.attributes.friendly_name) || f) + ' is ' + esc(fe.state) : '';
       const sw = (key, label, desc) => row(label, desc, swHtml('data-pswitch="' + key + '"', !!p[key]));
+      const fs = f && fe ? followStates(f) : { list: [], tag: '' };
+      const fname = f ? esc((fe && fe.attributes && fe.attributes.friendly_name) || f) : '';
+      const followCtl = PICKER
+        ? '<button type="button" class="pickbtn' + (UI.laPick ? ' on' : '') + '" data-la-pick="1"><span class="pv' + (f ? '' : ' none') + '">' + (f ? fname : 'Choose…') + '</span><span class="car">&#9662;</span></button>'
+        : txt('liveActivityFollow', true);
+      const pickPanel = PICKER && UI.laPick
+        ? '<div class="pickpanel"><div class="cur">' + (f ? 'Currently: <b>' + fname + '</b> (' + esc(f) + ')' : 'Nothing followed yet') + '</div>'
+          + '<ha-entity-picker data-la-follow="1" data-autoopen="1" data-value="' + esc(f) + '"></ha-entity-picker>'
+          + '</div>' : '';
+      // one of the two states: a list to choose from (and "Other…" when the entity doesn't declare them all)
+      const stateRow = (key, label, desc) => {
+        const cur = String(A[key] == null ? '' : A[key]);
+        const known = fs.list.indexOf(cur) >= 0;
+        const other = fs.other && (UI.laOther[key] || (cur !== '' && !known));
+        let o = '';
+        if (cur === '' && !other) o += '<option value="" selected disabled>Choose…</option>';
+        else if (cur !== '' && !known && !fs.other) o += '<option value="' + esc(cur) + '" selected>' + esc(cur) + ' (not a known state)</option>';
+        o += fs.list.map((s) => '<option value="' + esc(s) + '"' + (!other && s === cur ? ' selected' : '') + '>' + esc(s) + '</option>').join('');
+        if (fs.other) o += '<option value="__o"' + (other ? ' selected' : '') + '>Other…</option>';
+        return row(label, desc, '<div class="stk"><select data-la-state="' + key + '">' + o + '</select>'
+          + (other ? '<div class="field"><input data-la-text="' + key + '" placeholder="type a state" value="' + esc(cur) + '"></div>' : '') + '</div>');
+      };
       return note('Every alert goes to one phone, and each is off until you switch it on.')
         + '<div class="rows">'
         + row('Notify target', 'Which phone gets the alerts (Off silences all)', '<select class="wide" data-notify>' + opts + '</select>')
@@ -400,10 +520,10 @@ class BattmanSettingsCard extends BattmanCardBase {
         + sw('amberNegativeBuyAlert', 'Negative-price alert', "Push when you're paid to import")
         + '<div class="subdiv">Live Activity</div>'
         + row('Live Activity', "Your battery on the phone's lock screen", swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
-        + row('Follow entity', followNow, txt('liveActivityFollow', true), f && !fe ? '⚠ ' + esc(f) + ' not found' : '')
-        + row('On when it becomes', '', txt('liveActivityFollowOn'))
-        + row('Off when it becomes', 'And stays that way for the time below', txt('liveActivityFollowOff'))
-        + row('Off after', '', num('liveActivityFollowDelay', 'min'))
+        + row('Follow entity', followNow, followCtl, f && !fe ? '⚠ ' + esc(f) + ' not found' : '') + pickPanel
+        + (f ? stateRow('liveActivityFollowOn', 'Show when it becomes', fs.tag)
+           + stateRow('liveActivityFollowOff', 'Hide when it becomes', 'And stays that way for the time below')
+           + row('Hide after', '', num('liveActivityFollowDelay', 'min')) : '')
         + '<div class="subdiv">Feed-in spike</div>'
         + sw('liveActivitySpikeAlertOn', 'Spike alert', 'Sound on the Live Activity when feed-in spikes')
         + row('Above', '', num('liveActivitySpikeAlert', '$/kWh'))
@@ -416,9 +536,8 @@ class BattmanSettingsCard extends BattmanCardBase {
 
     // the Auto curve switcher: its settings are autoCurve* on the parameters sensor; what it did last is on the auto curve sensor
     function autoCurveSection() {
-      const p = attrs('parameters'), w = attrs('auto_curve'), c = attrs('soc_curves');
+      const p = attrs('parameters'), c = attrs('soc_curves');
       const names = c.preset_names || {}, presets = c.presets || {};
-      const rowSt = (label, desc, ...ctls) => '<div class="row st"><div class="lbl"><div class="name">' + label + '</div>' + (desc ? '<div class="desc">' + desc + '</div>' : '') + '</div>' + ctls.map((x) => '<div class="ctl">' + x + '</div>').join('') + '</div>';
       const pname = (n) => names[n] || ('Preset ' + n);
       const presetSel = (key, none) => {
         const cur = Number(p[key]) || 0;
@@ -437,11 +556,6 @@ class BattmanSettingsCard extends BattmanCardBase {
       const date = (key) => '<input type="date" data-acdate="' + key + '" value="' + esc(p[key] || '') + '">';
       const num = (key, d) => (has(p[key]) ? Number(p[key]) : d);
       const set = (k) => Object.prototype.hasOwnProperty.call(p, k);
-      const hm = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); };
-      const RESULT = { applied: 'Curve changed', unchanged: 'No change', restored: 'Curve put back', no_forecast: 'No forecast', no_preset: 'Preset empty', off: 'Not run yet' };
-      const chips = (w.lastCheck ? '<span class="chip">Last check <b>' + hm(w.lastCheck) + '</b></span>' : '')
-        + (Number(w.projected) > 0 ? '<span class="chip">Projected <b>' + Number(w.projected).toFixed(1) + ' kWh</b></span>' : '')
-        + '<span class="chip">Result <b>' + (RESULT[w.status] || esc(w.status || '')) + (w.preset > 0 && w.status === 'applied' ? ': ' + esc(pname(w.preset)) : '') + '</b></span>';
       return note("Picks a curve preset from today's projected solar: made so far plus the forecast still to come. At the reset hour the month's own curve goes back.")
         + (set('autoCurve') ? '' : note('Not available yet: Battman is still loading its new settings. Reload the template entities, then come back.', true))
         + '<div class="rows">'
@@ -451,12 +565,11 @@ class BattmanSettingsCard extends BattmanCardBase {
         + row('Reset at', 'Hour the month\'s own curve goes back. Repeat checks stop then', hourSel('autoCurveResetHour', num('autoCurveResetHour', 20), 'Off'))
         + row('Forecast used', 'Solar still to come today, added to what is made so far', opt('autoCurveBasis', p.autoCurveBasis || 'p10', [['p10', '10% (cautious)'], ['est', 'Expected'], ['p90', '90% (optimistic)']]))
         + '<div class="subdiv">Rules, first match wins</div>'
-        + rowSt('Holiday', 'Between these dates. Leave blank to skip', date('autoCurveHolidayFrom') + date('autoCurveHolidayTo'), presetSel('autoCurveHolidayPreset', 'Not used'))
-        + rowSt('Day total below', 'Projected solar for the day is under. Leave blank to skip', kwh('autoCurveBelow') + presetSel('autoCurveBelowPreset', 'Not used'))
-        + rowSt('Day total above', 'Projected solar for the day is over. Leave blank to skip', kwh('autoCurveAbove') + presetSel('autoCurveAbovePreset', 'Not used'))
+        + row('Holiday', 'Between these dates. Leave blank to skip', '<div class="ctls">' + date('autoCurveHolidayFrom') + date('autoCurveHolidayTo') + presetSel('autoCurveHolidayPreset', 'Not used') + '</div>')
+        + row('Day total below', 'Projected solar for the day is under. Leave blank to skip', '<div class="ctls">' + kwh('autoCurveBelow') + presetSel('autoCurveBelowPreset', 'Not used') + '</div>')
+        + row('Day total above', 'Projected solar for the day is over. Leave blank to skip', '<div class="ctls">' + kwh('autoCurveAbove') + presetSel('autoCurveAbovePreset', 'Not used') + '</div>')
         + row('Otherwise', 'Between the two. Leave alone keeps the month\'s curve', presetSel('autoCurveOtherPreset', 'Leave alone'))
-        + '</div><div class="chips">' + chips + '</div>'
-        + '<button class="act" data-accheck="1">Check now</button><div class="lbl" style="padding:0 16px"></div>';
+        + '</div>';
     }
 
     function dashboardSection() {
@@ -550,7 +663,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       protection: { title: 'Sell price protection', deps: ['buy_total'], render: protectionSection },
       provider:   { title: 'Power provider', deps: ['power_provider_buy', 'power_provider_sell'], render: providerSection },
       autoCurve:  { title: 'Auto curve switcher', deps: ['parameters', 'soc_curves', 'auto_curve'], render: autoCurveSection },
-      notifications: { title: 'Notifications', deps: ['parameters'], extra: () => [LA.sw], render: notificationsSection, services: true },
+      notifications: { title: 'Notifications', deps: ['parameters'], extra: () => [LA.sw, followNowId()].filter(Boolean), render: notificationsSection, services: true },
       dashboard:  { title: 'Dashboard options', deps: ['parameters'], render: dashboardSection, themes: true },
       defaults:   { title: 'Reset defaults', deps: ['parameters'], render: defaultsSection },
     };
@@ -591,7 +704,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       // are kept across the redraw.
       const pressed = el.contains(root.activeElement) ? sameControl(root.activeElement) : null;
       const scrolled = scrollPositions();
-      try { el.innerHTML = SECTIONS[id].render(); reapplyMessages(el); }
+      try { el.innerHTML = SECTIONS[id].render(); wirePickers(el); reapplyMessages(el); }
       catch (e) { el.innerHTML = note('This section couldn\'t be drawn: ' + esc(e.message), true); }
       const again = pressed && root.querySelector(pressed);
       if (again) again.focus({ preventScroll: true });
@@ -707,6 +820,12 @@ class BattmanSettingsCard extends BattmanCardBase {
         return apply(t, () => fire('power_provider_event', { attribute: side === 'buy' ? 'tariffBuy' : 'tariffSell', hour: h, item: item, value: n.v }),
                      () => near(((attrs('power_provider_' + side).tariff || [])[h] || {})[item], n.v), item);
       }
+      if (t.dataset.laState) {
+        const key = t.dataset.laState, v = t.value;
+        if (v === '__o') { UI.laOther[key] = true; return draw(secOf(t), true); }      // "Other…": a box to type it
+        UI.laOther[key] = false;
+        return setLA(t, key, v, () => String(laAttr(key) == null ? '' : laAttr(key)) === v, 'the setting').then(() => draw(secOf(t), true));
+      }
       if (t.dataset.laText) {
         const key = t.dataset.laText, v = t.value.trim();
         return setLA(t, key, v, () => String(laAttr(key) == null ? '' : laAttr(key)) === v, 'the setting');
@@ -732,10 +851,7 @@ class BattmanSettingsCard extends BattmanCardBase {
         root.querySelectorAll('.sec').forEach((s) => setFolded(s, fold));
         return saveFolded();
       }
-      if ('accheck' in t.dataset) {
-        await fire('auto_curve_check_event', {});
-        return say(t, 'Checking now. The result shows above in a moment', 'ok');
-      }
+      if ('laPick' in t.dataset) { UI.laPick = !UI.laPick; return draw(secOf(t), true); }
       if (t.dataset.reset) {
         const sec = t.dataset.reset, defs = (attrs('parameters').defaults || {})[sec];
         if (!defs || !Object.keys(defs).length) return say(t, 'No defaults saved for this section (see Reset defaults)', 'bad');
@@ -861,7 +977,14 @@ class BattmanSettingsCard extends BattmanCardBase {
     (async function start() {
       try { await loadMap(); } catch (e) { return card.problem(e.message); }
       const problem = missingThemeVars(card, THEME_VARS); if (problem) return card.problem(problem);
+      PICKER = await ensurePicker();
       build();
+      // HA's entity picker reports its choice as value-changed (not change)
+      root.addEventListener('value-changed', (e) => {
+        const t = e.target;
+        if (!t || !t.dataset || !t.dataset.laFollow || !e.detail) return;
+        onFollow(root.querySelector('button[data-la-pick].pickbtn') || t, typeof e.detail.value === 'string' ? e.detail.value : '').catch((x) => console.error('Battman settings', x));
+      });
       root.addEventListener('change', (e) => { onChange(e).catch((x) => console.error('Battman settings', x)); });
       root.addEventListener('click', (e) => { onClick(e).catch((x) => console.error('Battman settings', x)); });
       root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('input')) e.target.blur(); });
@@ -872,7 +995,10 @@ class BattmanSettingsCard extends BattmanCardBase {
     // a setting changed in HA (or a save landed): redraw the sections it shows, at most every 250 ms
     function hassChanged() {
       if (!started || redrawTimer) return;
-      redrawTimer = setTimeout(() => { redrawTimer = null; redrawAll(); }, 250);
+      redrawTimer = setTimeout(() => {
+        redrawTimer = null; redrawAll();
+        root.querySelectorAll('ha-entity-picker').forEach((p) => { p.hass = getHass(); });
+      }, 250);
     }
     return { hassChanged, themeChanged: hassChanged };
   }
