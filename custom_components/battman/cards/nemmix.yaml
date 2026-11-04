@@ -7,7 +7,7 @@
 #
 # Reads Battman's own NEM sensors (sensor.battman_nem_*), which Battman makes from the
 # OpenNEM integration's region sensor (it finds it itself). If any of them has no value, a
-# line above the pies names them (the pies themselves are drawn by power-pie-card). Without
+# line above the pies names them (the pies themselves are drawn by battman-pie-card, which Battman ships). Without
 # OpenNEM installed the sensors don't exist at all: the line says to install it (a Repair says so too).
 type: vertical-stack
 cards:
@@ -94,7 +94,7 @@ cards:
         %}<span style="color:var(--battman-darkred);font-weight:700">NEM mix: no value from
         {{ gone | join(', ') }}{% set p = state_attr(gone[0], 'problem') if gone else none
         %}{% if p %} ({{ p }}){% endif %}</span>{% endif %}
-  - type: custom:power-pie-card
+  - type: custom:battman-pie-card
     title: SA Generation Mix
     display_unit: MW
     decimals: 1
@@ -133,7 +133,7 @@ cards:
     min_pct_label: 4
     sort: max
     hide_legend_value: true
-  - type: custom:power-pie-card
+  - type: custom:battman-pie-card
     title: SA Demand Mix
     display_unit: MW
     decimals: 1

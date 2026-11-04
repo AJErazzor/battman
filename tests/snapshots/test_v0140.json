@@ -276,7 +276,7 @@
   "min_pct_label": 4,
   "sort": "max",
   "title": "SA Demand Mix",
-  "type": "custom:power-pie-card"
+  "type": "custom:battman-pie-card"
  },
  "nemmix-generation": {
   "decimals": 1,
@@ -338,6 +338,6 @@
   "min_pct_label": 4,
   "sort": "max",
   "title": "SA Generation Mix",
-  "type": "custom:power-pie-card"
+  "type": "custom:battman-pie-card"
  }
 }

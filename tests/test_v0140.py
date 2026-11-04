@@ -143,7 +143,7 @@ async def test_nem_entity_ids(hass: HomeAssistant) -> None:
 async def test_nemmix_card(hass: HomeAssistant, hass_client) -> None:
     await _setup(hass)
     card = await (await (await hass_client()).get("/api/battman/cards/nemmix")).json()
-    assert card["missing_map"] == [] and card["needs"] == ["power-pie-card"]
+    assert card["missing_map"] == [] and card["needs"] == ["battman-pie-card"]
     note, gen, dem = card["config"]["cards"]
     assert_snapshot(__file__, "nemmix-generation", gen)
     assert_snapshot(__file__, "nemmix-demand", dem)
