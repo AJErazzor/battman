@@ -14,11 +14,11 @@ export const battmanDefine = (n, k) => { globalThis.__K = k; }; export const bat
   await import(path.join(dir, 'card.mjs'));
   return globalThis.__K;
 }
-export function render(Klass, config, states) {
+export function render(Klass, config, states, registry = {}) {
   const els = {}; globalThis.__root = { getElementById: (id) => (els[id] ??= { innerHTML: '', textContent: '' }), addEventListener() {} };
   const c = new Klass(); c.attachShadow({ mode: 'open' }); c.setConfig(config);
   const st = Object.fromEntries(Object.entries(states).map(([id, v]) => [id, { state: String(v[0]), attributes: v[1] || {} }]));
-  c.hass = { states: st, themes: {}, callWS: async () => [], callApi: async () => [], config: { time_zone: 'Australia/Adelaide' } };
+  c.hass = { states: st, ...registry, themes: {}, callWS: async () => [], callApi: async () => [], config: { time_zone: 'Australia/Adelaide' } };
   const html = els.b.innerHTML;
-  return { today: [...html.matchAll(/Today <b>([^<]*)<\/b>/g)].map((m) => m[1]), text: html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 260) };
+  return { html, today: [...html.matchAll(/Today <b>([^<]*)<\/b>/g)].map((m) => m[1]), text: html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 260) };
 }
