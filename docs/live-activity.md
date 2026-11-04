@@ -23,9 +23,9 @@ other Battman setting. You set them on the Battman dashboard under **Settings �
 | Setting | Where | Default |
 |---|---|---|
 | On/off | `switch.battman_live_activity` (a template switch: its state is `liveActivity`) | off |
-| Follow entity | `liveActivityFollow` (blank = don't follow) | blank |
-| On / off states | `liveActivityFollowOn` / `liveActivityFollowOff` | `ON` / `OFF` |
-| Off after | `liveActivityFollowDelay` (minutes, 0–60) | 2 |
+| Follow entity | `liveActivityFollow` (blank = don't follow; picked with Home Assistant's entity picker) | blank |
+| Show / hide states | `liveActivityFollowOn` / `liveActivityFollowOff` (chosen from the entity's own states, or ones it has reported lately) | `ON` / `OFF` |
+| Hide after | `liveActivityFollowDelay` (minutes, 0–60) | 2 |
 | Spike alert | `liveActivitySpikeAlertOn` | off |
 | Spike alert above | `liveActivitySpikeAlert` ($/kWh, 0–20) | 0.30 |
 

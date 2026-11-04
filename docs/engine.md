@@ -86,7 +86,6 @@ Switch it on in **Settings → Auto curve switcher** (it starts off). It's a Bat
   rule, and (whatever the reset hour) at 23:50 on the last day of the month, because the copy of this month's
   curves into next month now runs at 23:55. Editing the month's curve in Curvy while the switcher has
   changed it is undone at the reset.
-- **Check now** (Settings) fires `battman_auto_curve_check`. `sensor.battman_auto_curve` shows what the last
-  check did (`status`, `rule`, `preset`, `generated` / `remaining` / `projected` kWh). The Chill card shows
-  an *Auto* pill while it's on (icon = the rule that won: umbrella holiday, cloud below, sun above, wand otherwise,
+- `sensor.battman_auto_curve` shows what the last check did (`status`, `rule`, `preset`, `generated` / `remaining` / `projected` kWh). The Chill card shows
+  an *Auto* pill while it's on (icon = the rule that won: umbrella holiday, cloud below, sun above, robot otherwise,
   orange alert when it couldn't act) and its tap popup says why.

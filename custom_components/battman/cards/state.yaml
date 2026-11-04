@@ -272,7 +272,7 @@ custom_fields:
       const AP = states['[[map:parameters]]']?.attributes || {}, AW = states['[[map:auto_curve]]']?.attributes || {};
       if (AP.autoCurve !== true) return '';
       const bad = ['no_forecast', 'no_preset'].includes(AW.status);
-      const ic = bad ? 'mdi:alert-circle-outline' : ({holiday: 'mdi:umbrella-beach', below: 'mdi:weather-cloudy', above: 'mdi:weather-sunny'}[AW.rule] || 'mdi:auto-fix');
+      const ic = bad ? 'mdi:alert-circle-outline' : ({holiday: 'mdi:umbrella-beach', below: 'mdi:weather-cloudy', above: 'mdi:weather-sunny'}[AW.rule] || 'mdi:robot');
       const col = bad ? C.orange : st.color, wide = String(st.text).length > 22;
       return `<div style='position:absolute;top:-9px;right:8px;display:flex;align-items:center;gap:5px;padding:1px ${wide ? 4 : 8}px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(st.color, 70)};'>` +
         ico(ic, 16, col) + (wide ? '' : `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${col};white-space:nowrap;'>Auto</span>`) + `</div>`;
@@ -637,7 +637,7 @@ tap_action:
         { const AP = states['[[map:parameters]]']?.attributes || {}, AW = states['[[map:auto_curve]]']?.attributes || {};
           if (AP.autoCurve === true) {
             const bad = ['no_forecast', 'no_preset'].includes(AW.status);
-            const ic = bad ? 'mdi:alert-circle-outline' : ({holiday: 'mdi:umbrella-beach', below: 'mdi:weather-cloudy', above: 'mdi:weather-sunny'}[AW.rule] || 'mdi:auto-fix');
+            const ic = bad ? 'mdi:alert-circle-outline' : ({holiday: 'mdi:umbrella-beach', below: 'mdi:weather-cloudy', above: 'mdi:weather-sunny'}[AW.rule] || 'mdi:robot');
             const acCol = bad ? 'var(--battman-orange)' : 'var(--battman-green)';
             const names = states['[[map:soc_curves]]']?.attributes?.preset_names || {};
             const pn = n => names[n] || ('Preset ' + n);
