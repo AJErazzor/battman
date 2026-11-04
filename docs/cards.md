@@ -213,9 +213,10 @@ refreshes every minute and whenever Amber updates. It has no options.
 
 ## Battman Solar
 
-`custom:battman-solar-card` shows up to two inverters (Inverter 1 is for a third-party inverter such as a
-Fronius, Inverter 2 is your Sigenergy): live power, today's generation and Solcast's forecast. An
-inverter whose power sensor doesn't exist isn't drawn, so a one-inverter home just works.
+`custom:battman-solar-card` shows the inverters you list: live power, today's generation and Solcast's
+forecast. **Nothing is assumed**: the card names no inverter, energy or forecast sensor of its own, so it
+draws only what you set up and says "No inverters set up" until you add one. (Before v0.39.0 it came with
+Sigenergy defaults, which could add figures you hadn't asked for.)
 
 - `view`: `toggle` (default; Now / Forecast pills), `both` (the two tables stacked), `now` or `forecast`.
   `default_view` picks the pill selected first.
@@ -231,11 +232,16 @@ inverter whose power sensor doesn't exist isn't drawn, so a one-inverter home ju
   inverter, `both` both, `off` none. Per-inverter curves are the whole forecast curve scaled by that
   inverter's share of the day (Solcast gives one daily total per site). It reads today's history for the
   power sensors, once on load and every 5 minutes.
-- Each inverter (`symo`, `sig`) takes `show`, `label`, `power`, `today` and `site`. `site` is the
-  Solcast site id (the part after `estimate_` in the sensor's attributes, for example
-  `fc06_f7f8_d429_86e2`); leave it blank for a single inverter and the whole forecast is used. With two
-  inverters a blank site shows a dash. W and Wh sensors are converted to kW and kWh.
-- `forecast_remaining`, `forecast_today` and `forecast_tomorrow` name the Solcast sensors.
+- `inverters` is a list; add as many as you have in the card options. Each takes `power` (required, its live
+  power sensor), `today` (its energy-today sensor), `label` and `site`. `label` is the name on the card; leave
+  it blank and the card uses the name of the power sensor's device in Home Assistant (or, if the sensor has no
+  device, the sensor's own name). `site` is the Solcast site id (the part after `estimate_` in the sensor's
+  attributes, for example `fc06_f7f8_d429_86e2`); with one inverter the whole forecast is used, and with
+  several a blank site shows a dash on that inverter (the Total still has the forecast). An inverter with no
+  `today` sensor shows a dash for Today, and then so does the Total, since it would be a partial sum.
+  Each inverter takes the next theme colour (`color` overrides). W and Wh sensors are converted to kW and kWh.
+  The older `symo` and `sig` entries still work if they name their own `power` sensor.
+- `forecast_remaining`, `forecast_today` and `forecast_tomorrow` name your Solcast sensors (blank: no forecast).
   `no_export_entity` (an orange "No export" flag while it's on) and `soft_limit_entity` (a red
   "Soft limit" flag) are optional; leave either empty to hide it.
 - `show_total`, `show_10` and `show_progress` turn the Total row, the 10% figures and the progress bars on or off.

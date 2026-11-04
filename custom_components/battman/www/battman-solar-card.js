@@ -1,7 +1,8 @@
 // Battman Solar card: custom:battman-solar-card.
-// Two inverters (Symo = third party, Sig = Sigenergy) with live power, today's energy and Solcast's
-// forecast. view: now | forecast | toggle (pills) | both (two tables stacked).
-// Rows whose power sensor doesn't exist are not drawn, so a one-inverter install just works.
+// Your inverters (as many as you list) with live power, today's energy and Solcast's forecast.
+// view: now | forecast | toggle (pills) | both (two tables stacked).
+// Nothing is assumed: no inverter, energy or forecast sensor is named here, so only what you set up is drawn.
+// An inverter is named by you, or else by its power sensor's device in Home Assistant.
 // Solcast: sensor attributes estimate / estimate10, or estimate_<site> / estimate10_<site> per inverter.
 
 import { BattmanCardBase, battmanDefine, battmanPicker, esc, inCardPicker } from "./battman-card-base.js";
@@ -12,20 +13,19 @@ const VIEWS = ["now", "forecast", "toggle", "both"];
 const DEFAULTS = {
   view: "toggle", default_view: "now", forecast_basis: "p10", title: "Solar",
   show_total: true, show_10: true, show_progress: true, sparkline: "total",
-  forecast_remaining: "sensor.solcast_pv_forecast_forecast_remaining_today",
-  forecast_today: "sensor.solcast_pv_forecast_forecast_today",
-  forecast_tomorrow: "sensor.solcast_pv_forecast_forecast_tomorrow",
-  no_export_entity: "input_boolean.battman_no_export",
+  forecast_remaining: "", forecast_today: "", forecast_tomorrow: "",
+  no_export_entity: "input_boolean.battman_no_export",   // Battman's own toggle
   soft_limit_entity: "",
-  symo: { show: true, label: "Symo", power: "sensor.sigen_plant_third_party_pv_power",
-    today: "sensor.sigen_plant_daily_third_party_inverter_energy", site: "", color: "--battman-orange" },
-  sig: { show: true, label: "Sig", power: "sensor.sigen_inverter_pv_power",
-    today: "sensor.sigen_inverter_daily_pv_energy", site: "", color: "--battman-yellow" },
+  inverters: [],
 };
+// each inverter gets the next colour (a theme colour), unless it names its own
+const COLOURS = ["--battman-yellow", "--battman-orange", "--battman-teal", "--battman-sky", "--battman-purple", "--battman-pink"];
 const FALLBACK = { "--battman-orange": "#f97316", "--battman-yellow": "#eab308", "--battman-green": "#22c55e",
-  "--battman-red": "#ef4444" };
+  "--battman-red": "#ef4444", "--battman-teal": "#14b8a6", "--battman-sky": "#38bdf8", "--battman-purple": "#a855f7",
+  "--battman-pink": "#ec4899" };
 
-const CONFIG_KEYS = ["type", "grid_options", "view_layout", "visibility", ...Object.keys(DEFAULTS)];
+// symo / sig are the older way to name two inverters: still read, but only when they name their own power sensor
+const CONFIG_KEYS = ["type", "grid_options", "view_layout", "visibility", ...Object.keys(DEFAULTS), "symo", "sig"];
 
 class BattmanSolarCard extends BattmanCardBase {
   static cardName = "Battman Solar card";
@@ -42,18 +42,11 @@ class BattmanSolarCard extends BattmanCardBase {
     this.shadowRoot.innerHTML = `<ha-card style="overflow:hidden;padding:0 14px 10px;font-family:var(--primary-font-family,sans-serif)">`
       + `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--divider-color)"><b style="font-size:12px;letter-spacing:.09em">SOLAR</b>`
       + `<span style="font-size:11px;color:var(--secondary-text-color)">10% &nbsp; Now &nbsp; Forecast</span></div>`
-      + row("Symo", "#f97316", 62, "3.1") + row("Sig", "#eab308", 78, "4.6") + `</ha-card>`;
+      + row("Inverter 1", "#f97316", 62, "3.1") + row("Inverter 2", "#eab308", 78, "4.6") + `</ha-card>`;
   }
 
   static getConfigForm() {
     const ent = (name, label, domain) => ({ name, label, selector: { entity: domain ? { domain } : {} } });
-    const inv = (name, label) => ({ name, type: "expandable", title: label, schema: [
-      { name: "show", label: "Show", selector: { boolean: {} } },
-      { name: "label", label: "Name", selector: { text: {} } },
-      ent("power", "Power sensor (live)", "sensor"),
-      ent("today", "Energy today sensor", "sensor"),
-      { name: "site", label: "Solcast site id (blank = whole forecast)", selector: { text: {} } },
-    ] });
     return { schema: [
       { name: "view", label: "Layout", selector: { select: { mode: "dropdown", options: [
         { value: "toggle", label: "One card, Now / Forecast pills" }, { value: "both", label: "Both tables, stacked" },
@@ -70,7 +63,11 @@ class BattmanSolarCard extends BattmanCardBase {
       { name: "sparkline", label: "Today's power sparkline (actual vs forecast)", selector: { select: { mode: "dropdown", options: [
         { value: "total", label: "Total only" }, { value: "rows", label: "Per inverter only" },
         { value: "both", label: "Total and per inverter" }, { value: "off", label: "Off" }] } } },
-      inv("symo", "Inverter 1 (third party)"), inv("sig", "Inverter 2 (Sigenergy)"),
+      { name: "inverters", label: "Inverters", selector: { object: { multiple: true, label_field: "power", fields: {
+        label: { label: "Name (blank = the power sensor's device name)", selector: { text: {} } },
+        power: { label: "Power sensor (live)", required: true, selector: { entity: { domain: "sensor" } } },
+        today: { label: "Energy today sensor", selector: { entity: { domain: "sensor" } } },
+        site: { label: "Solcast site id (blank = whole forecast)", selector: { text: {} } } } } } },
       { name: "", type: "expandable", title: "Solcast and status", schema: [
         ent("forecast_remaining", "Forecast remaining today", "sensor"), ent("forecast_today", "Forecast today", "sensor"),
         ent("forecast_tomorrow", "Forecast tomorrow", "sensor"),
@@ -81,16 +78,11 @@ class BattmanSolarCard extends BattmanCardBase {
   setConfig(config) {
     const extra = Object.keys(config || {}).filter((k) => !CONFIG_KEYS.includes(k));
     if (extra.length) throw new Error(`${this.constructor.cardName} has no options (found: ${extra.join(", ")}).`);
-    // An inverter's defaults go together: a default energy sensor belongs to the default power sensor.
-    // Pick your own power sensor and leave the energy one blank and Today is blank ("–"), not some
-    // other inverter's figure from the defaults.
-    const row = (k) => {
-      const own = (config && config[k]) || {};
-      const r = { ...DEFAULTS[k], ...own };
-      if (own.power && own.power !== DEFAULTS[k].power && own.today === undefined) r.today = "";
-      return r;
-    };
-    const c = { ...DEFAULTS, ...config, symo: row("symo"), sig: row("sig") };
+    // Only the inverters you list. An inverter with no energy sensor shows a dash for Today (never another
+    // inverter's figure). The older symo / sig entries still count if they name their own power sensor.
+    const list = Array.isArray(config && config.inverters) ? config.inverters.slice() : [];
+    ["symo", "sig"].forEach((k) => { const o = config && config[k]; if (o && typeof o === "object") list.push({ ...o }); });
+    const c = { ...DEFAULTS, ...config, inverters: list.filter((i) => i && typeof i === "object" && i.power) };
     if (!["total", "rows", "both", "off"].includes(c.sparkline)) throw new Error("sparkline must be one of: total, rows, both, off");
     if (!VIEWS.includes(c.view)) throw new Error(`view must be one of: ${VIEWS.join(", ")}`);
     this._config = c;
@@ -175,13 +167,19 @@ class BattmanSolarCard extends BattmanCardBase {
     // forecast figure: one site's attribute, or the whole-forecast attribute when no site is named
     const fc = (entity, base, site) => attr(entity, site ? `${base}_${site}` : base);
 
+    // an inverter's name: the one you typed, else its power sensor's device in Home Assistant (else the sensor's own name)
+    function nameOf(r) {
+      if (r.label) return r.label;
+      const h = card.hass, ent = h.entities && h.entities[r.power], dev = ent && ent.device_id && h.devices && h.devices[ent.device_id];
+      return (dev && (dev.name_by_user || dev.name)) || st(r.power).attributes.friendly_name || r.power;
+    }
+    const noRows = (c) => `<div class="msg">${c.inverters.length ? "No inverter sensors found. Check the power sensors in the card options." : "No inverters set up. Open the card options and add your inverter's power sensor."}</div>`;
     function rowsOf(c) {
       const out = [];
-      for (const k of ["symo", "sig"]) {
-        const r = c[k];
-        if (r.show === false || !st(r.power)) continue;
-        out.push({ ...r, key: k, col: colour(r.color) });
-      }
+      c.inverters.forEach((r, i) => {
+        if (r.show === false || !st(r.power)) return;
+        out.push({ ...r, key: i, label: nameOf(r), col: colour(r.color || COLOURS[i % COLOURS.length]) });
+      });
       // a row with no site id can only show the whole forecast, which is right for a single inverter
       out.forEach((r) => { r.hasFc = out.length === 1 || !!r.site; });
       return out;
@@ -262,7 +260,7 @@ class BattmanSolarCard extends BattmanCardBase {
 
     // ---------------- Now ----------------
     function nowHtml(c, rows, withSub) {
-      if (!rows.length) return `<div class="msg">No inverter sensors found. Check the power sensors in the card options.</div>`;
+      if (!rows.length) return noRows(c);
       const tot = { p: 0, g: 0, left: 0, lo: 0, any: false };
       const other = basis === "p10" ? "est" : "10%";
       const rowHtml = rows.map((r) => {
@@ -299,7 +297,7 @@ class BattmanSolarCard extends BattmanCardBase {
 
     // ---------------- Forecast ----------------
     function fcHtml(c, rows, withSub) {
-      if (!rows.length) return `<div class="msg">No inverter sensors found. Check the power sensors in the card options.</div>`;
+      if (!rows.length) return noRows(c);
       const days = [["Today", c.forecast_today], ["Tomorrow", c.forecast_tomorrow]];
       const lines = rows.map((r) => ({ label: r.label, col: r.col, site: r.site, hasFc: r.hasFc, tot: false }));
       if (c.show_total && rows.length > 1) lines.push({ label: "Total", col: colour("--battman-green"), site: "", hasFc: true, tot: true });
@@ -340,7 +338,7 @@ class BattmanSolarCard extends BattmanCardBase {
       if (r) card.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId: r.dataset.e }, bubbles: true, composed: true }));
     });
 
-    const watched = () => { const c = card._config; return [c.symo.power, c.symo.today, c.sig.power, c.sig.today, c.forecast_remaining,
+    const watched = () => { const c = card._config; return [...c.inverters.flatMap((i) => [i.power, i.today]), c.forecast_remaining,
       c.forecast_today, c.forecast_tomorrow, c.no_export_entity, c.soft_limit_entity].filter(Boolean); };
     render();
     loadHist();
@@ -352,5 +350,5 @@ class BattmanSolarCard extends BattmanCardBase {
 }
 battmanDefine("battman-solar-card", BattmanSolarCard);
 battmanPicker("battman-solar-card", "Battman Solar card",
-  "Live power, today's generation and Solcast forecast for one or two inverters, as pills, stacked tables, or either alone.",
+  "Live power, today's generation and Solcast forecast for the inverters you list, as pills, stacked tables, or either alone.",
   "battman-solar-card");

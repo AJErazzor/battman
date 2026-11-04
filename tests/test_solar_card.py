@@ -1,6 +1,6 @@
 """The Solar card (custom:battman-solar-card).
 
-- Two inverters (third party + Sigenergy) with live power, today's energy and Solcast's forecast.
+- The inverters you list (none are assumed) with live power, today's energy and Solcast's forecast.
 - view: toggle / both / now / forecast; the 10% pill picks which forecast figure is the big one.
 """
 
@@ -27,8 +27,8 @@ def test_card_options_and_defaults() -> None:
     for view in ("now", "forecast", "toggle", "both"):
         assert f'"{view}"' in js
     assert 'forecast_basis: "p10"' in js                      # 10% is the big figure until you tap the pill
-    assert "sensor.sigen_plant_third_party_pv_power" in js and "sensor.sigen_inverter_pv_power" in js
-    assert "sensor.solcast_pv_forecast_forecast_remaining_today" in js
+    assert "sensor.sigen_" not in js and "sensor.solcast" not in js        # no inverter or forecast sensor is assumed
+    assert "Symo" not in js and '"Sig"' not in js                           # nor an inverter name
     assert 'sparkline: "total"' in js and "detailedForecast" in js    # a total-only sparkline with the forecast dashed behind it
 
 
@@ -40,14 +40,17 @@ def test_card_parses_as_a_module() -> None:
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="needs node")
-def test_today_never_comes_from_another_inverters_default_sensor() -> None:
-    """#60: picking your own power sensors (and not an energy sensor) must not leave Today reading the
-    card's default Sigenergy energy sensors. Runs the real card against dummy states, no browser."""
+def test_only_the_inverters_you_list_are_drawn_and_named() -> None:
+    """#60 and its follow-up: nothing comes from a default. Another inverter's sensors in HA don't leak into Today,
+    an unconfigured card draws nothing, and the name is the one you typed or else the device's.
+    Runs the real card against dummy states, no browser."""
     out = subprocess.run(["node", str(ROOT / "tests/js/solar_today_check.mjs"), str(CARD)],
                          capture_output=True, text=True, check=True).stdout.strip().splitlines()[-1]
     import json
     r = json.loads(out)
-    assert r["powerOnly"] == ["– kWh"] * 4                                # no energy sensor chosen: blank, not 22.2
+    assert r["powerOnly"] == ["– kWh"] * 4                                  # no energy sensor chosen: blank, not 22.2
     assert r["withEnergy"] == ["8.7 kWh", "5.5 kWh", "3.2 kWh", "8.7 kWh"]  # hero, each inverter, total
     assert r["oneEnergy"] == ["– kWh", "5.5 kWh", "– kWh", "– kWh"]        # a total needs every inverter's figure
-    assert r["defaults"][0] == "22.2 kWh"                                   # the defaults, together, still work
+    assert r["nothing"]["today"] == [] and "No inverters set up" in r["nothing"]["msg"]
+    assert r["legacy"] == ["5.5 kWh", "5.5 kWh"]                            # an old `sig` that names its sensor (headline + row); a bare `symo` adds nothing
+    assert r["names"] == [True, True] and r["fallbackName"] is True
