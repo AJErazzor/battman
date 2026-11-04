@@ -1,7 +1,8 @@
 # name: NEM mix
 # description: Where the region's power comes from (generation mix) and where it goes (demand mix).
 #
-# A Battman card: on a dashboard it's `type: custom:battman-nemmix`, and it updates
+# A Battman card: on a dashboard it's `type: custom:battman-nemmix` (add `show: generation` or
+# `show: demand` to draw just one of the pies), and it updates
 # with Battman releases. To try changes on your own HA, copy this file to
 # config/battman/cards/nemmix.yaml and edit that copy.
 #
@@ -103,10 +104,10 @@ cards:
       - name: Wind
         color: var(--battman-green)
         entity: sensor.battman_nem_wind
-      - name: Rooftop Solar
+      - name: Solar (S)
         color: var(--battman-orange)
         entity: sensor.battman_nem_rooftop_solar
-      - name: Utility Solar
+      - name: Solar (L)
         color: var(--battman-amber)
         entity: sensor.battman_nem_utility_solar
       - name: Imports
@@ -115,21 +116,16 @@ cards:
       - name: Battery
         color: var(--battman-purple)
         entity: sensor.battman_nem_battery
-      - name: Gas (CCGT)
+      - name: Gas
         color: var(--battman-darkred)
-        entity: sensor.battman_nem_gas_ccgt
-      - name: Gas (OCGT)
-        color: var(--battman-red)
-        entity: sensor.battman_nem_gas_ocgt
+        entities:
+          - sensor.battman_nem_gas_ccgt
+          - sensor.battman_nem_gas_ocgt
+          - sensor.battman_nem_gas_steam
+          - sensor.battman_nem_gas_recip
       - name: Distillate
         color: var(--battman-text-muted)
         entity: sensor.battman_nem_distillate
-      - name: Gas (Steam)
-        color: var(--battman-darkred)
-        entity: sensor.battman_nem_gas_steam
-      - name: Gas (Recip)
-        color: var(--battman-red)
-        entity: sensor.battman_nem_gas_recip
     min_pct_label: 4
     sort: max
     hide_legend_value: true

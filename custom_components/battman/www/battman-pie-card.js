@@ -5,6 +5,8 @@
  *   - `mw` / `MW` is megawatts (upstream reads `mw` as milliwatts), and display_unit can be MW
  *   - min_pct_label: show the % on the ring for slices of at least that many percent
  *   - hide_legend_value: legend shows the name and % only
+ *   - a slice can group several sensors: { name: Gas, entities: [sensor.a, sensor.b] } is drawn as
+ *     their sum (positive values only). If any member has no value the slice isn't drawn.
  * Used by the NEM mix card, so Battman needs no extra HACS card for it.
  *
  * A dependency-free doughnut chart card for Home Assistant with built-in
@@ -143,9 +145,16 @@ class PowerPieCard extends HTMLElement {
     c.other_text = c.other_text || "Other";
     this._include = (c.filter && c.filter.include ? c.filter.include : []).map(compileRule);
     this._exclude = (c.filter && c.filter.exclude ? c.filter.exclude : []).map(compileRule);
-    this._static = (c.entities || []).map((e) =>
-      typeof e === "string" ? { entity: e } : e
-    );
+    this._groups = new Map();       // group slice id -> its member entity ids
+    this._static = (c.entities || []).map((e) => {
+      if (typeof e === "string") return { entity: e };
+      if (Array.isArray(e.entities) && e.entities.length) {
+        const id = `group:${e.name || e.entities.join("+")}`;
+        this._groups.set(id, e.entities);
+        return { ...e, entity: id };
+      }
+      return e;
+    });
     this._config = c;
     this._modelKey = null;
     this._buildDom();
@@ -379,16 +388,30 @@ class PowerPieCard extends HTMLElement {
     let items = [];
     for (const id of ids) {
       if (this._exclude.some((rule) => rule(id, hass))) continue;
-      const st = hass.states[id];
-      if (!st) continue;
-      const raw = Number(st.state);
-      if (!isFinite(raw)) continue;
-      const watts = toWatts(raw, st.attributes.unit_of_measurement);
+      const members = this._groups.get(id);
+      let watts;
+      let st;
+      if (members) {
+        // a group: the members' sum, only when every member has a value
+        const parts = members.map((mid) => {
+          const ms = hass.states[mid];
+          const mraw = ms ? Number(ms.state) : NaN;
+          return isFinite(mraw) && ms.state !== "" ? Math.max(0, toWatts(mraw, ms.attributes.unit_of_measurement)) : NaN;
+        });
+        if (parts.some((p) => !isFinite(p))) continue;
+        watts = parts.reduce((a, b) => a + b, 0);
+      } else {
+        st = hass.states[id];
+        if (!st) continue;
+        const raw = Number(st.state);
+        if (!isFinite(raw)) continue;
+        watts = toWatts(raw, st.attributes.unit_of_measurement);
+      }
       if (watts <= 0) continue;
       const m = meta.get(id) || {};
       items.push({
         id,
-        name: m.name || st.attributes.friendly_name || id,
+        name: m.name || (st && st.attributes.friendly_name) || id,
         color: m.color,
         watts,
       });
@@ -641,6 +664,8 @@ class PowerPieCard extends HTMLElement {
   }
 
   _moreInfo(entityId) {
+    const members = this._groups && this._groups.get(entityId);
+    if (members) entityId = members[0];       // a group opens its first member
     this.dispatchEvent(new CustomEvent("hass-more-info", {
       detail: { entityId },
       bubbles: true,

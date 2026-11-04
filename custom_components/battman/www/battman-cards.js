@@ -87,6 +87,28 @@ function errText(e) {
   return (e && e.body && e.body.message) || (e && e.message) || String(e);
 }
 
+// Options a card file's card takes on the dashboard (shown in its editor). apply() returns the card
+// config to draw (or { problem }). Cards not listed here take none.
+const CARD_OPTIONS = {
+  nemmix: {
+    fields: [{ name: "show", label: "Show", default: "both",
+      options: [["both", "Generation and demand"], ["generation", "Generation only"], ["demand", "Demand only"]] }],
+    apply(config, mine) {
+      const show = (mine && mine.show) || "both";
+      if (show === "both") return { config };
+      if (show !== "generation" && show !== "demand") {
+        return { problem: `show: “${show}” isn't one of both, generation, demand.` };
+      }
+      const [note, generation, demand] = config.cards;
+      return { config: { ...config, cards: [note, show === "generation" ? generation : demand] } };
+    },
+  },
+};
+function cardConfig(id, data, mine) {
+  const o = CARD_OPTIONS[id];
+  return o ? o.apply(data.config, mine) : { config: data.config };
+}
+
 class BattmanCard extends HTMLElement {
   static cardId = "";
 
@@ -219,10 +241,12 @@ class BattmanCard extends HTMLElement {
     if (missing.length) {
       return this._problem(`Card “${data.name}” needs ${missing.join(", ")}, which isn't installed (HACS → Frontend).`);
     }
+    const made = cardConfig(id, data, this._config);
+    if (made.problem) return this._problem(made.problem);
     let el;
     try {
       const helpers = await window.loadCardHelpers();
-      el = helpers.createCardElement(data.config);
+      el = helpers.createCardElement(made.config);
     } catch (e) {
       return this._problem(`Card “${data.name}” couldn't be drawn: ${errText(e)}`);
     }
@@ -266,10 +290,12 @@ class BattmanCardEditor extends HTMLElement {
     if (this._drawn || !this._hass) return;
     this._drawn = true;
     const id = this.cardId;
+    const opts = CARD_OPTIONS[id];
     this.innerHTML = `
       <div style="padding:8px 0;line-height:1.5">
         <p style="margin:0 0 8px">This is the Battman card <b>${id}</b>. It's drawn from Battman's
-        <code>cards/${id}.yaml</code> and updates with Battman releases. There's nothing to set here.</p>
+        <code>cards/${id}.yaml</code> and updates with Battman releases. ${opts ? "" : "There's nothing to set here."}</p>
+        <div class="opts" style="margin:0 0 12px"></div>
         <p style="margin:0 0 12px;color:var(--secondary-text-color)">To change how it looks everywhere,
         edit the card file (see <a href="${DOCS}" target="_blank" rel="noreferrer">Battman cards</a>).
         To make just this copy your own, convert it: you get the full card YAML with your entities
@@ -278,6 +304,22 @@ class BattmanCardEditor extends HTMLElement {
         <div class="msg" style="margin-top:8px;color:var(--error-color,#db4437)"></div>
       </div>`;
     this.querySelector(".convert").addEventListener("click", () => this._convert());
+    if (opts) {
+      const form = document.createElement("ha-form");
+      form.hass = this._hass;
+      form.schema = opts.fields.map((f) => ({ name: f.name, selector: { select: { mode: "dropdown",
+        options: f.options.map(([value, label]) => ({ value, label })) } } }));
+      form.computeLabel = (sch) => (opts.fields.find((f) => f.name === sch.name) || {}).label || sch.name;
+      form.data = Object.fromEntries(opts.fields.map((f) => [f.name, (this._config && this._config[f.name]) || f.default]));
+      form.addEventListener("value-changed", (ev) => {
+        ev.stopPropagation();
+        const config = { ...this._config, ...ev.detail.value };
+        for (const f of opts.fields) if (config[f.name] === f.default) delete config[f.name];   // defaults stay out of the YAML
+        this._config = config;
+        this.dispatchEvent(new CustomEvent("config-changed", { detail: { config }, bubbles: true, composed: true }));
+      });
+      this.querySelector(".opts").append(form);
+    }
   }
 
   async _convert() {
@@ -295,7 +337,12 @@ class BattmanCardEditor extends HTMLElement {
       msg.textContent = `Battman entity map has no entry for: ${data.missing_map.join(", ")}.`;
       return;
     }
-    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: data.config }, bubbles: true, composed: true }));
+    const made = cardConfig(this.cardId, data, this._config);
+    if (made.problem) {
+      msg.textContent = made.problem;
+      return;
+    }
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: made.config }, bubbles: true, composed: true }));
   }
 }
 battmanDefine("battman-card-editor", BattmanCardEditor);
