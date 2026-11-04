@@ -290,12 +290,12 @@
    {
     "color": "var(--battman-orange)",
     "entity": "sensor.battman_nem_rooftop_solar",
-    "name": "Rooftop Solar"
+    "name": "Solar (S)"
    },
    {
     "color": "var(--battman-amber)",
     "entity": "sensor.battman_nem_utility_solar",
-    "name": "Utility Solar"
+    "name": "Solar (L)"
    },
    {
     "color": "var(--battman-blue)",
@@ -309,28 +309,18 @@
    },
    {
     "color": "var(--battman-darkred)",
-    "entity": "sensor.battman_nem_gas_ccgt",
-    "name": "Gas (CCGT)"
-   },
-   {
-    "color": "var(--battman-red)",
-    "entity": "sensor.battman_nem_gas_ocgt",
-    "name": "Gas (OCGT)"
+    "entities": [
+     "sensor.battman_nem_gas_ccgt",
+     "sensor.battman_nem_gas_ocgt",
+     "sensor.battman_nem_gas_steam",
+     "sensor.battman_nem_gas_recip"
+    ],
+    "name": "Gas"
    },
    {
     "color": "var(--battman-text-muted)",
     "entity": "sensor.battman_nem_distillate",
     "name": "Distillate"
-   },
-   {
-    "color": "var(--battman-darkred)",
-    "entity": "sensor.battman_nem_gas_steam",
-    "name": "Gas (Steam)"
-   },
-   {
-    "color": "var(--battman-red)",
-    "entity": "sensor.battman_nem_gas_recip",
-    "name": "Gas (Recip)"
    }
   ],
   "hide_legend_value": true,

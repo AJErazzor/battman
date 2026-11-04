@@ -27,3 +27,17 @@ def test_nemmix_uses_it_and_needs_nothing_from_hacs() -> None:
     text = (ROOT / "custom_components/battman/cards/nemmix.yaml").read_text()
     assert "custom:battman-pie-card" in text and "custom:power-pie-card" not in text
     assert "power-pie-card" not in (ROOT / "custom_components/battman/dependencies.py").read_text()
+
+
+def test_gas_group_solar_names_and_show_option() -> None:
+    """#59: the four gas kinds are one "Gas" slice (the pie card sums them), the solar slices are
+    Solar (S) / Solar (L), and the card's `show:` picks one pie."""
+    text = (ROOT / "custom_components/battman/cards/nemmix.yaml").read_text()
+    assert "name: Gas\n" in text and "name: Solar (S)" in text and "name: Solar (L)" in text
+    assert "Gas (CCGT)" not in text and "Rooftop Solar" not in text
+    assert "sensor.battman_nem_gas_recip" in text                # the warning line still names a missing member
+    assert "Array.isArray(e.entities)" in JS and "parts.some((p) => !isFinite(p))" in JS   # a group needs every member
+    cards = (ROOT / "custom_components/battman/www/battman-cards.js").read_text()
+    for v in ('"both"', '"generation"', '"demand"'):
+        assert v in cards
+    assert "cardConfig(id, data, this._config)" in cards          # the dashboard card and Convert both apply it
