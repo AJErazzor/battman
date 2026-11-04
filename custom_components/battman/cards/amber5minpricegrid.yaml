@@ -168,12 +168,15 @@ cards:
                 : `<div style='display:flex;align-items:baseline;margin-bottom:3px;width:100%;'><span style='flex-shrink:0;display:flex;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>${label}</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'>${t}</span></span></div>`
               }
 
+              ${est ? `<style>@keyframes bm-est-pulse{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 22px var(--bm-pc),0 0 10px var(--bm-pc),0 0 3px var(--bm-pc)}}</style>` : ''}
               <div style="
                 font-size:26px;
                 font-weight:900;
                 color:${m.accent};
+                --bm-pc:${m.accent};
                 letter-spacing:-0.5px;
                 line-height:1;
+                ${est ? 'animation:bm-est-pulse 1.6s ease-in-out infinite;' : ''}
               ">
                 ${fmtC(v)}
               </div>
