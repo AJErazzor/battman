@@ -1,0 +1,161 @@
+# Battman engine.
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+#
+# Inputs: the one place that knows which Sigenergy, Amber and Solcast sensors to read.
+# It reads them ONCE, at one moment, and returns everything the decision needs as a single bundle
+# (`params`) for script.battman_engine_decide. It changes nothing and acts on nothing.
+#
+# To point Battman at a different battery, tariff or solar forecast, this is the file to change:
+# edit the sensor names in the first step, or the reads in the second.
+# The bundle keeps the engine's own units and Amber's shapes for now (see the decide script).
+
+blueprint:
+  name: Battman engine – inputs
+  description: Reads the sensors the Battman engine needs, once, and returns them as one parameter bundle. Acts on nothing.
+  domain: script
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+icon: mdi:database-import-outline
+fields:
+  for_forecast:
+    name: For the forecast
+    description: Also include the things only the forecast script needs (the Solcast half-hour solar). Leave off for a live run, it keeps the bundle small.
+    required: false
+    default: false
+    selector:
+      boolean: null
+# parallel: a forecast and a live run can both read the sensors at the same time
+mode: parallel
+max: 20
+max_exceeded: silent
+sequence:
+- variables:
+    # Which sensors to read. Change these to use different ones.
+    battery_soc: sensor.sigen_plant_battery_state_of_charge
+    battery_capacity_kwh: sensor.sigen_plant_rated_energy_capacity
+    grid_status: sensor.sigen_plant_grid_connection_status
+    grid_status_on: On Grid
+    pv_remaining: sensor.solcast_pv_forecast_forecast_remaining_today
+    buy_price_now: sensor.amber_5min_current_general_price
+    sell_price_now: sensor.amber_5min_current_feed_in_price
+    buy_price_forecast: sensor.amber_billing_interval_forecasts_general_price
+    sell_price_forecast: sensor.amber_billing_interval_forecasts_feed_in_price
+    # used only by the forecast (script.battman_engine_forecast), not by the decision
+    battery_charge_rate_kw: sensor.sigen_plant_ess_rated_charging_power
+    battery_discharge_rate_kw: sensor.sigen_plant_ess_rated_discharging_power
+    inverter_rated_kw: sensor.sigen_inverter_rated_active_power
+    pv_forecast_today: sensor.solcast_pv_forecast_forecast_today
+    pv_forecast_tomorrow: sensor.solcast_pv_forecast_forecast_tomorrow
+  alias: Which sensors
+- variables:
+    params:
+      schema: 1
+      # one moment for the whole bundle (local time, with its offset)
+      now: '{{ now().isoformat() }}'
+      soc: '{{ states(battery_soc) | float(0) }}'
+      capacity_kwh: '{{ states(battery_capacity_kwh) | float(0) | round(0) }}'
+      mode_now: '{{ states(''input_select.battman_mode'') }}'
+      on_grid: '{{ states(grid_status) == grid_status_on }}'
+      # P10 solar still to come today (kWh), or none when Solcast has no figure
+      pv_remaining_p10: '{{ state_attr(pv_remaining, ''estimate10'') }}'
+      # the 30-minute average home load (kW), or none when it has no value yet
+      load_avg_kw: >-
+        {{ (states('sensor.battman_load_30m_avg') | float) if has_value('sensor.battman_load_30m_avg') else none }}
+      # prices now ($/kWh): buy positive = you pay, sell positive = you earn
+      buy_now: '{{ states(buy_price_now) | float(0) }}'
+      sell_now: '{{ states(sell_price_now) | float(0) }}'
+      # Amber forecasts: [{start_time, duration (minutes), per_kwh}]. Feed-in per_kwh is
+      # negative when you earn.
+      # Only the fields the decision and the forecast use are kept (start_time, duration, per_kwh): Amber sends
+      # about a dozen more per slot, and carrying them made the bundle too big for HA to record a service call.
+      buy_forecast: >-
+        {% set ns = namespace(l=[]) %}
+        {% for f in (state_attr(buy_price_forecast, 'Forecasts') or []) %}
+          {% set ns.l = ns.l + [{'start_time': f.start_time, 'duration': f.duration, 'per_kwh': f.per_kwh}] %}
+        {% endfor %}
+        {{ ns.l }}
+      sell_forecast: >-
+        {% set ns = namespace(l=[]) %}
+        {% for f in (state_attr(sell_price_forecast, 'Forecasts') or []) %}
+          {% set ns.l = ns.l + [{'start_time': f.start_time, 'duration': f.duration, 'per_kwh': f.per_kwh}] %}
+        {% endfor %}
+        {{ ns.l }}
+      is_estimate: '{{ is_state(''binary_sensor.battman_estimated_price'', ''on'') }}'
+      # --- used by the forecast only (the decision ignores these) ---
+      # how fast the battery can charge and discharge (kW)
+      rated_charge_kw: '{{ states(battery_charge_rate_kw) | float(0) }}'
+      rated_discharge_kw: '{{ states(battery_discharge_rate_kw) | float(0) }}'
+      # the most the inverter can send to the grid (kW)
+      rated_inverter_kw: '{{ states(inverter_rated_kw) | float(0) }}'
+      # Solcast half-hour solar forecast for today and tomorrow: ts = start (epoch seconds), kW (middle
+      # estimate) and kw10 (the cautious P10 estimate)
+      pv_forecast: >-
+        {% set ns = namespace(l=[]) %}
+        {% for sensor_name in ([pv_forecast_today, pv_forecast_tomorrow] if for_forecast | default(false) else []) %}
+          {% for f in (state_attr(sensor_name, 'detailedForecast') or []) %}
+            {% set ns.l = ns.l + [{'ts': as_timestamp(f.period_start), 'kw': f.pv_estimate | float(0), 'kw10': f.pv_estimate10 | float(f.pv_estimate | float(0))}] %}
+          {% endfor %}
+        {% endfor %}
+        {{ ns.l }}
+      # the override timer: when it finishes, overrides that allow reset are cleared
+      override_timer:
+        active: '{{ is_state(''timer.battman_override_timer'', ''active'') }}'
+        finishes_ts: >-
+          {{ as_timestamp(state_attr('timer.battman_override_timer', 'finishes_at'), none) }}
+      # Battman's settings (the parameters sensor's attributes). Prices are cents, SOC is %.
+      settings:
+        needyTriggerPVGap: '{{ state_attr(''sensor.battman_parameters'', ''needyTriggerPVGap'') }}'
+        needyTriggerConsumption: '{{ state_attr(''sensor.battman_parameters'', ''needyTriggerConsumption'') }}'
+        sellSpikePrice1: '{{ state_attr(''sensor.battman_parameters'', ''sellSpikePrice1'') }}'
+        sellSpikeSOC1: '{{ state_attr(''sensor.battman_parameters'', ''sellSpikeSOC1'') }}'
+        sellSpikePrice2: '{{ state_attr(''sensor.battman_parameters'', ''sellSpikePrice2'') }}'
+        sellSpikeSOC2: '{{ state_attr(''sensor.battman_parameters'', ''sellSpikeSOC2'') }}'
+        buyAnytimePrice: '{{ state_attr(''sensor.battman_parameters'', ''buyAnytimePrice'') }}'
+        buyAnytimeSOC: '{{ state_attr(''sensor.battman_parameters'', ''buyAnytimeSOC'') }}'
+        sellOverridePrice: '{{ state_attr(''sensor.battman_parameters'', ''sellOverridePrice'') }}'
+        sellOverrideSOC: '{{ state_attr(''sensor.battman_parameters'', ''sellOverrideSOC'') }}'
+        sellSolarPrice: '{{ state_attr(''sensor.battman_parameters'', ''sellSolarPrice'') }}'
+        sellSolarSOC: '{{ state_attr(''sensor.battman_parameters'', ''sellSolarSOC'') }}'
+        buyOverridePrice: '{{ state_attr(''sensor.battman_parameters'', ''buyOverridePrice'') }}'
+        buyOverrideSOC: '{{ state_attr(''sensor.battman_parameters'', ''buyOverrideSOC'') }}'
+        drainBatteryPrice: '{{ state_attr(''sensor.battman_parameters'', ''drainBatteryPrice'') }}'
+        drainBatterySOC: '{{ state_attr(''sensor.battman_parameters'', ''drainBatterySOC'') }}'
+        drainBatteryPlughole: '{{ state_attr(''sensor.battman_parameters'', ''drainBatteryPlughole'') }}'
+        sellProrateSOCOffset: '{{ state_attr(''sensor.battman_parameters'', ''sellProrateSOCOffset'') }}'
+        sellLowSOCOffset: '{{ state_attr(''sensor.battman_parameters'', ''sellLowSOCOffset'') }}'
+        buyProrateSOCOffset: '{{ state_attr(''sensor.battman_parameters'', ''buyProrateSOCOffset'') }}'
+        buyHighSOCOffset: '{{ state_attr(''sensor.battman_parameters'', ''buyHighSOCOffset'') }}'
+        dailyNetworkCharge: '{{ state_attr(''sensor.battman_parameters'', ''dailyNetworkCharge'') }}'
+        # which overrides the timer is allowed to clear (forecast only)
+        sellOverrideAllowReset: '{{ state_attr(''sensor.battman_parameters'', ''sellOverrideAllowReset'') }}'
+        buyOverrideAllowReset: '{{ state_attr(''sensor.battman_parameters'', ''buyOverrideAllowReset'') }}'
+        buyAnytimeAllowReset: '{{ state_attr(''sensor.battman_parameters'', ''buyAnytimeAllowReset'') }}'
+        sellSolarAllowReset: '{{ state_attr(''sensor.battman_parameters'', ''sellSolarAllowReset'') }}'
+        drainBatteryAllowReset: '{{ state_attr(''sensor.battman_parameters'', ''drainBatteryAllowReset'') }}'
+      soc_curves: '{{ state_attr(''sensor.battman_soc_curves'', ''curves'') | default([]) }}'
+      price_curves: '{{ state_attr(''sensor.battman_price_curves'', ''curves'') | default([]) }}'
+      rules:
+        buy_on: '{{ states(''sensor.battman_buy_rules'') | lower == ''true'' }}'
+        buy: '{{ state_attr(''sensor.battman_buy_rules'', ''rules'') or [] }}'
+        sell_on: '{{ states(''sensor.battman_sell_rules'') | lower == ''true'' }}'
+        sell: '{{ state_attr(''sensor.battman_sell_rules'', ''rules'') or [] }}'
+      # today's buy and sell totals ($)
+      day:
+        buy: '{{ state_attr(''sensor.battman_buy_total'', ''day'') }}'
+        sell: '{{ state_attr(''sensor.battman_sell_total'', ''day'') }}'
+      # what Battman has paid and earned so far (behind the "protected sell" floor)
+      tracking:
+        buy:
+          Cost: '{{ state_attr(''sensor.battman_buy_total'', ''trackingA_Cost'') }}'
+          kwh: '{{ state_attr(''sensor.battman_buy_total'', ''trackingA_kwh'') }}'
+          CutOffcKwh: '{{ state_attr(''sensor.battman_buy_total'', ''trackingA_CutOffcKwh'') }}'
+          CutOffKwh: '{{ state_attr(''sensor.battman_buy_total'', ''trackingA_CutOffKwh'') }}'
+          Offset: '{{ state_attr(''sensor.battman_buy_total'', ''trackingA_Offset'') }}'
+          AllowLastChance: '{{ state_attr(''sensor.battman_buy_total'', ''trackingA_AllowLastChance'') }}'
+        sell:
+          Cost: '{{ state_attr(''sensor.battman_sell_total'', ''trackingA_Cost'') }}'
+          kwh: '{{ state_attr(''sensor.battman_sell_total'', ''trackingA_kwh'') }}'
+  alias: Read the sensors
+- stop: Inputs read
+  response_variable: params

@@ -1,0 +1,363 @@
+# Battman engine.
+# Managed by Battman: written into your config and replaced on every Battman update.
+# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+#
+# Forecast: what Battman's real decision would do over the next hours, slot by slot.
+# It changes no mode, no switch and no setting. It only works out and RETURNS a timeline.
+#
+# What it does:
+#   1. reads the sensors once (script.battman_engine_inputs) = "now";
+#   2. applies your what-if changes on top (SOC, prices, solar, load, any setting);
+#   3. walks forward slot by slot. For each slot it asks the real decision
+#      (script.battman_engine_decide) what Battman would do with the battery level, prices and
+#      settings at that moment, then works out where the battery ends up and what it costs or earns.
+#
+# Slots: the first is "right now" (the live 5-minute price). After that, one slot per Amber forecast
+# entry: 5-minute entries for the first hour or so, then 30-minute entries. The first slot ends where
+# the first forecast entry starts.
+#
+# What is held at today's values (so later hours are marked as approximate): the curves, rules,
+# today's totals, the "protected sell" floor, the load, the grid being on. What IS followed: the clock
+# and tariff windows, the price in each slot, the solar forecast (the cautious P10 figure, scaled by
+# solar_scale), the battery level carried from slot to slot, and the override timer running out.
+# It is NOT exact: Amber's forecast prices move, spikes are unknown, and the battery's real behaviour
+# in each mode is simplified (see "Battery model" below).
+#
+# Response: {approximate, generated, slots: [...], total: {...}, assumptions: [...], seconds}
+
+blueprint:
+  name: Battman engine – forecast
+  description: Forecast what Battman's real decision would do over the next hours, slot by slot. Changes nothing.
+  domain: script
+  source_url: https://github.com/AJErazzor/battman
+  input: {}
+icon: mdi:chart-timeline-variant
+mode: queued
+max: 3
+max_exceeded: silent
+fields:
+  hours:
+    name: Hours ahead
+    description: How far to look (the forecast data runs out after about 23 hours)
+    required: false
+    default: 24
+    selector:
+      number:
+        min: 1
+        max: 48
+  what_if:
+    name: What-if changes
+    description: >-
+      Anything to change before forecasting, in the same shape as the bundle from
+      script.battman_engine_inputs. Top-level values are replaced (for example soc: 40), and a
+      group is merged (for example settings: {sellOverridePrice: 30, sellOverrideSOC: 50}).
+    required: false
+    selector:
+      object: null
+  solar_scale:
+    name: Solar scale
+    description: Multiply the solar forecast (1 = as forecast, 0 = no sun)
+    required: false
+    default: 1
+    selector:
+      number:
+        min: 0
+        max: 2
+        step: 0.05
+  price_shift:
+    name: Price shift
+    description: "Add to every buy and sell price, in $/kWh. For example {buy: 0.05, sell: -0.02}."
+    required: false
+    selector:
+      object: null
+  load_profile:
+    name: Hourly house load
+    description: >-
+      24 numbers, the house load in kW for each hour of the day (hour 0 first), for example yesterday's
+      hour-by-hour average. Each future slot then uses its own hour's load. Leave empty to use the
+      30-minute average for every slot. A fixed load_kw overrides this.
+    required: false
+    selector:
+      object: null
+  load_kw:
+    name: House load
+    description: House load in kW to use for every slot (leave empty to use the 30-minute average)
+    required: false
+    selector:
+      number:
+        min: 0
+        max: 30
+        step: 0.1
+sequence:
+- variables:
+    started: '{{ as_timestamp(now()) }}'
+  alias: Start the clock
+- action: script.battman_engine_inputs
+  data:
+    for_forecast: true
+  response_variable: bundle
+  alias: Read the sensors once (now)
+# ---------------------------------------------------------------------------------------------
+# Apply the what-if changes, the price shift and the solar scale
+# ---------------------------------------------------------------------------------------------
+- variables:
+    base: >-
+      {% set ns = namespace(p=bundle) %}
+      {% for k, v in (what_if | default({}, true)).items() %}
+        {% if v is mapping and ns.p.get(k) is mapping %}
+          {% set ns.p = dict(ns.p.items() | list + [(k, dict(ns.p[k].items() | list + v.items() | list))]) %}
+        {% else %}
+          {% set ns.p = dict(ns.p.items() | list + [(k, v)]) %}
+        {% endif %}
+      {% endfor %}
+      {% if load_kw is defined and load_kw is number %}
+        {% set ns.p = dict(ns.p.items() | list + [('load_avg_kw', load_kw)]) %}
+      {% endif %}
+      {{ ns.p }}
+    shift_buy: '{{ (price_shift | default({}, true)).get(''buy'', 0) | float(0) }}'
+    shift_sell: '{{ (price_shift | default({}, true)).get(''sell'', 0) | float(0) }}'
+    solar_factor: '{{ solar_scale if solar_scale is defined and solar_scale is number else 1 }}'
+  alias: Start from now, plus the what-if changes
+- variables:
+    # the price shift applied to the forecast lists (Amber's feed-in per_kwh is negative when you earn)
+    buy_fc: >-
+      {% set ns = namespace(l=[]) %}
+      {% for e in base.buy_forecast %}
+        {% set ns.l = ns.l + [dict(e.items() | list + [('per_kwh', ((e.per_kwh | float(0)) + shift_buy) | round(6))])] %}
+      {% endfor %}
+      {{ ns.l }}
+    sell_fc: >-
+      {% set ns = namespace(l=[]) %}
+      {% for e in base.sell_forecast %}
+        {% set ns.l = ns.l + [dict(e.items() | list + [('per_kwh', ((e.per_kwh | float(0)) - shift_sell) | round(6))])] %}
+      {% endfor %}
+      {{ ns.l }}
+    batt_kwh: '{{ base.capacity_kwh | float(0) }}'
+    charge_kw: '{{ base.rated_charge_kw | float(0) }}'
+    discharge_kw: '{{ base.rated_discharge_kw | float(0) }}'
+    # the most the inverter may send to the grid (its rated power; the live export-limit setting is changed by the
+    # curtail automation, so it is not used here)
+    export_cap_kw: '{{ base.rated_inverter_kw if base.rated_inverter_kw is number and base.rated_inverter_kw > 0 else discharge_kw }}'
+    house_kw: '{{ base.load_avg_kw if base.load_avg_kw is number else 1.0 }}'
+    # the hour-by-hour profile is used for later slots when it is 24 numbers and no fixed load was asked for
+    use_profile: >-
+      {{ load_profile is defined and load_profile is iterable and load_profile is not string
+         and load_profile | length == 24 and load_profile | select('number') | list | length == 24
+         and not (load_kw is defined and load_kw is number) }}
+    horizon_end: '{{ as_timestamp(base.now) + (hours | default(24, true) | float(24)) * 3600 }}'
+  alias: Shift the prices; the battery and the load
+# ---------------------------------------------------------------------------------------------
+# The slots: "now", then one per forecast entry
+# ---------------------------------------------------------------------------------------------
+- variables:
+    slots: >-
+      {% set ns = namespace(l=[]) %}
+      {# slot 0: right now, at the live 5-minute price, up to where the first forecast entry starts #}
+      {% set first_start = as_timestamp(buy_fc[0].start_time) if buy_fc | length > 0 else as_timestamp(base.now) + 300 %}
+      {% set minutes0 = [[(first_start - as_timestamp(base.now)) / 60, 0.5] | max, 5] | min %}
+      {% set ns.l = [{'start': base.now, 'ts': as_timestamp(base.now), 'minutes': minutes0, 'buy': (base.buy_now | float(0)) + shift_buy, 'sell': (base.sell_now | float(0)) + shift_sell, 'est': base.is_estimate, 'fi': 0, 'live': true, 'sell_known': true}] %}
+      {% for e in buy_fc %}
+        {% set ts = as_timestamp(e.start_time) %}
+        {% if ts < horizon_end %}
+          {# the matching feed-in entry (same start time) #}
+          {% set se = sell_fc[loop.index0] if sell_fc | length > loop.index0 and sell_fc[loop.index0].start_time == e.start_time else (sell_fc | selectattr('start_time', 'eq', e.start_time) | first | default(none)) %}
+          {% set ns.l = ns.l + [{'start': as_local(as_datetime(e.start_time)).isoformat(), 'ts': ts, 'minutes': e.duration | float(5), 'buy': e.per_kwh | float(0), 'sell': (0 - (se.per_kwh | float(0))) if se is not none else 0, 'est': false, 'fi': loop.index0, 'live': false, 'sell_known': se is not none}] %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.l }}
+  alias: Work out the slots
+# ---------------------------------------------------------------------------------------------
+# Walk forward
+# ---------------------------------------------------------------------------------------------
+- variables:
+    soc: '{{ base.soc | float(0) }}'
+    mode_before: '{{ base.mode_now }}'
+    results: []
+    failed: 0
+    # The slots still to do. While the battery is moving (charging, selling, draining) a slot is done
+    # 5 minutes at a time and the rest of it is put back on this list, so the real decision is asked
+    # again every 5 minutes, as the live engine does.
+    queue: '{{ slots }}'
+    i: 0
+  alias: Where the walk starts
+- repeat:
+    while: '{{ i < queue | length }}'
+    sequence:
+    - variables:
+        slot: '{{ queue[i] }}'
+        # The override timer: once it has run out, overrides that allow reset are cleared
+        timer_done: >-
+          {{ base.override_timer.active and base.override_timer.finishes_ts is number
+             and slot.ts >= base.override_timer.finishes_ts }}
+        settings_now: >-
+          {% set ns = namespace(s=base.settings) %}
+          {% if timer_done %}
+            {% for pre in ['sellOverride', 'buyOverride', 'buyAnytime', 'sellSolar', 'drainBattery'] %}
+              {% if base.settings.get(pre ~ 'AllowReset') is not false %}
+                {% set ns.s = dict(ns.s.items() | list + [(pre ~ 'Price', 0), (pre ~ 'SOC', 0)]) %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.s }}
+        # House load for this slot: the live average for "now", then the profile for that hour (if given)
+        slot_load: >-
+          {{ load_profile[as_local(as_datetime(slot.start)).hour] if use_profile and not slot.live else house_kw }}
+        # Solar: P10 kW in this slot, and P10 kWh still to come before midnight (for the "sun is poor" check)
+        slot_midnight: >-
+          {{ as_timestamp((as_local(as_datetime(slot.start)).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))) }}
+        pv_now: >-
+          {% set p = base.pv_forecast | selectattr('ts', 'le', slot.ts) | list | last | default(none) %}
+          {{ (((p.kw10 if p is not none and slot.ts < p.ts + 1800 else 0) | float(0)) * solar_factor) | round(4) }}
+        pv_left: >-
+          {% set known = base.pv_forecast | selectattr('ts', 'gt', slot.ts - 1800) | selectattr('ts', 'lt', slot_midnight) | list %}
+          {{ (((known | map(attribute='kw10') | map('float') | sum) * 0.5 * solar_factor) | round(4)) if known | length > 0 else none }}
+      alias: This slot's settings and solar
+    - action: script.battman_engine_decide
+      data:
+        params:
+          schema: 1
+          now: '{{ slot.start }}'
+          soc: '{{ soc }}'
+          capacity_kwh: '{{ base.capacity_kwh }}'
+          mode_now: '{{ mode_before }}'
+          on_grid: '{{ base.on_grid }}'
+          pv_remaining_p10: '{{ pv_left }}'
+          load_avg_kw: '{{ slot_load if use_profile and not slot.live else base.load_avg_kw }}'
+          buy_now: '{{ slot.buy }}'
+          sell_now: '{{ slot.sell }}'
+          buy_forecast: '{{ buy_fc[slot.fi:] }}'
+          sell_forecast: '{{ sell_fc[slot.fi:] }}'
+          is_estimate: '{{ slot.est }}'
+          settings: '{{ settings_now }}'
+          soc_curves: '{{ base.soc_curves }}'
+          price_curves: '{{ base.price_curves }}'
+          rules: '{{ base.rules }}'
+          day: '{{ base.day }}'
+          tracking: '{{ base.tracking }}'
+      response_variable: decision
+      continue_on_error: true
+      alias: What would Battman do? (the real decision)
+    - if: '{{ decision is defined and decision is not none and decision.mode is defined }}'
+      then:
+      - variables:
+          # ---------------- Battery model ----------------
+          # A simple energy balance for the slot (kWh): solar in, house out, the battery does what the mode
+          # says, and the grid makes up the difference. Charge Solar Off / Float Solar Off ignore the solar.
+          # Drain pays nothing for what it sends out. A negative sell price (curtail) blocks export.
+          mode_now_chosen: '{{ decision.mode }}'
+          # a battery that is moving is followed 5 minutes at a time
+          split: '{{ mode_now_chosen in [''Charge'', ''Charge Solar Off'', ''Discharge'', ''Drain''] and slot.minutes > 5.05 }}'
+          piece_minutes: '{{ 5 if split else slot.minutes }}'
+          hrs: '{{ piece_minutes / 60 }}'
+          solar_on: '{{ mode_now_chosen not in [''Charge Solar Off'', ''Float Solar Off''] }}'
+          # Every figure below is rounded to 4 places: a leftover like 5e-17 would be written with an
+          # exponent, and Home Assistant keeps such numbers as text, which breaks the next comparison.
+          pv_kwh: '{{ ((pv_now * hrs) if solar_on else 0) | round(4) }}'
+          load_kwh: '{{ (slot_load * hrs) | round(4) }}'
+          room_kwh: '{{ ((100 - soc) / 100 * batt_kwh) | round(4) }}'
+          have_kwh: '{{ (soc / 100 * batt_kwh) | round(4) }}'
+          charge_cap: '{{ ([charge_kw * hrs, room_kwh] | min) | round(4) }}'
+          discharge_cap: '{{ ([discharge_kw * hrs, have_kwh] | min) | round(4) }}'
+          # selling is also limited by what the inverter may send to the grid (what is left after the house and solar)
+          export_cap_kwh: '{{ (export_cap_kw * hrs) | round(4) }}'
+          sell_cap: '{{ ([discharge_cap, [export_cap_kwh + load_kwh - pv_kwh, 0] | max] | min) | round(4) }}'
+          batt_kwh_change: >-
+            {% if mode_now_chosen in ['Charge', 'Charge Solar Off'] %}
+              {{ charge_cap }}
+            {% elif mode_now_chosen == 'Discharge' %}
+              {{ 0 - sell_cap }}
+            {% elif mode_now_chosen == 'Drain' %}
+              {{ 0 - discharge_cap }}
+            {% elif mode_now_chosen == 'Self Consume' %}
+              {% set net = pv_kwh - load_kwh %}
+              {{ (([net, charge_cap] | min) if net >= 0 else (0 - ([0 - net, discharge_cap] | min))) | round(4) }}
+            {% else %}
+              0
+            {% endif %}
+          grid_kwh: '{{ (load_kwh + batt_kwh_change - pv_kwh) | round(4) }}'
+          import_kwh: '{{ ([grid_kwh, 0] | max) | round(4) }}'
+          export_kwh: >-
+            {% if decision.curtail or mode_now_chosen == 'Drain' %}0{% else %}{{ ([[0 - grid_kwh, 0] | max, export_cap_kwh] | min) | round(4) }}{% endif %}
+          slot_money: '{{ ((export_kwh * slot.sell) - (import_kwh * slot.buy)) | round(4) }}'
+          soc_after: '{{ (([[soc + batt_kwh_change / batt_kwh * 100, 0] | max, 100] | min) if batt_kwh > 0 else soc) | round(3) }}'
+          # what is left of this slot after the 5-minute piece (only when it was cut)
+          remainder: >-
+            {{ dict(slot.items() | list + [('start', as_local(as_datetime(slot.start) + timedelta(minutes=5)).isoformat()), ('ts', slot.ts + 300), ('minutes', slot.minutes - 5), ('live', false)]) if split else none }}
+          record:
+            start: '{{ slot.start }}'
+            minutes: '{{ piece_minutes }}'
+            live: '{{ slot.live }}'
+            mode: '{{ mode_now_chosen }}'
+            buy_reason: '{{ decision.run.buyReason[2] }}'
+            buy_fires: '{{ decision.run.buyReason[0] }}'
+            sell_reason: '{{ decision.run.sellReason[2] }}'
+            sell_fires: '{{ decision.run.sellReason[0] }}'
+            soc_start: '{{ soc | round(1) }}'
+            soc_end: '{{ soc_after | round(1) }}'
+            battery_kwh: '{{ batt_kwh_change | round(3) }}'
+            import_kwh: '{{ import_kwh | round(3) }}'
+            export_kwh: '{{ export_kwh | round(3) }}'
+            money: '{{ slot_money | round(4) }}'
+            buy_price: '{{ slot.buy | round(4) }}'
+            sell_price: '{{ slot.sell | round(4) }}'
+            # the price Battman would buy at or below / sell at or above in this slot (an override price wins)
+            buy_line: >-
+              {{ ((decision.run.buyPriceOverride | float(0)) if (decision.run.buyPriceOverride | float(0)) > 0 else (decision.run.buyPrice | float(0))) | round(4) }}
+            sell_line: >-
+              {{ ((decision.run.sellPriceOverride | float(0)) if (decision.run.sellPriceOverride | float(0)) > 0 else (decision.run.sellPrice | float(0))) | round(4) }}
+            buy_override: '{{ (decision.run.buyPriceOverride | float(0)) > 0 }}'
+            sell_override: '{{ (decision.run.sellPriceOverride | float(0)) > 0 }}'
+            # a buy / sell rule is what set the line
+            buy_ruled: '{{ (decision.run.buyPriceRule | float(0)) != 0 and (decision.run.buyPriceRule | float(0)) == (decision.run.buyPrice | float(0)) }}'
+            sell_ruled: '{{ (decision.run.sellPriceRule | float(0)) != 0 and (decision.run.sellPriceRule | float(0)) == (decision.run.sellPrice | float(0)) }}'
+            buy_below: '{{ decision.run.buyBelow | float(0) | round(2) }}'
+            sell_above: '{{ decision.run.sellAbove | float(0) | round(2) }}'
+            pv_kw: '{{ pv_now | round(2) }}'
+            # the house load used for this slot (kW)
+            load_kw: '{{ slot_load | round(2) }}'
+            curtail: '{{ decision.curtail }}'
+            estimate: '{{ slot.est }}'
+            sell_price_known: '{{ slot.sell_known }}'
+            overrides_expired: '{{ timer_done }}'
+        alias: Battery and money for this slot
+      - variables:
+          results: '{{ results + [record] }}'
+          soc: '{{ soc_after }}'
+          mode_before: '{{ mode_now_chosen }}'
+          queue: '{{ (queue[:i + 1] + [remainder] + queue[i + 1:]) if split else queue }}'
+          i: '{{ i + 1 }}'
+        alias: Carry the battery and the mode on, and put back what is left of a cut slot
+      else:
+      - variables:
+          failed: '{{ failed + 1 }}'
+          i: '{{ i + 1 }}'
+        alias: Count a slot the decision failed on
+  alias: Walk the slots
+# ---------------------------------------------------------------------------------------------
+# The answer
+# ---------------------------------------------------------------------------------------------
+- variables:
+    answer:
+      approximate: true
+      generated: '{{ base.now }}'
+      slots: '{{ results }}'
+      failed_slots: '{{ failed }}'
+      total:
+        money: '{{ results | map(attribute=''money'') | map(''float'') | sum | round(4) }}'
+        import_kwh: '{{ results | map(attribute=''import_kwh'') | map(''float'') | sum | round(3) }}'
+        export_kwh: '{{ results | map(attribute=''export_kwh'') | map(''float'') | sum | round(3) }}'
+        soc_start: '{{ base.soc }}'
+        soc_end: '{{ soc | round(1) }}'
+      # (every line is quoted: an unquoted "word: word" would be read as a label and a value, not as a sentence)
+      assumptions:
+        - "Slot 0 is right now at the live price. Later slots use Amber's forecast prices (5-minute, then 30-minute)."
+        - "Solar is the cautious P10 forecast times the solar scale."
+        - "{{ 'House load follows the hour-by-hour profile it was given (the page gives yesterday, hour by hour). The first slot uses the live average.' if use_profile else 'House load is held at the 30-minute average for every slot.' }}"
+        - "Curves, rules, today's totals and the protected-sell floor are held at today's values."
+        - "A price above your spike price in Amber's forecast does trigger a spike sell. Spikes Amber has not forecast are not known, so they are not shown."
+        - "The battery model is simple. It charges and discharges at the rated speed (selling is limited to the inverter's rating), with no losses."
+        - "While the battery is charging, selling or draining, the real decision is asked again every 5 minutes, as the live engine does."
+      seconds: '{{ (as_timestamp(now()) - started) | round(2) }}'
+  alias: Put the answer together
+- stop: Forecast ready
+  response_variable: answer

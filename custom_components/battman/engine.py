@@ -47,6 +47,25 @@ SCRIPTS: dict[str, dict[str, Any]] = {
         "icon": "mdi:battery-sync",
         "use_blueprint": {"path": "battman/battman_engine.yaml", "input": {}},
     },
+    # the three scripts the engine is made of (the engine itself reads, decides, then acts)
+    "battman_engine_inputs": {
+        "alias": "Battman engine – inputs",
+        "description": NOTE,
+        "icon": "mdi:database-import-outline",
+        "use_blueprint": {"path": "battman/battman_engine_inputs.yaml", "input": {}},
+    },
+    "battman_engine_decide": {
+        "alias": "Battman engine – decide",
+        "description": NOTE,
+        "icon": "mdi:head-cog-outline",
+        "use_blueprint": {"path": "battman/battman_engine_decide.yaml", "input": {}},
+    },
+    "battman_engine_forecast": {
+        "alias": "Battman engine – forecast",
+        "description": NOTE,
+        "icon": "mdi:chart-timeline-variant",
+        "use_blueprint": {"path": "battman/battman_engine_forecast.yaml", "input": {}},
+    },
     "battman_apply_scene": {
         "alias": "Battman apply scene",
         "description": NOTE,
@@ -79,7 +98,8 @@ AUTOMATIONS: list[dict[str, Any]] = [
 # Engine automations added after the first release of the engine. An install that already has the
 # engine gets each one made once, by the first start of a version that has it (so one you delete
 # stays deleted); a fresh install gets them with the rest.
-ADDED_LATER = ("battman_engine_curve_switcher",)
+# The three engine scripts are in the same position (an install that already had the engine gets them once).
+ADDED_LATER = ("battman_engine_curve_switcher", "battman_engine_inputs", "battman_engine_decide", "battman_engine_forecast")
 
 
 class EngineError(Exception):
@@ -104,11 +124,11 @@ def missing(hass: HomeAssistant) -> list[str]:
 async def async_write_missing(hass: HomeAssistant, only: set[str] | None = None) -> list[str]:
     """Write any missing engine automations/scripts into the files (no reload). Returns ids added.
 
-    `only`: just these automation ids (no scripts), for the ones added after the first release.
+    `only`: just these ids (automations and scripts), for the ones added after the first release.
     """
     auto_path, script_path = automation_files.paths(hass)
     autos = AUTOMATIONS if only is None else [a for a in AUTOMATIONS if a["id"] in only]
-    scripts = SCRIPTS if only is None else {}
+    scripts = SCRIPTS if only is None else {k: v for k, v in SCRIPTS.items() if k in only}
     try:
         added = await hass.async_add_executor_job(
             automation_files.write_missing, auto_path, script_path, autos, scripts
