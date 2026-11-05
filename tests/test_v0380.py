@@ -105,6 +105,25 @@ async def test_an_existing_install_gets_it_once(hass: HomeAssistant) -> None:
     assert "battman_engine_curve_switcher" in {a["id"] for a in yaml.safe_load(path.read_text())}
 
 
+async def test_an_existing_install_gets_the_engine_scripts_once(hass: HomeAssistant) -> None:
+    """The engine is made of three scripts (inputs, decide, forecast) besides itself: an install from before
+    they existed gets each one made once, and one you delete stays deleted."""
+    entry = await _setup(hass)
+    names = {"battman_engine_inputs", "battman_engine_decide", "battman_engine_forecast"}
+    path = Path(hass.config.path("scripts.yaml"))
+    assert names <= set(yaml.safe_load(path.read_text()))                         # a fresh install has them
+    path.write_text(yaml.safe_dump({k: v for k, v in yaml.safe_load(path.read_text()).items() if k not in names},
+                                   allow_unicode=True))
+    assert await hass.config_entries.async_reload(entry.entry_id)               # offered already: stays deleted
+    await hass.async_block_till_done()
+    assert not names & set(yaml.safe_load(path.read_text()))
+    hass.config_entries.async_update_entry(                                       # an install from before they existed
+        entry, data={**entry.data, "automations_offered": [i for i in entry.data["automations_offered"] if i not in names]})
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert names <= set(yaml.safe_load(path.read_text()))
+
+
 async def test_below_rule_applies_a_preset_and_off_puts_the_curve_back(hass: HomeAssistant) -> None:
     await _setup(hass)
     await _arm(hass)

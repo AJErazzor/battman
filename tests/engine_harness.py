@@ -135,10 +135,30 @@ def set_world(hass: HomeAssistant, world: dict) -> None:
                         "duration": 30, "per_kwh": round(sign * v, 4), "spot_per_kwh": v, "estimate": True})
         return out
 
+    def fc_real(base: float, sign: float) -> list[dict]:
+        """The shape the live Amber sensor has: the first entry is the NEXT 5-minute interval, 5-minute
+        entries run to the first :00 / :30 an hour or more ahead, then 30-minute entries to about 23 h."""
+        out = []
+        t = start_ + timedelta(minutes=5)
+        edge = t + timedelta(minutes=60)                       # on a 5-minute mark already
+        edge += timedelta(minutes=(-edge.minute) % 30)         # up to the next :00 / :30
+        while t < edge:
+            v = round(base * (0.5 + rnd.random() * 1.5), 4)
+            out.append({"start_time": t.isoformat(), "end_time": (t + timedelta(minutes=5)).isoformat(),
+                        "duration": 5, "per_kwh": round(sign * v, 4), "spot_per_kwh": v, "estimate": True})
+            t += timedelta(minutes=5)
+        for _ in range(46):
+            v = round(base * (0.5 + rnd.random() * 1.5), 4)
+            out.append({"start_time": t.isoformat(), "end_time": (t + timedelta(minutes=30)).isoformat(),
+                        "duration": 30, "per_kwh": round(sign * v, 4), "spot_per_kwh": v, "estimate": True})
+            t += timedelta(minutes=30)
+        return out
+
+    make = fc_real if world.get("shape") == "real" else fc   # default: 48 even 30-minute entries
     hass.states.async_set("sensor.amber_billing_interval_forecasts_general_price", str(buy),
-                          {"Forecasts": fc(buy, 1)})
+                          {"Forecasts": make(buy, 1)})
     hass.states.async_set("sensor.amber_billing_interval_forecasts_feed_in_price", str(sell),
-                          {"Forecasts": fc(sell, -1)})
+                          {"Forecasts": make(sell, -1)})
     rem = float(world.get("pv_remaining", 10))
     hass.states.async_set("sensor.solcast_pv_forecast_forecast_remaining_today", str(rem),
                           {"estimate": rem, "estimate10": rem * 0.7, "estimate90": rem * 1.2})

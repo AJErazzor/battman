@@ -285,31 +285,25 @@ def state_states(scen, now: datetime | None = None):
 async def test_state(hass: HomeAssistant) -> None:
     m = (await _card(hass, "state"))["config"]
     main_m = m["custom_fields"]["content"]
-    pop_m = m["tap_action"]["browser_mod"]["data"]["content"]
+    # the tap opens the forecast page (the engine's own forecast): there is no popup text to draw here
+    assert m["tap_action"]["browser_mod"]["data"]["content"] == {
+        "type": "iframe", "url": "/battmanfiles/battman-forecast.html", "aspect_ratio": "150%"}
 
     def jobs_for(now=None):
-        jobs = []
-        for scen in range(5):
-            st = state_states(scen, now)
-            # the popup's look-ahead with sell rules off (test_v0231 checks them against the engine)
-            pop = json.loads(json.dumps(st))
-            pop["sensor.battman_sell_rules"]["state"] = "false"
-            jobs += [(main_m, st, "sensor.battman_parameters"), (pop_m, pop, None)]
-        return jobs
+        return [(main_m, state_states(scen, now), "sensor.battman_parameters") for scen in range(5)]
 
     out = run_js(jobs_for())
     for o in out:
         assert not o.startswith("THROW"), o
-    assert all(len(out[2 * s]) > 500 for s in range(5))
-    assert len({out[2 * s] for s in range(5)}) > 2            # the scenarios really differ
+    assert all(len(out[s]) > 500 for s in range(5))
+    assert len({out[s] for s in range(5)}) > 2                # the scenarios really differ
 
     # at a fixed time, zone and locale, recorded as snapshots
     out = run_js(jobs_for(FIXED_NOW), prelude=frozen_clock(FIXED_NOW), env=PINNED)
     for scen in range(5):
-        assert not out[2 * scen].startswith("THROW"), out[2 * scen]
-        assert len(out[2 * scen]) > 500
-        assert_snapshot(__file__, f"state-main-{scen}", out[2 * scen])
-        assert_snapshot(__file__, f"state-popup-{scen}", out[2 * scen + 1])
+        assert not out[scen].startswith("THROW"), out[scen]
+        assert len(out[scen]) > 500
+        assert_snapshot(__file__, f"state-main-{scen}", out[scen])
 
     def strip(x):
         if isinstance(x, dict):
@@ -326,16 +320,7 @@ async def test_state(hass: HomeAssistant) -> None:
 async def test_state_missing(hass: HomeAssistant) -> None:
     m = (await _card(hass, "state"))["config"]
     main = m["custom_fields"]["content"]
-    pop = m["tap_action"]["browser_mod"]["data"]["content"]
     gone = state_states(0)
     del gone["sensor.battman_run"]
-    no_cap = state_states(0)
-    no_cap["sensor.sigen_plant_rated_energy_capacity"]["state"] = "unavailable"
-    no_sun = state_states(0)
-    del no_sun["sensor.solcast_pv_forecast_forecast_tomorrow"]
-    out = run_js([(main, gone, None), (pop, gone, None), (pop, no_cap, None), (pop, no_sun, None)])
+    out = run_js([(main, gone, None)])
     assert "State: missing sensor.battman_run" in out[0]
-    assert "Next hours: missing sensor.battman_run" in out[1]
-    assert "battery capacity (sensor.sigen_plant_rated_energy_capacity) unavailable" in out[2]
-    assert "40.3" not in out[2]
-    assert out[3].startswith('<div style="padding:4px') and "assumes no solar" in out[3]

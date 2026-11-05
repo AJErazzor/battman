@@ -32,9 +32,11 @@ def js(expr_list: list[str]) -> list:
 
 
 def test_engine_script_has_no_emoji() -> None:
-    text = (ROOT / "custom_components/battman/blueprints/script/battman_engine.yaml").read_text()
-    assert not EMOJI.findall(text)
-    for head in ("Run: {{ now()", "Mode:", "Prices:", "Battery:", "SOC Limits:", "Solar:", "Actions:",
+    scripts = ROOT / "custom_components/battman/blueprints/script"
+    for name in ("battman_engine", "battman_engine_inputs", "battman_engine_decide", "battman_engine_forecast"):
+        assert not EMOJI.findall((scripts / f"{name}.yaml").read_text()), name
+    text = (scripts / "battman_engine_decide.yaml").read_text()
+    for head in ("Run: {{ as_local(", "Mode:", "Prices:", "Battery:", "SOC Limits:", "Solar:", "Actions:",
                  "Sell Forecasts:", "Buy Forecasts:", "Version:", "Debug: ", "(Spike 1)", "(Spike 2)", "(Bad!)"):
         assert head in text, head
     # Battman's log text (the Debug Message step's prettyMessage): the headings and lines above
