@@ -165,8 +165,12 @@ def retire_old_settings(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, An
         entity_id = reg.async_get_entity_id(domain, DOMAIN, f"{entry.entry_id}_{key}")
         if entity_id is None:
             continue
-        # HA 2026.11 replaced the last_states dict with async_get_stored_state()
-        stored = restored.async_get_stored_state(entity_id)
+        # HA 2026.11 replaced the last_states dict with async_get_stored_state(); older HA only has the dict
+        stored = (
+            restored.async_get_stored_state(entity_id)
+            if hasattr(restored, "async_get_stored_state")
+            else restored.last_states.get(entity_id)
+        )
         if stored is not None and stored.state.state not in ("unknown", "unavailable"):
             try:
                 values[attr] = convert(stored.state.state)
