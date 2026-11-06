@@ -7,6 +7,10 @@
  *   - hide_legend_value: legend shows the name and % only
  *   - a slice can group several sensors: { name: Gas, entities: [sensor.a, sensor.b] } is drawn as
  *     their sum (positive values only). If any member has no value the slice isn't drawn.
+ *   - style: bar draws one horizontal stacked bar instead of the doughnut (v0.44.0, #63), with the
+ *     same options: slice_gap is the gap between blocks (% of the bar), min_pct_label puts the %
+ *     inside a block of at least that many percent (when it fits), and the legend sits under the
+ *     bar (or above it with legend: top) as a wrapping row naming every block, small ones too. The total is shown above the bar.
  * Used by the NEM mix card, so Battman needs no extra HACS card for it.
  *
  * A dependency-free doughnut chart card for Home Assistant with built-in
@@ -143,6 +147,7 @@ class PowerPieCard extends HTMLElement {
     c.legend = ["auto", "top", "bottom", "left", "right", "none"].includes(c.legend)
       ? c.legend : "auto";
     c.other_text = c.other_text || "Other";
+    c.style = c.style === "bar" ? "bar" : "pie";
     this._include = (c.filter && c.filter.include ? c.filter.include : []).map(compileRule);
     this._exclude = (c.filter && c.filter.exclude ? c.filter.exclude : []).map(compileRule);
     this._groups = new Map();       // group slice id -> its member entity ids
@@ -269,6 +274,31 @@ class PowerPieCard extends HTMLElement {
         position: absolute; top: 2px; right: 2px; font-size: 11px;
         color: var(--secondary-text-color, #52514e); opacity: .7; display: none;
       }
+      /* style: bar — one stacked bar, legend as a wrapping row under (or over) it */
+      ha-card.bar .body { min-height: 0; container-type: inline-size; }
+      ha-card.bar .layout { align-items: stretch; flex: 0 0 auto; gap: 6px; }
+      ha-card.bar .chart { height: auto; aspect-ratio: auto; width: 100%; flex: 0 0 auto; }
+      ha-card.bar .total { font-size: 13px; color: var(--secondary-text-color, #52514e); margin-bottom: 4px; }
+      ha-card.bar .total b { font-size: 15px; font-weight: 600; color: var(--primary-text-color, #0b0b0b); }
+      .bar-track { position: relative; height: 28px; border-radius: 6px; overflow: hidden; }
+      .seg {
+        position: absolute; top: 0; bottom: 0; cursor: pointer; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        transition: left .6s ease, width .6s ease, opacity .3s ease, filter .15s ease;
+      }
+      .seg.dim { opacity: 0.35; }
+      .seg.hot { filter: brightness(1.15); }
+      .seg .seg-label {
+        font-size: 12px; font-weight: 600; color: rgba(0,0,0,.78);
+        white-space: nowrap; pointer-events: none; padding: 0 3px;
+      }
+      ha-card.bar .legend, ha-card.bar .layout.p-top .legend, ha-card.bar .layout.p-bottom .legend {
+        flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; justify-content: center;
+        gap: 0 10px; overflow: visible; width: 100%; min-width: 0; align-self: stretch;
+      }
+      ha-card.bar .row { grid-template-columns: 12px auto auto auto; }
+      ha-card.bar .legend.hide-val .row { grid-template-columns: 12px auto auto; }
+      ha-card.bar .row .pct { min-width: 0; }
       .empty {
         flex: 1; display: flex; align-items: center; justify-content: center;
         color: var(--secondary-text-color, #52514e); font-size: 13px;
@@ -287,8 +317,12 @@ class PowerPieCard extends HTMLElement {
     this._body = document.createElement("div");
     this._body.className = "body";
 
+    const bar = this._config.style === "bar";
+    if (bar) this._card.classList.add("bar");
     this._layoutEl = document.createElement("div");
-    this._layoutEl.className = `layout p-${this._config.legend}`;
+    // a bar's legend goes under it (top: over it; none: hidden), never beside it
+    const place = bar ? ({ top: "top", none: "none" }[this._config.legend] || "bottom") : this._config.legend;
+    this._layoutEl.className = `layout p-${place}`;
 
     this._chartEl = document.createElement("div");
     this._chartEl.className = "chart";
@@ -315,7 +349,15 @@ class PowerPieCard extends HTMLElement {
     this._emptyEl.className = "empty";
     this._emptyEl.style.display = "none";
 
-    this._chartEl.append(this._svg, this._centerEl, this._tooltipEl);
+    if (bar) {
+      this._totalEl = document.createElement("div");
+      this._totalEl.className = "total";
+      this._trackEl = document.createElement("div");
+      this._trackEl.className = "bar-track";
+      this._chartEl.append(this._totalEl, this._trackEl, this._tooltipEl);
+    } else {
+      this._chartEl.append(this._svg, this._centerEl, this._tooltipEl);
+    }
     this._layoutEl.append(this._chartEl, this._legendEl);
     this._body.append(this._layoutEl, this._emptyEl, this._pausedEl);
     this._card.append(this._body);
@@ -523,6 +565,62 @@ class PowerPieCard extends HTMLElement {
       return;
     }
 
+    if (this._config.style === "bar") this._renderBar(model);
+    else this._renderPie(model);
+
+    // --- legend (safe to rebuild: renders never happen while hovered) ---
+    this._renderLegend(model);
+    this._model = model;
+  }
+
+  // style: bar — blocks laid along one bar, the same slices and gaps as the doughnut's arcs
+  _renderBar(model) {
+    const GAP = model.slices.length > 1 ? this._config.slice_gap : 0;
+    const minPctLabel = this._config.min_pct_label ?? 0;
+    let start = 0;
+    const seen = new Set();
+    for (const s of model.slices) {
+      seen.add(s.id);
+      let el = this._arcs.get(s.id);
+      const isNew = !el;
+      if (isNew) {
+        el = document.createElement("div");
+        el.className = "seg";
+        el.style.left = `${start}%`;
+        el.style.width = "0%";
+        el.innerHTML = `<span class="seg-label"></span>`;
+        this._attachArcEvents(el, s.id);
+        this._trackEl.appendChild(el);
+        this._arcs.set(s.id, el);
+      }
+      const len = Math.max(s.pct - GAP, 0.15);
+      const left = start + GAP / 2;
+      const lbl = el.firstElementChild;
+      lbl.textContent = s.pct >= minPctLabel ? s.pctText : "";
+      const apply = () => {
+        el.style.background = s.color;
+        el.style.left = `${left}%`;
+        el.style.width = `${len}%`;
+        // the % only when it fits in the block (at its final width)
+        const room = (this._trackEl.clientWidth * len) / 100;
+        lbl.style.visibility = lbl.textContent && lbl.scrollWidth <= room ? "" : "hidden";
+      };
+      if (isNew) requestAnimationFrame(apply);
+      else apply();
+      start += s.pct;
+    }
+    for (const [id, el] of [...this._arcs.entries()].filter(([id]) => !seen.has(id))) {
+      this._arcs.delete(id);
+      el.style.width = "0%";
+      setTimeout(() => el.remove(), 650);
+    }
+    this._totalEl.innerHTML = "";
+    const b = document.createElement("b");
+    b.textContent = model.totalText;
+    this._totalEl.append(b, ` ${model.unit}`);
+  }
+
+  _renderPie(model) {
     // --- doughnut arcs (stroke-dasharray technique, C = 100) ---
     const R = 15.91549431;
     const GAP = model.slices.length > 1 ? this._config.slice_gap : 0;
@@ -598,11 +696,14 @@ class PowerPieCard extends HTMLElement {
     // --- center label ---
     this._centerEl.querySelector(".value").textContent = model.totalText;
     this._centerEl.querySelector(".unit").textContent = model.unit;
+  }
 
-    // --- legend (safe to rebuild: renders never happen while hovered) ---
+  _renderLegend(model) {
     this._legendEl.classList.toggle("hide-val", !!this._config.hide_legend_value);
     this._legendEl.innerHTML = "";
-    const minPctLegend = this._config.min_pct_legend ?? this._config.min_pct_label ?? 0;
+    // a bar's legend names every block (the small ones have no label inside them)
+    const minPctLegend = this._config.min_pct_legend ??
+      (this._config.style === "bar" ? 0 : this._config.min_pct_label ?? 0);
     for (const s of model.slices) {
       if (s.pct < minPctLegend) continue;
       const row = document.createElement("div");
@@ -624,7 +725,6 @@ class PowerPieCard extends HTMLElement {
       }
       this._legendEl.appendChild(row);
     }
-    this._model = model;
   }
 
   _attachArcEvents(el, id) {
@@ -674,10 +774,11 @@ class PowerPieCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 4;
+    return this._config && this._config.style === "bar" ? 2 : 4;
   }
 
   getGridOptions() {
+    if (this._config && this._config.style === "bar") return { columns: 12, rows: "auto", min_columns: 6 };
     return { columns: 12, rows: 4, min_columns: 6, min_rows: 3 };
   }
 }
@@ -691,10 +792,11 @@ battmanDefine("battman-pie-card", PowerPieCard);
 // more complex falls back to an object (YAML) sub-editor for just the filter,
 // while every other option stays GUI-editable.
 
-const MANAGED_KEYS = ["title", "total_amount", "display_unit", "decimals",
+const MANAGED_KEYS = ["style", "title", "total_amount", "display_unit", "decimals",
   "unknown_text", "other_text", "max_slices", "sort", "slice_gap", "legend"];
 
 const EDITOR_LABELS = {
+  style: "Chart style",
   title: "Title",
   total_amount: "Total sensor (derives the unmeasured slice)",
   display_unit: "Display unit",
@@ -789,6 +891,12 @@ class PowerPieCardEditor extends HTMLElement {
 
     const c = this._config;
     const schema = [
+      {
+        name: "style",
+        selector: { select: { mode: "dropdown", options: [
+          { value: "pie", label: "Pie (doughnut)" }, { value: "bar", label: "Bar" },
+        ] } },
+      },
       { name: "title", selector: { text: {} } },
       { name: "total_amount", selector: { entity: { domain: "sensor" } } },
       {
@@ -905,7 +1013,7 @@ window.customCards.push({
   type: "battman-pie-card",
   name: "Battman Pie",
   description:
-    "Doughnut chart with built-in entity filtering, sorted value legend, and freeze-on-hover updates.",
+    "Doughnut or stacked bar chart with built-in entity filtering, sorted value legend, and freeze-on-hover updates.",
   documentationURL: "https://github.com/AJErazzor/battman",
 });
 

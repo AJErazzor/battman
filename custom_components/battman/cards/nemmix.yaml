@@ -2,7 +2,7 @@
 # description: Where the region's power comes from (generation mix) and where it goes (demand mix).
 #
 # A Battman card: on a dashboard it's `type: custom:battman-nemmix` (add `show: generation` or
-# `show: demand` to draw just one of the pies), and it updates
+# `show: demand` to draw just one of the pies, and `style: bar` to draw them as stacked bars), and it updates
 # with Battman releases. To try changes on your own HA, copy this file to
 # config/battman/cards/nemmix.yaml and edit that copy.
 #

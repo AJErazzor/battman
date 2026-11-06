@@ -92,15 +92,22 @@ function errText(e) {
 const CARD_OPTIONS = {
   nemmix: {
     fields: [{ name: "show", label: "Show", default: "both",
-      options: [["both", "Generation and demand"], ["generation", "Generation only"], ["demand", "Demand only"]] }],
+      options: [["both", "Generation and demand"], ["generation", "Generation only"], ["demand", "Demand only"]] },
+    // v0.44.0 (#63): the same figures as stacked bars, like RenewEconomy's NEM Watch
+    { name: "style", label: "Chart", default: "pie", options: [["pie", "Pies"], ["bar", "Bars"]] }],
     apply(config, mine) {
       const show = (mine && mine.show) || "both";
-      if (show === "both") return { config };
-      if (show !== "generation" && show !== "demand") {
+      const style = (mine && mine.style) || "pie";
+      if (show !== "both" && show !== "generation" && show !== "demand") {
         return { problem: `show: “${show}” isn't one of both, generation, demand.` };
       }
-      const [note, generation, demand] = config.cards;
-      return { config: { ...config, cards: [note, show === "generation" ? generation : demand] } };
+      if (style !== "pie" && style !== "bar") {
+        return { problem: `style: “${style}” isn't one of pie, bar.` };
+      }
+      let [note, generation, demand] = config.cards;
+      if (style === "bar") [generation, demand] = [generation, demand].map((c) => ({ ...c, style: "bar" }));
+      const cards = show === "both" ? [note, generation, demand] : [note, show === "generation" ? generation : demand];
+      return { config: { ...config, cards } };
     },
   },
 };
