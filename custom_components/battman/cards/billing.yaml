@@ -5,7 +5,7 @@
 # with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
 # when it's a whole value). To try changes on your own HA, copy this file to
 # config/battman/cards/billing.yaml and edit that copy.
-# Correct totals opens a popup (browser_mod) to fix a period's buy and sell totals: it sends the
+# Correct totals opens a popup (a Battman dialog, no browser_mod) to fix a period's buy and sell totals: it sends the
 # totals sensors' SetTotal action, so they record the correction themselves.
 type: custom:button-card
 entity: '[[map:parameters]]'
