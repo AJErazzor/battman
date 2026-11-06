@@ -74,7 +74,7 @@ def _engine_log_popup(states):
 const states = {json.dumps(states)}; let shown = null;
 const dlg = {{ attrs: {{}}, setAttribute(k, v) {{ this.attrs[k] = v; }}, querySelector: () => ({{ addEventListener() {{}} }}),
   addEventListener() {{}}, showModal() {{ shown = this; }}, remove() {{}}, close() {{}} }};
-globalThis.document = {{ body: {{ appendChild() {{}} }}, documentElement: {{ style: {{}} }}, createElement: () => dlg,
+globalThis.document = {{ body: {{ appendChild() {{}} }}, documentElement: {{ style: {{}} }}, createElement: () => dlg, addEventListener() {{}}, removeEventListener() {{}},
   querySelector: () => ({{ hass: {{ states }} }}) }};
 globalThis.getComputedStyle = () => ({{ getPropertyValue: (k) => k === '--battman-green' ? '#0f0' : '' }});
 window.BattmanLib.showPopup({{ kind: 'enginelog', log: '{LOG}' }}, {{}});

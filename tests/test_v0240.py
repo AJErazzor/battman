@@ -49,7 +49,7 @@ def test_correct_totals_opens_on_this_device() -> None:
     page = """
 const dlg = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, querySelector: () => ({ addEventListener() {} }), addEventListener() {},
   showModal() { this.open = true; }, remove() {}, close() {} };
-document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.createElement = () => dlg;
+document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.addEventListener = () => {}; document.removeEventListener = () => {}; document.createElement = () => dlg;
 hass.states['sensor.b'] = { attributes: { day: '1.5', yesterday: '2', month: '3', bill: '4' } };
 hass.states['sensor.s'] = { attributes: { day: '5.5', yesterday: '6', month: '7', bill: '8' } };
 """
@@ -71,7 +71,7 @@ def test_forecast_popup_is_a_battman_dialog() -> None:
     out = _lib("""
 const dlg = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, querySelector: () => ({ addEventListener() {} }), addEventListener() {},
   showModal() { this.open = true; }, remove() {}, close() {} };
-document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.createElement = () => dlg;
+document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.addEventListener = () => {}; document.removeEventListener = () => {}; document.createElement = () => dlg;
 window.BattmanLib.showPopup({ kind: 'forecast', url: '/battmanfiles/battman-forecast.html' }, btn);
 window.BattmanLib.showPopup({ kind: 'nothing-like-this' }, btn);
 process.stdout.write(JSON.stringify({ open: !!dlg.open, html: dlg.innerHTML, style: dlg.attrs.style, calls, toasts }));""")

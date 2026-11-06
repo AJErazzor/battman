@@ -49,7 +49,7 @@ def test_pressing_a_mode_button() -> None:
     """Asks in a Battman dialog (no browser_mod); never stops a press it can't judge."""
     out = _node("""
 // a minimal <dialog>: records what the lib builds, and lets the test press its buttons
-const dialogs = [], docEl = { style: { overflow: '' } };
+const dialogs = [], docKeys = [], docEl = { style: { overflow: '' } };
 const mkDialog = () => {
   const els = {}, ls = {}, d = { attrs: {}, children: [], open: false, removed: false,
     setAttribute(k, v) { d.attrs[k] = v; },
@@ -65,7 +65,7 @@ const calls = [];
 const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
   'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
 let native = 0;
-globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mkDialog,
+globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mkDialog, addEventListener: (n, f) => docKeys.push(f), removeEventListener() {},
   querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
 globalThis.getComputedStyle = () => ({ getPropertyValue: (k) => k === '--battman-orange' ? '#f90' : '' });
 window.confirm = () => { native++; return true; };
@@ -80,18 +80,20 @@ const backdrop = (go('Charge'), dialogs[2]);                 // Buy above the 30
 backdrop.ls.click({ target: backdrop }); const afterBackdrop = calls.length;
 go('Float');                        // a new question while another is open closes the old one first
 go('Charge'); const replaced = dialogs[3].open === false && dialogs[4].open === true;
-dialogs[4].close();                 // Escape: closes without switching
+docKeys[docKeys.length - 1]({ key: 'Escape' });   // Escape (real, or the synthetic one a popup's script sends): closes without switching
+const escClosed = dialogs[4].open === false;
 const afterEsc = calls.length;
 states['sensor.p'].attributes = { confirmPriceMismatch: false };   // the setting off and no Buy limit: no question
 go('Discharge'); go('Charge');
 globalThis.document = { querySelector: () => ({ hass: { get states() { throw new Error('boom'); }, callService: (d, s, x) => calls.push('fallback ' + x.option) } }) };
 go('Charge');                       // anything failing in the check must not stop the press
 process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, afterBackdrop, afterEsc, replaced, native, n: dialogs.length,
-  overflowOpen, overflowAfter: docEl.style.overflow, theme: sellAsk.attrs.style,
+  escClosed, overflowOpen, overflowAfter: docEl.style.overflow, theme: sellAsk.attrs.style,
   h: sellAsk.els['.h'].textContent, m: sellAsk.els['.m'].textContent, yes: sellAsk.els['.yes'].textContent, buyYes: dialogs[2].els['.yes'].textContent }));""")
     assert out["afterAsk"] == 1 and out["cancelled"] == 1                     # only Self Consume so far: asking and Cancel switched nothing
     assert out["afterBackdrop"] == 2 and out["afterEsc"] == 2                 # backdrop tap and Escape switched nothing either
     assert out["calls"] == ["Self Consume", "Discharge", "Discharge", "Charge", "fallback Charge"]
+    assert out["escClosed"] is True
     assert out["replaced"] is True and out["native"] == 0                     # one question at a time; never the browser's box
     assert out["overflowOpen"] == "hidden" and out["overflowAfter"] == ""     # the page doesn't scroll behind it, and is released
     assert "--battman-orange:#f90" in out["theme"]                            # the dialog takes the tapped element's Battman colours
@@ -104,7 +106,7 @@ def test_active_and_curtail_ask_first() -> None:
     """Active / Curtail ask in the same dialog; only the confirm button flips the switch."""
     out = _node("""
 // a minimal <dialog>: records what the lib builds, and lets the test press its buttons
-const dialogs = [], docEl = { style: { overflow: '' } };
+const dialogs = [], docKeys = [], docEl = { style: { overflow: '' } };
 const mkDialog = () => {
   const els = {}, ls = {}, d = { attrs: {}, children: [], open: false, removed: false,
     setAttribute(k, v) { d.attrs[k] = v; },
@@ -118,7 +120,7 @@ const mkDialog = () => {
 const press = (d, sel) => d.els[sel].ls.click();
 const calls = [];
 const states = { 'input_boolean.a': { state: 'on' } };
-globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mkDialog,
+globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mkDialog, addEventListener() {}, removeEventListener() {},
   querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(d + '.' + s + ' ' + x.entity_id) } }) };
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
 const T = { entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' };
