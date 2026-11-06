@@ -159,13 +159,14 @@ def retire_old_settings(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, An
     """Read the old Live Activity entities' last values and remove the entities (so the template
     switch can take switch.battman_live_activity). Returns parameters attribute -> value."""
     reg = er.async_get(hass)
-    last = restore_state(hass).last_states
+    restored = restore_state(hass)
     values: dict[str, Any] = {}
     for (domain, key), (attr, convert) in OLD_SETTINGS.items():
         entity_id = reg.async_get_entity_id(domain, DOMAIN, f"{entry.entry_id}_{key}")
         if entity_id is None:
             continue
-        stored = last.get(entity_id)
+        # HA 2026.11 replaced the last_states dict with async_get_stored_state()
+        stored = restored.async_get_stored_state(entity_id)
         if stored is not None and stored.state.state not in ("unknown", "unavailable"):
             try:
                 values[attr] = convert(stored.state.state)
