@@ -46,65 +46,98 @@ process.stdout.write(JSON.stringify(cases.map(([o, b, f, x]) => window.BattmanLi
 
 @needs_node
 def test_pressing_a_mode_button() -> None:
-    """Asks in a Battman-styled browser_mod popup (like the info popups); never stops a press it can't judge."""
+    """Asks in a Battman dialog (no browser_mod); never stops a press it can't judge."""
     out = _node("""
-const calls = [], popups = [], closed = []; let native = 0;
+// a minimal <dialog>: records what the lib builds, and lets the test press its buttons
+const dialogs = [], docEl = { style: { overflow: '' } };
+const mkDialog = () => {
+  const els = {}, ls = {}, d = { attrs: {}, children: [], open: false, removed: false,
+    setAttribute(k, v) { d.attrs[k] = v; },
+    querySelector(sel) { return els[sel] || (els[sel] = { textContent: '', ls: {}, addEventListener(n, f) { this.ls[n] = f; } }); },
+    addEventListener(n, f) { ls[n] = f; },
+    showModal() { d.open = true; },
+    close() { if (!d.open) return; d.open = false; ls.close && ls.close(); },
+    remove() { d.removed = true; }, els, ls };
+  dialogs.push(d); return d;
+};
+const press = (d, sel) => d.els[sel].ls.click();
+const calls = [];
 const states = { 'sensor.amber_5min_current_general_price': { state: '0.42' }, 'sensor.amber_5min_current_feed_in_price': { state: '-0.04' },
   'sensor.p': { attributes: { confirmPriceMismatch: true, confirmBuyAbove: 30 } } };
-globalThis.document = { body: {}, dispatchEvent: (e) => closed.push(e.key), querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
-globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
-globalThis.KeyboardEvent = class { constructor(t, o) { this.key = o.key; } };
+let native = 0;
+globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mkDialog,
+  querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(x.option) } }) };
+globalThis.getComputedStyle = () => ({ getPropertyValue: (k) => k === '--battman-orange' ? '#f90' : '' });
 window.confirm = () => { native++; return true; };
-window.browser_mod = { service: (n, o) => { if (n === 'popup') popups.push(o); } };
-const press = (option) => window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p' }, {});
-press('Self Consume');              // never asks: switches at once
-press('Discharge');                 // negative feed-in: asks, nothing switched yet
-const sellAsk = popups[0], afterAsk = calls.length;
-window.BattmanLib.answerMode(false); const cancelled = calls.length;   // Cancel: closes, switches nothing
-press('Discharge');
-window.BattmanLib.answerMode(true);   // the confirm button: closes and sells
-press('Charge'); const buyAsk = popups[2];   // Buy above the 30c limit
-delete window.browser_mod;          // no browser_mod: the browser's own box, and Yes sets it
-press('Float');
+const go = (option) => window.BattmanLib.setMode({ option, mode: 'input_select.m', parameters: 'sensor.p' }, {});
+go('Self Consume');                 // never asks: switches at once
+go('Discharge');                    // negative feed-in: asks, nothing switched yet
+const sellAsk = dialogs[0], afterAsk = calls.length, overflowOpen = docEl.style.overflow;
+press(sellAsk, '.no'); const cancelled = calls.length;      // Cancel: closes, switches nothing
+go('Discharge');
+press(dialogs[1], '.yes');          // the confirm button: closes and sells
+const backdrop = (go('Charge'), dialogs[2]);                 // Buy above the 30c limit; a tap on the backdrop cancels
+backdrop.ls.click({ target: backdrop }); const afterBackdrop = calls.length;
+go('Float');                        // a new question while another is open closes the old one first
+go('Charge'); const replaced = dialogs[3].open === false && dialogs[4].open === true;
+dialogs[4].close();                 // Escape: closes without switching
+const afterEsc = calls.length;
 states['sensor.p'].attributes = { confirmPriceMismatch: false };   // the setting off and no Buy limit: no question
-press('Discharge'); press('Charge');
+go('Discharge'); go('Charge');
 globalThis.document = { querySelector: () => ({ hass: { get states() { throw new Error('boom'); }, callService: (d, s, x) => calls.push('fallback ' + x.option) } }) };
-press('Charge');                    // anything failing in the check must not stop the press
-process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, closed, popups: popups.length, native,
-  content: sellAsk.content, buyContent: buyAsk.content }));""")
+go('Charge');                       // anything failing in the check must not stop the press
+process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, afterBackdrop, afterEsc, replaced, native, n: dialogs.length,
+  overflowOpen, overflowAfter: docEl.style.overflow, theme: sellAsk.attrs.style,
+  h: sellAsk.els['.h'].textContent, m: sellAsk.els['.m'].textContent, yes: sellAsk.els['.yes'].textContent, buyYes: dialogs[2].els['.yes'].textContent }));""")
     assert out["afterAsk"] == 1 and out["cancelled"] == 1                     # only Self Consume so far: asking and Cancel switched nothing
-    assert out["closed"] == ["Escape", "Escape"]                    # both answers close the popup
-    assert out["calls"] == ["Self Consume", "Discharge", "Float", "Discharge", "Charge", "fallback Charge"]
-    assert out["popups"] == 3 and out["native"] == 1                          # three dialogs; the one without browser_mod used the box
-    assert "Sell?" in out["content"] and "Cancel" in out["content"] and "Sell anyway" in out["content"]
-    assert "Buy?" in out["buyContent"] and "Buy anyway" in out["buyContent"]
-    assert "Feed-in is -4.0c: you would pay to export. Sell anyway?" in out["content"]
+    assert out["afterBackdrop"] == 2 and out["afterEsc"] == 2                 # backdrop tap and Escape switched nothing either
+    assert out["calls"] == ["Self Consume", "Discharge", "Discharge", "Charge", "fallback Charge"]
+    assert out["replaced"] is True and out["native"] == 0                     # one question at a time; never the browser's box
+    assert out["overflowOpen"] == "hidden" and out["overflowAfter"] == ""     # the page doesn't scroll behind it, and is released
+    assert "--battman-orange:#f90" in out["theme"]                            # the dialog takes the tapped element's Battman colours
+    assert out["h"] == "Sell?" and out["yes"] == "Sell anyway" and out["buyYes"] == "Buy anyway"
+    assert out["m"] == "Feed-in is -4.0c: you would pay to export. Sell anyway?"
 
 
 @needs_node
 def test_active_and_curtail_ask_first() -> None:
-    """Active / Curtail ask in the same popup; only the confirm button flips the switch."""
+    """Active / Curtail ask in the same dialog; only the confirm button flips the switch."""
     out = _node("""
-const calls = [], popups = [], closed = [];
+// a minimal <dialog>: records what the lib builds, and lets the test press its buttons
+const dialogs = [], docEl = { style: { overflow: '' } };
+const mkDialog = () => {
+  const els = {}, ls = {}, d = { attrs: {}, children: [], open: false, removed: false,
+    setAttribute(k, v) { d.attrs[k] = v; },
+    querySelector(sel) { return els[sel] || (els[sel] = { textContent: '', ls: {}, addEventListener(n, f) { this.ls[n] = f; } }); },
+    addEventListener(n, f) { ls[n] = f; },
+    showModal() { d.open = true; },
+    close() { if (!d.open) return; d.open = false; ls.close && ls.close(); },
+    remove() { d.removed = true; }, els, ls };
+  dialogs.push(d); return d;
+};
+const press = (d, sel) => d.els[sel].ls.click();
+const calls = [];
 const states = { 'input_boolean.a': { state: 'on' } };
-globalThis.document = { body: {}, dispatchEvent: (e) => closed.push(e.key), querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(d + '.' + s + ' ' + x.entity_id) } }) };
+globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mkDialog,
+  querySelector: () => ({ hass: { states, callService: (d, s, x) => calls.push(d + '.' + s + ' ' + x.entity_id) } }) };
 globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
-globalThis.KeyboardEvent = class { constructor(t, o) { this.key = o.key; } };
-window.browser_mod = { service: (n, o) => popups.push(o) };
-window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' }, {});
+const T = { entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' };
+window.BattmanLib.setToggle(T, {});
 const before = calls.length;
-window.BattmanLib.answerMode(false); const cancelled = calls.length;
-window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Active', ask_off: 'Off msg', ask_on: 'On msg' }, {});
-window.BattmanLib.answerMode(true);
+press(dialogs[0], '.no'); const cancelled = calls.length;
+window.BattmanLib.setToggle(T, {});
+press(dialogs[1], '.yes');
 states['input_boolean.a'].state = 'on'; states['sensor.fit'] = { state: '-0.04' };   // Curtail on, feed-in negative: says why off costs money
-window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Curtail', ask_off: 'Off msg', ask_on: 'On msg', ask_off_negative: 'Feed-in is {price}. Pay.', price: 'sensor.fit' }, {});
+const C = { entity: 'input_boolean.a', name: 'Turn Curtail', ask_off: 'Off msg', ask_on: 'On msg', ask_off_negative: 'Feed-in is {price}. Pay.', price: 'sensor.fit' };
+window.BattmanLib.setToggle(C, {});
 states['sensor.fit'].state = '0.10';                                                      // positive: the plain off message
-window.BattmanLib.setToggle({ entity: 'input_boolean.a', name: 'Turn Curtail', ask_off: 'Off msg', ask_on: 'On msg', ask_off_negative: 'Feed-in is {price}. Pay.', price: 'sensor.fit' }, {});
-process.stdout.write(JSON.stringify({ before, cancelled, calls, content: popups[0].content, neg: popups[2].content, pos: popups[3].content }));""")
+window.BattmanLib.setToggle(C, {});
+process.stdout.write(JSON.stringify({ before, cancelled, calls, h: dialogs[0].els['.h'].textContent, m: dialogs[0].els['.m'].textContent,
+  yes: dialogs[0].els['.yes'].textContent, neg: dialogs[2].els['.m'].textContent, pos: dialogs[3].els['.m'].textContent }));""")
     assert out["before"] == 0 and out["cancelled"] == 0
     assert out["calls"] == ["homeassistant.toggle input_boolean.a"]
-    assert "Turn Active?" in out["content"] and "Off msg" in out["content"] and "Turn off" in out["content"]
-    assert "Feed-in is -4.0c. Pay." in out["neg"] and "Off msg" in out["pos"] and "Pay." not in out["pos"]
+    assert out["h"] == "Turn Active?" and out["m"] == "Off msg" and out["yes"] == "Turn off"
+    assert out["neg"] == "Feed-in is -4.0c. Pay." and out["pos"] == "Off msg"
 
 
 def test_mode_card_buttons() -> None:

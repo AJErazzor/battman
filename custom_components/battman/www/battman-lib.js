@@ -734,11 +734,10 @@ window.BattmanLib.themeModeColours = function (themes, name) {
 })();
 
 // ---------------------------------------------------------------------------------------------
-// Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy ask (in HA's own
-// popup, as the info buttons use, when the press goes against the price, and just switch otherwise. The buttons
+// Battman: mode buttons that ask first. Sell, Sell Solar, HOOOOVER, House Party and Buy ask in a
+// Battman panel (no browser_mod), when the press goes against the price, and just switch otherwise. The buttons
 // fire a "battman_mode" dom event (as browser_mod's popups do); the listener below decides. Nothing it can't
-// judge (a missing price, a failure here) stops the press: the mode is set. Active and Curtail use HA's own
-// confirmation on their buttons.
+// judge (a missing price, a failure here) stops the press: the mode is set. Active and Curtail ask in the same panel.
 window.BattmanLib.MODE_NAMES = { 'Charge': 'Buy', 'Discharge': 'Sell', 'Float': 'Sell Solar', 'Charge Solar Off': 'HOOOOVER', 'Float Solar Off': 'House Party' };
 window.BattmanLib.centsText = function (c) { return (c < 0 ? '-' : '') + Math.abs(c).toFixed(1) + 'c'; };
 
@@ -775,33 +774,21 @@ window.BattmanLib.setMode = function (d, el) {
   window.BattmanLib.askMode(warning, d.option, go, el);
 };
 
-// The question, in the same kind of Battman panel as the info popups (browser_mod popup, no title bar text,
-// themed card with an uppercase heading). Without browser_mod, or if it can't open, the browser's confirm box.
-// The Battman colours the panel uses, read off the tapped element (the popup sits outside the themed view).
-window.BattmanLib.popupVars = function (el) {
-  var KEYS = ['surface-popup', 'surface-card', 'text-bright', 'text-muted', 'orange', 'orange-wash', 'orange-border', 'orange-border-strong', 'border-neutral', 'font'];
-  var read = function (node) {
-    var cs = getComputedStyle(node), out = '', n = 0;
-    KEYS.forEach(function (k) {
-      var v = String(cs.getPropertyValue('--battman-' + k) || '').trim().replace(/"/g, "'");
-      if (v) { out += '--battman-' + k + ':' + v + ';'; n++; }
-    });
-    return { css: out, n: n };
-  };
-  var got = read(el);
-  if (got.n < 5) try {                       // the tapped element didn't see the theme: find one that does (as the Override panel does)
-    var found = null;
-    (function walk(root) {
-      var all = root.querySelectorAll('*');
-      for (var i = 0; i < all.length && !found; i++) {
-        var x = all[i];
-        if (getComputedStyle(x).getPropertyValue('--battman-surface-popup').trim()) { found = x; return; }
-        if (x.shadowRoot) walk(x.shadowRoot);
-      }
-    })(document);
-    if (found) got = read(found);
-  } catch (e) { /* keep what the tapped element gave */ }
-  return got.css;
+// The question, in a Battman panel of its own: a native <dialog> opened with showModal(), so it sits in the
+// browser's top layer (above HA's header and bars) and Escape, focus and an inert page come with it. No
+// browser_mod. The dialog lives on document.body, outside the themed view, so the Battman colours are read off
+// the tapped element and set on it.
+window.BattmanLib.MODAL_KEYS = ['surface-popup', 'surface-card', 'text-bright', 'text-muted', 'orange', 'orange-wash',
+  'orange-border', 'orange-border-strong', 'border-neutral', 'font'];
+window.BattmanLib.modalTheme = function (el) {
+  var cs = getComputedStyle(el || document.body), out = '';
+  window.BattmanLib.MODAL_KEYS.forEach(function (k) {
+    var v = String(cs.getPropertyValue('--battman-' + k) || '').trim();
+    if (v) out += '--battman-' + k + ':' + v + ';';
+  });
+  var f = String(cs.getPropertyValue('--primary-font-family') || '').trim();
+  if (f && out.indexOf('--battman-font:') < 0) out += '--battman-font:' + f + ';';
+  return out;
 };
 
 window.BattmanLib.askMode = function (message, option, go, el) {
@@ -809,39 +796,47 @@ window.BattmanLib.askMode = function (message, option, go, el) {
   window.BattmanLib.askConfirm(name + '?', message, name + ' anyway', go, el);
 };
 
-// Any yes/no question, in the same panel: heading, message, Cancel, and a confirm button.
+// Any yes/no question, in the same panel: heading, message, Cancel, and a confirm button. Cancel, a tap on the
+// dim backdrop and Escape all cancel. Without <dialog> support the browser's own confirm box asks instead.
 window.BattmanLib.askConfirm = function (title, message, okLabel, go, el) {
   var L = window.BattmanLib;
-  try {
-    if (!window.browser_mod) throw new Error('no browser_mod');
-    var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
-    var btn = 'flex:1;min-height:42px;border-radius:8px;font-family:var(--battman-font,inherit);font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;';
-    L._pendingMode = go;
-    L.localPopup({
-      title: ' ',
-      style: '--mdc-dialog-min-width:340px;--mdc-dialog-max-width:360px;',
-      content: '<div style="' + L.popupVars(el || document.body) + 'background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,inherit);color:var(--battman-text-bright)">'
-        + '<div style="font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--battman-orange);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border)">' + esc(title) + '</div>'
-        + '<div style="font-size:14px;line-height:1.5;margin-bottom:14px">' + esc(message) + '</div>'
-        + '<div style="display:flex;gap:8px">'
-        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(false)" style="' + btn + 'display:flex;align-items:center;justify-content:center;background:transparent;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral)">Cancel</div>'
-        + '<div role="button" onclick="event.stopPropagation();window.BattmanLib.answerMode(true)" style="' + btn + 'flex:1.4;display:flex;align-items:center;justify-content:center;background:var(--battman-orange-wash);color:var(--battman-orange);border:1px solid var(--battman-orange-border-strong)">' + esc(okLabel) + '</div>'
-        + '</div></div>',
-    });
-  } catch (e) {
-    L._pendingMode = null;
-    if (window.confirm(message)) go();
-  }
-};
-
-// Closes the popup the way the Override panel does (its own bmClose): Escape.
-function L_close() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true, cancelable: true })); }
-
-window.BattmanLib.answerMode = function (yes) {
-  var go = window.BattmanLib._pendingMode;
-  window.BattmanLib._pendingMode = null;
-  L_close();
-  if (yes && go) go();
+  if (L._modal) { try { L._modal.close(); } catch (e) { /* already closed */ } }
+  var dlg = document.createElement('dialog');
+  if (!dlg.showModal) { if (window.confirm(message) && go) go(); return; }
+  dlg.setAttribute('style', L.modalTheme(el));
+  dlg.className = 'bm';
+  dlg.innerHTML =
+    '<style>' +
+    'dialog.bm{padding:0;border:0;background:transparent;max-width:min(92vw,360px);width:92vw;overflow:visible;color:var(--battman-text-bright,#eee);font-family:var(--battman-font,inherit)}' +
+    'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
+    '.bm .p{background:var(--battman-surface-popup,#111);padding:14px 16px;border-radius:8px;border:1px solid var(--battman-orange-border,#a60)}' +
+    '.bm .h{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border,#a60)}' +
+    '.bm .m{font-size:14px;line-height:1.5;margin-bottom:14px}' +
+    '.bm .r{display:flex;gap:8px}' +
+    '.bm button{flex:1;min-height:44px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '.bm .no{background:transparent;color:var(--battman-text-muted,#999);border:1px solid var(--battman-border-neutral,#444)}' +
+    '.bm .yes{flex:1.4;background:var(--battman-orange-wash,#320);color:var(--battman-orange,#f90);border:1px solid var(--battman-orange-border-strong,#f90)}' +
+    '</style>' +
+    '<div class="p"><div class="h"></div><div class="m"></div><div class="r"><button class="no" type="button">Cancel</button><button class="yes" type="button"></button></div></div>';
+  dlg.querySelector('.h').textContent = title;
+  dlg.querySelector('.m').textContent = message;
+  dlg.querySelector('.yes').textContent = okLabel;
+  var answer = false, prevOverflow = document.documentElement.style.overflow;
+  dlg.querySelector('.yes').addEventListener('click', function () { answer = true; dlg.close(); });
+  dlg.querySelector('.no').addEventListener('click', function () { dlg.close(); });
+  // the dialog's own box is just the panel, so a tap on the dialog itself is a tap on the backdrop
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('close', function () {
+    document.documentElement.style.overflow = prevOverflow;
+    L._modal = null;
+    dlg.remove();
+    if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* not focusable */ } }
+    if (answer && go) go();
+  });
+  document.body.appendChild(dlg);
+  document.documentElement.style.overflow = 'hidden';
+  L._modal = dlg;
+  dlg.showModal();
 };
 
 // Active / Curtail: ask before flipping the switch.
