@@ -174,7 +174,7 @@ async def run_engine(hass: HomeAssistant) -> tuple[bool, dict | None]:
     return ran, (events[-1] if events else None)
 
 
-async def start_oracle_ha(hass: HomeAssistant, freezer) -> None:
+async def start_worlds_ha(hass: HomeAssistant, freezer) -> None:
     from .test_finances_cards import _start_totals
 
     await hass.config.async_set_time_zone(TZ)
@@ -186,7 +186,7 @@ async def start_oracle_ha(hass: HomeAssistant, freezer) -> None:
 
 
 async def test_engine_across_300_worlds(hass: HomeAssistant, freezer) -> None:
-    await start_oracle_ha(hass, freezer)
+    await start_worlds_ha(hass, freezer)
 
     seen_modes: set[str] = set()
     tally: collections.Counter = collections.Counter()

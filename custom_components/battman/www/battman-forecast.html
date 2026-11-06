@@ -2,7 +2,7 @@
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Battman forecast</title>
 <!--
-  Battman forecast page: the Chill card's tap popup. Shows what script.battman_engine_forecast says Battman would
+  Battman forecast page: the Chill card tap popup. Shows what script.battman_engine_forecast says Battman would
   do over the next hours: the real engine decision, slot by slot. It only READS: it calls that one script (which
   changes nothing) and draws the answer. What-if changes are held in this page only and are never saved.
 -->
@@ -19,9 +19,10 @@ body{color:var(--primary-text-color);font-family:var(--primary-font-family,var(-
 /* the header pill (as the Chill card's popup) */
 .pill{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;
   background:color-mix(in srgb,var(--st,var(--battman-green)) 16%,transparent);border:1px solid color-mix(in srgb,var(--st,var(--battman-green)) 45%,transparent)}
-.pill #status{color:var(--st,var(--battman-green))}
-.pill #title{font-weight:600;text-transform:none;letter-spacing:0}
+.pill #title{font-size:17px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--st,var(--battman-green))}
+.pill .asof{font-size:12px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--battman-text-muted)}
 .cap{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:6px 2px 0;font-size:12px;color:var(--battman-text-muted)}
+.day{margin:10px 2px 0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--battman-text-muted)}
 .banner{display:none;margin:8px 0 0;padding:8px 10px;border:1px dashed var(--wi);border-radius:8px;background:color-mix(in srgb,var(--wi) 12%,transparent);color:var(--wi);font-size:13px;font-weight:700}
 body.wi .banner{display:block}
 .spin{display:none;color:var(--battman-text-muted)}body.busy .spin{display:inline}
@@ -98,9 +99,10 @@ ul.acc{padding:8px 14px 12px 30px;color:var(--battman-text-muted);font-size:12px
 .wi .tilde::before{content:"~"}
 </style></head><body>
 <div class="pop">
-  <div class="pill" id="pill"><span id="status">Chill</span><span id="title">Next hours</span></div>
-  <div class="cap"><span><span class="spin">working… </span><span id="gen"></span></span></div>
+  <div class="pill" id="pill"><span id="title">Next hours</span><span class="asof"><span class="spin">working… </span><span id="gen"></span></span></div>
   <div class="banner" id="banner">WHAT-IF · not live · nothing is sent to the battery</div>
+
+  <div id="out"><div class="msg">Loading…</div></div>
 
   <details class="panel" id="wip"><summary>What-if</summary>
     <div class="ctl"><div class="l">Battery level<small id="soc_l"></small></div>
@@ -116,8 +118,6 @@ ul.acc{padding:8px 14px 12px 30px;color:var(--battman-text-muted);font-size:12px
     <div id="ovs"></div>
     <div class="ctl"><button class="btn" id="reset">Reset to live</button><span style="font-size:12px;color:var(--muted)">changes live here only</span></div>
   </details>
-
-  <div id="out"><div class="msg">Loading…</div></div>
 
   <details class="panel"><summary>How accurate is this?</summary><ul class="acc" id="acc"></ul></details>
 </div>
@@ -189,6 +189,11 @@ function split(m) {
       else if (m.kind === 'buy' || m.kind === 'hooover') same = (s.buy_price < 0) === (f.buy_price < 0) && buyCat(s) === buyCat(f);
       else if (m.kind === 'sell' || m.kind === 'drain') same = sellCat(s) === sellCat(f);
       else same = true;
+      // whatever the mode: a price move of 2c or more starts a new part (sell kinds follow the sell price, the rest the buy price)
+      if (same && m.kind !== 'idle') {
+        const px = x => c1(m.kind === 'sell' || m.kind === 'drain' ? x.sell_price : x.buy_price);
+        if (Number.isFinite(px(s)) && Number.isFinite(px(f)) && Math.abs(px(s) - px(f)) >= 2) same = false;
+      }
     }
     if (same) p.slots.push(s); else parts.push({ kind: m.kind, slots: [s], spk: spk(s), bpk: bpk(s) });
   });
@@ -204,7 +209,8 @@ function loadLine(a) {
   const range = v => { const lo = Math.min(...v), hi = Math.max(...v); return lo.toFixed(1) === hi.toFixed(1) ? lo.toFixed(1) : lo.toFixed(1) + '–' + hi.toFixed(1); };
   const L = a.map(s => s.load_kw).filter(Number.isFinite), P = a.map(s => s.pv_kw).filter(Number.isFinite);
   if (!L.length) return '';
-  return `House ${range(L)} kW` + (P.length && Math.max(...P) > 0.05 ? ` · solar ${range(P)} kW` : '');
+  const kwh = f => { const v = sum(a, s => (Number.isFinite(s[f]) ? s[f] : 0) * s.minutes / 60); return v >= 10 ? v.toFixed(0) : v.toFixed(1); };
+  return `House ${range(L)} kW (${kwh('load_kw')} kWh)` + (P.length && Math.max(...P) > 0.05 ? ` · solar ${range(P)} kW (${kwh('pv_kw')} kWh)` : '');
 }
 // the orange line for solar that is sent to the grid (or held back because the price is negative)
 function exportHint(a) {
@@ -260,7 +266,7 @@ function describe(p) {
     if (sp.length) o.hints.push(['var(--battman-orange)', `Sells if Amber pays ${d1(Math.min(...sp.map(s => s.sell_line)))}c or more${tag(sp, 'sell_ruled', 'sell_override')}`]);
   }
   o.load = loadLine(a);
-  if (p.kind === 'sell' && houseKwh >= 0.05) o.load += ` (${houseKwh.toFixed(1)} kWh from the battery, not sold)`;
+  if (p.kind === 'sell' && houseKwh >= 0.05) o.load += ` · battery covers ${houseKwh.toFixed(1)} kWh of the house`;
   if (p.kind === 'idle' || p.kind === 'float') { const ex = exportHint(a); if (ex) o.hints.push(ex); }
   return o;
 }
@@ -446,17 +452,20 @@ function statusNow() {
 function draw(a, b) {
   const masters = group(a.slots);
   const first = a.slots[0];
-  const shown = masters.map(masterHtml).join('');
+  const day0 = String(first.start).slice(0, 10);
+  const shown = masters.map((m, i) => {
+    const d = String(m.slots[0].start).slice(0, 10), prev = i ? String(masters[i - 1].slots[0].start).slice(0, 10) : day0;
+    return (d !== day0 && d !== prev ? `<div class="day">Tomorrow</div>` : '') + masterHtml(m);
+  }).join('');
   const t = a.total, delta = b ? t.money - b.total.money : 0, tc = t.money >= 0 ? 'var(--battman-green)' : 'var(--battman-yellow)';
   const h = Math.round(sum(a.slots, x => x.minutes) / 60);
   $('out').innerHTML = `${shown}
-    <div class="total" style="--tc:${tc}"><span>Total, next ${h} hours</span><b><span class="tilde"></span>${money(t.money)}</b></div>
+    <div class="total" style="--tc:${tc}"><span>Total, next ${h} hours · ends ${Math.round(t.soc_end)}%</span><b><span class="tilde"></span>${money(t.money)}</b></div>
     <div class="delta" style="${dirty() && b ? '' : 'display:none'}">What-if ${money(t.money)} · live ${b ? money(b.total.money) : ''} · difference ${money(delta)}<br>
       Battery at the end: ${Math.round(t.soc_end)}% (live ${b ? Math.round(b.total.soc_end) : ''}%)</div>`;
-  const [stTxt, stCol] = statusNow(), pw = num((st('sensor.sigen_plant_battery_power') || {}).state);
-  $('status').textContent = stTxt; $('pill').style.setProperty('--st', stCol);
-  $('title').textContent = `Next ${h}h · SOC ${Math.round(first.soc_start)}% · ${pw > 0.05 ? '↑' : (pw < -0.05 ? '↓' : '')}${Math.abs(pw).toFixed(1)} kW`;
-  $('gen').textContent = 'as of ' + hhmm(a.generated) + ' · ' + a.seconds + 's';
+  $('pill').style.setProperty('--st', statusNow()[1]);
+  $('title').textContent = `Next ${h} hours`;
+  $('gen').textContent = 'as of ' + hhmm(a.generated);
   $('acc').innerHTML = a.assumptions.map(x => `<li>${x}</li>`).join('') + (profileNote ? `<li>${profileNote}</li>` : '') + (a.failed_slots ? `<li>${a.failed_slots} slot(s) could not be worked out.</li>` : '');
 }
 

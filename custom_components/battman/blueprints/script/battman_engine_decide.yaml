@@ -55,8 +55,8 @@ sequence:
     drainBatteryPlughole: '{{ params.settings.drainBatteryPlughole | bool }}'
   alias: Limits
 - variables:
-    # Minutes since midnight, local time (from params.now). The old engine's clock windows (HH:MM to HH:MM),
-    # [HH:MM:00, HH:MM:00) on whole minutes, are exactly these minute ranges.
+    # Minutes since midnight, local time (from params.now). The clock windows used below (HH:MM to HH:MM)
+    # are [HH:MM:00, HH:MM:00) on whole minutes, so they are exactly these minute ranges.
     clockMinutes: "{{ as_local(as_datetime(params.now)).hour * 60 + as_local(as_datetime(params.now)).minute }}"
   alias: Clock
 - variables:

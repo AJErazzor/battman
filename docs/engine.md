@@ -86,7 +86,7 @@ The Curvy and Pricy pages read `input_number.battman_high_consumption` instead.
 
 ## How it's tested
 
-The tests drive the engine across 300 generated worlds (`tests/test_engine_oracle.py`: battery level,
+The tests drive the engine across 300 generated worlds (`tests/test_engine_worlds.py`: battery level,
 buy and sell prices, estimates, forecasts in both the even 30-minute shape and the live 5-then-30-minute
 shape, solar, home load, grid status, month and time of day including the tariff swap minutes and window
 edges, curves, rules, every override, spike and drain setting, today's totals, the current mode, and gaps

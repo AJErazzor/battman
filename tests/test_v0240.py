@@ -1,7 +1,6 @@
 """v0.24.0: fixes, and Battman's own grid power and load average sensors off the map.
 
-(The State card's look-ahead used to have its own copy of the sell-rule maths, checked here against
-the engine. The popup now shows the engine's own forecast, so those checks are gone.)
+(The State card's popup shows the engine's own forecast, so it has no separate sell-rule maths to check.)
 """
 
 import json
