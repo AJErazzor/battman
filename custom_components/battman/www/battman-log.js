@@ -9,6 +9,11 @@
 // see it and to limit the log to that 5-minute block; drag to scrub) and the chart panels, which
 // you drag into your own order by their grip (kept per device).
 //
+// History / Forecast / Both: Forecast and Both add what script.battman_engine_forecast predicts (mode, price, SOC,
+// grid, power) after a dashed "now" line, in the same blocks and wording as the Chill card's "Next N hours"
+// popup. From / To work as in History (Forecast: now to the end of the forecast; Both: any From to the end of
+// the forecast); the forecast is fetched once and each range only shows its slice of it.
+//
 // Live: when the engine logs a run, the log reloads; on a quick range (4h, 1h, ...) the window moves
 // on to now, keeping your filters. The charts also refresh every minute.
 //
@@ -154,6 +159,23 @@ const LOG_CSS = `
   #logCard.collapsed .chev { transform: rotate(-90deg); }
   #log { display: flex; flex-direction: column; gap: 8px; }
   .entry { background: var(--ha-bg); border-radius: 8px; padding: 10px 14px; border-left: 3px solid var(--ha-accent); }
+  /* predicted (future) log entries: the Chill popup's rows, with a DOTTED bar instead of its solid one */
+  .fc-entry { display: flex; gap: 10px; padding: 9px 10px; margin-top: 6px; border-radius: 8px; border-left-width: 1px;
+    background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 28%, transparent); }
+  .fc-entry.act { background: color-mix(in srgb, var(--c) 16%, transparent); border-color: color-mix(in srgb, var(--c) 40%, transparent); }
+  .fc-entry .fc-bar { width: 0; align-self: stretch; flex-shrink: 0; border-left: 4px dotted var(--c); }
+  .fc-entry .fc-body { flex: 1; min-width: 0; }
+  .fc-entry .fc-r1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .fc-entry .fc-time { font-size: 17px; font-weight: 800; color: var(--ha-text); font-variant-numeric: tabular-nums; }
+  .fc-entry.act .fc-time { color: var(--c); }
+  .fc-entry .fc-amt { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .fc-entry .fc-r2 { font-size: 16px; font-weight: 700; line-height: 1.3; margin-top: 1px; }
+  .fc-entry .fc-chip { display: inline-block; font-size: 11px; font-weight: 800; line-height: 1; letter-spacing: .03em; padding: 3px 8px; margin-right: 6px;
+    border-radius: 999px; vertical-align: 2px; border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
+    background: color-mix(in srgb, var(--c) 10%, transparent); color: var(--c); }
+  .fc-entry .fc-r3 { font-size: 15px; opacity: .85; line-height: 1.35; margin-top: 2px; }
+  .fc-entry .fc-hint { font-weight: 700; }
+  .fc-entry .fc-r4 { font-size: 12px; color: var(--ha-muted); margin-top: 3px; }
   .empty { color: var(--ha-muted); text-align: center; padding: 40px 20px; font-size: 16px; }
   .count { color: var(--ha-muted); font-size: 13px; text-align: right; padding-bottom: 6px; border-bottom: 1px solid var(--ha-border); margin-bottom: 4px; }
 
@@ -181,6 +203,17 @@ const LOG_CSS = `
   /* --- drag-to-reorder blocks --- */
   .reorder { display: flex; flex-direction: column; gap: 14px; position: relative; }
   /* synced scrubber guide — a thin 1px line inside each chart's plot area only */
+  .fcRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--ha-muted); }
+  .viewRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-top: 8px; }
+  .fcReload { margin-right: 0; flex: none; padding: 0 9px; }
+  .fcReload[hidden] { display: none; }
+  .fcReload[disabled] { opacity: .5; pointer-events: none; }
+  .fcReload svg { width: 15px; height: 15px; fill: currentColor; }
+  .fcReload.busy svg { animation: fcspin 1s linear infinite; }
+  @keyframes fcspin { to { transform: rotate(360deg); } }
+  .mnow { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed var(--ha-text); opacity: .8; pointer-events: none; z-index: 2; }
+  .mseg.fut { opacity: .6; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 4px, transparent 4px 8px); }
+  .ro-fc { color: var(--ha-accent); font-weight: 700; font-size: 11px; letter-spacing: .06em; }
   .cline { position: absolute; width: 1px; margin-left: -0.5px; background: #ff3b30;
     box-shadow: 0 0 0 0.5px rgba(0,0,0,0.25); opacity: 0; pointer-events: none;
     z-index: 3; transition: opacity .1s ease; }
@@ -214,6 +247,11 @@ const LOG_HTML = `<ha-card><div class="page">
     <div class="card reCard" id="controlsCard" data-block="controls">
       <div class="title cardHead"><span>Filter Log</span><span class="grip" data-grip></span></div>
       <div class="chips" id="rangeChips"></div>
+      <div class="viewRow">
+        <div class="chips" id="viewChips"></div>
+        <button class="chip fcReload" id="fcReload" aria-label="Reload forecast" title="Reload forecast" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+      </div>
+      <div class="fcRow" id="fcRow" style="display:none"><span id="fcStamp"></span></div>
       <div class="pager">
         <button class="chip pgr" id="pagePrev" aria-label="Previous window">‹</button>
         <span class="pgrspan" id="pgrSpan"></span>
@@ -270,6 +308,14 @@ function battmanLogRun(card, root) {
   let changesOnly = false;
 
   const HISTORY_HOURS = 5;
+  // ---- FUTURE: view selector + forecast cache ----
+  const VIEW_KEY = 'battman.logView';
+  let viewMode = 'history';          // history | forecast | both
+  try { const v = localStorage.getItem(VIEW_KEY); if (v === 'forecast' || v === 'both') viewMode = v; } catch (e) {}
+  let fc = null;                     // { slots:[{t,end,...}], at:Date, generated, approximate }
+  let fcBusy = false, fcError = '';
+  let nowMarker = null;              // { frac, idx } for the dashed now line (null on History)
+  const wantsFuture = () => viewMode !== 'history';
   // Entity IDs: Battman's engine entities from Battman's entity map (GET /api/battman/entities),
   // Sigen's, Amber's and Battman's own sensors by name (SIGEN, AMBER, BATTMAN_SENSORS). Panels are built once the map has loaded.
   const NEEDS = ['mode'];
@@ -449,14 +495,81 @@ function battmanLogRun(card, root) {
     return '<div class="entry"' + border + '>' + EL.render(p.message, { title: 'Engine run', timePrefix: '' }) + '</div>';
   }
 
+  // 'YYYY-MM-DDTHH:MM:SS+10:30' for a moment, in the same offset as the slot's own start string (the popup's
+  // grouping reads the clock straight off that string)
+  function isoAt(ms, like) {
+    const m = /([+-])(\d\d):(\d\d)$/.exec(like);
+    const off = m ? (m[1] === '-' ? -1 : 1) * (+m[2] * 60 + +m[3]) : 0;
+    return new Date(ms + off * 60000).toISOString().slice(0, 19) + (m ? m[0] : 'Z');
+  }
+  // A slot that straddles From or To is cut to the part inside the range: its length, kWh and $ shrink in
+  // proportion and SOC is read off the line between its start and end, so the first / last entry matches the range.
+  function clipSlot(x, startMs, endMs, nowMs) {
+    const t = (startMs > x.t && startMs > nowMs) ? startMs : x.t, e = Math.min(x.end, endMs);
+    if (t <= x.t && e >= x.end) return x;
+    const span = x.end - x.t, frac = Math.max(0, (e - t) / span);
+    const socAt = ms => x.soc_start + (x.soc_end - x.soc_start) * ((ms - x.t) / span);
+    const y = Object.assign({}, x, { t: t, end: e, minutes: x.minutes * frac, hrs: x.hrs * frac,
+      soc_start: socAt(t), soc_end: socAt(e), live: t > x.t ? false : x.live });
+    ['money', 'import_kwh', 'export_kwh', 'battery_kwh'].forEach(k => { if (Number.isFinite(x[k])) y[k] = x[k] * frac; });
+    if (t > x.t) y.start = isoAt(t, x.start);
+    return y;
+  }
+  // Predicted log entries: the Chill popup's blocks (same grouping, reasons, prices, SOC and $), one entry per
+  // part, soonest first. (Forecast and Both read forward in time; only History is newest-first.) Honours the same mode /
+  // Changes Only / tapped-block filters as the history log, and the From / To range.
+  function predictedEntries() {
+    if (!wantsFuture() || !fc || fcBusy || !fc.slots.length) return { html: '', count: 0 };
+    const nowMs = Date.now(), win = displayWindow(), startMs = win.start.getTime(), endMs = win.end.getTime();
+    const slots = fc.slots.filter(x => x.end > nowMs && x.end > startMs && x.t < endMs).map(x => clipSlot(x, startMs, endMs, nowMs));
+    if (!slots.length) return { html: '', count: 0 };
+    const rows = [];
+    FP.group(slots).forEach(m => FP.split(m).forEach((part, i) => rows.push({ part: part, change: i === 0 })));
+    const shown = rows.filter(r => {
+      const mode = baseMode(r.part.slots[0].mode);
+      if (!activeModes.has(mode)) return false;
+      if (changesOnly && !r.change) return false;
+      if (periodFilter) {
+        const t0 = r.part.slots[0].t, t1 = r.part.slots[r.part.slots.length - 1].end;
+        if (t1 <= periodFilter.start || t0 >= periodFilter.end) return false;
+      }
+      return true;
+    });
+    const html = shown.map(r => {
+      const d = FP.describe(r.part), p = r.part;
+      const amt = Math.abs(d.money) >= 0.005
+        ? '<span class="fc-amt" style="color:' + (d.money > 0 ? 'var(--battman-green)' : 'var(--battman-yellow)') + '">' + FP.money(d.money) + '</span>' : '';
+      return '<div class="entry fc-entry' + (d.act ? ' act' : '') + '" style="--c:' + d.color + '"><div class="fc-bar"></div><div class="fc-body">' +
+        '<div class="fc-r1"><span class="fc-time">' + p.start + ' \u2013 ' + p.end + '</span>' + amt + '</div>' +
+        '<div class="fc-r2">' + (d.chip ? '<span class="fc-chip">' + d.chip + '</span>' : '') + d.head + '</div>' +
+        '<div class="fc-r3">' + d.sub + d.hints.map(h => '<br><span class="fc-hint" style="color:' + h[0] + '">' + h[1] + '</span>').join('') + '</div>' +
+        (d.load ? '<div class="fc-r4">' + d.load + '</div>' : '') +
+        '</div></div>';
+    }).join('');
+    return { html: html, count: shown.length };
+  }
+
   function renderLog() {
     if (FATAL) return;
     const el = $('log');
-    if (allLines.length === 0) {
+    const showHistory = viewMode !== 'forecast';   // Forecast = predictions only (history hidden, like the chart)
+
+    // Forecast mode with no forecast yet: mirror the blanked chart instead of leaving stale history.
+    if (viewMode === 'forecast' && !fc) {
+      el.innerHTML = '<div class="empty">' +
+        (fcBusy ? 'Forecasting…' : fcError ? escapeHtml('Forecast failed: ' + fcError) : 'No forecast yet') +
+        '</div>';
+      return;
+    }
+
+    const pred = predictedEntries();
+
+    if (showHistory && allLines.length === 0 && !pred.count) {
       el.innerHTML = '<div class="empty">Pick a range above to load the log</div>';
       return;
     }
-    const filtered = allLines.filter(line => {
+
+    const filtered = showHistory ? allLines.filter(line => {
       if (line.indexOf('(Est)') >= 0) return false;   // drop the preliminary estimate line (one entry per 5-min)
       const mode = getMode(line);
       if (!activeModes.has(mode)) return false;
@@ -467,14 +580,21 @@ function battmanLogRun(card, root) {
         if (!isNaN(tt) && (tt < periodFilter.start || tt >= periodFilter.end)) return false;
       }
       return true;
-    });
-    if (filtered.length === 0) {
+    }) : [];
+
+    if (filtered.length === 0 && !pred.count) {
       el.innerHTML = '<div class="empty">No entries match filters' + (periodFilter ? ' (block ' + escapeHtml(periodFilter.label || '') + ')' : '') + '</div>';
       return;
     }
+
     const periodNote = periodFilter ? ' · block ' + escapeHtml(periodFilter.label || '') + ' (' + escapeHtml(periodFilter.mode) + ')' : '';
-    const countHtml = '<div class="count">' + filtered.length + ' of ' + allLines.length + ' entries' + periodNote + '</div>';
-    el.innerHTML = countHtml + filtered.slice().reverse().map(format).join('');
+    let countTxt;
+    if (!showHistory) countTxt = pred.count + ' predicted entr' + (pred.count === 1 ? 'y' : 'ies');
+    else if (pred.count) countTxt = pred.count + ' predicted · ' + filtered.length + ' of ' + allLines.length + ' entries';
+    else countTxt = filtered.length + ' of ' + allLines.length + ' entries';
+    const countHtml = '<div class="count">' + countTxt + periodNote + '</div>';
+    if (viewMode === 'history') el.innerHTML = countHtml + filtered.slice().reverse().map(format).join('');   // as it always was
+    else el.innerHTML = countHtml + filtered.map(format).join('') + pred.html;                                // forward in time
   }
 
   // collapse / expand the log to reach the charts quickly
@@ -499,8 +619,11 @@ function battmanLogRun(card, root) {
 
   // ------------------------------------------------------- range controls
   function setRangeAndLoad(start, end) {
-    logRange = [fmtDt(start), fmtDt(end)];
-    last = '';
+    const e = new Date(Math.min(end.getTime(), Date.now()));   // the engine log only has the past
+    if (start.getTime() >= e.getTime()) { logRange = null; allLines = []; last = ''; renderLog(); return; }
+    logRange = [fmtDt(start), fmtDt(e)];
+    last = null;   // never equal to a response: a range change always redraws
+    if (wantsFuture()) renderLog();   // the predicted part follows the new range at once, not after the history reply
     load();
   }
 
@@ -519,6 +642,34 @@ function battmanLogRun(card, root) {
   const toLabel = $('toLabel');
   let curStart = null, curEnd = null;
   let presetMins = null;       // the quick range in use (null = a range you set): follows now on each run
+  let toMax = false;           // Forecast / Both default: To sits at the end of the forecast
+  // End of the forecast (ms). Until one is loaded, assume the 24 h the forecast asks for.
+  function fcEndMs() {
+    const nw = Date.now();
+    return (fc && fc.slots.length) ? Math.max(nw + 300000, fc.slots[fc.slots.length - 1].end) : nw + 24 * 3600000;
+  }
+  // The range rules per mode. History: anything (as it always was). Forecast: from now to the end of the
+  // forecast. Both: any From (history) to the end of the forecast.
+  function clampRange(a, b) {
+    const nw = Date.now(), hi = fcEndMs(), MIN = 300000;
+    if (viewMode === 'forecast') {
+      a = Math.max(a, nw); b = Math.min(b, hi);
+      if (b < a + MIN) b = Math.min(hi, a + MIN);
+      if (a > b - MIN) a = Math.max(nw, b - MIN);
+    } else if (viewMode === 'both') {
+      b = Math.min(b, hi);
+      if (a > b - MIN) a = b - MIN;
+    }
+    return [a, b];
+  }
+  // A quick range (e.g. 4h) in the current mode: history = back from now, forecast = ahead from now,
+  // both = either side of now.
+  function presetWindow(mins) {
+    const nw = Date.now(), d = mins * 60000;
+    if (viewMode === 'forecast') return [nw, nw + d];
+    if (viewMode === 'both') return [nw - d, nw + d];
+    return [nw - d, nw];
+  }
 
   function fmtStamp(d) {
     return d.toLocaleString([], { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
@@ -528,10 +679,15 @@ function battmanLogRun(card, root) {
     if (chip) chip.classList.add('active');
   }
   function renderSummary() {
-    fromLabel.textContent = curStart ? fmtStamp(curStart) : '—';
-    toLabel.textContent = curEnd ? fmtStamp(curEnd) : '—';
+    fromLabel.textContent = curStart ? fmtStamp(curStart) : '\u2014';
+    toLabel.textContent = curEnd ? fmtStamp(curEnd) : '\u2014';
+    if (curStart) fromEl.value = toInputVal(curStart);
+    if (curEnd) toEl.value = toInputVal(curEnd);
+    try { updatePager(); } catch (e) {}
   }
   function applyRange(start, end, chip) {
+    const cl = clampRange(start.getTime(), end.getTime());   // identity in History
+    start = new Date(cl[0]); end = new Date(cl[1]);
     curStart = start; curEnd = end;
     periodFilter = null;   // a new range/pill clears any tapped mode-period filter
     lastTapMs = null;      // and drops the tapped-point marker/anchor
@@ -545,19 +701,17 @@ function battmanLogRun(card, root) {
   }
   function loadPreset(mins, chip) {
     haptic();
-    presetMins = mins;
-    const now = new Date();
-    applyRange(new Date(now.getTime() - mins * 60 * 1000), now, chip);
+    presetMins = mins; toMax = false;
+    const w = presetWindow(mins);
+    applyRange(new Date(w[0]), new Date(w[1]), chip);
   }
   // a run was logged: on a quick range the window moves on to now (filters and the tapped point
   // stay); on a range you set, it stays put
   function follow() {
     if (presetMins == null || FATAL) return;
-    const now = new Date();
-    curStart = new Date(now.getTime() - presetMins * 60 * 1000); curEnd = now;
+    const w = clampRange.apply(null, presetWindow(presetMins));
+    curStart = new Date(w[0]); curEnd = new Date(w[1]);
     renderSummary();
-    fromEl.value = toInputVal(curStart);
-    toEl.value = toInputVal(curEnd);
     setRangeAndLoad(curStart, curEnd);
     refreshChart();
     updatePager();
@@ -582,7 +736,7 @@ function battmanLogRun(card, root) {
       const picked = new Date(inp.value);
       picked.setSeconds(0, 0);
       picked.setMinutes(Math.round(picked.getMinutes() / 5) * 5);
-      presetMins = null;
+      presetMins = null; toMax = false;
       if (isFrom) applyRange(picked, curEnd || new Date(), null);
       else applyRange(curStart || new Date(Date.now() - 15 * 60000), picked, null);
     });
@@ -604,6 +758,12 @@ function battmanLogRun(card, root) {
   function updatePager() {
     if (!curStart || !curEnd) { pgrSpan.textContent = ''; return; }
     pgrSpan.textContent = fmtSpan(curEnd.getTime() - curStart.getTime()) + ' window';
+    if (wantsFuture()) {
+      pageNext.classList.toggle('disabled', curEnd.getTime() >= fcEndMs() - 60000);
+      pagePrev.classList.toggle('disabled', viewMode === 'forecast' && curStart.getTime() <= Date.now() + 60000);
+      return;
+    }
+    pagePrev.classList.remove('disabled');
     pageNext.classList.toggle('disabled', (Date.now() - curEnd.getTime()) < 60000);
   }
   function shiftRange(dir) {
@@ -613,11 +773,45 @@ function battmanLogRun(card, root) {
     const now = Date.now();
     let ns = curStart.getTime() + dir * D;
     let ne = curEnd.getTime() + dir * D;
+    if (wantsFuture()) {
+      // Forecast: stays within now .. end of forecast. Both: up to the end of the forecast.
+      const hi = fcEndMs(), lo = viewMode === 'forecast' ? now : -Infinity;
+      if (ns < lo) { ns = lo; ne = lo + D; }
+      if (ne > hi) { ne = hi; ns = Math.max(lo, hi - D); }
+      presetMins = null; toMax = false;
+      applyRange(new Date(ns), new Date(ne), null);
+      return;
+    }
     const live = ne >= now;
     if (live) { ne = now; ns = now - D; }   // don't page into the future; snap to live
     if (!live) presetMins = null;           // an earlier window stays where it is
     applyRange(new Date(ns), new Date(ne), live ? chipsEl.querySelector('.chip.active') : null);
   }
+  // Switching mode resets From / To to the defaults (the 4h quick range in that mode, as on load).
+  function reframe() {
+    presetMins = 240; toMax = false;
+    const chip4h = Array.from(chipsEl.querySelectorAll('.chip')).find(c => c.textContent === '4h');
+    const w = presetWindow(240);
+    applyRange(new Date(w[0]), new Date(w[1]), chip4h);
+  }
+  // ---- FUTURE: History / Forecast / Both selector + reload ----
+  const viewChipsEl = $('viewChips');
+  [['History', 'history'], ['Forecast', 'forecast'], ['Both', 'both']].forEach(([label, v]) => {
+    const c = document.createElement('span');
+    c.className = 'chip' + (v === viewMode ? ' active' : '');
+    c.textContent = label; c.dataset.view = v;
+    c.onclick = () => {
+      haptic(); viewMode = v; lastTapMs = null;
+      try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
+      viewChipsEl.querySelectorAll('.chip').forEach(x => x.classList.toggle('active', x === c));
+      setFcStamp();
+      reframe();         // reset From / To to the defaults for the new mode (also redraws the charts + history log)
+      renderLog();       // show / hide predicted entries for the new mode
+      if (wantsFuture() && !fc && !fcBusy) loadForecast();
+    };
+    viewChipsEl.appendChild(c);
+  });
+  $('fcReload').onclick = () => { haptic(); loadForecast(); };
   pagePrev.onclick = () => shiftRange(-1);
   pageNext.onclick = () => shiftRange(1);
 
@@ -677,17 +871,20 @@ function battmanLogRun(card, root) {
       // no next change yet → "so far"; a block whose start sits at the window's left edge may
       // have begun earlier → "+".
       let durTxt = '';
-      if (idx >= 0) durTxt = modeLengthText(pts[idx].t, (idx + 1 < pts.length) ? pts[idx + 1].t : null, t1, t0);
+      if (idx >= 0 && !(t > Date.now() && idx + 1 >= pts.length)) durTxt = modeLengthText(pts[idx].t, (idx + 1 < pts.length) ? pts[idx + 1].t : null, t1, t0);
 
       const cents = centsText, pct = percentText;
       const v = valsAt(t);
+      const fs = (wantsFuture() && t > Date.now()) ? fcSlotAt(t) : null;
+      if (fs) { v.buy = fs.buy_price; v.sell = fs.sell_price; v.soc = fs.soc_end; }
       // show the same 5-min block the tap would filter (anchored to the nearest log line)
       const line = nearestLine(t);
       let dispT = t;
-      if (line) { const a = Date.parse(line.slice(0, line.indexOf('|'))); if (!isNaN(a)) dispT = Math.floor(a / 300000) * 300000; }
+      if (fs) dispT = Math.floor(t / 300000) * 300000;
+      else if (line) { const a = Date.parse(line.slice(0, line.indexOf('|'))); if (!isNaN(a)) dispT = Math.floor(a / 300000) * 300000; }
       out.innerHTML =
         '<span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' +
-        hhmm(new Date(dispT)) + ' &middot; <b>' + escapeHtml(m) + '</b>' +
+        hhmm(new Date(dispT)) + (fs ? ' <span class="ro-fc">FORECAST</span>' : '') + ' &middot; <b>' + escapeHtml(m) + '</b>' +
         (durTxt ? ' &middot; <span class="ro-dur">' + durTxt + '</span>' : '') +
         '<span class="ro-extra">buy ' + cents(v.buy) + ' · sell ' + cents(v.sell) + ' · SOC ' + pct(v.soc) + '</span>';
     }
@@ -743,7 +940,7 @@ function battmanLogRun(card, root) {
     // timestamps being exactly on the 5-min mark and always contains that line (never empty).
     // Pick a range up top to reset.
     function setFilter() {
-      if (lastT == null) return;
+      if (lastT == null || lastT > Date.now()) return;   // the log has nothing to filter in the future
       const line = nearestLine(lastT);
       if (!line) return;                       // nothing to anchor to -> leave the log as-is
       const anchor = Date.parse(line.slice(0, line.indexOf('|')));
@@ -886,20 +1083,265 @@ function battmanLogRun(card, root) {
     applyOrder();
   }
 
-  async function fetchHistoryRaw() {
-    // the chart window is the log's selected range (last 5 h until one is picked)
+  // ---- Forecast wording: LIFTED VERBATIM from the Chill popup (custom_components/battman/www/battman-forecast.html,
+  // the <pure> block) so the Log's FORECAST entries group and read exactly like "Next N hours". If the popup's
+  // grouping changes, re-copy it here. Wrapped in a function so its helper names stay private to it.
+  const FP = (() => {
+  // ---- turning the forecast's slots into the rows shown (no page access in this block) ----
+  const c1 = x => (x * 100);
+  const d1 = x => { const r = Math.round(c1(x) * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
+  const hhmm = iso => String(iso).slice(11, 16);
+  const money = x => (x < 0 ? '−$' : '+$') + Math.abs(x).toFixed(2);
+  const sum = (a, f) => a.reduce((t, x) => t + f(x), 0);
+  
+  function addMinutes(iso, mins) {
+    // 'YYYY-MM-DDTHH:MM:SS+10:30' + minutes, as HH:MM (same offset, so only the clock part moves)
+    const h = +iso.slice(11, 13), m = +iso.slice(14, 16);
+    const t = (h * 60 + m + Math.round(mins)) % 1440;
+    return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+  }
+  
+  function kind(s) {
+    // what the slot is, in the words the card uses
+    const m = s.mode;
+    if (m === 'Charge Solar Off') return 'hooover';
+    if (m === 'Float Solar Off') return 'party';
+    if (m === 'Charge') return 'buy';
+    if (m === 'Discharge') return 'sell';
+    if (m === 'Drain') return 'drain';
+    if (m === 'Float') return 'float';
+    return 'idle';
+  }
+  
+  // v1's two "what would make Battman act" keys for a quiet slot:
+  //   bpk: the buy line (in whole cents), or 'P' when it is below the line but it is peak (no buying 5-9pm); null when the battery is not below the line
+  //   spk: the sell line (whole cents) when the battery is above the sell line, null otherwise
+  function bpk(s) {
+    if (kind(s) !== 'idle' || !(s.soc_start < s.buy_below)) return null;
+    return s.buy_reason === 'No Buy in Peak Tariff' ? 'P' : Math.round(c1(s.buy_line));
+  }
+  function spk(s) {
+    return kind(s) === 'idle' && s.sell_price_known && s.soc_start > s.sell_above + 1 ? Math.round(c1(s.sell_line)) : null;
+  }
+  // two keys are "the same" when both are absent, both present and equal, or both numbers within 2c (v1's rule)
+  const near = (x, y) => (x === null) === (y === null) && (x === null || x === y || (typeof x === 'number' && typeof y === 'number' && Math.abs(x - y) < 2));
+  // the sell / buy "kind of reason" (v1 only split where this changed)
+  const sellCat = s => /^Solar/.test(s.sell_reason) ? 'solar' : (/Drain/.test(s.sell_reason) ? 'drain' : 'sell');
+  const buyCat = s => s.buy_reason === 'Anytime' ? 'anytime' : 'buy';
+  
+  function group(slots) {
+    // MASTERS: runs of the same kind of slot
+    const S = slots.map((s, i) => Object.assign({}, s, { _end: i + 1 < slots.length ? hhmm(slots[i + 1].start) : addMinutes(s.start, s.minutes) }));
+    const out = [];
+    S.forEach(s => {
+      const k = kind(s), last = out[out.length - 1];
+      if (last && last.kind === k) last.slots.push(s); else out.push({ kind: k, slots: [s] });
+    });
+    out.forEach(m => { m.start = m.slots[0].live ? 'Now' : hhmm(m.slots[0].start); m.end = m.slots[m.slots.length - 1]._end; });
+    return out;
+  }
+  
+  function split(m) {
+    // PARTS: v1's splitting of a master
+    const parts = [];
+    m.slots.forEach(s => {
+      const p = parts[parts.length - 1];
+      let same = false;
+      if (p) {
+        const f = p.slots[0];
+        if (m.kind === 'idle') same = near(spk(s), p.spk) && near(bpk(s), p.bpk);
+        else if (m.kind === 'buy' || m.kind === 'hooover') same = (s.buy_price < 0) === (f.buy_price < 0) && buyCat(s) === buyCat(f);
+        else if (m.kind === 'sell' || m.kind === 'drain') same = sellCat(s) === sellCat(f);
+        else same = true;
+        // whatever the mode: a price move of 2c or more starts a new part (sell kinds follow the sell price, the rest the buy price)
+        if (same && m.kind !== 'idle') {
+          const px = x => c1(m.kind === 'sell' || m.kind === 'drain' ? x.sell_price : x.buy_price);
+          if (Number.isFinite(px(s)) && Number.isFinite(px(f)) && Math.abs(px(s) - px(f)) >= 2) same = false;
+        }
+      }
+      if (same) p.slots.push(s); else parts.push({ kind: m.kind, slots: [s], spk: spk(s), bpk: bpk(s) });
+    });
+    parts.forEach(p => { p.start = p.slots[0].live ? 'Now' : hhmm(p.slots[0].start); p.end = p.slots[p.slots.length - 1]._end; });
+    return parts;
+  }
+  
+  const rng = (vals) => { const lo = Math.min(...vals), hi = Math.max(...vals); return d1(lo) === d1(hi) ? d1(lo) : d1(lo) + '–' + d1(hi); };
+  const tag = (a, ruled, over) => a.some(s => s[ruled]) ? ' (' + (ruled === 'buy_ruled' ? 'buy' : 'sell') + ' rule)' : (a.some(s => s[over]) ? ' (override)' : '');
+  
+  // "House 1.2 kW · solar 3.4 kW" for the slots of a row (a range when they differ)
+  function loadLine(a) {
+    const range = v => { const lo = Math.min(...v), hi = Math.max(...v); return lo.toFixed(1) === hi.toFixed(1) ? lo.toFixed(1) : lo.toFixed(1) + '–' + hi.toFixed(1); };
+    const L = a.map(s => s.load_kw).filter(Number.isFinite), P = a.map(s => s.pv_kw).filter(Number.isFinite);
+    if (!L.length) return '';
+    const kwh = f => { const v = sum(a, s => (Number.isFinite(s[f]) ? s[f] : 0) * s.minutes / 60); return v >= 10 ? v.toFixed(0) : v.toFixed(1); };
+    const off = a.every(s => s.solar_off);   // the mode has the solar switched off: the figure is what is available, not what is used
+    return `House ${range(L)} kW (${kwh('load_kw')} kWh)` + (P.length && Math.max(...P) > 0.05
+      ? (off ? ` · solar switched off, ${range(P)} kW (${kwh('pv_kw')} kWh) available` : ` · solar ${range(P)} kW (${kwh('pv_kw')} kWh)`) : '');
+  }
+  // the orange line for solar that is sent to the grid (or held back because the price is negative)
+  function exportHint(a) {
+    const kwh = sum(a, s => s.export_kwh);
+    if (kwh >= 0.05) return ['var(--battman-orange)', `Exporting excess solar, ${kwh.toFixed(1)} kWh at ${d1(sum(a, s => s.export_kwh * s.sell_price) / kwh)}c`];
+    if (a.some(s => s.curtail && s.pv_kw > 0.05)) return ['var(--battman-orange)', 'Solar curtailed: the export price is negative'];
+    return null;
+  }
+  
+  function describe(p) {
+    // the words for a part or a whole master: { head, sub, hints:[[colour, text]], money, colour, ... }
+    const a = p.slots, f = a[0], l = a[a.length - 1];
+    const money$ = sum(a, x => x.money), batt = sum(a, x => x.battery_kwh);
+    const avgBuy = sum(a, x => x.buy_price) / a.length, avgSell = sum(a, x => x.sell_price) / a.length;
+    const soc = `battery ${Math.round(f.soc_start)}% → ${Math.round(l.soc_end)}%`;
+    const kwhSold = sum(a, x => x.export_kwh).toFixed(1), kwhBought = sum(a, x => x.import_kwh).toFixed(1);
+    const houseKwh = sum(a, x => (x.load_kw || 0) * x.minutes / 60);
+    const kwh = Math.abs(batt).toFixed(1);   // the whole battery change (the house included): used for Drain only
+    // a quiet row's colour (as the Chill card): orange when the grid is used, green when solar fills the battery, blue otherwise
+    const holdCol = money$ < -0.005 ? 'var(--battman-orange)' : (l.soc_end > f.soc_start + 0.05 ? 'var(--battman-green)' : 'var(--battman-blue)');
+    const o = { money: money$, color: holdCol, bg: '', chip: '', hints: [], act: p.kind !== 'idle', fx: p.kind === 'hooover' ? 'hooover' : (p.kind === 'party' ? 'houseparty' : '') };
+    switch (p.kind) {
+      case 'sell':
+        Object.assign(o, { color: 'var(--battman-green)', head: `Sell ${kwhSold} kWh, ${soc}`,
+          sub: /^Spike/.test(f.sell_reason) ? `Price spike: Amber pays ${d1(avgSell)}c (${f.sell_reason}).`
+            : `Amber pays ${d1(avgSell)}c. BATTMAN sells at ${d1(f.sell_line)}c or more (${f.sell_reason}).` }); break;
+      case 'buy':
+        Object.assign(o, { color: 'var(--battman-yellow)', head: `Buy ${kwhBought} kWh, ${soc}`,
+          sub: `${avgBuy < 0 ? 'Amber pays you ' + d1(-avgBuy) + 'c' : 'Amber charges ' + d1(avgBuy) + 'c'}. BATTMAN buys at ${d1(f.buy_line)}c or less (${f.buy_reason}).` }); break;
+      case 'hooover':
+        Object.assign(o, { color: 'var(--battman-purple)', chip: 'Hoooover', head: `Buy ${kwhBought} kWh, ${soc}`,
+          sub: `Amber pays you ${d1(-avgBuy)}c to use power: charging to 100%, ignoring the curve.` }); break;
+      case 'party':
+        Object.assign(o, { color: 'var(--battman-purple)', chip: 'House Party', head: `Run the house off the grid, battery holds at ${Math.round(l.soc_end)}%`,
+          sub: `Amber pays you ${d1(-avgBuy)}c to use power: holding the battery, no grid charge.` }); break;
+      case 'drain':
+        Object.assign(o, { color: 'var(--battman-red)', head: `Drain ${kwh} kWh, ${soc}`,
+          sub: `Grid price is under the drain price (${f.sell_reason}); this moves charge, not dollars.` }); break;
+      case 'float':
+        Object.assign(o, { color: 'var(--battman-green)', head: `Hold the battery at ${Math.round(l.soc_end)}%`,
+          sub: `Solar goes to the house and grid (${f.sell_reason}).` }); break;
+      default: {
+        o.head = `Do nothing, ${soc}`;
+        // the Chill card's words for a quiet stretch
+        o.sub = money$ < -0.005 ? 'Battery runs low, house uses the grid.' : (l.soc_end > f.soc_start ? 'Solar fills the battery.' : 'House runs off the battery.');
+      }
+    }
+    if (p.kind === 'idle') {
+      // v1's two hints under a quiet row
+      if (p.bpk === 'P') o.hints.push(['var(--battman-yellow)', 'Below the buy line, but no buying in peak (5–9pm)']);
+      else if (p.bpk !== null && p.bpk !== undefined) o.hints.push(['var(--battman-yellow)', `Buys if Amber charges ${d1(Math.max(...a.map(s => s.buy_line)))}c or less${tag(a, 'buy_ruled', 'buy_override')}`]);
+      const sp = a.filter(s => spk(s) !== null);
+      if (sp.length) o.hints.push(['var(--battman-orange)', `Sells if Amber pays ${d1(Math.min(...sp.map(s => s.sell_line)))}c or more${tag(sp, 'sell_ruled', 'sell_override')}`]);
+    }
+    o.load = loadLine(a);
+    if (p.kind === 'sell' && houseKwh >= 0.05) o.load += ` · battery covers ${houseKwh.toFixed(1)} kWh of the house`;
+    if (p.kind === 'idle' || p.kind === 'float') { const ex = exportHint(a); if (ex) o.hints.push(ex); }
+    return o;
+  }
+  
+  function summaryHints(parts) {
+    // the master's one-line summary: the range of each hint across its parts
+    const hints = [];
+    const buys = parts.filter(p => p.bpk !== null && p.bpk !== 'P').map(p => Math.max(...p.slots.map(s => s.buy_line)));
+    const sells = parts.filter(p => p.spk !== null).map(p => Math.min(...p.slots.filter(s => spk(s) !== null).map(s => s.sell_line)));
+    if (parts.some(p => p.bpk === 'P')) hints.push(['var(--battman-yellow)', 'No buying in peak (5–9pm)']);
+    if (buys.length) hints.push(['var(--battman-yellow)', `Buys if Amber charges ${rng(buys)}c or less`]);
+    if (sells.length) hints.push(['var(--battman-orange)', `Sells if Amber pays ${rng(sells)}c or more`]);
+    return hints;
+  }
+  
+  return { group, split, describe, money };
+  })();
+
+  // The window drawn = the range (From / To), clamped per mode when it was set.
+  function displayWindow() {
     const end = curEnd ? new Date(curEnd) : new Date();
     const start = curStart ? new Date(curStart) : new Date(end.getTime() - HISTORY_HOURS * 3600 * 1000);
+    return { start, end };
+  }
+
+  async function fetchHistoryRaw() {
+    const win = displayWindow();
+    const start = win.start, end = win.end;
+    const hEnd = new Date(Math.min(end.getTime(), Date.now()));
+    if (viewMode === 'forecast' || start.getTime() >= hEnd.getTime()) { const out = {}; mergeForecast(out, start, end); return { out, start, end }; }
     const path = 'history/period/' + start.toISOString() +
       '?filter_entity_id=' + HISTORY_ENTITIES.join(',') +
-      '&end_time=' + end.toISOString() + '&minimal_response';
+      '&end_time=' + hEnd.toISOString() + '&minimal_response';
     try {
       const arr = await haObj().callApi('GET', path);
       const out = {};
       (arr || []).forEach(ser => { if (ser && ser.length && ser[0].entity_id) out[ser[0].entity_id] = ser; });
       out[GRID_ID] = gridSeries(out[M.grid_import_power], out[M.grid_export_power]);
+      if (wantsFuture()) mergeForecast(out, start, end);
       return { out, start, end };
     } catch(e) { return null; }
+  }
+
+  // ================= FUTURE: forecast fetch + merge =================
+  const iso = (ms) => new Date(ms).toISOString();
+  async function loadForecast() {
+    if (fcBusy || FATAL) return;
+    fcBusy = true; fcError = ''; setFcStamp();
+    // Forecast mode: drop the stale history graphs + log straight away so they don't linger while the
+    // forecast is fetched (Both keeps its real history, which is valid and already on screen).
+    if (wantsFuture()) { refreshChart(); renderLog(); }
+    try {
+      const r = await haObj().callWS({ type: 'call_service', domain: 'script', service: 'battman_engine_forecast',
+        service_data: { hours: 24 }, return_response: true });
+      let resp = r && r.response;
+      if (resp && resp.slots === undefined) resp = Object.values(resp)[0];
+      if (!resp || !Array.isArray(resp.slots)) throw new Error('the forecast returned no slots');
+      const slots = resp.slots.map(x => {
+        const t = Date.parse(x.start), mins = Number(x.minutes);
+        return Object.assign({}, x, { t: t, end: t + mins * 60000, hrs: mins / 60 });
+      }).filter(x => isFinite(x.t) && x.hrs > 0).sort((a, b) => a.t - b.t);
+      fc = { slots: slots, at: new Date(), approximate: !!resp.approximate, failed: resp.failed_slots || 0 };
+    } catch (e) {
+      fcError = String((e && e.message) || (e && e.body && e.body.message) || e);
+    }
+    fcBusy = false;
+    setFcStamp();
+    if (wantsFuture() && curStart && curEnd) {   // the forecast end is now known: keep the range inside it
+      const cl = clampRange(curStart.getTime(), toMax ? fcEndMs() : curEnd.getTime());
+      curStart = new Date(cl[0]); curEnd = new Date(cl[1]);
+    }
+    renderSummary();
+    refreshChart();
+    renderLog();
+  }
+  function setFcStamp() {
+    const el = $('fcStamp'), btn = $('fcReload'), row = $('fcRow');
+    if (!el) return;
+    if (btn) { btn.hidden = !wantsFuture(); btn.disabled = fcBusy; btn.classList.toggle('busy', fcBusy); }
+    // only problems get words: the buttons and charts already say everything else
+    el.textContent = !wantsFuture() || fcBusy ? '' : fcError ? 'Forecast failed: ' + fcError : (fc && fc.failed ? fc.failed + ' forecast slots failed' : '');
+    if (row) row.style.display = el.textContent ? '' : 'none';
+  }
+  const fcSlotAt = (t) => fc && fc.slots.find(x => t >= x.t && t < x.end) || null;
+  // add the forecast slots to the history series as extra points (same shape as history rows) so the
+  // existing bucket/chart code draws them. Prices are $/kWh like the sensors; grid + battery are kW.
+  function mergeForecast(out, start, end) {
+    if (!fc || fcBusy) return;   // never draw the old forecast while a new one is building
+    const nowMs = Date.now() - 2000, add = (id, t, v) => {
+      if (!id || v === null || v === undefined || !isFinite(Number(v))) return;
+      (out[id] = out[id] || []).push({ last_changed: iso(t), state: String(v) });
+    };
+    let lastMode = null;
+    const modeRows = out[MODE_ENTITY] = out[MODE_ENTITY] || [];
+    if (modeRows.length) lastMode = modeRows[modeRows.length - 1].state;
+    fc.slots.forEach(x => {
+      if (x.end <= nowMs || x.t > end.getTime() || x.end <= start.getTime()) return;
+      const t = Math.max(x.t, nowMs + 1000, start.getTime());
+      if (x.mode !== lastMode) { modeRows.push({ last_changed: iso(t), state: x.mode }); lastMode = x.mode; }
+      add(M.buy_price, t, x.buy_price);
+      add(M.feed_in_price, t, x.sell_price);
+      add(M.pv_power, t, x.pv_kw);
+      add(M.home_power, t, x.load_kw);
+      add(M.load_30m_avg, t, x.load_kw);
+      add(M.battery_power, t, Math.round(x.battery_kwh / x.hrs * 100) / 100);
+      add(GRID_ID, t, Math.round((x.import_kwh - x.export_kwh) / x.hrs * 100) / 100);
+      add(M.battery_soc, t, x.soc_start);
+      add(M.battery_soc, x.end - 1000, x.soc_end);
+    });
   }
 
   // Grid power history from import / export history, with the same rule as Battman's grid power
@@ -968,7 +1410,8 @@ function battmanLogRun(card, root) {
       const w = ((segEnd - segStart) / span) * 100;
       const col = modeColor[pts[i].m] || accentHex;
       if (seen.indexOf(pts[i].m) < 0) seen.push(pts[i].m);
-      bar += '<div class="mseg" style="width:' + w.toFixed(3) + '%;background:' + col + '" title="' +
+      const fut = wantsFuture() && segStart >= Date.now() - 2000;
+      bar += '<div class="mseg' + (fut ? ' fut' : '') + '" style="width:' + w.toFixed(3) + '%;background:' + col + '" title="' + (fut ? 'Forecast: ' : '') +
              escapeHtml(pts[i].m) + '"></div>';
     }
     // ticks at the same bucket positions (band centres) + times as the chart x-labels
@@ -981,7 +1424,9 @@ function battmanLogRun(card, root) {
     let legend = seen.map(m =>
       '<span class="li"><span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' + escapeHtml(m) + '</span>'
     ).join('');
-    el.innerHTML = '<div class="mbar">' + bar + '<div class="mmark" id="modeMark"></div></div><div class="mticks">' + ticks + '</div>' +
+    const nowF = (Date.now() - t0) / span;
+    const nowDiv = (wantsFuture() && nowF > 0 && nowF < 1) ? '<div class="mnow" style="left:' + (nowF * 100).toFixed(3) + '%"></div>' : '';
+    el.innerHTML = '<div class="mbar">' + bar + nowDiv + '<div class="mmark" id="modeMark"></div></div><div class="mticks">' + ticks + '</div>' +
                    '<div class="mreadout" id="modeReadout"><span class="hint">Tap the timeline for the mode at a point</span></div>' +
                    '<div class="mlegend">' + legend + '</div>';
   }
@@ -1011,12 +1456,16 @@ function battmanLogRun(card, root) {
     let unit = panel.unit;
     if (unit === '') { const st = h && h.states[panel.series[0].id]; unit = (st && st.attributes && st.attributes.unit_of_measurement) || ''; }
 
+    nowMarker = null;
+    if (wantsFuture()) { const nf = (Date.now() - t0) / (tEnd - t0); if (nf > 0 && nf < 1) nowMarker = { frac: nf, idx: Math.floor((Date.now() - t0) / step) }; }
+    const nm = nowMarker;
     const datasets = panel.series.map(s => {
       const col = gc(s.token);
       const arr = bucketize(out[s.id], gStart, gEnd, n, v => { const f = parseFloat(v); return isFinite(f) ? (s.mul ? f * s.mul : f) : null; });
       return {
         label: s.label, data: arr, borderColor: col, backgroundColor: col + '20',
-        fill: panel.series.length === 1, tension: 0, stepped: true, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, spanGaps: true
+        fill: panel.series.length === 1, tension: 0, stepped: true, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, spanGaps: true,
+        segment: { borderDash: c => (nm && c.p0DataIndex >= nm.idx) ? [5, 4] : undefined }
       };
     });
 
@@ -1041,6 +1490,15 @@ function battmanLogRun(card, root) {
       }
     };
 
+    cfg.plugins = [{ id: 'nowline', beforeDatasetsDraw: (ch) => {
+      if (!nm) return;
+      const ca = ch.chartArea, x = ca.left + nm.frac * (ca.right - ca.left), c = ch.ctx;
+      c.save();
+      c.fillStyle = 'rgba(128,128,128,0.10)'; c.fillRect(x, ca.top, ca.right - x, ca.bottom - ca.top);
+      c.strokeStyle = muted; c.lineWidth = 1; c.setLineDash([4, 3]);
+      c.beginPath(); c.moveTo(x, ca.top); c.lineTo(x, ca.bottom); c.stroke();
+      c.restore();
+    } }];
     if (charts[panel.id]) charts[panel.id].destroy();
     charts[panel.id] = new ChartLib($('cv-' + panel.id).getContext('2d'), cfg);
   }
@@ -1062,8 +1520,17 @@ function battmanLogRun(card, root) {
 
   async function refreshChart() {
     if (FATAL || !PANELS.length) return;
-    const data = await fetchHistoryRaw();
+    renderSummary();   // future window tracks 'now', so keep From / To current on each refresh
     const modeEl = $('modeStrip');
+    if (viewMode === 'forecast' && (fcBusy || !fc)) {
+      const msg = fcBusy ? 'Forecasting\u2026' : (fcError ? 'Forecast failed' : 'No forecast yet');
+      modeStripState = null;
+      root.querySelectorAll('.cline').forEach(l => l.style.opacity = '0');
+      if (modeEl) modeEl.innerHTML = '<div class="chart-empty">' + msg + '</div>';
+      PANELS.forEach(p => { const w = $('wrap-' + p.id), e = $('empty-' + p.id); if (w) w.style.display = 'none'; if (e) { e.style.display = ''; e.textContent = msg; } });
+      return;
+    }
+    const data = await fetchHistoryRaw();
     if (!data) {
       if (modeEl) modeEl.innerHTML = '<div class="chart-empty">History unavailable</div>';
       PANELS.forEach(p => renderLinePanel(p, null));
@@ -1133,10 +1600,13 @@ function battmanLogRun(card, root) {
     const now = new Date();
     presetMins = 240;
     const chip4h = Array.from(chipsEl.querySelectorAll('.chip')).find(c => c.textContent === '4h');
-    applyRange(new Date(now.getTime() - 4 * 60 * 60 * 1000), now, chip4h);
+    const w0 = presetWindow(240);
+    applyRange(new Date(w0[0]), new Date(w0[1]), chip4h);
     resizeObs = new ResizeObserver(() => requestAnimationFrame(alignModeStrip));
     resizeObs.observe($('reorder'));
     started = true;
+    setFcStamp();                                    // shows the reload button when Forecast / Both was remembered
+    if (wantsFuture() && !fc) loadForecast();        // ...and loads the forecast straight away
     if (card.isConnected) resume();
   })();
 
@@ -1160,6 +1630,8 @@ function battmanLogRun(card, root) {
     applyModeColors();
     renderLog();
     refreshChart();
+    setFcStamp();
+    if (wantsFuture() && !fc) loadForecast();
   }
   return { resume, pause, themeChanged };
 }

@@ -159,6 +159,15 @@ draws itself, so it grows to fit (no size to set) and takes the view's theme dir
 options. It looks and works as the page did:
 
 - **Filter Log**: quick ranges (5m to 24h), the ‹ › pager, and From / To.
+- **History / Forecast / Both**: History is the log as it always was. Forecast and Both add what the
+  engine would do next (`script.battman_engine_forecast`, the same forecast as the Chill card's
+  "Next N hours" popup): mode, price, battery charge, grid and power after a dashed "now" line, and
+  the log lists the predicted blocks in the popup's own wording (what it does, why, the average
+  prices, charge start to end and the dollars), each with a dotted bar. The same From / To and quick
+  ranges apply: Forecast covers now to the end of the forecast; Both can start anywhere in the past.
+  The forecast is fetched once (about 5 seconds) when you open Forecast or Both, and the reload
+  icon fetches it again; changing the range only shows a different slice of it. The choice is
+  remembered per device.
 - **Log**: collapsed to start; tick modes on or off, or Changes Only.
 - **Mode**: tap the timeline for the mode, price and battery at that point, and to limit the log to
   that 5-minute block; drag to scrub (the charts show the same point).
