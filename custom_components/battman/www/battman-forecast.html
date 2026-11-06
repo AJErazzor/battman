@@ -97,8 +97,10 @@ details.panel[open]>summary{border-bottom:1px solid color-mix(in srgb,var(--batt
 .btn.small{min-height:40px;padding:0 12px;font-size:14px}
 ul.acc{padding:8px 14px 12px 30px;color:var(--battman-text-muted);font-size:12px;line-height:1.5}
 .wi .tilde::before{content:"~"}
+.gamble{margin:0 2px 8px;padding:8px 10px;border-radius:8px;text-align:center;font-size:17px;font-weight:800;line-height:1.3;color:var(--battman-yellow);background:color-mix(in srgb,var(--battman-yellow) 10%,transparent);border:1px solid color-mix(in srgb,var(--battman-yellow) 35%,transparent)}
 </style></head><body>
 <div class="pop">
+  <div class="gamble" id="gamble"></div>
   <div class="pill" id="pill"><span id="title">Next hours</span><span class="asof"><span class="spin">working… </span><span id="gen"></span></span></div>
   <div class="banner" id="banner">WHAT-IF · not live · nothing is sent to the battery</div>
 
@@ -121,6 +123,11 @@ ul.acc{padding:8px 14px 12px 30px;color:var(--battman-text-muted);font-size:12px
 
   <details class="panel"><summary>How accurate is this?</summary><ul class="acc" id="acc"></ul></details>
 </div>
+<script>
+// A random responsible-gambling reminder at the top, a new one each time the popup opens.
+(function(){var m=["What are you prepared to lose today? Set a limit.","Imagine what you could be buying instead.","You win some, you lose more.","What are you really gambling with?","Chances are you\u2019re about to lose.","Think. Is this a bet you really want to place?","What\u2019s gambling really costing you?"];
+document.getElementById("gamble").textContent=m[Math.floor(Math.random()*m.length)];})();
+</script>
 <script>
 // <pure>
 // ---- turning the forecast's slots into the rows shown (no page access in this block) ----
