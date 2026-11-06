@@ -548,7 +548,7 @@ window.BattmanLib.correctTotals = function (btn, ids) {
     var hass = document.querySelector('home-assistant').hass;
     var dlg = L.modal(btn, {
       width: 'min(94vw,420px)', close: true,
-      css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 36px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
+      css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 48px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
       html: '<div class="pop"><div class="ph">Correct totals</div>' + L.totalsForm(hass.states) + '</div>',
     });
     if (!dlg) L.toast(btn, "Correct totals can't open in this browser.");
@@ -802,7 +802,7 @@ window.BattmanLib.modal = function (el, o) {
     'dialog.bm{padding:0;border:0;background:transparent;max-width:var(--bm-w);width:92vw;overflow:visible;color:var(--battman-text-bright,#eee);font-family:var(--battman-font,inherit)}' +
     'dialog.bm:focus,.bm button:focus:not(:focus-visible){outline:none}' +
     'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
-    '.bm .x{position:absolute;top:6px;right:6px;z-index:2;width:36px;height:36px;border-radius:18px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:18px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '.bm .x{position:absolute;top:2px;right:2px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
     (o.css || '') + '</style>' + (o.close ? '<button class="x" type="button" aria-label="Close">✕</button>' : '') + o.html;
   var prevOverflow = document.documentElement.style.overflow;
   if (o.close) dlg.querySelector('.x').addEventListener('click', function () { dlg.close(); });
@@ -888,7 +888,7 @@ window.BattmanLib.POPUPS.run = function (d) {
 window.BattmanLib.POPUPS.forecast = function (d, el) {
   window.BattmanLib.modal(el, {
     width: 'min(94vw,480px)', close: true,
-    css: '.bm .fc{padding-top:38px;background:var(--battman-surface-card,#000);border-radius:8px;overflow:hidden}.bm .fc iframe{display:block;width:100%;height:min(80vh,720px);border:0}',
+    css: '.bm .fc{padding-top:48px;background:var(--battman-surface-card,#000);border-radius:8px;overflow:hidden}.bm .fc iframe{display:block;width:100%;height:min(80vh,720px);border:0}',
     html: '<div class="fc"><iframe src="' + (d.url || '/battmanfiles/battman-forecast.html') + '" title="Next hours"></iframe></div>',
   });
 };
