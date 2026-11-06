@@ -139,6 +139,17 @@ sequence:
     # curtail automation, so it is not used here)
     export_cap_kw: '{{ base.rated_inverter_kw if base.rated_inverter_kw is number and base.rated_inverter_kw > 0 else discharge_kw }}'
     house_kw: '{{ base.load_avg_kw if base.load_avg_kw is number else 1.0 }}'
+    # "Now means now": for the first live_hold_minutes the house load and the solar are what they are doing this
+    # moment (the live readings), then they fade over live_fade_minutes into the later figures (yesterday's hourly
+    # load, and the Solcast P10 forecast). Change these two numbers to hold the live readings for longer or shorter.
+    live_hold_minutes: 30
+    live_fade_minutes: 60
+    fixed_load: '{{ load_kw is defined and load_kw is number }}'
+    live_load_kw: '{{ base.load_now_kw if base.load_now_kw is number else house_kw }}'
+    # the live solar reading only means something while the battery mode lets the solar work (it reads 0 when a
+    # Solar Off mode has it switched off) and when no what-if solar scale is set
+    live_pv_ok: >-
+      {{ base.pv_now_kw is number and base.mode_now not in ['Charge Solar Off', 'Float Solar Off'] and solar_factor == 1 }}
     # the hour-by-hour profile is used for later slots when it is 24 numbers and no fixed load was asked for
     use_profile: >-
       {{ load_profile is defined and load_profile is iterable and load_profile is not string
@@ -199,15 +210,25 @@ sequence:
             {% endfor %}
           {% endif %}
           {{ ns.s }}
-        # House load for this slot: the live average for "now", then the profile for that hour (if given)
+        # How far ahead this slot starts, and how much of the live readings it still gets (1 = all, 0 = none)
+        mins_ahead: '{{ ((slot.ts - as_timestamp(base.now)) / 60) | round(2) }}'
+        live_weight: >-
+          {{ 1 if mins_ahead <= live_hold_minutes else ([0, 1 - (mins_ahead - live_hold_minutes) / live_fade_minutes] | max) }}
+        # House load for this slot, later on: that hour of yesterday's profile (if given), else the 30-minute average
+        later_load: >-
+          {{ load_profile[as_local(as_datetime(slot.start)).hour] if use_profile else house_kw }}
+        # House load for this slot's energy balance: the live reading fading into the later figure.
+        # A load fixed by the what-if is used as it is.
         slot_load: >-
-          {{ load_profile[as_local(as_datetime(slot.start)).hour] if use_profile and not slot.live else house_kw }}
+          {{ house_kw if fixed_load else ((live_weight * live_load_kw + (1 - live_weight) * later_load) | round(4)) }}
         # Solar: P10 kW in this slot, and P10 kWh still to come before midnight (for the "sun is poor" check)
         slot_midnight: >-
           {{ as_timestamp((as_local(as_datetime(slot.start)).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))) }}
+        # Solar available in this slot (kW): the live reading fading into the Solcast P10 forecast
         pv_now: >-
           {% set p = base.pv_forecast | selectattr('ts', 'le', slot.ts) | list | last | default(none) %}
-          {{ (((p.kw10 if p is not none and slot.ts < p.ts + 1800 else 0) | float(0)) * solar_factor) | round(4) }}
+          {% set fc = ((p.kw10 if p is not none and slot.ts < p.ts + 1800 else 0) | float(0)) * solar_factor %}
+          {{ ((live_weight * base.pv_now_kw + (1 - live_weight) * fc) if live_pv_ok else fc) | round(4) }}
         pv_left: >-
           {% set known = base.pv_forecast | selectattr('ts', 'gt', slot.ts - 1800) | selectattr('ts', 'lt', slot_midnight) | list %}
           {{ (((known | map(attribute='kw10') | map('float') | sum) * 0.5 * solar_factor) | round(4)) if known | length > 0 else none }}
@@ -222,7 +243,8 @@ sequence:
           mode_now: '{{ mode_before }}'
           on_grid: '{{ base.on_grid }}'
           pv_remaining_p10: '{{ pv_left }}'
-          load_avg_kw: '{{ slot_load if use_profile and not slot.live else base.load_avg_kw }}'
+          # the decision keeps seeing the profile hour or the 30-minute average, as the live engine does
+          load_avg_kw: '{{ later_load if use_profile and not slot.live else base.load_avg_kw }}'
           buy_now: '{{ slot.buy }}'
           sell_now: '{{ slot.sell }}'
           buy_forecast: '{{ buy_fc[slot.fi:] }}'
@@ -313,6 +335,8 @@ sequence:
             buy_below: '{{ decision.run.buyBelow | float(0) | round(2) }}'
             sell_above: '{{ decision.run.sellAbove | float(0) | round(2) }}'
             pv_kw: '{{ pv_now | round(2) }}'
+            # the mode has the solar switched off: pv_kw is then what is available, not what is used
+            solar_off: '{{ not solar_on }}'
             # the house load used for this slot (kW)
             load_kw: '{{ slot_load | round(2) }}'
             curtail: '{{ decision.curtail }}'
@@ -351,8 +375,9 @@ sequence:
       # (every line is quoted: an unquoted "word: word" would be read as a label and a value, not as a sentence)
       assumptions:
         - "Slot 0 is right now at the live price. Later slots use Amber's forecast prices (5-minute, then 30-minute)."
-        - "Solar is the cautious P10 forecast times the solar scale."
-        - "{{ 'House load follows the hour-by-hour profile it was given (the page gives yesterday, hour by hour). The first slot uses the live average.' if use_profile else 'House load is held at the 30-minute average for every slot.' }}"
+        - "{{ 'Solar is what it is doing now for the first ' ~ live_hold_minutes ~ ' minutes, then fades into the cautious P10 forecast over ' ~ live_fade_minutes ~ ' minutes.' if live_pv_ok else 'Solar is the cautious P10 forecast times the solar scale (it is not on now, or a solar change was asked for).' }}"
+        - "{{ 'House load is held at the load you set.' if fixed_load else ('House load is what it is doing now for the first ' ~ live_hold_minutes ~ ' minutes, then fades over ' ~ live_fade_minutes ~ ' minutes into ' ~ ('yesterday by the hour (the page gives that).' if use_profile else 'the 30-minute average.')) }}"
+        - "Battman's decisions use the 30-minute average (or yesterday's hour), as the live engine does. Only the cost uses the live readings."
         - "Curves, rules, today's totals and the protected-sell floor are held at today's values."
         - "A price above your spike price in Amber's forecast does trigger a spike sell. Spikes Amber has not forecast are not known, so they are not shown."
         - "The battery model is simple. It charges and discharges at the rated speed (selling is limited to the inverter's rating), with no losses."

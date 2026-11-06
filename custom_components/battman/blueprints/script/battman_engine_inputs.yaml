@@ -45,6 +45,8 @@ sequence:
     battery_charge_rate_kw: sensor.sigen_plant_ess_rated_charging_power
     battery_discharge_rate_kw: sensor.sigen_plant_ess_rated_discharging_power
     inverter_rated_kw: sensor.sigen_inverter_rated_active_power
+    house_power_now: sensor.sigen_plant_consumed_power
+    solar_power_now: sensor.sigen_plant_pv_power
     pv_forecast_today: sensor.solcast_pv_forecast_forecast_today
     pv_forecast_tomorrow: sensor.solcast_pv_forecast_forecast_tomorrow
   alias: Which sensors
@@ -88,6 +90,10 @@ sequence:
       rated_discharge_kw: '{{ states(battery_discharge_rate_kw) | float(0) }}'
       # the most the inverter can send to the grid (kW)
       rated_inverter_kw: '{{ states(inverter_rated_kw) | float(0) }}'
+      # what the house and the solar are doing this moment (kW), or none when the sensor has no value:
+      # the forecast uses these for its first few minutes ("now means now")
+      load_now_kw: '{{ (states(house_power_now) | float) if has_value(house_power_now) else none }}'
+      pv_now_kw: '{{ (states(solar_power_now) | float) if has_value(solar_power_now) else none }}'
       # Solcast half-hour solar forecast for today and tomorrow: ts = start (epoch seconds), kW (middle
       # estimate) and kw10 (the cautious P10 estimate)
       pv_forecast: >-
