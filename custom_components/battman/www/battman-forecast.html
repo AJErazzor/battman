@@ -210,7 +210,9 @@ function loadLine(a) {
   const L = a.map(s => s.load_kw).filter(Number.isFinite), P = a.map(s => s.pv_kw).filter(Number.isFinite);
   if (!L.length) return '';
   const kwh = f => { const v = sum(a, s => (Number.isFinite(s[f]) ? s[f] : 0) * s.minutes / 60); return v >= 10 ? v.toFixed(0) : v.toFixed(1); };
-  return `House ${range(L)} kW (${kwh('load_kw')} kWh)` + (P.length && Math.max(...P) > 0.05 ? ` · solar ${range(P)} kW (${kwh('pv_kw')} kWh)` : '');
+  const off = a.every(s => s.solar_off);   // the mode has the solar switched off: the figure is what is available, not what is used
+  return `House ${range(L)} kW (${kwh('load_kw')} kWh)` + (P.length && Math.max(...P) > 0.05
+    ? (off ? ` · solar switched off, ${range(P)} kW (${kwh('pv_kw')} kWh) available` : ` · solar ${range(P)} kW (${kwh('pv_kw')} kWh)`) : '');
 }
 // the orange line for solar that is sent to the grid (or held back because the price is negative)
 function exportHint(a) {

@@ -40,6 +40,7 @@ and returns the timeline. It changes nothing. The State (Chill) card's tap popup
 unknown, and the battery model is simple (no losses; the curves, rules and today's totals are held at their
 current values). What-if changes (a different SOC, price shift, solar scale, load or setting) are passed in
 and never saved.
+For its first 30 minutes the forecast uses what the house and the solar are doing right now (the live readings), then fades over the next hour into yesterday's hourly load and the Solcast P10 forecast; the decisions themselves still see the 30-minute average, as the live engine does, so only the cost uses the live readings. A block whose mode has the solar switched off shows what is available, not what is used. The two times are `live_hold_minutes` and `live_fade_minutes` at the top of the forecast script.
 
 **Another inverter or provider.** Only the inputs script (what is read) and the act step (what is switched)
 name Sigen and Amber; the decision and the forecast work from the bundle. The bundle's fields are listed in
