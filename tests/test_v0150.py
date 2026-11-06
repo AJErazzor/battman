@@ -2,6 +2,7 @@
 
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from .test_v0130 import run_js
 from .dashboard_views import built
 from .snapshots import assert_snapshot
 
@@ -33,7 +33,7 @@ async def _card(hass, hass_client, cid):
 
 
 def _popup(cfg):
-    return cfg["cards"][0]["cards"][0]["cards"][2]["tap_action"]["browser_mod"]["data"]
+    return cfg["cards"][0]["cards"][0]["cards"][2]["tap_action"]["battman_popup"]
 
 
 async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
@@ -44,7 +44,6 @@ async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
     for old in ("smiggles", "solarsystemcontrol", "solar_system_control", "ssc"):
         assert old not in raw, old
     m = json.loads(json.dumps(card["config"]))
-    _popup(m).clear()
 
     # every service call a button makes, listed
     def calls(x, out):
@@ -67,19 +66,33 @@ async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
     assert_snapshot(__file__, "batterymode-service-calls", [[s, json.loads(d)] for s, d in got])
 
 
+def _engine_log_popup(states):
+    """Open the Engine log popup in node with a fake <dialog>; returns the dialog's markup and its settings."""
+    lib = (Path(__file__).parents[1] / "custom_components/battman/www/battman-lib.js").read_text()
+    script = ("globalThis.window = globalThis; globalThis.setTimeout = () => 0; globalThis.setInterval = () => 0;\n"
+              + ENGINELOG + "\n" + lib + f"""
+const states = {json.dumps(states)}; let shown = null;
+const dlg = {{ attrs: {{}}, setAttribute(k, v) {{ this.attrs[k] = v; }}, querySelector: () => ({{ addEventListener() {{}} }}),
+  addEventListener() {{}}, showModal() {{ shown = this; }}, remove() {{}}, close() {{}} }};
+globalThis.document = {{ body: {{ appendChild() {{}} }}, documentElement: {{ style: {{}} }}, createElement: () => dlg,
+  querySelector: () => ({{ hass: {{ states }} }}) }};
+globalThis.getComputedStyle = () => ({{ getPropertyValue: (k) => k === '--battman-green' ? '#0f0' : '' }});
+window.BattmanLib.showPopup({{ kind: 'enginelog', log: '{LOG}' }}, {{}});
+process.stdout.write(JSON.stringify({{ html: dlg.innerHTML, style: dlg.attrs.style, open: !!shown }}));""")
+    r = subprocess.run(["node", "-"], input=script, capture_output=True, text=True, check=True)
+    return json.loads(r.stdout)
+
+
 @needs_node
 async def test_engine_log_popup(hass: HomeAssistant, hass_client) -> None:
     _client, card = await _card(hass, hass_client, "batterymode")
-    pop = _popup(card["config"])
-    assert pop["title"] == " " and "min(94vw,480px)" in pop["style"]
+    # the info button asks Battman's library to open it (no browser_mod)
+    assert _popup(card["config"]) == {"kind": "enginelog", "log": LOG}
+    assert "browser_mod" not in json.dumps(card["config"])
     msg = (FIX / "engine_log_sample.txt").read_text()
-    out = run_js([(pop["content"], {LOG: {"state": "x", "attributes": {"message": msg}}}, None),
-                  (pop["content"], {}, None),
-                  (pop["content"], {LOG: {"state": "x", "attributes": {"message": "  "}}}, None)], prelude=ENGINELOG)
-    # without Battman's log renderer it says so
-    assert "isn't loaded" in run_js([(pop["content"], {LOG: {"state": "x", "attributes": {"message": msg}}}, None)])[0]
-    full = out[0]
-    assert not full.startswith("THROW")
+    full = _engine_log_popup({LOG: {"state": "x", "attributes": {"message": msg}}})
+    assert full["open"] and "min(94vw,480px)" in full["style"] and "--battman-green:#0f0" in full["style"]
+    full = full["html"]
     assert "Engine log" in full and "Last run 2026-10-20 16:10:34" in full
     for head in ("Mode", "Prices", "Battery", "SOC Limits", "Solar", "Actions", "Sell Forecasts", "Buy Forecasts",
                  "Version", "Debug"):
@@ -90,13 +103,9 @@ async def test_engine_log_popup(hass: HomeAssistant, hass_client) -> None:
     for emoji in ("🕐", "🔄", "💰", "🔋", "📊", "☀", "⚡", "📈", "📉", "ℹ"):
         assert emoji not in full                                               # emoji pick colours, aren't shown
     assert "max-height:82vh" in full and "var(--battman-surface-popup)" in full
-    assert f"Engine log: missing {LOG}" in out[1] and "No data" not in out[1]
-    assert "has no log message yet" in out[2]
-    # the engine log popup: recorded as it draws
-    assert_snapshot(__file__, "enginelog-popup", {k: v for k, v in pop.items() if k != "content"})
-    assert_snapshot(__file__, "enginelog-popup-template", pop["content"])
-    for name, text in zip(("sample", "no-sensor", "blank-message"), out, strict=True):
-        assert_snapshot(__file__, f"enginelog-draw-{name}", text)
+    assert 'class="x"' in full                                                 # a close button (the page behind is dimmed)
+    assert f"Engine log: missing {LOG}" in _engine_log_popup({})["html"]
+    assert "has no log message yet" in _engine_log_popup({LOG: {"state": "x", "attributes": {"message": "  "}}})["html"]
 
 
 async def test_forecast_table_scrolls(hass: HomeAssistant, hass_client) -> None:
