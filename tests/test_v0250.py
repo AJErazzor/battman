@@ -50,9 +50,9 @@ def test_amber_by_name_everywhere() -> None:
         assert not re.search(rf"\[\[map:({keys})\]\]|\{{\{{({keys})\}}\}}|\"map:({keys})\"", text), f.name
         if re.search(rf"\bM\.({keys})\b", text) or "OPTIONAL_ENTITIES = { buy_forecast" in text:
             assert "...AMBER" in text and re.search(r"import \{[^}]*\bAMBER\b", text), f.name
-    engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
-    assert "general_price: sensor.amber_5min_current_general_price" in engine
-    assert "feed_in_forecast: sensor.amber_billing_interval_forecasts_feed_in_price" in engine
+    inputs = (ROOT / "blueprints/script/battman_engine_inputs.yaml").read_text()   # where the engine reads the sensors
+    assert "buy_price_now: sensor.amber_5min_current_general_price" in inputs
+    assert "sell_price_forecast: sensor.amber_billing_interval_forecasts_feed_in_price" in inputs
     base = (ROOT / "www/battman-card-base.js").read_text()
     s = base.index("export const AMBER")
     assert dict(re.findall(r'^  (\w+): "([^"]+)",$', base[s:base.index("};", s)], re.M)) == AMBER

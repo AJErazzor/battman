@@ -39,9 +39,9 @@ def test_engine_side_names_sigen_directly() -> None:
         text = f.read_text()
         for k in sigen_keys:
             assert f"[[map:{k}]]" not in text, (f.name, k)
-    engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
-    assert "states(''sensor.sigen_plant_battery_state_of_charge'')" in engine
-    assert "states(''sensor.sigen_plant_rated_energy_capacity'')" in engine
+    inputs = (ROOT / "blueprints/script/battman_engine_inputs.yaml").read_text()   # where the engine reads the sensors
+    assert "battery_soc: sensor.sigen_plant_battery_state_of_charge" in inputs
+    assert "battery_capacity_kwh: sensor.sigen_plant_rated_energy_capacity" in inputs
     assert "select.sigen_plant_remote_ems_control_mode" in (ROOT / "blueprints/automation/battman_engine_sig_mode.yaml").read_text()
     assert "sensor.sigen_plant_total_imported_energy" in (ROOT / "packages/battman_cost.yaml").read_text()
 

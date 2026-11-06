@@ -40,7 +40,7 @@ async def test_fresh_install_has_every_setting_and_the_factory_curves(hass: Home
     await H.start(hass)
     assert hass.states.get("binary_sensor.battman_in_charge") is None        # gone: nothing needs it
     params = hass.states.get("sensor.battman_parameters").attributes
-    engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
+    engine = (ROOT / "blueprints/script/battman_engine_inputs.yaml").read_text()   # the one script that reads the settings
     read = set(re.findall(r"battman_parameters'{1,2},\s*'{1,2}(\w+)'{1,2}\)", engine))
     assert read and not read - set(params), read - set(params)
     assert params["needyTriggerPVGap"] == 3 and params["needyTriggerConsumption"] == 3.5
@@ -79,7 +79,7 @@ def test_factory_curves_live_in_one_place() -> None:
 
 
 def test_engine_reads_settings_without_fallbacks() -> None:
-    engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
+    engine = "".join((ROOT / f"blueprints/script/battman_engine{part}.yaml").read_text() for part in ("", "_inputs", "_decide"))
     assert not re.findall(r"battman_parameters'{1,2},\s*'{1,2}\w+'{1,2}\)\s*\|\s*float\(", engine)
 
 

@@ -10,13 +10,40 @@ Home Assistant you can open, trace and take control of.
 |---|---|
 | Settings, overrides, run data, rules, power provider, cost odometers, curves, engine log sensor, estimated price | Template sensors in `packages/battman/` (written by Battman) |
 | Helpers: enable, no export, mode, high consumption, override timer | `packages/battman/battman_helpers.yaml` |
-| The engine script and the apply-scene script | `scripts.yaml`, made from Battman's blueprints |
+| The engine scripts (the engine, and the inputs, decide and forecast scripts it is made of) and the apply-scene script | `scripts.yaml`, made from Battman's blueprints |
 | The automations (main loop, watchdog, Sigen mode, curtail, SAPN override, override timer start, copy curves, armed scene, auto curve switcher) | `automations.yaml`, made from Battman's blueprints |
 | The log file | `<config>/battman/engine.log`, written by Battman itself |
 
 Battman rewrites `packages/battman/` and the blueprints on every update. The automations and
 scripts made from the blueprints follow the blueprints. Battman never edits those automations or
 scripts after making them, so you can open one, see its traces, or take control of it.
+
+## How the engine runs
+
+The engine script (`script.battman_engine`) is three plain steps, run whenever the price estimate or
+your settings change:
+
+1. **Read.** `script.battman_engine_inputs` reads Sigen, Amber and Solcast once and returns everything
+   the decision needs as one bundle. It is the one place that knows which sensors those are.
+2. **Decide.** `script.battman_engine_decide` works out the battery mode, the no-export switch, the run
+   record and the log text from that bundle alone. It reads no sensor and no clock, and acts on nothing.
+3. **Act.** The engine script writes the log, sets the battery mode and the no-export switch, and fires
+   `battman_run_update`, which the run sensor, the cards and the watchdog follow.
+
+If step 1 or 2 fails there is no decision: a line goes to the logbook and the run stops. The watchdog
+forces Self Consume when the engine hasn't run for its limit.
+
+**Forecast.** `script.battman_engine_forecast` asks the same decide script what Battman would do in every
+future slot (the live 5-minute price, then Amber's forecast), carrying the battery level from slot to slot,
+and returns the timeline. It changes nothing. The State (Chill) card's tap popup is a page that calls it
+(`www/battman-forecast.html`). It is approximate: forecast prices move, price spikes beyond the forecast are
+unknown, and the battery model is simple (no losses; the curves, rules and today's totals are held at their
+current values). What-if changes (a different SOC, price shift, solar scale, load or setting) are passed in
+and never saved.
+
+**Another inverter or provider.** Only the inputs script (what is read) and the act step (what is switched)
+name Sigen and Amber; the decision and the forecast work from the bundle. The bundle's fields are listed in
+the decide script's header.
 
 ## Enabled, or not
 
@@ -28,7 +55,7 @@ are used by name, and OpenNEM's region sensor is found automatically.
 
 ## Entities it uses by name
 
-Sigen's, Amber's (amber2mqtt) and Solcast's entities are named directly, in the engine and on the
+Sigen's, Amber's (amber2mqtt) and Solcast's entities are named directly, in the engine's inputs script and on the
 cards (e.g. `select.sigen_plant_remote_ems_control_mode`, `sensor.amber_5min_current_general_price`,
 `sensor.solcast_pv_forecast_forecast_remaining_today`); at startup Battman checks each one it
 uses is there, and a Repair names any that isn't. Sigen needs its integration at v1.1.0 or newer.
@@ -59,12 +86,14 @@ The Curvy and Pricy pages read `input_number.battman_high_consumption` instead.
 
 ## How it's tested
 
-The tests drive the engine across 300 generated worlds (battery level, buy and sell prices,
-estimates, forecasts, solar, home load, grid status, month and time of day, curves, rules, every
-override and net target) and snapshot its decisions — mode, no-export, the full run record and the
-log text — so any change that moves a decision is caught. Separate tests cover Sigen mode (every
-mode), curtail, SAPN override, override-timer start, watchdog (overrides cleared when the timer
-ends) and apply scene: the Sigen actions and settings changes they produce.
+The tests drive the engine across 300 generated worlds (`tests/test_engine_worlds.py`: battery level,
+buy and sell prices, estimates, forecasts in both the even 30-minute shape and the live 5-then-30-minute
+shape, solar, home load, grid status, month and time of day including the tariff swap minutes and window
+edges, curves, rules, every override, spike and drain setting, today's totals, the current mode, and gaps
+such as a missing load average, Solcast or forecast) and check that every world ends with a valid mode,
+no-export switch, run record and log. Separate tests cover Sigen mode (every mode), curtail, SAPN override,
+override-timer start, watchdog (overrides cleared when the timer ends) and apply scene: the Sigen actions
+and settings changes they produce.
 
 ## Auto curve switcher
 

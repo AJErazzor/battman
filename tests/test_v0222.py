@@ -50,14 +50,16 @@ def test_solcast_named_directly() -> None:
     from custom_components.battman.const import ENTITY_MAP_DEFAULTS
 
     assert not [k for k in ENTITY_MAP_DEFAULTS if "solcast" in k]
-    for f in ("blueprints/script/battman_engine.yaml", "cards/state.yaml", "cards/gauges.yaml", "www/battman-curvy.js",
+    for f in ("blueprints/script/battman_engine.yaml", "blueprints/script/battman_engine_inputs.yaml", "cards/state.yaml", "cards/gauges.yaml", "www/battman-curvy.js",
               "translations/en.json"):
         assert not re.search(r"\[\[map:solcast|M\.solcast|['\"]solcast_(today|tomorrow|remaining|next)", (ROOT / f).read_text()), f
-    engine = (ROOT / "blueprints/script/battman_engine.yaml").read_text()
-    assert f"state_attr(''{REMAIN}'',''estimate10'')" in engine
-    for gone in ("pvRemainingkwh", "pvNext1hr", "forecast_next_hour"):
-        assert gone not in engine, gone
-    assert TODAY in (ROOT / "cards/state.yaml").read_text() and TOMORROW in (ROOT / "cards/state.yaml").read_text()
+    inputs = (ROOT / "blueprints/script/battman_engine_inputs.yaml").read_text()   # the script that reads the sensors
+    assert f"pv_remaining: {REMAIN}" in inputs and "state_attr(pv_remaining, ''estimate10'')" in inputs
+    assert f"pv_forecast_today: {TODAY}" in inputs and f"pv_forecast_tomorrow: {TOMORROW}" in inputs
+    for part in ("", "_inputs", "_decide"):
+        engine = (ROOT / f"blueprints/script/battman_engine{part}.yaml").read_text()
+        for gone in ("pvRemainingkwh", "pvNext1hr", "forecast_next_hour"):
+            assert gone not in engine, gone
     assert REMAIN in (ROOT / "cards/gauges.yaml").read_text()
     assert f"const SOLCAST_TODAY = '{TODAY}';" in (ROOT / "www/battman-curvy.js").read_text()
 
