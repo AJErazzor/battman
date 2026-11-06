@@ -133,7 +133,7 @@ custom_fields:
   row9: |-
     [[[
       if (!window.BattmanLib || !window.BattmanLib.correctTotals) return `<div style="padding:6px 16px 14px;color:var(--battman-red);background:var(--battman-surface-popup)">Correct totals: Battman's card library (battman-lib.js) isn't loaded. Refresh the page.</div>`;
-      return `<div style="padding:6px 16px 14px 16px;background:var(--battman-surface-popup);"><button onclick="event.stopPropagation();window.BattmanLib.correctTotals(this,{buy:'[[map:buy_total]]',sell:'[[map:sell_total]]',event:'[[map:totals_update_event]]'})" style="width:100%;height:38px;border:1px solid var(--battman-amber);border-radius:8px;background:transparent;color:var(--battman-amber);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Correct Totals</button></div>`;
+      return `<div style="padding:6px 16px 14px 16px;background:var(--battman-surface-popup);"><button onpointerup="event.stopPropagation();window.BattmanLib.correctTotals(this,{buy:'[[map:buy_total]]',sell:'[[map:sell_total]]',event:'[[map:totals_update_event]]'})" onclick="event.stopPropagation();window.BattmanLib.correctTotals(this,{buy:'[[map:buy_total]]',sell:'[[map:sell_total]]',event:'[[map:totals_update_event]]'})" style="width:100%;height:38px;border:1px solid var(--battman-amber);border-radius:8px;background:transparent;color:var(--battman-amber);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;pointer-events:all;">Correct Totals</button></div>`;
     ]]]
 grid_options:
   columns: full

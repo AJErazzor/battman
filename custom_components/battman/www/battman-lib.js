@@ -539,6 +539,10 @@ window.BattmanLib.popupStyle = function (el, width) {
 // Correct totals opens in a Battman popup on the device that was tapped (no browser_mod).
 window.BattmanLib.correctTotals = function (btn, ids) {
   var L = window.BattmanLib;
+  // The button fires this on pointerup and on click (on an iPhone the tap inside this card never becomes a
+  // click), so a second call right after the first is the same tap.
+  if (L._ctAt && Date.now() - L._ctAt < 700) return;
+  L._ctAt = Date.now();
   L._totals = ids;
   try {
     var hass = document.querySelector('home-assistant').hass;
@@ -801,7 +805,8 @@ window.BattmanLib.modal = function (el, o) {
   var prevOverflow = document.documentElement.style.overflow;
   if (o.close) dlg.querySelector('.x').addEventListener('click', function () { dlg.close(); });
   // the dialog's own box is just the content, so a tap on the dialog itself is a tap on the backdrop
-  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  var openedAt = Date.now();   // (a click that is still on its way from the tap that opened this must not close it)
+  dlg.addEventListener('click', function (e) { if (e.target === dlg && Date.now() - openedAt > 500) dlg.close(); });
   dlg.addEventListener('close', function () {
     document.documentElement.style.overflow = prevOverflow;
     L._modal = null;
