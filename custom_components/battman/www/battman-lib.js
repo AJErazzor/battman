@@ -540,13 +540,17 @@ window.BattmanLib.popupStyle = function (el, width) {
 window.BattmanLib.correctTotals = function (btn, ids) {
   var L = window.BattmanLib;
   L._totals = ids;
-  var hass = document.querySelector('home-assistant').hass;
-  var dlg = L.modal(btn, {
-    width: 'min(94vw,420px)', close: true,
-    css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 36px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
-    html: '<div class="pop"><div class="ph">Correct totals</div>' + L.totalsForm(hass.states) + '</div>',
-  });
-  if (!dlg) L.toast(btn, "Correct totals can't open in this browser.");
+  try {
+    var hass = document.querySelector('home-assistant').hass;
+    var dlg = L.modal(btn, {
+      width: 'min(94vw,420px)', close: true,
+      css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 36px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
+      html: '<div class="pop"><div class="ph">Correct totals</div>' + L.totalsForm(hass.states) + '</div>',
+    });
+    if (!dlg) L.toast(btn, "Correct totals can't open in this browser.");
+  } catch (e) {
+    L.toast(btn, 'Correct totals: ' + ((e && e.message) || e));   // say why, instead of doing nothing
+  }
 };
 
 window.BattmanLib.totalsForm = function (states) {
