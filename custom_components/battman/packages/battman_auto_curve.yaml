@@ -1,6 +1,6 @@
 # Battman engine.
 # Managed by Battman: written into your config and replaced on every Battman update.
-# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+# Don't edit this copy.
 #
 # The Auto curve switcher's working state: what it last did, and a copy of the month's own
 # SOC curves from before it first changed them (so the reset can put them back exactly).

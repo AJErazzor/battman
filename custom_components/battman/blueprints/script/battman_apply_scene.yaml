@@ -1,6 +1,6 @@
 # Battman engine.
 # Managed by Battman: written into your config and replaced on every Battman update.
-# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+# Don't edit this copy.
 
 blueprint:
   name: Battman apply scene

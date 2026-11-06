@@ -1,6 +1,6 @@
 # Battman engine.
 # Managed by Battman: written into your config and replaced on every Battman update.
-# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+# Don't edit this copy.
 #
 # Forecast: what Battman's real decision would do over the next hours, slot by slot.
 # It changes no mode, no switch and no setting. It only works out and RETURNS a timeline.

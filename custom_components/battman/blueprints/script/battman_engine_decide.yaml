@@ -1,6 +1,6 @@
 # Battman engine.
 # Managed by Battman: written into your config and replaced on every Battman update.
-# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+# Don't edit this copy.
 #
 # Decide: works out what the battery should do (mode, curtail, the run record and the log text) from
 # one bundle, `params` (built by script.battman_engine_inputs, or supplied by hand for a what-if).
