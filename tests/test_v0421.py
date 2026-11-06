@@ -28,3 +28,14 @@ def test_forecast_holds_the_live_readings_then_fades() -> None:
 def test_page_says_when_the_solar_is_switched_off() -> None:
     page = (ROOT / "www/battman-forecast.html").read_text()
     assert "solar switched off" in page and "a.every(s => s.solar_off)" in page
+
+
+def test_decide_small_fixes() -> None:
+    text = (SCRIPTS / "battman_engine_decide.yaml").read_text()
+    # the curves are maps, so a missing one defaults to an empty map
+    assert "params.soc_curves | default({})" in text and "params.price_curves | default({})" in text
+    # no stray brace in the log, no warning when no sell rule applies, step names spelt right
+    assert "{{params.tracking.buy.kwh | float(0) }}kwh}" not in text
+    assert "allowLastChance == 1 and sellRule and sellRule.allowLastChance" in text
+    for typo in ("Forcast", "Tweek", "Posative", "esimated"):
+        assert typo not in text, typo
