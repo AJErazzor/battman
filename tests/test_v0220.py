@@ -60,7 +60,8 @@ def test_no_framed_pages_left() -> None:
     assert [f.name for f in WWW.glob("*.html")] == ["battman-forecast.html"]
     for f in (ROOT / "cards").glob("*.yaml"):
         text = f.read_text()
-        assert "type: iframe" not in text and "# preview:" not in text, f.name
+        # the State card's tap opens the forecast page in an iframe; no other card may
+        assert ("type: iframe" not in text or f.name == "state.yaml") and "# preview:" not in text, f.name
     cards_py = (ROOT / "cards.py").read_text()
     assert "preview" not in cards_py and "STATIC_URL" not in cards_py
     wrapper = (WWW / "battman-cards.js").read_text()
