@@ -45,17 +45,24 @@ const btn = { tagName: 'BUTTON', dispatchEvent: (e) => toasts.push(e.detail.mess
 
 @needs_node
 def test_correct_totals_opens_on_this_device() -> None:
-    """It used to ask the server for a browser_mod popup with no browser named, which only reaches
-    browsers registered with browser_mod (so nothing on an unregistered phone)."""
-    out = _lib("""
-window.browser_mod = { service: (s, d) => calls.push(['local', s, d.title, d.content.type]) };
+    """It opens in Battman's own dialog on the device that was tapped: no browser_mod, so it works on any phone."""
+    page = """
+const dlg = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, querySelector: () => ({ addEventListener() {} }), addEventListener() {},
+  showModal() { this.open = true; }, remove() {}, close() {} };
+document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.createElement = () => dlg;
+hass.states['sensor.b'] = { attributes: { day: '1.5', yesterday: '2', month: '3', bill: '4' } };
+hass.states['sensor.s'] = { attributes: { day: '5.5', yesterday: '6', month: '7', bill: '8' } };
+"""
+    out = _lib(page + """
+window.BattmanLib.correctTotals(btn, {buy: 'sensor.b', sell: 'sensor.s', event: 'e'});
+process.stdout.write(JSON.stringify({calls, toasts, open: !!dlg.open, html: dlg.innerHTML}));""")
+    assert out["calls"] == [] and out["toasts"] == [] and out["open"] is True
+    assert "Correct totals" in out["html"] and 'data-period="day"' in out["html"] and "1.5000" in out["html"] and 'class="x"' in out["html"]
+    out = _lib(page.replace("document.createElement = () => dlg;", "document.createElement = () => ({});") + """
 window.BattmanLib.correctTotals(btn, {buy: 'sensor.b', sell: 'sensor.s', event: 'e'});
 process.stdout.write(JSON.stringify({calls, toasts}));""")
-    assert out == {"calls": [["local", "popup", "Correct totals", "custom:button-card"]], "toasts": []}
-    out = _lib("""
-window.BattmanLib.correctTotals(btn, {buy: 'sensor.b', sell: 'sensor.s', event: 'e'});
-process.stdout.write(JSON.stringify({calls, toasts}));""")
-    assert out["calls"] == [] and out["toasts"] == ["Correct totals needs browser_mod, which isn't loaded on this device."]
+    assert out["calls"] == [] and out["toasts"] == ["Correct totals can't open in this browser."]
+    assert "browser_mod" not in LIB.read_text().split("window.BattmanLib.correctTotals")[1].split("window.BattmanLib.totalsForm")[0]
 
 
 def test_no_server_popups_left() -> None:

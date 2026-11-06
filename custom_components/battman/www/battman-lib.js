@@ -536,35 +536,17 @@ window.BattmanLib.popupStyle = function (el, width) {
     + window.BattmanLib.themeStyle(el);
 };
 
-// The popup opens on the device that was tapped, through browser_mod's own action (as the Overrides
-// card's popups do), so it works on a phone that isn't registered as a browser_mod browser.
+// Correct totals opens in a Battman popup on the device that was tapped (no browser_mod).
 window.BattmanLib.correctTotals = function (btn, ids) {
-  window.BattmanLib._totals = ids;
-  if (!window.browser_mod) {
-    window.BattmanLib.toast(btn, "Correct totals needs browser_mod, which isn't loaded on this device.");
-    return;
-  }
-  window.BattmanLib.localPopup({
-    title: 'Correct totals',
-    style: window.BattmanLib.popupStyle(btn, 'min(94vw,420px)'),
-    content: {
-      type: 'custom:button-card',
-      entity: ids.buy,
-      triggers_update: [ids.buy, ids.sell],
-      show_icon: false, show_name: false, show_state: false,
-      tap_action: { action: 'none' },
-      styles: { card: [{ padding: '0' }, { background: 'var(--battman-surface-card)' }, { 'box-shadow': 'none' }, { border: 'none' }],
-                grid: [{ 'grid-template-areas': '"body"' }, { 'grid-template-columns': '1fr' }],
-                custom_fields: { body: [{ width: '100%' }] } },
-      custom_fields: { body: '[[[ return window.BattmanLib.totalsForm(states); ]]]' },
-    },
+  var L = window.BattmanLib;
+  L._totals = ids;
+  var hass = document.querySelector('home-assistant').hass;
+  var dlg = L.modal(btn, {
+    width: 'min(94vw,420px)', close: true,
+    css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 36px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
+    html: '<div class="pop"><div class="ph">Correct totals</div>' + L.totalsForm(hass.states) + '</div>',
   });
-};
-
-// A browser_mod popup on this device only (browser_mod's own frontend runs it, as it does for
-// button-card's fire-dom-event), not a service call that goes to every registered browser.
-window.BattmanLib.localPopup = function (data) {
-  window.browser_mod.service('popup', data);
+  if (!dlg) L.toast(btn, "Correct totals can't open in this browser.");
 };
 
 window.BattmanLib.totalsForm = function (states) {
