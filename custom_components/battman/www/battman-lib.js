@@ -805,9 +805,11 @@ window.BattmanLib.askConfirm = function (title, message, okLabel, go, el) {
   if (!dlg.showModal) { if (window.confirm(message) && go) go(); return; }
   dlg.setAttribute('style', L.modalTheme(el));
   dlg.className = 'bm';
+  dlg.setAttribute('autofocus', '');   // showModal() focuses the dialog itself, not the first button (no stray ring on Cancel)
   dlg.innerHTML =
     '<style>' +
     'dialog.bm{padding:0;border:0;background:transparent;max-width:min(92vw,360px);width:92vw;overflow:visible;color:var(--battman-text-bright,#eee);font-family:var(--battman-font,inherit)}' +
+    'dialog.bm:focus,.bm button:focus:not(:focus-visible){outline:none}' +
     'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
     '.bm .p{background:var(--battman-surface-popup,#111);padding:14px 16px;border-radius:8px;border:1px solid var(--battman-orange-border,#a60)}' +
     '.bm .h{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--battman-orange-border,#a60)}' +
