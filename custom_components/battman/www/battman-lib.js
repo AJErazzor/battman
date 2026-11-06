@@ -809,17 +809,17 @@ window.BattmanLib.modal = function (el, o) {
   // the dialog's own box is just the content, so a tap on the dialog itself is a tap on the backdrop
   var openedAt = Date.now();   // (a click that is still on its way from the tap that opened this must not close it)
   dlg.addEventListener('click', function (e) { if (e.target === dlg && Date.now() - openedAt > 500) dlg.close(); });
+  // Escape closes it, including the synthetic Escape the popups' own scripts send to close themselves
+  var onKey = function (e) { if (e.key === 'Escape' && dlg.open) dlg.close(); };
   dlg.addEventListener('close', function () {
+    document.removeEventListener('keydown', onKey);
     document.documentElement.style.overflow = prevOverflow;
     L._modal = null;
     dlg.remove();
     if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* not focusable */ } }
     if (o.onClose) o.onClose();
   });
-  // Escape closes it, including the synthetic Escape the popups' own scripts send to close themselves
-  var onKey = function (e) { if (e.key === 'Escape' && dlg.open) dlg.close(); };
   document.addEventListener('keydown', onKey);
-  dlg.addEventListener('close', function () { document.removeEventListener('keydown', onKey); });
   document.body.appendChild(dlg);
   document.documentElement.style.overflow = 'hidden';
   L._modal = dlg;

@@ -77,7 +77,10 @@ press(sellAsk, '.no'); const cancelled = calls.length;      // Cancel: closes, s
 go('Discharge');
 press(dialogs[1], '.yes');          // the confirm button: closes and sells
 const backdrop = (go('Charge'), dialogs[2]);                 // Buy above the 30c limit; a tap on the backdrop cancels
-backdrop.ls.click({ target: backdrop }); const afterBackdrop = calls.length;
+backdrop.ls.click({ target: backdrop }); const ignoredAtOnce = backdrop.open === true;   // (a ghost click right after opening is ignored)
+const realNow = Date.now; Date.now = () => realNow() + 1000;
+backdrop.ls.click({ target: backdrop }); const afterBackdrop = calls.length; const backdropClosed = backdrop.open === false;   // a real tap on the backdrop cancels
+Date.now = realNow;
 go('Float');                        // a new question while another is open closes the old one first
 go('Charge'); const replaced = dialogs[3].open === false && dialogs[4].open === true;
 docKeys[docKeys.length - 1]({ key: 'Escape' });   // Escape (real, or the synthetic one a popup's script sends): closes without switching
@@ -88,12 +91,12 @@ go('Discharge'); go('Charge');
 globalThis.document = { querySelector: () => ({ hass: { get states() { throw new Error('boom'); }, callService: (d, s, x) => calls.push('fallback ' + x.option) } }) };
 go('Charge');                       // anything failing in the check must not stop the press
 process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, afterBackdrop, afterEsc, replaced, native, n: dialogs.length,
-  escClosed, overflowOpen, overflowAfter: docEl.style.overflow, theme: sellAsk.attrs.style,
+  escClosed, ignoredAtOnce, backdropClosed, overflowOpen, overflowAfter: docEl.style.overflow, theme: sellAsk.attrs.style,
   h: sellAsk.els['.h'].textContent, m: sellAsk.els['.m'].textContent, yes: sellAsk.els['.yes'].textContent, buyYes: dialogs[2].els['.yes'].textContent }));""")
     assert out["afterAsk"] == 1 and out["cancelled"] == 1                     # only Self Consume so far: asking and Cancel switched nothing
     assert out["afterBackdrop"] == 2 and out["afterEsc"] == 2                 # backdrop tap and Escape switched nothing either
     assert out["calls"] == ["Self Consume", "Discharge", "Discharge", "Charge", "fallback Charge"]
-    assert out["escClosed"] is True
+    assert out["escClosed"] is True and out["ignoredAtOnce"] is True and out["backdropClosed"] is True
     assert out["replaced"] is True and out["native"] == 0                     # one question at a time; never the browser's box
     assert out["overflowOpen"] == "hidden" and out["overflowAfter"] == ""     # the page doesn't scroll behind it, and is released
     assert "--battman-orange:#f90" in out["theme"]                            # the dialog takes the tapped element's Battman colours
