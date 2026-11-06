@@ -2,6 +2,7 @@
 automation (made once per install) picks a SOC preset from today's projected solar and writes it into
 the current month, and puts the month's own curve back (reset hour, switched off, month end)."""
 
+import asyncio
 from datetime import timedelta
 from pathlib import Path
 
@@ -20,9 +21,22 @@ def _preset(n: int) -> dict:
     return {k: [n * 10 + i % 3 for i in range(24)] for k in ("sell", "sell_high", "buy", "buy_high")}
 
 
+async def _idle(hass: HomeAssistant, timeout: float = 10.0) -> None:
+    """Wait until the switcher has no run going (or queued). A fixed number of event-loop turns isn't
+    enough when a run takes a moment longer: about 1 in 10 checks then read the result too early."""
+    loop = asyncio.get_running_loop()
+    end = loop.time() + timeout
+    while loop.time() < end:
+        state = hass.states.get(SW)
+        if state is None or not state.attributes.get("current"):
+            return
+        await asyncio.sleep(0.01)
+
+
 async def _settle_all(hass: HomeAssistant) -> None:
     for _ in range(6):
         await _settle(hass)
+        await _idle(hass)
 
 
 async def _scene(hass: HomeAssistant, kwh_per_period: float = 2.0, periods: int = 4) -> tuple[str, dict]:

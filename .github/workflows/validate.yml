@@ -7,6 +7,12 @@ on:
   schedule:
     - cron: "0 3 * * 1"
 
+# A newer push to the same branch or pull request cancels the run still going for it. A run on main
+# gets its own group (its run id), so it's never cancelled, and neither is anything it releases.
+concurrency:
+  group: validate-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     name: Tests
