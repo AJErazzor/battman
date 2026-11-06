@@ -91,7 +91,11 @@ async def test_nem_sensors_match_templates(hass: HomeAssistant) -> None:
     for k, uid in mine.items():
         st = hass.states.get(f"sensor.battman_nem_{k}")
         assert st is not None, k
-        assert float(st.state) == pytest.approx(float(hass.states.get(ids[uid]).state)), k
+        want = float(hass.states.get(ids[uid]).state)
+        if k == "consumers":
+            # v0.43.0: rooftop solar comes out of consumers (it's its own slice of the demand mix)
+            want -= GEN["solar_rooftop"]
+        assert float(st.state) == pytest.approx(want), k
         assert st.attributes["unit_of_measurement"] == "MW" and "problem" not in st.attributes
     # Battman's side, recorded so the comparison survives the original templates' removal
     assert_snapshot(__file__, "nem-sensors", {

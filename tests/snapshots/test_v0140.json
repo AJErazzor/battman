@@ -181,7 +181,7 @@
   "consumers": {
    "problem": null,
    "source": "sensor.opennem_sa",
-   "state": "1811.17",
+   "state": "690.47",
    "unit": "MW"
   },
   "distillate": {
@@ -259,6 +259,11 @@
     "color": "var(--battman-teal, #94e2d5)",
     "entity": "sensor.battman_nem_consumers",
     "name": "Consumers"
+   },
+   {
+    "color": "var(--battman-orange)",
+    "entity": "sensor.battman_nem_rooftop_solar",
+    "name": "Solar (S)"
    },
    {
     "color": "var(--battman-blue)",

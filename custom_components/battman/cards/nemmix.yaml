@@ -138,6 +138,9 @@ cards:
       - name: Consumers
         color: 'var(--battman-teal, #94e2d5)'
         entity: sensor.battman_nem_consumers
+      - name: Solar (S)
+        color: var(--battman-orange)
+        entity: sensor.battman_nem_rooftop_solar
       - name: Exports
         color: var(--battman-blue)
         entity: sensor.battman_nem_exports

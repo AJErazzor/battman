@@ -15,7 +15,9 @@ Battman re-exposes them as sensors (MW), plus where the power goes:
 
     exports, battery charging   OpenNEM reports these negative: shown as positive
     total supply                the positive generation sources added up
-    consumers                   total supply - exports - battery charging (never < 0)
+    consumers                   total supply - exports - battery charging - rooftop solar (never < 0;
+                                v0.43.0: rooftop solar is its own slice of the demand mix, as it's used
+                                behind the meter)
 
 No fallbacks: if the OpenNEM sensor is unavailable, every NEM sensor is unavailable.
 If one category is missing from it, that sensor is unknown (not 0), and so are the
@@ -95,8 +97,10 @@ def compute(state: Any) -> tuple[bool, dict[str, float | None], list[str]]:
             missing.append(attr)
     gen = [out[k] for k in GENERATION]
     out["nem_total_supply"] = None if None in gen else round(sum(max(0.0, v) for v in gen), 2)
-    parts = (out["nem_total_supply"], out["nem_exports"], out["nem_battery_charging"])
-    out["nem_consumers"] = None if None in parts else round(max(0.0, parts[0] - parts[1] - parts[2]), 2)
+    parts = (out["nem_total_supply"], out["nem_exports"], out["nem_battery_charging"], out["nem_rooftop_solar"])
+    out["nem_consumers"] = (
+        None if None in parts else round(max(0.0, parts[0] - parts[1] - parts[2] - max(0.0, parts[3])), 2)
+    )
     return True, out, missing
 
 
