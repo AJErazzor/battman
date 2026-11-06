@@ -23,6 +23,7 @@ from . import engine_harness as H
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 needs_node = pytest.mark.skipif(not shutil.which("node"), reason="needs node")
 TZ = "Australia/Adelaide"
+LIB = ROOT / "www/battman-lib.js"
 
 
 def _lib(script: str) -> dict:

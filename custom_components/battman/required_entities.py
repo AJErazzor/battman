@@ -92,6 +92,7 @@ REQUIRED: dict[str, tuple[str, str]] = {
     "number.sigen_plant_grid_export_limitation": ("the export limit, set by the engine", SIGEN),
     "sensor.sigen_plant_ess_rated_charging_power": ("the battery's rated charging power", SIGEN),
     "sensor.sigen_plant_ess_rated_discharging_power": ("the battery's rated discharging power", SIGEN),
+    "sensor.sigen_inverter_rated_active_power": ("the inverter's rated power, the most the forecast lets it export", SIGEN),
     "sensor.sigen_plant_grid_connection_status": ("on or off grid", SIGEN),
     "sensor.sigen_plant_battery_state_of_charge": ("the battery's charge (SOC)", SIGEN),
     "sensor.sigen_plant_rated_energy_capacity": ("the battery's capacity", SIGEN),

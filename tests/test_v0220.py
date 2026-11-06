@@ -56,7 +56,8 @@ def test_each_card_is_a_real_card() -> None:
 
 
 def test_no_framed_pages_left() -> None:
-    assert not list(WWW.glob("*.html"))
+    # the one page left is the State card popup (battman-forecast.html), shown from the card's tap
+    assert [f.name for f in WWW.glob("*.html")] == ["battman-forecast.html"]
     for f in (ROOT / "cards").glob("*.yaml"):
         text = f.read_text()
         assert "type: iframe" not in text and "# preview:" not in text, f.name
