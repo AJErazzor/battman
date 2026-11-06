@@ -1,6 +1,6 @@
 # Battman engine.
 # Managed by Battman: written into your config and replaced on every Battman update.
-# Don't edit this copy. [[map:...]] markers are filled from Battman's entity map.
+# Don't edit this copy.
 #
 # Battman addition: the event battman_totals_update with
 #   {attribute: SetTotal, period: day|yesterday|month|bill, buy: <$>, sell: <$>}

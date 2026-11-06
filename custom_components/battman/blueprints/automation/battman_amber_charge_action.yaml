@@ -1,3 +1,5 @@
+# Battman blueprint. [[map:...]] markers are filled from Battman's entity map.
+
 blueprint:
   name: Battman Amber – charge from the alert
   author: Battman
