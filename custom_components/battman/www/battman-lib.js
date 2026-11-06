@@ -860,6 +860,17 @@ window.BattmanLib.showPopup = function (d, el) {
 // The scrolling panel every content popup is drawn in.
 window.BattmanLib.POPUP_CSS = '.bm .pop{box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif))}';
 
+// The forecast page (State card's tap): what Battman's real engine would do over the next hours. It is its own
+// page (www/battman-forecast.html), shown in a frame inside Battman's dialog: it reads the dashboard's hass and
+// theme from the page around it, as it always did. The ✕ gets its own strip above the page.
+window.BattmanLib.POPUPS.forecast = function (d, el) {
+  window.BattmanLib.modal(el, {
+    width: 'min(94vw,480px)', close: true,
+    css: '.bm .fc{padding-top:38px;background:var(--battman-surface-card,#000);border-radius:8px;overflow:hidden}.bm .fc iframe{display:block;width:100%;height:min(80vh,720px);border:0}',
+    html: '<div class="fc"><iframe src="' + (d.url || '/battmanfiles/battman-forecast.html') + '" title="Next hours"></iframe></div>',
+  });
+};
+
 // Engine log (Battery mode card's info button): the engine's last-run log, drawn by Battman's engine log
 // renderer (battman-enginelog.js), the same one the Log page uses. d.log is the log sensor's entity id.
 window.BattmanLib.POPUPS.enginelog = function (d, el) {

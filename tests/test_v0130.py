@@ -286,8 +286,8 @@ async def test_state(hass: HomeAssistant) -> None:
     m = (await _card(hass, "state"))["config"]
     main_m = m["custom_fields"]["content"]
     # the tap opens the forecast page (the engine's own forecast): there is no popup text to draw here
-    assert m["tap_action"]["browser_mod"]["data"]["content"] == {
-        "type": "iframe", "url": "/battmanfiles/battman-forecast.html", "aspect_ratio": "150%"}
+    assert m["tap_action"]["battman_popup"] == {"kind": "forecast", "url": "/battmanfiles/battman-forecast.html"}
+    assert "browser_mod" not in json.dumps(m["tap_action"])
 
     def jobs_for(now=None):
         return [(main_m, state_states(scen, now), "sensor.battman_parameters") for scen in range(5)]

@@ -118,17 +118,9 @@
   },
   "tap_action": {
    "action": "fire-dom-event",
-   "browser_mod": {
-    "data": {
-     "content": {
-      "aspect_ratio": "150%",
-      "type": "iframe",
-      "url": "/battmanfiles/battman-forecast.html"
-     },
-     "style": "--mdc-dialog-min-width:min(94vw,480px);--mdc-dialog-max-width:min(94vw,480px);",
-     "title": ""
-    },
-    "service": "browser_mod.popup"
+   "battman_popup": {
+    "kind": "forecast",
+    "url": "/battmanfiles/battman-forecast.html"
    }
   },
   "triggers_update": [
