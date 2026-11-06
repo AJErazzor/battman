@@ -771,7 +771,9 @@ window.BattmanLib.MODAL_KEYS = ['surface-popup', 'surface-card', 'text-bright', 
   'orange-border', 'orange-border-strong', 'border-neutral', 'green', 'yellow', 'amber', 'blue', 'purple', 'darkred', 'red', 'font'];
 window.BattmanLib.modalTheme = function (el) {
   var cs = getComputedStyle(el || document.body), out = '';
+  try { out = window.BattmanLib.themeStyle(el || document.body) || ''; } catch (e) { out = ''; }   // every --battman-* the theme defines
   window.BattmanLib.MODAL_KEYS.forEach(function (k) {
+    if (out.indexOf('--battman-' + k + ':') >= 0) return;
     var v = String(cs.getPropertyValue('--battman-' + k) || '').trim();
     if (v) out += '--battman-' + k + ':' + v + ';';
   });
@@ -814,6 +816,10 @@ window.BattmanLib.modal = function (el, o) {
     if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* not focusable */ } }
     if (o.onClose) o.onClose();
   });
+  // Escape closes it, including the synthetic Escape the popups' own scripts send to close themselves
+  var onKey = function (e) { if (e.key === 'Escape' && dlg.open) dlg.close(); };
+  document.addEventListener('keydown', onKey);
+  dlg.addEventListener('close', function () { document.removeEventListener('keydown', onKey); });
   document.body.appendChild(dlg);
   document.documentElement.style.overflow = 'hidden';
   L._modal = dlg;
@@ -859,6 +865,22 @@ window.BattmanLib.showPopup = function (d, el) {
 
 // The scrolling panel every content popup is drawn in.
 window.BattmanLib.POPUP_CSS = '.bm .pop{box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif))}';
+
+// Any popup whose markup the card builds itself (the Overrides card's panels, help and timer sheet): d.html is that
+// markup, d.width its width. Its own inline handlers and its <img onload> start-up script run as they always did.
+window.BattmanLib.POPUPS.html = function (d, el) {
+  window.BattmanLib.modal(el, { width: d.width || 'min(94vw,360px)', close: true, html: String(d.html || '') });
+};
+
+// A button action built as markup whose <img onload> does the work (the Overrides rows' double tap, which clears
+// the override): run it with no dialog.
+window.BattmanLib.POPUPS.run = function (d) {
+  var host = document.createElement('div');
+  host.style.display = 'none';
+  host.innerHTML = String(d.html || '');
+  document.body.appendChild(host);
+  setTimeout(function () { host.remove(); }, 1500);
+};
 
 // The forecast page (State card's tap): what Battman's real engine would do over the next hours. It is its own
 // page (www/battman-forecast.html), shown in a frame inside Battman's dialog: it reads the dashboard's hass and
