@@ -1,14 +1,13 @@
 # Battman dependencies
 
 Battman can't install other add-ons for you. Install these yourself (HACS → Frontend).
-Battman checks for the dashboard cards and browser_mod at startup and raises a **Repair** naming any that are missing.
+Battman checks for the dashboard cards at startup and raises a **Repair** naming any that are missing.
 
 | Dependency | Type | Needed by | Get it |
 |---|---|---|---|
 | button-card | Dashboard card | Billing and Solar System cards; every Battman card on the Power view | https://github.com/custom-cards/button-card |
 | card-mod | Dashboard card | Battery mode, Limits and Overrides cards | https://github.com/thomasloven/lovelace-card-mod |
 | modern-circular-gauge | Dashboard card | Gauges card | https://github.com/selvalt7/modern-circular-gauge |
-| browser_mod | Integration (HACS) | State card (next-hours popup), Battery mode card (Engine log popup), Overrides card (every popup), Billing card (Correct totals popup) | https://github.com/thomasloven/hass-browser_mod |
 
 
 Battman ships **Chart.js** 4.4.0 (`www/vendor/`), so the charts on the Log, Cost chart and Cost

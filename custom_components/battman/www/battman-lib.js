@@ -512,7 +512,7 @@ window.BattmanLib.cssHex = function (value) {
 // the totals event's SetTotal action, which the totals sensors record themselves.
 window.BattmanLib.TOTAL_PERIODS = [['day', 'Today'], ['yesterday', 'Yesterday'], ['month', 'This Month'], ['bill', 'Billing Period']];
 
-// A browser_mod popup sits outside the themed view: hand it the view's Battman colours.
+// Every --battman-* colour the active Battman theme defines, read off an element in the view (a dialog on the page body is outside the themed view).
 window.BattmanLib.themeStyle = function (el) {
   var hass = document.querySelector('home-assistant').hass;
   var themes = (hass.themes && hass.themes.themes) || {};

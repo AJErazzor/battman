@@ -11,7 +11,7 @@ Curvy, Pricy, Finances, Settings, Log, Theme), its cards and themes.
 Before you start, have these in place (the full list, and why: [DEPENDENCIES.md](DEPENDENCIES.md)):
 
 - The integrations it reads: Sigenergy (Sigenergy-Local-Modbus), Amber, Solcast, and optionally OpenNEM.
-- The HACS cards it draws with (button-card, card-mod, modern-circular-gauge) and browser_mod.
+- The HACS cards it draws with (button-card, card-mod, modern-circular-gauge).
 - These lines in `configuration.yaml` (Battman writes its engine and themes into these folders; a
   Repair tells you if a line is missing):
 
@@ -165,7 +165,7 @@ when OpenNEM has several.
 
 ## Dependencies
 
-Battman's dashboard needs some HACS cards (button-card, card-mod, and a few more) and browser_mod.
+Battman's dashboard needs some HACS cards (button-card, card-mod, and a few more).
 See [DEPENDENCIES.md](DEPENDENCIES.md). Battman raises a Repair if any are missing.
 
 ## Removing Battman

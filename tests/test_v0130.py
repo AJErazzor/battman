@@ -142,7 +142,7 @@ async def test_power_view_layout(hass: HomeAssistant) -> None:
                                                 "custom:battman-amber24hourforecasttable"]
 
 
-async def test_countdown_and_browser_mod(hass: HomeAssistant) -> None:
+async def test_countdown_and_no_browser_mod(hass: HomeAssistant) -> None:
     client = await _setup(hass)
     r = await client.get("/battmanfiles/battman-countdown.js")
     js = await r.text()
@@ -150,11 +150,7 @@ async def test_countdown_and_browser_mod(hass: HomeAssistant) -> None:
     orig = "(now.getMinutes() % 5) * 60 + now.getSeconds();\n    const totalSecs = 5 * 60 - secsInBlock;"
     assert orig in js                                            # same countdown maths as Smiggles
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "missing_dependencies")
-    assert "browser_mod" in issue.translation_placeholders["missing"]
-    from custom_components.battman import dependencies
-
-    MockConfigEntry(domain="browser_mod", data={}).add_to_hass(hass)
-    assert "browser_mod" not in await dependencies.async_check(hass)
+    assert "browser_mod" not in issue.translation_placeholders["missing"]   # Battman's popups are its own now
 
 
 # ── amber5minpricegrid ───────────────────────────────────────────────────────
