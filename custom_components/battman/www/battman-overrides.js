@@ -414,6 +414,7 @@ function openControl(anchor) {
   const UL = L.runUntilList(H);
   const pins = OVERRIDES.filter((o) => P[o.pin] === "show").map((o) => o.id);
   let MG = false, SV = false, SVALS = null, OPEN = -1, TDUR = "", TUNT = "", ARM = String(P.armedScene || "");
+  let DRAFT = null;   // what was typed in a panel when its Save was pressed: { i, s, p, locked }
   let NTSIDE = "sell", NTV = 0, NTSV = false, ntHold = null, ntN = 0;
   const tm0 = H.states[E.timer] || {};
   if (tm0.state === "active" && tm0.attributes && tm0.attributes.finishes_at) TUNT = L.clk(new Date(tm0.attributes.finishes_at));
@@ -486,7 +487,9 @@ function openControl(anchor) {
       + (chips ? `<div style="margin-bottom:10px">${chips}</div>` : "")
       + `<div style="display:flex;gap:8px;margin-bottom:10px">${numBox("s", "SOC %", 100, 1)}${numBox("p", "PRICE ¢", 200, 0.01)}${noReset}</div>`
       + plugRow + costBlock + timerBlock(i, "0") + calcBlock
+      + `<div id="svm${i}" style="text-align:center;min-height:0;margin-bottom:2px"></div>`
       + `<div style="display:flex;gap:6px"><div data-a="clear" data-i="${i}" style="${BTN};background:transparent;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral)">Clear</div>`
+      + `<div data-a="panelsave" data-i="${i}" style="${BTN};background:transparent;color:var(--battman-green);border:1px solid var(--battman-green-border-light)">Save</div>`
       + `<div data-a="set" data-i="${i}" style="${BTN};background:${K.wash};color:${K.c};border:1px solid ${K.dim}">Set</div></div></div></div>`;
     return `<div style="border:1px solid ${on ? K.dim : "var(--battman-border-neutral-soft)"};border-radius:8px;margin-bottom:6px;background:var(--battman-surface-card);overflow:hidden">${head}${body}</div>`;
   };
@@ -609,6 +612,11 @@ function openControl(anchor) {
     q("#s" + i).value = val(o.soc) || "";
     q("#p" + i).value = val(o.price) || "";
     q("#t" + i).value = TDUR; q("#u" + i).value = TUNT;
+    if (DRAFT && DRAFT.i === i) {
+      q("#s" + i).value = DRAFT.s; q("#p" + i).value = DRAFT.p;
+      const r = q("#r" + i);
+      if (r && (r.getAttribute("data-on") === "1") !== DRAFT.locked) lockToggle(r);
+    }
     pv(i);
     if (o.id === "any") costPreview(H, q("#costpv-any"), parseFloat(q("#s" + i).value) || 0, parseFloat(q("#p" + i).value) || 0, colours(o));
   };
@@ -741,6 +749,24 @@ function openControl(anchor) {
       fire({ armedScene: ARM }); render();
     },
     mgmt() { MG = !MG; if (!MG) { SV = false; SVALS = null; } render(); },
+    // Save in a panel: the values typed there (not applied) become a preset chip for that override
+    panelsave(t) {
+      const i = +t.dataset.i, o = OVERRIDES[i];
+      const sv = parseFloat(q("#s" + i).value) || 0, pr = parseFloat(q("#p" + i).value) || 0;
+      const r = q("#r" + i), locked = !!r && r.getAttribute("data-on") === "1";
+      if (sv <= 0 && pr <= 0 && !(o.allowNegative && pr < 0)) {
+        const m = q("#svm" + i);
+        if (m) m.innerHTML = `<span style="color:var(--battman-amber);font-size:11px">Set a value first</span>`;
+        return;
+      }
+      DRAFT = { i, s: q("#s" + i).value, p: q("#p" + i).value, locked };
+      SVALS = { [o.id]: { soc: sv, price: pr, allowReset: !locked } };
+      SV = true; render();
+      const nt = q("#snt"), nu = q("#snu");                            // the timer typed in the panel comes along
+      if (nt) nt.value = TDUR;
+      if (nu) nu.value = TUNT;
+      const ni = q("#nm"); if (ni) ni.focus();
+    },
     saveopen() {
       const vals = {};
       OVERRIDES.forEach((o) => {
@@ -761,7 +787,7 @@ function openControl(anchor) {
       const np = { name: nm, timer: (!ta && th > 0) ? Math.round(th * 3600) : 0, values: SVALS };
       if (ta) np.timer_at = ta;
       presets = presets.concat([np]);
-      fire({ overridePresets: presets }); SV = false; SVALS = null; render();
+      fire({ overridePresets: presets }); SV = false; SVALS = null; DRAFT = null; render();
     },
     ntside(t) { const s = +t.dataset.k === 1 ? "buy" : "sell"; if (s === NTSIDE) return; NTSIDE = s; ntRedraw(); },
     ntbe() { if (MG || ntBlocked()) return; ntFireV(NTSIDE, NTSIDE === "sell" ? 0.001 : -0.001); closeIt(); },
