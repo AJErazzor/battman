@@ -801,7 +801,7 @@ window.BattmanLib.modal = function (el, o) {
     'dialog.bm{padding:0;border:0;background:transparent;max-width:var(--bm-w);width:92vw;overflow:visible;color:var(--battman-text-bright,#eee);font-family:var(--battman-font,inherit)}' +
     'dialog.bm:focus,.bm button:focus:not(:focus-visible){outline:none}' +
     'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
-    '.bm .x{position:absolute;top:2px;right:2px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '.bm .x{position:absolute;top:8px;right:4px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
     (o.css || '') + '</style>' + (o.close ? '<button class="x" type="button" aria-label="Close">✕</button>' : '') + o.html;
   // The page's own overflow, remembered once while no dialog is open. (dialog.close() fires its close event on a
   // later tick, so a dialog opened over another must not take the first one's "hidden" for the original.)
@@ -891,7 +891,7 @@ window.BattmanLib.POPUPS.run = function (d) {
 window.BattmanLib.POPUPS.forecast = function (d, el) {
   window.BattmanLib.modal(el, {
     width: 'min(94vw,480px)', close: true,
-    css: '.bm .fc{padding-top:48px;background:var(--battman-surface-card,#000);border-radius:8px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}',
+    css: '.bm .fc{padding-top:56px;background:var(--battman-surface-card,#000);border-radius:8px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}',
     html: '<div class="fc"><battman-forecast-view></battman-forecast-view></div>',
   });
 };
