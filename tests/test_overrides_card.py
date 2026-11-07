@@ -100,3 +100,16 @@ def test_documented() -> None:
     docs = (Path(__file__).parents[1] / "docs/cards.md").read_text()
     row = next(line for line in docs.splitlines() if line.startswith("| `battman-overrides` |"))
     assert "Draws itself" in row and "button-card" not in row
+
+
+def test_popups_fit_the_screen_and_the_close_button_has_room() -> None:
+    """A tall popup is capped to the visible screen height (dvh, less the notch and home bar), scrolls inside, and the
+    close button keeps its own place in the title bar. (On a phone the popups used to run off both ends and the close
+    button ended up under the status bar or on top of the first row.)"""
+    lib = (WWW / "battman-lib.js").read_text()
+    assert "100dvh - env(safe-area-inset-top" in lib and "env(safe-area-inset-bottom" in lib
+    assert ".bm .bm-scroll{" in lib and '<div class="bm-scroll">' in lib
+    assert "82vh" not in lib and "90vh" not in lib                       # no popup scrolls itself or measures in vh
+    card = (WWW / "battman-overrides.js").read_text()
+    assert card.count("padding:0 52px") >= 4                             # the quick edit, help, dock help and control centre
+    assert 'dlg.querySelector(".bm-scroll")' in card                       # the Save preset overlay is scrolled into view

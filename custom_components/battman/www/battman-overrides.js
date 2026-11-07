@@ -118,7 +118,7 @@ function editHtml(o, P, UL) {
   const input = (id, label, color, attrs, border, fz) =>
     `<div style="flex:1"><span style="${FL};color:${color}">${label}</span><input id="${id}" type="number" ${attrs} style="${NUM};border:1px solid ${border};font-size:${fz}px"></div>`;
   return `<div style="background:var(--battman-surface-popup);padding:12px;border-radius:10px;font-family:var(--battman-font)">`
-    + `<div style="font-size:14px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:${K.c};padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid ${K.dim}">${o.name}</div>`
+    + `<div style="font-size:14px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:${K.c};display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 52px 9px 0;margin-bottom:9px;border-bottom:1px solid ${K.dim}">${o.name}</div>`
     + `<div id="body">`
     + (chips ? `<div style="margin-bottom:10px">${chips}</div>` : "")
     + `<div style="display:flex;gap:8px;margin-bottom:10px">`
@@ -269,7 +269,7 @@ function openHelp(o, anchor) {
   const b = (t) => `<span style="color:var(--battman-text-bright);font-weight:600">${t}</span>`;
   L.modal(anchor, { width: "min(94vw,360px)", close: true, html:
     `<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font)">`
-    + `<div style="font-size:9px;font-weight:700;color:${K.c};text-transform:uppercase;letter-spacing:0.14em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid ${K.dim}">${o.name}</div>`
+    + `<div style="font-size:9px;font-weight:700;color:${K.c};text-transform:uppercase;letter-spacing:0.14em;display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 52px 6px 0;margin-bottom:10px;border-bottom:1px solid ${K.dim}">${o.name}</div>`
     + `<div style="margin-bottom:10px"><div style="margin-bottom:5px"><span style="color:${K.c};font-weight:700;font-size:12px">SOC</span><span style="color:var(--battman-text-muted);font-size:11px"> — ${o.helpSoc}</span></div>`
     + `<div><span style="color:${K.c};font-weight:700;font-size:12px">Price</span><span style="color:var(--battman-text-muted);font-size:11px"> — ${o.helpPrice}</span></div></div>`
     + hr + line("If only SOC is set, the curve price thresholds still apply.") + line("If only Price is set, the SOC curve thresholds still apply.")
@@ -339,8 +339,8 @@ function openTimerSheet(anchor) {
   const LB = "font-size:9px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-dim);margin-bottom:6px";
   const IN = "width:100%;box-sizing:border-box;height:36px;background:var(--battman-surface-card);border:1px solid var(--battman-blue-border);border-radius:6px;color:var(--battman-text-bright);font-size:16px;font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font);color-scheme:dark";
   const head = live
-    ? `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:13px"><span id="sh-cd" style="font-size:26px;font-weight:800;color:${C};font-variant-numeric:tabular-nums"></span><span id="sh-un" style="font-size:12px;font-weight:700;color:${C}"></span></div>`
-    : `<div style="font-size:13px;font-weight:800;color:var(--battman-text-dim);margin-bottom:13px">Timer is off</div>`;
+    ? `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:13px;padding-right:52px"><span id="sh-cd" style="font-size:26px;font-weight:800;color:${C};font-variant-numeric:tabular-nums"></span><span id="sh-un" style="font-size:12px;font-weight:700;color:${C}"></span></div>`
+    : `<div style="font-size:13px;font-weight:800;color:var(--battman-text-dim);margin-bottom:13px;padding-right:52px">Timer is off</div>`;
   const ext = [["+15m", 900], ["+30m", 1800], ["+1h", 3600], ["+2h", 7200]].map((e) =>
     `<span class="sh-x bmb2" data-s="${e[1]}" style="${CH};border:1px solid var(--battman-blue-border);color:${C}">${live ? e[0] : e[0].replace("+", "")}</span>`).join("");
   const run = L.runUntilList(H).map((r) =>
@@ -590,7 +590,7 @@ function openControl(anchor) {
         + `<div style="display:flex;gap:8px"><div data-a="savecancel" style="flex:1;text-align:center;padding:11px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral);cursor:pointer">Cancel</div>`
         + `<div data-a="saveok" style="flex:1.4;text-align:center;padding:11px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-green);background:var(--battman-green-soft-bg);border:1px solid var(--battman-green-border-strong);cursor:pointer">Save preset</div></div>`;
     }
-    return `<div style="position:absolute;inset:0;background:rgba(6,10,18,0.94);border-radius:12px;display:flex;flex-direction:column;justify-content:center;padding:16px;overflow:auto"><div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-bright);margin-bottom:12px">Save preset</div>${box}</div>`;
+    return `<div style="position:absolute;inset:0;background:rgba(6,10,18,0.94);border-radius:12px;display:flex;flex-direction:column;justify-content:flex-start;padding:16px;overflow:auto"><div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-bright);margin-bottom:12px">Save preset</div>${box}</div>`;
   };
 
   // ---- the dialog ----
@@ -622,7 +622,7 @@ function openControl(anchor) {
   };
   const fillNet = () => { const t = q("#t99"), u = q("#u99"); if (t) t.value = TDUR; if (u) u.value = TUNT; pv(99); ntShow(); };
   const render = () => {
-    const html = `<div style="position:relative"><div style="font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:var(--battman-text-muted);padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--battman-border-neutral-soft)">Overrides</div>`
+    const html = `<div style="position:relative"><div style="font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:var(--battman-text-muted);display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 52px 9px 0;margin-bottom:9px;border-bottom:1px solid var(--battman-border-neutral-soft)">Overrides</div>`
       + ntPanel() + OVERRIDES.map(panel).join("")
       + (scenesStrip() ? `<div style="font-size:10px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:var(--battman-text-dim);margin:12px 2px 6px">Scenes</div><div style="display:flex;flex-wrap:wrap;gap:6px;padding-bottom:2px">${scenesStrip()}</div>` : "")
       + `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:11px;border-top:1px solid var(--battman-border-neutral-soft)">`
@@ -631,6 +631,7 @@ function openControl(anchor) {
       + `<div style="font-size:11px;color:var(--battman-text-dim);line-height:1.5;margin-top:10px;text-align:center">${MG ? "× deletes a preset · ＋ Save current adds one" : "Chips apply instantly · Scenes replace all overrides + net target · moon runs a scene at 00:01 · pin keeps a row visible"}</div>`
       + (SV ? overlay() : "") + `</div>`;
     q("#cc").innerHTML = html;
+    if (SV) { const sc = dlg.querySelector(".bm-scroll"); if (sc) sc.scrollTop = 0; }
     OVERRIDES.forEach((o, i) => fillPanel(i));
     if (!SV) {
       if (OPEN === 99) { fillNet(); expand(q("#b99")); }
@@ -847,7 +848,7 @@ function openDockHelp(anchor) {
   const k = (t, col = "var(--battman-text-bright)") => `<span style="color:${col};font-weight:600">${t}</span>`;
   L.modal(anchor, { width: "min(94vw,360px)", close: true, html:
     `<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font)">`
-    + `<div style="font-size:9px;font-weight:700;color:var(--battman-text-muted);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--battman-border-neutral-soft)">Override Dock</div>`
+    + `<div style="font-size:9px;font-weight:700;color:var(--battman-text-muted);text-transform:uppercase;letter-spacing:0.14em;display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 52px 6px 0;margin-bottom:10px;border-bottom:1px solid var(--battman-border-neutral-soft)">Override Dock</div>`
     + m("Rows appear below the dock when an override is active or pinned. The override timer follows the same rule.", 11)
     + `<div style="border-top:1px solid var(--battman-border-neutral-soft);margin:8px 0"></div>`
     + m(`${k("Dock tap:")} control centre — presets, values, pins and the override timer.`)

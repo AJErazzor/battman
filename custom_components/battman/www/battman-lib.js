@@ -527,10 +527,12 @@ window.BattmanLib.modal = function (el, o) {
   dlg.innerHTML =
     '<style>' +
     'dialog.bm{padding:0;border:0;background:transparent;max-width:var(--bm-w);width:92vw;overflow:visible;color:var(--battman-text-bright,#eee);font-family:var(--battman-font,inherit)}' +
+    'dialog.bm[open]{display:flex;flex-direction:column;max-height:calc(100vh - 32px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 32px)}' +
+    '.bm .bm-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}' +
     'dialog.bm:focus,.bm button:focus:not(:focus-visible){outline:none}' +
     'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
     '.bm .x{position:absolute;top:8px;right:4px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    (o.css || '') + '</style>' + (o.close ? '<button class="x" type="button" aria-label="Close">✕</button>' : '') + o.html;
+    (o.css || '') + '</style>' + (o.close ? '<button class="x" type="button" aria-label="Close">✕</button>' : '') + '<div class="bm-scroll">' + o.html + '</div>';
   // The page's own overflow, remembered once while no dialog is open. (dialog.close() fires its close event on a
   // later tick, so a dialog opened over another must not take the first one's "hidden" for the original.)
   if (L._overflow0 === undefined) L._overflow0 = document.documentElement.style.overflow;
@@ -596,14 +598,14 @@ window.BattmanLib.showPopup = function (d, el) {
 };
 
 // The scrolling panel every content popup is drawn in.
-window.BattmanLib.POPUP_CSS = '.bm .pop{box-sizing:border-box;width:100%;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif))}';
+window.BattmanLib.POPUP_CSS = '.bm .pop{box-sizing:border-box;width:100%;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif))}';
 
 // The "Next hours" forecast (State card's tap): the <battman-forecast-view> element (battman-forecast-view.js), which
 // shows what Battman's real engine would do over the next hours. The strip above it is for the ✕.
 window.BattmanLib.POPUPS.forecast = function (d, el) {
   window.BattmanLib.modal(el, {
     width: 'min(94vw,480px)', close: true,
-    css: '.bm .fc{padding-top:56px;background:var(--battman-surface-card,#000);border-radius:8px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}',
+    css: '.bm .fc{padding-top:56px;background:var(--battman-surface-card,#000);border-radius:8px}',
     html: '<div class="fc"><battman-forecast-view></battman-forecast-view></div>',
   });
 };

@@ -102,7 +102,7 @@ async def test_engine_log_popup(hass: HomeAssistant, hass_client) -> None:
     assert "color:var(--battman-green);'>True</b>" in full
     for emoji in ("🕐", "🔄", "💰", "🔋", "📊", "☀", "⚡", "📈", "📉", "ℹ"):
         assert emoji not in full                                               # emoji pick colours, aren't shown
-    assert "max-height:82vh" in full and "var(--battman-surface-popup)" in full
+    assert "100dvh" in full and "bm-scroll" in full and "var(--battman-surface-popup)" in full      # fits the visible screen, scrolls inside
     assert 'class="x"' in full                                                 # a close button (the page behind is dimmed)
     assert f"Engine log: missing {LOG}" in _engine_log_popup({})["html"]
     assert "has no log message yet" in _engine_log_popup({LOG: {"state": "x", "attributes": {"message": "  "}}})["html"]
