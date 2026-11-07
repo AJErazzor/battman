@@ -6,6 +6,7 @@
 // for the font browser and themes that use a custom font.
 
 import { BattmanCardBase, FILES, battmanDefine, battmanPicker, missingThemeVars } from "./battman-card-base.js";
+import { OVERRIDES, rowHtml } from "./battman-overrides-core.js";
 
 class BattmanThemeStudioCard extends BattmanCardBase {
   static cardName = "Battman Theme studio";
@@ -249,10 +250,9 @@ details.panel>.body{margin-top:14px}
 .mbtn.active .nm,.mbtn.active .st{color:var(--mhue)}
 @media(prefers-reduced-motion:reduce){.mbtn,.mbtn::before{animation:none!important}}
 
-/* ── Override dock: rows injected verbatim by BattmanLib.renderRow ── */
+/* ── Override dock: the real rows, drawn by the Overrides card's own code (battman-overrides-core.js) ── */
 .dock{display:flex;flex-direction:column;gap:8px}
-.dockfallback .orow{display:flex;align-items:center;gap:8px;height:60px;border-radius:8px;padding:0 12px;
-  border:1px solid var(--battman-border-neutral);background:var(--battman-surface-card);color:var(--battman-text-muted)}
+.dock .row{position:relative;height:60px;box-sizing:border-box;border-radius:8px;overflow:hidden;cursor:pointer}
 
 /* ── Amber price timeline: SELL + BUY sections, colour-coded forecast boxes ── */
 .hero{border-radius:12px;overflow:hidden;border:1px solid var(--battman-border-neutral);background:var(--battman-surface-card)}
@@ -459,30 +459,13 @@ textarea#yaml{
       {t:"HOOOOVER",     hue:"green",  ns:"hooover"}
     ];
     var activeModeIdx = 8; // HOOOOVER — shows FX on the Hunk theme by default
-    // Real dock-row overrides (tokens + direction/money) for BattmanLib.renderRow
-    function ovr(id,label,hue,dir,money,special_at,special_desc,allow_neg){
-      return {id:id,row_label:label,
-        color:"var(--battman-"+hue+")",dim:"var(--battman-"+hue+"-border)",
-        shade:"var(--battman-"+hue+"-wash)",shade_border:"var(--battman-"+hue+"-border-soft)",
-        bg:"var(--battman-"+hue+"-soft-bg)",
-        attr_soc:id+"SOC",attr_price:id+"Price",attr_reset:id+"Reset",
-        direction:dir,money_label:money,special_at:special_at||0,special_desc:special_desc||"",
-        allow_negative:!!allow_neg};
-    }
-    var BM_OVERRIDES=[
-      ovr("sell","SELL<br>OVERRIDE","green","down","EARN",100,"NO SELLING"),
-      ovr("sellsolar","SELL<br>SOLAR","orange","down","EARN"),
-      ovr("buy","BUY<br>OVERRIDE","yellow","up","COST"),
-      ovr("any","BUY<br>ANYTIME","purple","up","COST"),
-      ovr("drain","DRAIN<br>BATTERY","darkred","down","COST")
-    ];
     // Mock entity attributes → a realistic mix of on / price-only / off rows
     var MOCK_ATTR={
-      sellSOC:20, sellPrice:35, sellReset:true,
-      sellsolarSOC:0, sellsolarPrice:18, sellsolarReset:true,
-      buySOC:90, buyPrice:6, buyReset:false,
-      anySOC:0, anyPrice:0, anyReset:true,
-      drainSOC:5, drainPrice:0, drainReset:true,
+      sellOverrideSOC:20, sellOverridePrice:35, sellOverrideAllowReset:true,
+      sellSolarSOC:0, sellSolarPrice:18, sellSolarAllowReset:true,
+      buyOverrideSOC:90, buyOverridePrice:6, buyOverrideAllowReset:false,
+      buyAnytimeSOC:0, buyAnytimePrice:0, buyAnytimeAllowReset:true,
+      drainBatterySOC:5, drainBatteryPrice:0, drainBatteryAllowReset:true,
       overridePresets:[]
     };
     var MOCK_CUR_SOC=62;
@@ -931,25 +914,12 @@ textarea#yaml{
     }
     function renderDockRows(){
       var box=$("pvDock");box.className="dock";box.innerHTML="";
-      var L=window.BattmanLib;
-      if(L&&L.renderRow){
-        var variables={battman:{overrides:BM_OVERRIDES,soc_entity:"sensor._soc",capacity_entity:"sensor._cap"}};
-        var states={"sensor._soc":{state:String(MOCK_CUR_SOC)},"sensor._cap":{state:"40.3"}};
-        var entity={attributes:MOCK_ATTR};
-        BM_OVERRIDES.forEach(function(o){
-          var wrap=document.createElement("div");
-          try{wrap.innerHTML=L.renderRow(variables,states,entity,o.id);}catch(e){wrap.textContent="";}
-          if(wrap.firstChild)box.appendChild(wrap.firstChild);
-        });
-        return;
-      }
-      // fallback (library not loaded): simple labelled rows
-      box.className="dock dockfallback";
-      BM_OVERRIDES.forEach(function(o){
-        var el=document.createElement("div");el.className="orow";
-        el.style.color="var(--battman-"+o.color.replace(/^.*battman-|\).*$/g)+")";
-        el.innerHTML='<b>'+o.row_label.replace("<br>"," ")+'</b>';
-        box.appendChild(el);
+      var states={"sensor._soc":{state:String(MOCK_CUR_SOC)},"sensor._cap":{state:"40.3"}};
+      var env={soc:"sensor._soc",capacity:"sensor._cap"};
+      OVERRIDES.forEach(function(o){
+        var wrap=document.createElement("div");
+        try{wrap.innerHTML=rowHtml(o,MOCK_ATTR,states,env);}catch(e){wrap.textContent="";}
+        if(wrap.firstChild)box.appendChild(wrap.firstChild);
       });
     }
     // Amber BUY / FIT colour logic — the real card_mod thresholds (return HUE name,
@@ -1014,13 +984,6 @@ textarea#yaml{
       var now=new Date();var s=(now.getMinutes()%5)*60+now.getSeconds();var left=300-s;
       el.textContent=Math.floor(left/60)+":"+pad(left%60);
     },1000);
-    // load the real dock library so renderRow is pixel-exact
-    function loadBattmanLib(cb){
-      if(window.BattmanLib){cb&&cb();return;}
-      var s=document.createElement("script");s.src="/battmanfiles/battman-lib.js";
-      s.onload=function(){cb&&cb();};s.onerror=function(){cb&&cb();};
-      document.head.appendChild(s);
-    }
 
     /* ───────────────────────── harmonic ───────────────────────── */
     var SCHEMES=[
@@ -1410,8 +1373,6 @@ textarea#yaml{
       seedHex.addEventListener("change",function(){var h=hexToRgb(seedHex.value);if(h){seed.value=rgbToHex(h.r,h.g,h.b);updateHarmPrev();}});
       $("btnApplyHarm").addEventListener("click",applyHarm);
 
-      // pull the real dock library; re-render rows pixel-exact once it lands
-      loadBattmanLib(function(){ if(window.BattmanLib&&window.BattmanLib.renderRow) renderDockRows(); });
       loadChillCard();
 
       // connect — retry until the parent hass object is ready

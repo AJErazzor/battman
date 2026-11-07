@@ -76,8 +76,8 @@ def test_plant_soc_everywhere() -> None:
         assert "battery_maximum_temperature" not in f.read_text(), f.name
     gauges = (ROOT / "cards/gauges.yaml").read_text()
     assert f"entity: '{PLANT_SOC}'" in gauges and f"states('{PLANT_SOC}')" in gauges
-    overrides = (ROOT / "cards/overrides.yaml").read_text()
-    assert overrides.count(f"- '{PLANT_SOC}'") == 5                    # each row redraws on the SOC
+    overrides = (ROOT / "www/battman-overrides.js").read_text()
+    assert "soc: SIGEN.battery_soc," in overrides                      # the dock's rows draw (and redraw) on the plant SOC
     assert f"entity: {PLANT_SOC}" in (ROOT / "views/20-finances.yaml").read_text()
     house = (ROOT / "www/battman-house.js").read_text()
     assert '{ key: "battery_temp", title: "Battery temperature", ent: { entity: "" }' in house
@@ -88,7 +88,7 @@ async def test_cards_and_views_need_nothing_from_the_map(hass: HomeAssistant, ha
 
     await _setup(hass)
     client = await hass_client()
-    for card in ("gauges", "overrides", "state", "limits"):
+    for card in ("gauges", "state", "limits"):
         c = await (await client.get(f"/api/battman/cards/{card}")).json()
         assert c["missing_map"] == [], card
         assert "[[map:" not in json.dumps(c["config"]), card

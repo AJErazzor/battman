@@ -1,0 +1,28 @@
+{
+  "rows": [
+    { "name": "idle", "attrs": {} },
+    { "name": "sell-40-12", "attrs": { "sellOverrideSOC": 40, "sellOverridePrice": 12 } },
+    { "name": "sell-100-no-selling", "attrs": { "sellOverrideSOC": 100 } },
+    { "name": "buy-negative-price", "attrs": { "buyOverridePrice": -5.5 } },
+    { "name": "buy-80-9-locked", "attrs": { "buyOverrideSOC": 80, "buyOverridePrice": 9, "buyOverrideAllowReset": false } },
+    { "name": "drain-plughole", "attrs": { "drainBatterySOC": 20, "drainBatteryPlughole": true } },
+    { "name": "any-100-12-wide", "attrs": { "buyAnytimeSOC": 100, "buyAnytimePrice": 12 } },
+    { "name": "preset-named-long", "attrs": { "sellSolarSOC": 30, "sellSolarPrice": 8,
+      "overridePresets": [{ "name": "A very long preset name here", "values": { "sellsolar": { "soc": 30, "price": 8 } } }] } },
+    { "name": "soc-unavailable", "attrs": { "sellOverrideSOC": 50 }, "soc": "unavailable" },
+    { "name": "target-met-already", "attrs": { "sellOverrideSOC": 50 }, "soc": "80" }
+  ],
+  "strips": [
+    { "name": "idle", "attrs": {} },
+    { "name": "sell-40", "attrs": { "sellOverrideSOC": 40 } },
+    { "name": "no-selling", "attrs": { "sellOverrideSOC": 100 } },
+    { "name": "locked", "attrs": { "buyOverrideSOC": 80, "buyOverrideAllowReset": false } },
+    { "name": "plughole", "attrs": { "drainBatterySOC": 20, "drainBatteryPlughole": true } },
+    { "name": "armed-scene-with-markup", "attrs": { "armedScene": "Morning <b>&" } },
+    { "name": "net-sell-5", "attrs": { "netTargetSellPrice": 5 } },
+    { "name": "net-buy-3", "attrs": { "netTargetBuyPrice": 3 } },
+    { "name": "break-even-sell", "attrs": { "netTargetSellPrice": 0.001 } },
+    { "name": "target-met", "attrs": { "netTargetSellMet": "__MET__" } },
+    { "name": "locked-and-armed", "attrs": { "sellSolarSOC": 30, "sellSolarAllowReset": false, "armedScene": "x" } }
+  ]
+}

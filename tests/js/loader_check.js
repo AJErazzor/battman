@@ -23,7 +23,7 @@ const http = require("http");
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error" && m.text().startsWith("Battman:")) errors.push(m.text()); });   // (not the favicon 404)
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
-  const tags = ["battman-countdown", "battman-house", "battman-log", "battman-settings", "battman-curvy", "battman-pricy", "battman-forecast-view", "battman-pie-card", "battman-state"];
+  const tags = ["battman-countdown", "battman-house", "battman-log", "battman-settings", "battman-curvy", "battman-pricy", "battman-forecast-view", "battman-pie-card", "battman-state", "battman-overrides"];
   await page.waitForTimeout(2500);
   const out = await page.evaluate((tags) => ({
     defined: tags.filter((t) => customElements.get(t)),
