@@ -588,7 +588,7 @@ textarea#yaml{
     var PREFIX="Battman ";                 // reserved namespace prefix (display-stripped)
     function isBattman(n){return /^battman /i.test(n);}      // case-insensitive namespace match
     function strip(n){return n.replace(/^battman /i,"");}     // display without the prefix
-    // the theme the studio opens on when it has none remembered (and HA's active theme isn't a Battman one)
+    // the theme the studio opens on when HA's active theme isn't a Battman one and it has none remembered
     var ENTRY_THEME="Battman Neon Drift";
     function fetchThemes(cb){
       var hass=getHass();
@@ -603,14 +603,15 @@ textarea#yaml{
           var o=document.createElement("option");o.value=n;o.textContent=strip(n);
           sel.appendChild(o);
         });
-        // Default: last theme we were editing (survives the reload Make Active triggers)
-        //   → Battman Neon Drift → HA's active theme → first Battman.
+        // Opens on the active theme when it's a Battman one, so what's selected is what's on the
+        // dashboard (Make Active reloads the page, and the active theme is then the one just made
+        // active). Otherwise: the last theme we were editing → Battman Neon Drift → first Battman.
         var last=null; try{last=localStorage.getItem("battman.studioTheme");}catch(e){}
         var entry=ENTRY_THEME;
         var active=hass.themes&&hass.themes.theme;
-        var pick=(last&&allThemes[last])?last
+        var pick=(active&&isBattman(active)&&allThemes[active])?active
+                :(last&&allThemes[last])?last
                 :(entry&&allThemes[entry])?entry
-                :(active&&isBattman(active))?active
                 :(fam[0]||null);
         if(pick)sel.value=pick;
         setStatus("connected","ok");
@@ -869,16 +870,25 @@ textarea#yaml{
       });
     }
     /* ───────────────────────── preview ───────────────────────── */
+    var appliedKeys={};
     function applyPreviewVars(){
       var pv=$("preview");
-      // set every battman-*, fx-*, and the two roles onto #preview so var() refs
-      // resolve to the EDITED theme (independent of the active/chrome theme)
+      // The selected theme's battman-*, fx-* and the two roles go onto the whole studio (its buttons,
+      // title and cards too), not just #preview, so the page always shows the selected theme and
+      // never a mix with the active one. Names the last theme had and this one hasn't are cleared.
+      var tops=[root.querySelector(".studio"),pv];
+      var now={};
       Object.keys(vars).forEach(function(k){
         if(k.indexOf("battman-")===0||k.indexOf("fx-")===0||k==="primary-color"||k==="accent-color"){
-          pv.style.setProperty("--"+k,vars[k]);
+          now[k]=1;
+          tops.forEach(function(el){if(el)el.style.setProperty("--"+k,vars[k]);});
         }
       });
-      // font
+      Object.keys(appliedKeys).forEach(function(k){
+        if(!now[k])tops.forEach(function(el){if(el)el.style.removeProperty("--"+k);});
+      });
+      appliedKeys=now;
+      // font (the preview's own: the studio's chrome keeps the dashboard font)
       var on=$("fontOn").checked;
       var fam=fontStack()||"inherit";
       pv.style.setProperty("--battman-font",on?fam:"inherit");
