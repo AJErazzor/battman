@@ -135,7 +135,7 @@ async def test_power_view_layout(hass: HomeAssistant) -> None:
     client = await _setup(hass)
     power = (await built(hass))["views"][0]
     s1 = [c["type"] for c in power["sections"][0]["cards"]]
-    assert s1.index("custom:battman-state") + 1 == s1.index("custom:battman-profitloss")   # full order: test_v0160
+    assert s1.index("custom:battman-state") + 1 == s1.index("custom:battman-profitloss")   # full order: test_overrides_card
     s2 = power["sections"][1]
     assert s2["column_span"] == 2
     assert [c["type"] for c in s2["cards"]] == ["custom:battman-amber5minpricegrid", "custom:battman-limits",

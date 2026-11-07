@@ -1,4 +1,4 @@
-// Real-browser check of the Battman card wrapper's `theme:` option (run by tests/test_v0171.py).
+// Real-browser check of the Battman card wrapper's `theme:` option (run by tests/test_engine_log_renderer.py).
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node theme_check.js <battman-cards.js> <scratch dir>
 const { chromium } = require("playwright");
 const fs = require("fs");

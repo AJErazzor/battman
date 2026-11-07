@@ -9,7 +9,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from .test_v0100 import PARAMS, _la, _phone, _set, _settle, _setup
+from .test_live_activity_install import PARAMS, _la, _phone, _set, _settle, _setup
 
 NEW = ["automation.battman_amber_cheap_price_alert", "automation.battman_amber_negative_price_alert",
        "automation.battman_amber_charge_from_the_alert", "automation.battman_off_grid_alert"]

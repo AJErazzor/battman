@@ -58,7 +58,7 @@ async def test_batterymode_card(hass: HomeAssistant, hass_client) -> None:
         return out
     got = calls(card["config"], [])
     # Self Consume and Drain are plain service calls; the five that can go against the price fire Battman's
-    # "battman_mode" event instead (battman-lib.js asks when needed, then sets the mode: see test_v0360.py)
+    # "battman_mode" event instead (battman-lib.js asks when needed, then sets the mode: see test_mode_button_confirmations.py)
     assert len(got) == 3 and all(s == "input_select.select_option" for s, _ in got)
     assert {json.loads(d)["option"] for _, d in got} == {"Self Consume", "Drain"}
     # Battman's side, recorded so the comparison survives Smiggles' removal (popup emptied, as compared)

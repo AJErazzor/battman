@@ -1,6 +1,6 @@
 // Real-browser check: a page that still has an older list of card files naming cards that are real
 // cards now (open since before the update) gets each from its own script (battman-log.js and so
-// on), not a card-file card of that name (run by tests/test_v0200.py).
+// on), not a card-file card of that name (run by tests/test_log_card.py).
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node stale_list_check.js <www dir>
 const { chromium } = require("playwright");
 const fs = require("fs");

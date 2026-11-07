@@ -1,5 +1,5 @@
 // Real-browser check of the one Battman script (www/battman.js): it starts the others, each in its own import, so a
-// script that fails to load is reported and the rest carry on. (run by tests/test_v0184.py)
+// script that fails to load is reported and the rest carry on. (run by tests/test_element_registry.py)
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node loader_check.js <www dir (a copy)>
 const { chromium } = require("playwright");
 const fs = require("fs");

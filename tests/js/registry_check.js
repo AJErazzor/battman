@@ -1,5 +1,5 @@
 // Real-browser check: Battman's scripts register their elements again when HA's frontend swaps
-// window.customElements for its own registry after they've run (run by tests/test_v0184.py).
+// window.customElements for its own registry after they've run (run by tests/test_element_registry.py).
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node registry_check.js <www dir> <scratch dir>
 const { chromium } = require("playwright");
 const fs = require("fs");

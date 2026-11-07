@@ -1,4 +1,4 @@
-// Real-browser check of the Battman Image card (run by tests/test_v0180.py).
+// Real-browser check of the Battman Image card (run by tests/test_image_card.py).
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node image_check.js <battman-cards.js> <images dir> <scratch dir>
 const { chromium } = require("playwright");
 const fs = require("fs");
