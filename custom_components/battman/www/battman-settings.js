@@ -136,7 +136,10 @@ class BattmanSettingsCard extends BattmanCardBase {
                     background: var(--battman-text-muted); transition: transform .15s, background .15s; }
   .sw input:checked + span { background: var(--battman-green-border-strong); border-color: var(--battman-green-border-strong); }
   .sw input:checked + span::after { transform: translateX(20px); background: var(--battman-green); }
-  .bar { display: flex; justify-content: flex-end; gap: 8px; margin: -4px 0 12px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin: -4px 0 12px; }
+  .barl, .barr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .runmsg { font-size: 12px; line-height: 1.3; }
+  .runmsg.ok { color: var(--battman-green); } .runmsg.bad { color: var(--battman-red); } .runmsg.busy { color: var(--battman-text-muted); }
   button.fold { display: flex; align-items: center; gap: 7px; background: none; border: none; padding: 0; font: inherit;
                 color: inherit; cursor: pointer; letter-spacing: inherit; text-align: left; min-height: 28px; }
   button.chevs { background: none; border: none; padding: 0 2px; cursor: pointer; display: flex; align-items: center; min-height: 28px; }
@@ -150,7 +153,7 @@ class BattmanSettingsCard extends BattmanCardBase {
 `;
   static html = `<ha-card><div class="frame"><div class="page">
 <h2 class="hdr"><img src="${FILES}/images/battman-wrench.webp" alt="Battman" class="who"><img src="${FILES}/images/settings-line.webp" alt="Settings" class="word">${VERSION ? `<span class="ver">Battman v${VERSION}</span>` : ''}</h2>
-<div class="bar"><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></div>
+<div class="bar"><span class="barl"><button class="rst" data-runengine="1">Run engine now</button><span class="runmsg" id="runmsg"></span></span><span class="barr"><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></span></div>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
 </div></div></ha-card>`;
 
@@ -160,7 +163,7 @@ class BattmanSettingsCard extends BattmanCardBase {
     const ICON = {"buy": "M11.39 5.45L9.61 4.55L10.87 2H19.34L20.61 4.55L18.83 5.44L18.11 4H12.11L11.39 5.45M21.73 8H17.2L16.41 5H13.81L13 8H8.5L7.21 10.55L9 11.44L9.73 10H20.5L21.21 11.45L23 10.56L21.73 8M20.88 22H18.81L18.57 21.1L15.11 15.9L11.64 21.1L11.41 22H9.34L12.23 11H14.3L13.94 12.35L15.11 14.1L16.27 12.35L15.92 11H18L20.88 22M14.5 15L13.61 13.65L12.43 18.13L14.5 15M17.79 18.12L16.61 13.64L15.71 15L17.79 18.12M9 16L5 12V15H1V17H5V20L9 16Z", "buyRules": "M11 15H6L13 1V9H18L11 23V15Z", "needy": "M20 13C20.6 13 21.1 13.2 21.5 13.6C21.8 14 22 14.5 22 15L14 18L7 16V7H8.9L16.2 9.7C16.7 9.9 17 10.3 17 10.8C17 11.1 16.9 11.4 16.7 11.6S16.1 12 15.8 12H13L11.2 11.3L10.9 12.2L13 13H20M1 7H5V18H1V7Z", "watchdog": "M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z", "billing": "M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9M1,10H3V20H19V22H1V10Z", "system": "M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z", "sell": "M5.18 5.45L3.4 4.55L4.66 2H13.13L14.4 4.55L12.62 5.44L11.9 4H5.9L5.18 5.45M15.5 8H11L10.2 5H7.6L6.81 8H2.28L1 10.55L2.79 11.44L3.5 10H14.28L15 11.45L16.79 10.56L15.5 8M14.67 22H12.6L12.36 21.1L8.9 15.9L5.43 21.1L5.2 22H3.13L6 11H8.09L7.73 12.35L8.9 14.1L10.06 12.35L9.71 11H11.78L14.67 22M8.3 15L7.4 13.65L6.22 18.13L8.3 15M11.58 18.12L10.4 13.64L9.5 15L11.58 18.12M23 16L19 12V15H15V17H19V20L23 16Z", "sellRules": "M2.3,20.28L11.9,10.68L10.5,9.26L9.78,9.97C9.39,10.36 8.76,10.36 8.37,9.97L7.66,9.26C7.27,8.87 7.27,8.24 7.66,7.85L13.32,2.19C13.71,1.8 14.34,1.8 14.73,2.19L15.44,2.9C15.83,3.29 15.83,3.92 15.44,4.31L14.73,5L16.15,6.43C16.54,6.04 17.17,6.04 17.56,6.43C17.95,6.82 17.95,7.46 17.56,7.85L18.97,9.26L19.68,8.55C20.07,8.16 20.71,8.16 21.1,8.55L21.8,9.26C22.19,9.65 22.19,10.29 21.8,10.68L16.15,16.33C15.76,16.72 15.12,16.72 14.73,16.33L14.03,15.63C13.63,15.24 13.63,14.6 14.03,14.21L14.73,13.5L13.32,12.09L3.71,21.7C3.32,22.09 2.69,22.09 2.3,21.7C1.91,21.31 1.91,20.67 2.3,20.28M20,19A2,2 0 0,1 22,21V22H12V21A2,2 0 0,1 14,19H20Z", "spike": "M7,2V13H10V22L17,10H13L17,2H7Z", "protection": "M10 12C10 10.9 10.9 10 12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12M7.8 17.7L6.3 16.3L7.8 14.8C7.3 14 7 13 7 12C7 11 7.3 10 7.8 9.3L6.3 7.8L7.8 6.3L9.2 7.8C10 7.3 11 7 12 7C13 7 14 7.3 14.8 7.8L16.3 6.3L17.7 7.7L16.2 9.2C16.7 10 17 11 17 12C17 13 16.7 14 16.2 14.8L17.7 16.3L16.3 17.7L14.8 16.2C14 16.7 13 17 12 17C11 17 10 16.7 9.3 16.2L7.8 17.7M12 9C10.3 9 9 10.3 9 12C9 13.7 10.3 15 12 15C13.7 15 15 13.7 15 12C15 10.3 13.7 9 12 9M20 2C21.1 2 22 2.9 22 4V20C22 21.1 21.1 22 20 22H19V23H15V22H9V23H5V22H4C2.9 22 2 21.1 2 20V4C2 2.9 2.9 2 4 2H20M20 20V4H4V20H20Z", "provider": "M8.28,5.45L6.5,4.55L7.76,2H16.23L17.5,4.55L15.72,5.44L15,4H9L8.28,5.45M18.62,8H14.09L13.3,5H10.7L9.91,8H5.38L4.1,10.55L5.89,11.44L6.62,10H17.38L18.1,11.45L19.89,10.56L18.62,8M17.77,22H15.7L15.46,21.1L12,15.9L8.53,21.1L8.3,22H6.23L9.12,11H11.19L10.83,12.35L12,14.1L13.16,12.35L12.81,11H14.88L17.77,22M11.4,15L10.5,13.65L9.32,18.13L11.4,15M14.68,18.12L13.5,13.64L12.6,15L14.68,18.12Z", "autoCurve": "M9.96,11.31C10.82,8.1 11.5,6 13,6C14.5,6 15.18,8.1 16.04,11.31C17,14.92 18.1,19 22,19V17C19.8,17 19,14.54 17.97,10.8C17.08,7.46 16.15,4 13,4C9.85,4 8.92,7.46 8.03,10.8C7.03,14.54 6.2,17 4,17V2H2V22H22V20H4V19C7.9,19 9,14.92 9.96,11.31Z", "notifications": "M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21M19.75,3.19L18.33,4.61C20.04,6.3 21,8.6 21,11H23C23,8.07 21.84,5.25 19.75,3.19M1,11H3C3,8.6 3.96,6.3 5.67,4.61L4.25,3.19C2.16,5.25 1,8.07 1,11Z", "dashboard": "M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z", "defaults": "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"};
     const NEEDS = ['parameters', 'parameters_update_event', 'buy_rules', 'buy_rules_event', 'sell_rules', 'sell_rules_event',
                    'buy_total', 'totals_update_event', 'power_provider_buy', 'power_provider_sell', 'power_provider_event',
-                   'soc_curves', 'auto_curve'];
+                   'soc_curves', 'auto_curve', 'run', 'control_script'];
     const NEED_ENTITIES = ['parameters', 'buy_rules', 'sell_rules', 'buy_total', 'power_provider_buy', 'power_provider_sell'];
     // what the parameters sensor accepts (packages/battman_parameters.yaml): [int?, min, max, min exclusive?]
     const RANGE = {
@@ -842,10 +845,37 @@ class BattmanSettingsCard extends BattmanCardBase {
       if ('theme' in t.dataset) return applyTheme(t, t.value);
     }
 
+    // Run the engine now (script.battman_engine). It only says "Ran" once the run sensor shows a new run.
+    let runBusy = false;
+    async function runEngine(btn) {
+      if (runBusy) return;
+      const out = root.querySelector('#runmsg');
+      const say2 = (text, cls) => { out.textContent = text; out.className = 'runmsg ' + cls; };
+      const lastRun = () => String(attrs('run').lastRunAt || '');
+      const before = lastRun();
+      runBusy = true; btn.disabled = true; say2('Running…', 'busy');
+      try {
+        await getHass().callService('script', M.control_script.split('.').slice(1).join('.'), {});
+      } catch (e) {
+        runBusy = false; btn.disabled = false;
+        return say2("Didn't run: " + ((e && e.message) || e), 'bad');
+      }
+      const t0 = Date.now();
+      let ran = false;
+      while (Date.now() - t0 < 15000) {
+        if (lastRun() !== before) { ran = true; break; }
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      runBusy = false; btn.disabled = false;
+      if (ran) { say2('✓ Ran', 'ok'); setTimeout(() => { if (out.textContent === '✓ Ran') { out.textContent = ''; out.className = 'runmsg'; } }, 3000); }
+      else say2("Didn't run: the engine's run sensor didn't change", 'bad');
+    }
+
     async function onClick(e) {
       const t = e.target.closest('button');
       if (!t) return;
       if ('fold' in t.dataset) { const s = t.closest('.sec'); setFolded(s, !s.classList.contains('folded')); return saveFolded(); }
+      if ('runengine' in t.dataset) return runEngine(t);
       if ('foldall' in t.dataset) {
         const fold = t.dataset.foldall === '1';
         root.querySelectorAll('.sec').forEach((s) => setFolded(s, fold));

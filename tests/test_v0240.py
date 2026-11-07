@@ -80,6 +80,31 @@ process.stdout.write(JSON.stringify({ open: !!dlg.open, html: dlg.innerHTML, sty
     assert "min(94vw,480px)" in out["style"]
 
 
+@needs_node
+def test_fire_checked_ignores_the_second_half_of_one_tap() -> None:
+    """The Billing buttons answer pointerup AND click (an iPhone tap there never becomes a click), so one tap calls
+    fireChecked twice: only the first sends."""
+    out = _lib("""
+const sent = [];
+hass.callWS = (m) => { sent.push(m.event_type); return Promise.resolve(); };
+hass.states = {};
+const el = { tagName: 'BUTTON', dispatchEvent: (e) => toasts.push(e.detail.message) };
+window.BattmanLib.fireChecked(el, 'evt', { a: 1 }, () => false);
+window.BattmanLib.fireChecked(el, 'evt', { a: 1 }, () => false);          // the click that follows the pointerup
+const other = { tagName: 'BUTTON', dispatchEvent: () => {} };
+window.BattmanLib.fireChecked(other, 'evt2', {}, () => false);              // a different button is its own tap
+setTimeout(() => { process.stdout.write(JSON.stringify({ sent })); process.exit(0); }, 20);""")
+    assert out["sent"] == ["evt", "evt2"]
+
+
+def test_billing_buttons_and_settings_run_button() -> None:
+    billing = (ROOT / "cards/billing.yaml").read_text()
+    assert billing.count("onpointerup=") == 3          # Bank New Income, Reset New Income, Correct Totals
+    settings = (ROOT / "www/battman-settings.js").read_text()
+    assert 'data-runengine="1">Run engine now</button>' in settings and "if ('runengine' in t.dataset) return runEngine(t);" in settings
+    assert "'run', 'control_script'" in settings and "Didn't run" in settings and "✓ Ran" in settings
+
+
 def test_no_server_popups_left() -> None:
     lib = LIB.read_text()
     assert "callService('browser_mod'" not in lib and 'callService("browser_mod"' not in lib

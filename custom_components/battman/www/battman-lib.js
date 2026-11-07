@@ -637,6 +637,10 @@ window.BattmanLib.toast = function (el, message) {
   (el || document.querySelector('home-assistant')).dispatchEvent(new CustomEvent('hass-notification', { detail: { message: message }, bubbles: true, composed: true }));
 };
 window.BattmanLib.fireChecked = function (el, eventType, data, check, okText) {
+  // A button that answers pointerup AND click (an iPhone tap inside the Billing card never becomes a click) calls
+  // this twice for one tap: the second call, right after the first, is the same tap.
+  if (el && el._fcAt && Date.now() - el._fcAt < 700) return Promise.resolve(false);
+  if (el) el._fcAt = Date.now();
   var hass = document.querySelector('home-assistant').hass;
   if (el && el.tagName === 'BUTTON') el.disabled = true;
   var done = function (ok, msg) {
