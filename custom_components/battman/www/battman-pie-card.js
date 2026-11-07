@@ -20,6 +20,8 @@
  * MIT License
  */
 
+import { battmanDefine } from "./battman-card-base.js";
+
 const VERSION = "0.3.2";
 
 // Validated categorical palette (8 slots, light + dark surface variants).
@@ -985,25 +987,6 @@ class PowerPieCardEditor extends HTMLElement {
       composed: true,
     }));
   }
-}
-
-// Register a custom element so HA finds it (as in battman-cards.js: HA may swap its element
-// registry while it starts, so register again in the new one if that happens after us).
-function battmanDefine(tag, cls) {
-  const reg = window.customElements;
-  if (!reg.get(tag)) reg.define(tag, cls);
-  const t0 = Date.now();
-  (function watch() {
-    const now = window.customElements;
-    if (now !== reg) {
-      if (!now.get(tag)) {
-        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
-      }
-      return;
-    }
-    if (window.CustomElementRegistryPolyfill) return;
-    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
-  })();
 }
 
 battmanDefine("battman-pie-card-editor", PowerPieCardEditor);

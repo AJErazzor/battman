@@ -6,6 +6,7 @@ const path = require("path");
 (async () => {
   const [src, imagesDir, dir] = process.argv.slice(2);
   fs.writeFileSync(path.join(dir, "battman-cards.js"), fs.readFileSync(src, "utf8"));
+  fs.copyFileSync(path.join(path.dirname(src), "battman-card-base.js"), path.join(dir, "battman-card-base.js"));   // what cards.js imports
   fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html><html><body style="margin:0">
 <script>
 window.loadCardHelpers = async () => ({ createCardElement: () => document.createElement("div") });

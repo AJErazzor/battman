@@ -35,8 +35,8 @@ forces Self Consume when the engine hasn't run for its limit.
 
 **Forecast.** `script.battman_engine_forecast` asks the same decide script what Battman would do in every
 future slot (the live 5-minute price, then Amber's forecast), carrying the battery level from slot to slot,
-and returns the timeline. It changes nothing. The State (Chill) card's tap popup is a page that calls it
-(`www/battman-forecast.html`). It is approximate: forecast prices move, price spikes beyond the forecast are
+and returns the timeline. It changes nothing. The State (Chill) card's tap popup is a view that calls it
+(`www/battman-forecast-view.js`). It is approximate: forecast prices move, price spikes beyond the forecast are
 unknown, and the battery model is simple (no losses; the curves, rules and today's totals are held at their
 current values). What-if changes (a different SOC, price shift, solar scale, load or setting) are passed in
 and never saved.

@@ -6,7 +6,7 @@
 # when it's a whole value). To try changes on your own HA, copy this file to
 # config/battman/cards/state.yaml and edit that copy.
 #
-# Tap opens a Battman dialog (no browser_mod) with the forecast page (www/battman-forecast.html): what Battman's real
+# Tap opens a Battman dialog (no browser_mod) with the forecast (www/battman-forecast-view.js): what Battman's real
 # engine decision (script.battman_engine_forecast) would do over the next hours, slot by slot.
 type: custom:button-card
 entity: '[[map:parameters]]'
@@ -297,9 +297,8 @@ styles:
     - width: 100%
 tap_action:
   action: fire-dom-event
-  battman_popup:   # Battman's library opens the forecast page in its own dialog (battman-lib.js, POPUPS.forecast)
+  battman_popup:   # Battman's library opens the forecast in its own dialog (battman-lib.js, POPUPS.forecast)
     kind: forecast
-    url: /battmanfiles/battman-forecast.html
 hold_action:
   action: none
 extra_styles: |

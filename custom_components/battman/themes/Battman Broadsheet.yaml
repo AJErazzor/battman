@@ -9,7 +9,7 @@
 
   mode: "light"
   # ── THEME FONT (optional) ── uncomment the lines below + pick a font to enable it.
-  #    Loads via card-mod, applies everywhere incl. iframes & browser_mod popups.
+  #    Loads via card-mod, applies everywhere, including Battman's popups and the forecast frame.
   #    To use: set the family in `battman-font` and its Google Fonts URL in the @import.
   # battman-font: "Inter, Roboto, sans-serif"
   # card-mod-theme: "Battman Broadsheet"

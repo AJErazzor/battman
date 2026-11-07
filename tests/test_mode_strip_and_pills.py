@@ -19,7 +19,7 @@ def _node(code: str) -> dict:
 
 
 def test_strip_is_loaded_and_documented() -> None:
-    assert '"mode-history-strip"' in (ROOT / "custom_components/battman/__init__.py").read_text()
+    assert '"mode-history-strip"' in (ROOT / "custom_components/battman/www/battman.js").read_text()
     docs = (ROOT / "docs/cards.md").read_text()
     assert "`battman-mode-history-strip`" in docs and "## Battman Mode history strip" in docs
     js = (WWW / "battman-mode-history-strip.js").read_text()

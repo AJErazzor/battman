@@ -19,28 +19,11 @@
 // ---------------------------------------------------------------------------------------------
 
 
-// Register a custom element so HA finds it (as in battman-cards.js: HA may swap its element
-// registry while it starts, so register again in the new one if that happens after us).
-function battmanDefine(tag, cls) {
-  const reg = window.customElements;
-  if (!reg.get(tag)) reg.define(tag, cls);
-  const t0 = Date.now();
-  (function watch() {
-    const now = window.customElements;
-    if (now !== reg) {
-      if (!now.get(tag)) {
-        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
-      }
-      return;
-    }
-    if (window.CustomElementRegistryPolyfill) return;
-    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
-  })();
-}
-
 // The items, in the editor's order. ent: { field: default entity } ("" = none). need: the fields that must
 // exist for the item to be drawn.
 // at: [top %, left %, width %] on the card.
+
+import { battmanDefine, esc } from "./battman-card-base.js";
 const HOUSE_ITEMS = [
   { key: "house", title: "House picture", image: "/battmanfiles/images/house.webp", at: [1.1, 0, 100] },
   { key: "battery_unit", title: "Battery picture", image: "/battmanfiles/images/house-battery.webp", at: [1.1, -3.8, 100] },
@@ -270,7 +253,6 @@ class BattmanHouseCard extends HTMLElement {
 
   // One item's contents (HTML), or null for nothing to show.
   _html(key, st, num, has) {
-    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     // a value with its text under it; pc / sc: their classes, colour: the value's theme colour
     const two = (p, sec, pc = "blend", sc = "muted", colour = "") =>
       `<div class="p ${pc}"${colour ? ` style="color:var(--battman-${colour})"` : ""}>${p}</div>${sec ? `<div class="s ${sc}">${esc(sec)}</div>` : ""}`;

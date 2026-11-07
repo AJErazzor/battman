@@ -26,7 +26,7 @@ def test_forecast_holds_the_live_readings_then_fades() -> None:
 
 
 def test_page_says_when_the_solar_is_switched_off() -> None:
-    page = (ROOT / "www/battman-forecast.html").read_text()
+    page = (ROOT / "www/battman-forecast-core.js").read_text()
     assert "solar switched off" in page and "a.every(s => s.solar_off)" in page
 
 

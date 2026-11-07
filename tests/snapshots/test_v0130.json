@@ -119,8 +119,7 @@
   "tap_action": {
    "action": "fire-dom-event",
    "battman_popup": {
-    "kind": "forecast",
-    "url": "/battmanfiles/battman-forecast.html"
+    "kind": "forecast"
    }
   },
   "triggers_update": [

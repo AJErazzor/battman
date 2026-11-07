@@ -525,17 +525,6 @@ window.BattmanLib.themeStyle = function (el) {
   return out;
 };
 
-// A popup's style: its width, the view's Battman colours, and the dialog itself in the theme's
-// card colour (otherwise it takes HA's default dialog colour, which may not match).
-window.BattmanLib.popupStyle = function (el, width) {
-  var surface = getComputedStyle(el).getPropertyValue('--battman-surface-card').trim();
-  var text = getComputedStyle(el).getPropertyValue('--battman-text-bright').trim();
-  return '--mdc-dialog-min-width:' + width + ';--mdc-dialog-max-width:' + width + ';'
-    + (surface ? '--mdc-theme-surface:' + surface + ';--ha-dialog-surface-background:' + surface + ';--ha-card-background:' + surface + ';--card-background-color:' + surface + ';' : '')
-    + (text ? '--primary-text-color:' + text + ';--mdc-dialog-heading-ink-color:' + text + ';' : '')
-    + window.BattmanLib.themeStyle(el);
-};
-
 // Correct totals opens in a Battman popup on the device that was tapped (no browser_mod).
 window.BattmanLib.correctTotals = function (btn, ids) {
   var L = window.BattmanLib;
@@ -781,6 +770,12 @@ window.BattmanLib.modalTheme = function (el) {
     var v = String(cs.getPropertyValue('--battman-' + k) || '').trim();
     if (v) out += '--battman-' + k + ':' + v + ';';
   });
+  ['hooover', 'houseparty'].forEach(function (ns) {          // the theme's effect variables (the forecast's Hooover / House Party rows)
+    ['chase-display', 'chase-gradient', 'chase-duration', 'ring-width', 'border', 'glow-name', 'glow-color', 'glow-duration'].forEach(function (k) {
+      var v = String(cs.getPropertyValue('--fx-' + ns + '-' + k) || '').trim();
+      if (v) out += '--fx-' + ns + '-' + k + ':' + v + ';';
+    });
+  });
   ['primary-font-family', 'primary-text-color'].forEach(function (k) {
     var v = String(cs.getPropertyValue('--' + k) || '').trim();
     if (v) out += '--' + k + ':' + v + ';';
@@ -806,9 +801,11 @@ window.BattmanLib.modal = function (el, o) {
     'dialog.bm{padding:0;border:0;background:transparent;max-width:var(--bm-w);width:92vw;overflow:visible;color:var(--battman-text-bright,#eee);font-family:var(--battman-font,inherit)}' +
     'dialog.bm:focus,.bm button:focus:not(:focus-visible){outline:none}' +
     'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
-    '.bm .x{position:absolute;top:2px;right:2px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '.bm .x{position:absolute;top:8px;right:4px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
     (o.css || '') + '</style>' + (o.close ? '<button class="x" type="button" aria-label="Close">✕</button>' : '') + o.html;
-  var prevOverflow = document.documentElement.style.overflow;
+  // The page's own overflow, remembered once while no dialog is open. (dialog.close() fires its close event on a
+  // later tick, so a dialog opened over another must not take the first one's "hidden" for the original.)
+  if (L._overflow0 === undefined) L._overflow0 = document.documentElement.style.overflow;
   if (o.close) dlg.querySelector('.x').addEventListener('click', function () { dlg.close(); });
   // the dialog's own box is just the content, so a tap on the dialog itself is a tap on the backdrop
   var openedAt = Date.now();   // (a click that is still on its way from the tap that opened this must not close it)
@@ -817,9 +814,12 @@ window.BattmanLib.modal = function (el, o) {
   var onKey = function (e) { if (e.key === 'Escape' && dlg.open) dlg.close(); };
   dlg.addEventListener('close', function () {
     document.removeEventListener('keydown', onKey);
-    document.documentElement.style.overflow = prevOverflow;
-    L._modal = null;
     dlg.remove();
+    if (L._modal === dlg) {            // (not when another dialog has already taken over)
+      L._modal = null;
+      document.documentElement.style.overflow = L._overflow0;
+      L._overflow0 = undefined;
+    }
     if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* not focusable */ } }
     if (o.onClose) o.onClose();
   });
@@ -886,14 +886,13 @@ window.BattmanLib.POPUPS.run = function (d) {
   setTimeout(function () { host.remove(); }, 1500);
 };
 
-// The forecast page (State card's tap): what Battman's real engine would do over the next hours. It is its own
-// page (www/battman-forecast.html), shown in a frame inside Battman's dialog: it reads the dashboard's hass and
-// theme from the page around it, as it always did. The ✕ gets its own strip above the page.
+// The "Next hours" forecast (State card's tap): the <battman-forecast-view> element (battman-forecast-view.js), which
+// shows what Battman's real engine would do over the next hours. The strip above it is for the ✕.
 window.BattmanLib.POPUPS.forecast = function (d, el) {
   window.BattmanLib.modal(el, {
     width: 'min(94vw,480px)', close: true,
-    css: '.bm .fc{padding-top:48px;background:var(--battman-surface-card,#000);border-radius:8px;overflow:hidden}.bm .fc iframe{display:block;width:100%;height:min(80vh,720px);border:0}',
-    html: '<div class="fc"><iframe src="' + (d.url || '/battmanfiles/battman-forecast.html') + '" title="Next hours"></iframe></div>',
+    css: '.bm .fc{padding-top:56px;background:var(--battman-surface-card,#000);border-radius:8px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}',
+    html: '<div class="fc"><battman-forecast-view></battman-forecast-view></div>',
   });
 };
 

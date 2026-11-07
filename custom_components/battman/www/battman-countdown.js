@@ -3,6 +3,8 @@
 // interval boundary (m:ss), updating every second. It inherits colour and font
 // from its parent, so wrap it in a styled <span> to control how it looks.
 // Battman's amber-countdown, loaded on every HA page.
+
+import { battmanDefine } from "./battman-card-base.js";
 class BattmanCountdown extends HTMLElement {
   connectedCallback() {
     this._update();
@@ -20,26 +22,4 @@ class BattmanCountdown extends HTMLElement {
     this.textContent = m + ':' + String(s).padStart(2, '0');
   }
 }
-// Register a custom element so HA finds it. HA's frontend may swap window.customElements for
-// its own registry (a compatibility layer) while it starts; anything registered just before the
-// swap is lost to HA. So register now, and again in HA's registry if the swap comes after us.
-function battmanDefine(tag, cls) {
-  const reg = window.customElements;
-  if (!reg.get(tag)) reg.define(tag, cls);
-  const t0 = Date.now();
-  (function watch() {
-    const now = window.customElements;
-    if (now !== reg) {
-      if (!now.get(tag)) {
-        try { now.define(tag, cls); } catch (e) { console.error(`Battman: couldn't register ${tag}: ${e.message}`); }
-      }
-      return;
-    }
-    // HA's registry was already in place when we registered (it leaves this marker): nothing to wait for
-    if (window.CustomElementRegistryPolyfill) return;
-    if (Date.now() - t0 < 30000) setTimeout(watch, 20);
-  })();
-}
-
-
 battmanDefine('battman-countdown', BattmanCountdown);

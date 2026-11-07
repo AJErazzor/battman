@@ -67,16 +67,16 @@ process.stdout.write(JSON.stringify({calls, toasts}));""")
 
 @needs_node
 def test_forecast_popup_is_a_battman_dialog() -> None:
-    """The State card's tap shows the forecast page in Battman's dialog (a frame inside it), not browser_mod."""
+    """The State card's tap shows the forecast view in Battman's dialog, not browser_mod and not a frame."""
     out = _lib("""
 const dlg = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, querySelector: () => ({ addEventListener() {} }), addEventListener() {},
   showModal() { this.open = true; }, remove() {}, close() {} };
 document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.addEventListener = () => {}; document.removeEventListener = () => {}; document.createElement = () => dlg;
-window.BattmanLib.showPopup({ kind: 'forecast', url: '/battmanfiles/battman-forecast.html' }, btn);
+window.BattmanLib.showPopup({ kind: 'forecast' }, btn);
 window.BattmanLib.showPopup({ kind: 'nothing-like-this' }, btn);
 process.stdout.write(JSON.stringify({ open: !!dlg.open, html: dlg.innerHTML, style: dlg.attrs.style, calls, toasts }));""")
     assert out["open"] is True and out["calls"] == [] and out["toasts"] == []
-    assert '<iframe src="/battmanfiles/battman-forecast.html"' in out["html"] and 'class="x"' in out["html"]
+    assert "<battman-forecast-view></battman-forecast-view>" in out["html"] and 'class="x"' in out["html"] and "iframe" not in out["html"]
     assert "min(94vw,480px)" in out["style"]
 
 

@@ -29,8 +29,7 @@ NODE_PATH = os.environ.get("BATTMAN_NODE_PATH", "/tmp/pwtest/node_modules")
 
 
 def test_each_card_is_a_real_card() -> None:
-    init = (ROOT / "__init__.py").read_text()
-    loaded = re.search(r'for name in \(([^)]*)\):\n\s+frontend\.add_extra_js_url', init).group(1)
+    loaded = re.search(r"const SCRIPTS = \[([^\]]*)\]", (WWW / "battman.js").read_text()).group(1)      # what the one Battman script starts
     wrapper = (WWW / "battman-cards.js").read_text()
     own = wrapper[wrapper.index("const OWN_SCRIPT_CARDS = {"):]
     own = own[:own.index("};")]
@@ -56,12 +55,11 @@ def test_each_card_is_a_real_card() -> None:
 
 
 def test_no_framed_pages_left() -> None:
-    # the one page left is the State card popup (battman-forecast.html), shown from the card's tap
-    assert [f.name for f in WWW.glob("*.html")] == ["battman-forecast.html"]
+    # no framed pages at all now: the State card's forecast is an element (battman-forecast-view.js)
+    assert [f.name for f in WWW.glob("*.html")] == []
     for f in (ROOT / "cards").glob("*.yaml"):
         text = f.read_text()
-        # the State card's tap opens the forecast page in an iframe; no other card may
-        assert ("type: iframe" not in text or f.name == "state.yaml") and "# preview:" not in text, f.name
+        assert "type: iframe" not in text and "# preview:" not in text, f.name
     cards_py = (ROOT / "cards.py").read_text()
     assert "preview" not in cards_py and "STATIC_URL" not in cards_py
     wrapper = (WWW / "battman-cards.js").read_text()
