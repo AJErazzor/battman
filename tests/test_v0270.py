@@ -35,8 +35,7 @@ def test_a_real_card_in_the_picker() -> None:
     assert 'static preview = "amber-forecast-chart.webp";' in js
     assert (WWW / "previews/amber-forecast-chart.webp").stat().st_size > 1000
     assert 'from "./battman-card-base.js"' in js and "loadChartJs" in js and "AMBER" in js
-    init = (ROOT / "__init__.py").read_text()
-    loaded = re.search(r'for name in \(([^)]*)\):\n\s+frontend\.add_extra_js_url', init).group(1)
+    loaded = re.search(r"const SCRIPTS = \[([^\]]*)\]", (WWW / "battman.js").read_text()).group(1)      # what the one Battman script starts
     assert '"amber-forecast-chart"' in loaded
     # no ApexCharts, no helper, no frame or token, no outside CDN
     for gone in ("apexcharts", "input_select", "access_token", "iframe", "fetch(", "cdn."):

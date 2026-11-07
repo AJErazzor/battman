@@ -96,28 +96,16 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanImagesView())
     hass.http.register_view(BattmanImageView())
     hass.http.register_view(engine_log.BattmanLogView())
-    # <battman-countdown>: the 5-minute Amber countdown some Battman cards show.
-    frontend.add_extra_js_url(hass, f"{static_v}/battman-countdown.js")
-    # Battman's card library (window.BattmanLib): the Overrides card's rows and popups.
-    # Loaded on every HA page so it's there before the first tap.
-    frontend.add_extra_js_url(hass, f"{static_v}/battman-lib.js")
-    # The engine log renderer: the Engine log popup and the Log page draw the log with it.
-    frontend.add_extra_js_url(hass, f"{static_v}/battman-enginelog.js")
-    # The Battman House card (custom:battman-house): the house picture with live numbers on it.
-    frontend.add_extra_js_url(hass, f"{static_v}/battman-house.js")
-    # The Battman cards that draw themselves (www/battman-card-base.js is what they share): Log,
-    # Cost compare, Cost chart, Settings, Theme studio, Curvy, Pricy, Amber forecast chart, Solar, Mode history strip.
-    # battman-pie-card is the donut the NEM mix card uses (a copy of power-pie-card with MW).
-    for name in ("log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy", "amber-forecast-chart", "solar-card",
-                 "mode-history-strip", "pie-card", "forecast-view"):
-        frontend.add_extra_js_url(hass, f"{static_v}/battman-{name}.js")
-    # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
-    # start are passed along so the cards exist before any dashboard draws them.
+    # Battman's cards that exist at start are passed along (?cards=) so they exist before any dashboard draws them.
     local = cards.local_dir(hass)
     card_list = await hass.async_add_executor_job(cards.list_cards, local)
     cards.update_issue(hass, [c["id"] for c in card_list if c["source"] != "battman"])
     ids = ",".join(c["id"] for c in card_list)
-    frontend.add_extra_js_url(hass, f"{static_v}/battman-cards.js?cards={ids}")
+    # One script starts all of Battman's (www/battman.js lists them): the Amber countdown, the card library
+    # (window.BattmanLib: the Overrides card's rows and popups, Battman's own dialog), the engine log renderer, the
+    # House, Log, Cost, Settings, Theme studio, Curvy, Pricy, Amber forecast, Solar, Mode strip, NEM pie and forecast
+    # view cards, and the wrapper for the cards written as YAML (custom:battman-<id>).
+    frontend.add_extra_js_url(hass, f"{static_v}/battman.js?cards={ids}")
     async_register_services(hass)
     # "Battman updated, restart to finish" Repair, checked every few minutes
     update_check.async_start(hass, str(integration.version))

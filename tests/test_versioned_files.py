@@ -5,7 +5,9 @@ This checks the behaviour, not the source text: what HA serves, with which cache
 which script URLs it hands the frontend.
 """
 
-import pytest
+import re
+from pathlib import Path
+
 from homeassistant.components.frontend import DATA_EXTRA_MODULE_URL
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
@@ -13,6 +15,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 DOMAIN = "battman"
+WWW = Path(__file__).parents[1] / "custom_components/battman/www"
 
 
 async def _setup(hass: HomeAssistant) -> str:
@@ -38,13 +41,18 @@ async def test_modules_served_under_the_version(hass: HomeAssistant, hass_client
     assert "max-age" not in r.headers.get("Cache-Control", "")
 
 
-@pytest.mark.parametrize(
-    "name",
-    ["battman-countdown.js", "battman-lib.js", "battman-enginelog.js", "battman-house.js", "battman-log.js",
-     "battman-settings.js", "battman-curvy.js", "battman-pricy.js"],
-)
-async def test_frontend_loads_the_versioned_urls(hass: HomeAssistant, name: str) -> None:
+async def test_frontend_loads_the_one_versioned_script(hass: HomeAssistant, hass_client_no_auth) -> None:
+    """HA is handed ONE Battman script, under the version in its path; it starts the rest (www/battman.js)."""
     ver = await _setup(hass)
     urls = list(hass.data[DATA_EXTRA_MODULE_URL].urls)
-    assert f"/battmanfiles-v{ver}/{name}" in urls
-    assert not any(u.startswith(f"/battmanfiles/{name}") for u in urls)
+    ours = [u for u in urls if "battmanfiles" in u]
+    assert len(ours) == 1 and ours[0].startswith(f"/battmanfiles-v{ver}/battman.js?cards="), ours
+    # every script it starts is there to fetch, under the versioned folder, cached hard
+    loader = (WWW / "battman.js").read_text()
+    names = re.search(r"const SCRIPTS = \[([^\]]*)\]", loader).group(1)
+    names = [n.strip().strip('"') for n in names.replace("\n", " ").split(",") if n.strip()]
+    assert {"countdown", "lib", "enginelog", "house", "log", "settings", "curvy", "pricy", "forecast-view"} <= set(names)
+    client = await hass_client_no_auth()
+    for name in ["battman", "battman-cards", *(f"battman-{n}" for n in names)]:
+        r = await client.get(f"/battmanfiles-v{ver}/{name}.js")
+        assert r.status == 200 and "max-age" in r.headers.get("Cache-Control", ""), name

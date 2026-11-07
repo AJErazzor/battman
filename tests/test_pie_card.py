@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 JS = (ROOT / "custom_components/battman/www/battman-pie-card.js").read_text()
-INIT = (ROOT / "custom_components/battman/__init__.py").read_text()
+INIT = (ROOT / "custom_components/battman/www/battman.js").read_text()      # the script that starts all of them
 
 
 def test_pie_card_is_shipped_and_loaded() -> None:

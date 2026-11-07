@@ -4,7 +4,7 @@
 // is checked: a value Battman won't accept is refused before it's sent, and after sending, the
 // card waits for the setting to change and says so if it didn't.
 
-import { BattmanCardBase, FILES, battmanDefine, battmanMap, battmanPicker, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { BattmanCardBase, FILES, battmanDefine, esc, battmanMap, battmanPicker, missingEntities, missingThemeVars } from "./battman-card-base.js";
 
 // the Battman version this page was served as (HA serves it under /battmanfiles-v<version>/); blank if not
 const VERSION = (import.meta.url.match(/battmanfiles-v([^/]+)\//) || [])[1] || '';
@@ -207,7 +207,6 @@ class BattmanSettingsCard extends BattmanCardBase {
     let M = null;
 
     // ---------------------------------------------------------------- basics
-    const esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const getHass = () => card.hass;
     const st = (id) => { const h = getHass(); return h && h.states[id]; };
     const attrs = (key) => (st(M[key]) || {}).attributes || {};

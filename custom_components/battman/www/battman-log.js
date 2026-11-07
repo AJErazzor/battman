@@ -24,7 +24,7 @@
 
 import { centsText, logValuesAt, modeLengthText, nearestLogLine, percentText } from "./battman-mode-history-data.js";
 import { describe, group, money, split } from "./battman-forecast-core.js";
-import { AMBER, BATTMAN_SENSORS, BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { AMBER, BATTMAN_SENSORS, BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, esc, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 
 const LOG_EVENT = "battman_engine_log";
 
@@ -465,7 +465,6 @@ function battmanLogRun(card, root) {
   filtersEl.appendChild(changesLbl);
 
   // ---------------------------------------------------------- log parsing
-  function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   // strip a trailing "(...)" variant so e.g. "Charge (Anytime)" matches the "Charge" checkbox
   function baseMode(m) { return m.replace(/\s*\([^)]*\)\s*$/, '').trim(); }
   // each log line is "time|message"; the renderer reads both the current and older formats
@@ -558,7 +557,7 @@ function battmanLogRun(card, root) {
     // Forecast mode with no forecast yet: mirror the blanked chart instead of leaving stale history.
     if (viewMode === 'forecast' && !fc) {
       el.innerHTML = '<div class="empty">' +
-        (fcBusy ? 'Forecasting…' : fcError ? escapeHtml('Forecast failed: ' + fcError) : 'No forecast yet') +
+        (fcBusy ? 'Forecasting…' : fcError ? esc('Forecast failed: ' + fcError) : 'No forecast yet') +
         '</div>';
       return;
     }
@@ -584,11 +583,11 @@ function battmanLogRun(card, root) {
     }) : [];
 
     if (filtered.length === 0 && !pred.count) {
-      el.innerHTML = '<div class="empty">No entries match filters' + (periodFilter ? ' (block ' + escapeHtml(periodFilter.label || '') + ')' : '') + '</div>';
+      el.innerHTML = '<div class="empty">No entries match filters' + (periodFilter ? ' (block ' + esc(periodFilter.label || '') + ')' : '') + '</div>';
       return;
     }
 
-    const periodNote = periodFilter ? ' · block ' + escapeHtml(periodFilter.label || '') + ' (' + escapeHtml(periodFilter.mode) + ')' : '';
+    const periodNote = periodFilter ? ' · block ' + esc(periodFilter.label || '') + ' (' + esc(periodFilter.mode) + ')' : '';
     let countTxt;
     if (!showHistory) countTxt = pred.count + ' predicted entr' + (pred.count === 1 ? 'y' : 'ies');
     else if (pred.count) countTxt = pred.count + ' predicted · ' + filtered.length + ' of ' + allLines.length + ' entries';
@@ -615,7 +614,7 @@ function battmanLogRun(card, root) {
           renderLog();
         }
       })
-      .catch(e => { $('log').innerHTML = '<div class="empty">' + escapeHtml(String((e && e.body && e.body.message) || (e && e.message) || 'No log found')) + '</div>'; });
+      .catch(e => { $('log').innerHTML = '<div class="empty">' + esc(String((e && e.body && e.body.message) || (e && e.message) || 'No log found')) + '</div>'; });
   }
 
   // ------------------------------------------------------- range controls
@@ -885,7 +884,7 @@ function battmanLogRun(card, root) {
       else if (line) { const a = Date.parse(line.slice(0, line.indexOf('|'))); if (!isNaN(a)) dispT = Math.floor(a / 300000) * 300000; }
       out.innerHTML =
         '<span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' +
-        hhmm(new Date(dispT)) + (fs ? ' <span class="ro-fc">FORECAST</span>' : '') + ' &middot; <b>' + escapeHtml(m) + '</b>' +
+        hhmm(new Date(dispT)) + (fs ? ' <span class="ro-fc">FORECAST</span>' : '') + ' &middot; <b>' + esc(m) + '</b>' +
         (durTxt ? ' &middot; <span class="ro-dur">' + durTxt + '</span>' : '') +
         '<span class="ro-extra">buy ' + cents(v.buy) + ' · sell ' + cents(v.sell) + ' · SOC ' + pct(v.soc) + '</span>';
     }
@@ -1249,7 +1248,7 @@ function battmanLogRun(card, root) {
       if (seen.indexOf(pts[i].m) < 0) seen.push(pts[i].m);
       const fut = wantsFuture() && segStart >= Date.now() - 2000;
       bar += '<div class="mseg' + (fut ? ' fut' : '') + '" style="width:' + w.toFixed(3) + '%;background:' + col + '" title="' + (fut ? 'Forecast: ' : '') +
-             escapeHtml(pts[i].m) + '"></div>';
+             esc(pts[i].m) + '"></div>';
     }
     // ticks at the same bucket positions (band centres) + times as the chart x-labels
     const every = Math.max(1, Math.round(n / 8));
@@ -1259,7 +1258,7 @@ function battmanLogRun(card, root) {
       ticks += '<span style="left:' + frac.toFixed(3) + '%">' + hhmm(new Date(t0 + width * i)) + '</span>';
     }
     let legend = seen.map(m =>
-      '<span class="li"><span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' + escapeHtml(m) + '</span>'
+      '<span class="li"><span class="dot" style="background:' + (modeColor[m] || accentHex) + '"></span>' + esc(m) + '</span>'
     ).join('');
     const nowF = (Date.now() - t0) / span;
     const nowDiv = (wantsFuture() && nowF > 0 && nowF < 1) ? '<div class="mnow" style="left:' + (nowF * 100).toFixed(3) + '%"></div>' : '';
@@ -1385,7 +1384,7 @@ function battmanLogRun(card, root) {
   function showFatal(msg) {
     FATAL = msg;
     $('reorder').innerHTML =
-      '<div class="card"><div class="title">Battman Log problem</div><div class="empty">' + escapeHtml(msg) + '</div></div>';
+      '<div class="card"><div class="title">Battman Log problem</div><div class="empty">' + esc(msg) + '</div></div>';
   }
   // live: each engine run reloads the log (and moves a quick range on to now)
   let unsubLive = null, liveTimer = null;

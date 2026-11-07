@@ -29,8 +29,7 @@ OLD_PAGES = ("cost-compare", "cost-chart", "settings", "theme-studio")
 
 
 def test_each_card_is_a_real_card() -> None:
-    init = (ROOT / "__init__.py").read_text()
-    loaded = re.search(r'for name in \(([^)]*)\):\n\s+frontend\.add_extra_js_url', init).group(1)
+    loaded = re.search(r"const SCRIPTS = \[([^\]]*)\]", (WWW / "battman.js").read_text()).group(1)      # what the one Battman script starts
     wrapper = (WWW / "battman-cards.js").read_text()
     own = wrapper[wrapper.index("const OWN_SCRIPT_CARDS = {"):]
     own = own[:own.index("};")]

@@ -16,7 +16,7 @@ CARD = ROOT / "custom_components/battman/www/battman-solar-card.js"
 
 
 def test_card_is_loaded_and_documented() -> None:
-    assert '"solar-card"' in (ROOT / "custom_components/battman/__init__.py").read_text()
+    assert '"solar-card"' in (ROOT / "custom_components/battman/www/battman.js").read_text()
     docs = (ROOT / "docs/cards.md").read_text()
     assert "`battman-solar-card`" in docs and "## Battman Solar" in docs
 

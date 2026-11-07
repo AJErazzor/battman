@@ -28,8 +28,8 @@ JS = (WWW / "battman-log.js").read_text()
 def test_log_card_is_a_real_card() -> None:
     assert subprocess.run(["node", "--check", str(WWW / "battman-log.js")]).returncode == 0
     assert 'battmanDefine("battman-log", BattmanLogCard)' in JS
-    init = (ROOT / "__init__.py").read_text()
-    assert '"log", ' in init and 'add_extra_js_url(hass, f"{static_v}/battman-{name}.js' in init
+    loader = (WWW / "battman.js").read_text()
+    assert '"log"' in loader and "start(`./battman-${name}.js`)" in loader
     assert not (WWW / "log.html").exists() and not (ROOT / "cards/log.yaml").exists()
     # HA's connection, not a token taken from the page around it, and no frame
     for gone in ("access_token", "parent.document", "frameElement", "fetch(", "haCall", "iframe"):
