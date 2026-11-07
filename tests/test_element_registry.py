@@ -53,7 +53,7 @@ def test_the_one_script_starts_the_rest_and_survives_a_broken_one(tmp_path) -> N
         return json.loads(r.stdout.strip().splitlines()[-1])
 
     everything = {"battman-countdown", "battman-house", "battman-log", "battman-settings", "battman-curvy", "battman-pricy",
-                  "battman-forecast-view", "battman-pie-card", "battman-state"}
+                  "battman-forecast-view", "battman-pie-card", "battman-state", "battman-overrides"}
     ok = run(WWW)
     assert set(ok["defined"]) == everything, set(ok["defined"]) ^ everything
     assert ok["lib"] and ok["enginelog"] and ok["errors"] == [], ok

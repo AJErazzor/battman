@@ -52,7 +52,7 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-amber24hourforecasttable` | Every Amber forecast interval: Sell, SS, Buy, SS, colour banded (built from Amber's forecast sensors) | button-card |
 | `battman-state` | What the engine is doing; tap for the next hours' forecast (the engine's own decisions, slot by slot) | button-card |
 | `battman-batterymode` | Active / Curtail switches (each asks "are you sure?"), Engine log popup (info button), battery mode buttons (Sell, Sell Solar, HOOOOVER, House Party and Buy ask first when the press goes against the price: see [Mode button confirmations](#mode-button-confirmations)) | button-card, card-mod |
-| `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain), control centre (presets, scenes, Net Target), override timer | button-card, card-mod |
+| `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain): tap the strip for the control centre (presets, scenes, Net Target), tap a row to edit it, double-tap to clear, hold for help; the override timer under the rows. Draws itself; no options | nothing |
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors); `show: generation` or `show: demand` draws just one pie | none (draws itself) |
 | `battman-curvy` | The SOC curve editor (see [Battman Curvy](#battman-curvy)). Draws itself; no options | nothing |

@@ -1,0 +1,25 @@
+{
+  "sensor.battman_parameters": {
+    "state": "ok",
+    "attributes": {
+      "sellOverrideSOC": 0, "sellOverridePrice": 0, "sellOverrideAllowReset": true, "sellOverridePinned": "hide",
+      "sellSolarSOC": 0, "sellSolarPrice": 0, "sellSolarAllowReset": true, "sellSolarPinned": "hide",
+      "buyOverrideSOC": 0, "buyOverridePrice": 0, "buyOverrideAllowReset": true, "buyOverridePinned": "hide",
+      "buyAnytimeSOC": 0, "buyAnytimePrice": 0, "buyAnytimeAllowReset": true, "buyAnytimePinned": "hide",
+      "drainBatterySOC": 0, "drainBatteryPrice": 0, "drainBatteryAllowReset": true, "drainBatteryPinned": "hide",
+      "drainBatteryPlughole": false,
+      "netTargetSellPrice": 0, "netTargetBuyPrice": 0, "netTargetSellMet": "", "netTargetBuyMet": "",
+      "dailyNetworkCharge": 1.0,
+      "armedScene": "",
+      "alwaysShowOverrideTimer": "hide",
+      "overridePresets": []
+    }
+  },
+  "sensor.sigen_plant_battery_state_of_charge": { "state": "62", "attributes": {} },
+  "sensor.sigen_plant_rated_energy_capacity": { "state": "40.3", "attributes": {} },
+  "sensor.sigen_plant_available_max_active_power": { "state": "25", "attributes": {} },
+  "sensor.battman_sell_total": { "state": "1", "attributes": { "day": 12.5 } },
+  "sensor.battman_buy_total": { "state": "1", "attributes": { "day": 4.2 } },
+  "timer.battman_override_timer": { "state": "idle", "attributes": {} },
+  "sun.sun": { "state": "above_horizon", "attributes": { "next_rising": "2026-03-04T20:05:00+00:00", "next_setting": "2026-03-04T08:30:00+00:00" } }
+}
