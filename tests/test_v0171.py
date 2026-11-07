@@ -88,7 +88,8 @@ def test_log_card_uses_the_popup_renderer() -> None:
     assert "const EL = window.battmanEngineLog;" in page
     assert "EL.render(p.message" in page and "emojiRegex" not in page
     card = (ROOT / "custom_components/battman/cards/batterymode.yaml").read_text()
-    assert "R.render(raw, { title: 'Engine log' })" in card and "emojiOf" not in card
+    lib = (WWW / "battman-lib.js").read_text()      # the Engine log popup is drawn by Battman's library now
+    assert "R.render(raw, { title: 'Engine log' })" in lib and "kind: enginelog" in card and "emojiOf" not in card + lib
     init = (ROOT / "custom_components/battman/__init__.py").read_text()
     assert "battman-enginelog.js" in init
 

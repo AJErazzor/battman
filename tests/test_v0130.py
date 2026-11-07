@@ -142,7 +142,7 @@ async def test_power_view_layout(hass: HomeAssistant) -> None:
                                                 "custom:battman-amber24hourforecasttable"]
 
 
-async def test_countdown_and_browser_mod(hass: HomeAssistant) -> None:
+async def test_countdown_and_no_browser_mod(hass: HomeAssistant) -> None:
     client = await _setup(hass)
     r = await client.get("/battmanfiles/battman-countdown.js")
     js = await r.text()
@@ -150,11 +150,7 @@ async def test_countdown_and_browser_mod(hass: HomeAssistant) -> None:
     orig = "(now.getMinutes() % 5) * 60 + now.getSeconds();\n    const totalSecs = 5 * 60 - secsInBlock;"
     assert orig in js                                            # same countdown maths as Smiggles
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "missing_dependencies")
-    assert "browser_mod" in issue.translation_placeholders["missing"]
-    from custom_components.battman import dependencies
-
-    MockConfigEntry(domain="browser_mod", data={}).add_to_hass(hass)
-    assert "browser_mod" not in await dependencies.async_check(hass)
+    assert "browser_mod" not in issue.translation_placeholders["missing"]   # Battman's popups are its own now
 
 
 # ── amber5minpricegrid ───────────────────────────────────────────────────────
@@ -286,8 +282,8 @@ async def test_state(hass: HomeAssistant) -> None:
     m = (await _card(hass, "state"))["config"]
     main_m = m["custom_fields"]["content"]
     # the tap opens the forecast page (the engine's own forecast): there is no popup text to draw here
-    assert m["tap_action"]["browser_mod"]["data"]["content"] == {
-        "type": "iframe", "url": "/battmanfiles/battman-forecast.html", "aspect_ratio": "150%"}
+    assert m["tap_action"]["battman_popup"] == {"kind": "forecast", "url": "/battmanfiles/battman-forecast.html"}
+    assert "browser_mod" not in json.dumps(m["tap_action"])
 
     def jobs_for(now=None):
         return [(main_m, state_states(scen, now), "sensor.battman_parameters") for scen in range(5)]

@@ -26,9 +26,8 @@ FRONTEND_CARDS: dict[str, tuple[str, str]] = {
 
 # Integrations: name -> (domain, where to get it). Checked by config entry, so it
 # doesn't matter whether they've finished loading when Battman starts.
-INTEGRATIONS: dict[str, tuple[str, str]] = {
-    "browser_mod": ("browser_mod", "https://github.com/thomasloven/hass-browser_mod"),
-}
+# (None needed now: Battman's popups are its own, so browser_mod is no longer required.)
+INTEGRATIONS: dict[str, tuple[str, str]] = {}
 
 GET = {**{n: v[1] for n, v in FRONTEND_CARDS.items()}, **{n: v[1] for n, v in INTEGRATIONS.items()}}
 

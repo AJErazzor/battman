@@ -50,9 +50,9 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-profitloss` | Today's sell, buy, gross, and net after the daily network charge | button-card |
 | `battman-amber5minpricegrid` | SELL / BUY now with sparkline and 5-min countdown, then the next 8 periods | button-card |
 | `battman-amber24hourforecasttable` | Every Amber forecast interval: Sell, SS, Buy, SS, colour banded (built from Amber's forecast sensors) | button-card |
-| `battman-state` | What the engine is doing; tap for the next hours' forecast (the engine's own decisions, slot by slot) | button-card, browser_mod |
-| `battman-batterymode` | Active / Curtail switches (each asks "are you sure?"), Engine log popup (info button), battery mode buttons (Sell, Sell Solar, HOOOOVER, House Party and Buy ask first when the press goes against the price: see [Mode button confirmations](#mode-button-confirmations)) | button-card, card-mod, browser_mod |
-| `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain), control centre (presets, scenes, Net Target), override timer | button-card, card-mod, browser_mod |
+| `battman-state` | What the engine is doing; tap for the next hours' forecast (the engine's own decisions, slot by slot) | button-card |
+| `battman-batterymode` | Active / Curtail switches (each asks "are you sure?"), Engine log popup (info button), battery mode buttons (Sell, Sell Solar, HOOOOVER, House Party and Buy ask first when the press goes against the price: see [Mode button confirmations](#mode-button-confirmations)) | button-card, card-mod |
+| `battman-overrides` | Override dock (Sell / Sell Solar / Buy / Buy Anytime / Drain), control centre (presets, scenes, Net Target), override timer | button-card, card-mod |
 | `battman-gauges` | SOC, battery in/out, grid and home half gauges | modern-circular-gauge |
 | `battman-nemmix` | Region generation mix and demand mix (Battman's NEM sensors); `show: generation` or `show: demand` draws just one pie | none (draws itself) |
 | `battman-curvy` | The SOC curve editor (see [Battman Curvy](#battman-curvy)). Draws itself; no options | nothing |
@@ -65,7 +65,7 @@ dashboard you own, so every Battman card on it has the editor.
 | `battman-amber-forecast-chart` | Amber's buy and sell price forecasts (price, predicted, low and high) for the next 30 minutes, or 1, 2, 4, 8, 12 or 24 hours; tap a name to hide a line (see [Battman Amber forecast chart](#battman-amber-forecast-chart)). Draws itself; no options | nothing |
 | `battman-solar-card` | Live power, today's generation and Solcast's forecast for one or two inverters, as Now / Forecast pills, two stacked tables, or either alone (see [Battman Solar](#battman-solar)) | nothing |
 | `battman-mode-history-strip` | The battery mode over the last 15 minutes to 24 hours as one coloured strip, on its own; tap or drag for the mode at a point (see [Battman Mode history strip](#battman-mode-history-strip)). Draws itself; no options | nothing |
-| `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card, browser_mod |
+| `battman-billing` | This billing period's buy, sell, days and income; network fee; bank / reset new income; **Correct totals** popup | button-card |
 | `battman-solar-system` | Today's verdict, financials and the ROI timeline | button-card |
 | `battman-house` | The house picture with live prices, solar, PV strings, home, grid, battery, temperature and three of your own devices, with moving flow lines (see [Battman House](#battman-house)) | nothing |
 | `battman-image` | Any of Battman's images, or yours, with fit, position and size options (see [Battman Image](#battman-image)) | nothing |
@@ -321,6 +321,6 @@ ask only when the press goes against the current price, and just switch otherwis
 | Self Consume, Drain | never | |
 
 It doesn't ask when a price isn't available, and a failure in the check never stops the press: the mode is set.
-A running override makes no difference. The question is a browser_mod popup styled like the info
-popups, with Cancel and "<Mode> anyway" buttons inside it; without browser_mod it falls back to the browser's own confirm box.
+A running override makes no difference. The question is a Battman dialog styled like the info
+popups, with Cancel and "<Mode> anyway" buttons inside it (a tap outside it or Escape cancels); a browser without dialog support falls back to its own confirm box.
 

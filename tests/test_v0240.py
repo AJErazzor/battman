@@ -45,17 +45,64 @@ const btn = { tagName: 'BUTTON', dispatchEvent: (e) => toasts.push(e.detail.mess
 
 @needs_node
 def test_correct_totals_opens_on_this_device() -> None:
-    """It used to ask the server for a browser_mod popup with no browser named, which only reaches
-    browsers registered with browser_mod (so nothing on an unregistered phone)."""
-    out = _lib("""
-window.browser_mod = { service: (s, d) => calls.push(['local', s, d.title, d.content.type]) };
+    """It opens in Battman's own dialog on the device that was tapped: no browser_mod, so it works on any phone."""
+    page = """
+const dlg = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, querySelector: () => ({ addEventListener() {} }), addEventListener() {},
+  showModal() { this.open = true; }, remove() {}, close() {} };
+document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.addEventListener = () => {}; document.removeEventListener = () => {}; document.createElement = () => dlg;
+hass.states['sensor.b'] = { attributes: { day: '1.5', yesterday: '2', month: '3', bill: '4' } };
+hass.states['sensor.s'] = { attributes: { day: '5.5', yesterday: '6', month: '7', bill: '8' } };
+"""
+    out = _lib(page + """
+window.BattmanLib.correctTotals(btn, {buy: 'sensor.b', sell: 'sensor.s', event: 'e'});
+process.stdout.write(JSON.stringify({calls, toasts, open: !!dlg.open, html: dlg.innerHTML}));""")
+    assert out["calls"] == [] and out["toasts"] == [] and out["open"] is True
+    assert "Correct totals" in out["html"] and 'data-period="day"' in out["html"] and "1.5000" in out["html"] and 'class="x"' in out["html"]
+    out = _lib(page.replace("document.createElement = () => dlg;", "document.createElement = () => ({});") + """
 window.BattmanLib.correctTotals(btn, {buy: 'sensor.b', sell: 'sensor.s', event: 'e'});
 process.stdout.write(JSON.stringify({calls, toasts}));""")
-    assert out == {"calls": [["local", "popup", "Correct totals", "custom:button-card"]], "toasts": []}
+    assert out["calls"] == [] and out["toasts"] == ["Correct totals can't open in this browser."]
+    assert "browser_mod" not in LIB.read_text().split("window.BattmanLib.correctTotals")[1].split("window.BattmanLib.totalsForm")[0]
+
+
+@needs_node
+def test_forecast_popup_is_a_battman_dialog() -> None:
+    """The State card's tap shows the forecast page in Battman's dialog (a frame inside it), not browser_mod."""
     out = _lib("""
-window.BattmanLib.correctTotals(btn, {buy: 'sensor.b', sell: 'sensor.s', event: 'e'});
-process.stdout.write(JSON.stringify({calls, toasts}));""")
-    assert out["calls"] == [] and out["toasts"] == ["Correct totals needs browser_mod, which isn't loaded on this device."]
+const dlg = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, querySelector: () => ({ addEventListener() {} }), addEventListener() {},
+  showModal() { this.open = true; }, remove() {}, close() {} };
+document.body = { appendChild() {} }; document.documentElement = { style: {} }; document.addEventListener = () => {}; document.removeEventListener = () => {}; document.createElement = () => dlg;
+window.BattmanLib.showPopup({ kind: 'forecast', url: '/battmanfiles/battman-forecast.html' }, btn);
+window.BattmanLib.showPopup({ kind: 'nothing-like-this' }, btn);
+process.stdout.write(JSON.stringify({ open: !!dlg.open, html: dlg.innerHTML, style: dlg.attrs.style, calls, toasts }));""")
+    assert out["open"] is True and out["calls"] == [] and out["toasts"] == []
+    assert '<iframe src="/battmanfiles/battman-forecast.html"' in out["html"] and 'class="x"' in out["html"]
+    assert "min(94vw,480px)" in out["style"]
+
+
+@needs_node
+def test_fire_checked_ignores_the_second_half_of_one_tap() -> None:
+    """The Billing buttons answer pointerup AND click (an iPhone tap there never becomes a click), so one tap calls
+    fireChecked twice: only the first sends."""
+    out = _lib("""
+const sent = [];
+hass.callWS = (m) => { sent.push(m.event_type); return Promise.resolve(); };
+hass.states = {};
+const el = { tagName: 'BUTTON', dispatchEvent: (e) => toasts.push(e.detail.message) };
+window.BattmanLib.fireChecked(el, 'evt', { a: 1 }, () => false);
+window.BattmanLib.fireChecked(el, 'evt', { a: 1 }, () => false);          // the click that follows the pointerup
+const other = { tagName: 'BUTTON', dispatchEvent: () => {} };
+window.BattmanLib.fireChecked(other, 'evt2', {}, () => false);              // a different button is its own tap
+setTimeout(() => { process.stdout.write(JSON.stringify({ sent })); process.exit(0); }, 20);""")
+    assert out["sent"] == ["evt", "evt2"]
+
+
+def test_billing_buttons_and_settings_run_button() -> None:
+    billing = (ROOT / "cards/billing.yaml").read_text()
+    assert billing.count("onpointerup=") == 3          # Bank New Income, Reset New Income, Correct Totals
+    settings = (ROOT / "www/battman-settings.js").read_text()
+    assert 'data-runengine="1">Run engine now</button>' in settings and "if ('runengine' in t.dataset) return runEngine(t);" in settings
+    assert "'run', 'control_script'" in settings and "Didn't run" in settings and "✓ Ran" in settings
 
 
 def test_no_server_popups_left() -> None:
