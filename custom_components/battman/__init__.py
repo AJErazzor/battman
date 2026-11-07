@@ -109,7 +109,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Cost compare, Cost chart, Settings, Theme studio, Curvy, Pricy, Amber forecast chart, Solar, Mode history strip.
     # battman-pie-card is the donut the NEM mix card uses (a copy of power-pie-card with MW).
     for name in ("log", "cost-compare", "cost-chart", "settings", "theme-studio", "curvy", "pricy", "amber-forecast-chart", "solar-card",
-                 "mode-history-strip", "pie-card"):
+                 "mode-history-strip", "pie-card", "forecast-view"):
         frontend.add_extra_js_url(hass, f"{static_v}/battman-{name}.js")
     # Battman cards (custom:battman-<id>), in HA's card picker. The card names known at
     # start are passed along so the cards exist before any dashboard draws them.

@@ -770,6 +770,12 @@ window.BattmanLib.modalTheme = function (el) {
     var v = String(cs.getPropertyValue('--battman-' + k) || '').trim();
     if (v) out += '--battman-' + k + ':' + v + ';';
   });
+  ['hooover', 'houseparty'].forEach(function (ns) {          // the theme's effect variables (the forecast's Hooover / House Party rows)
+    ['chase-display', 'chase-gradient', 'chase-duration', 'ring-width', 'border', 'glow-name', 'glow-color', 'glow-duration'].forEach(function (k) {
+      var v = String(cs.getPropertyValue('--fx-' + ns + '-' + k) || '').trim();
+      if (v) out += '--fx-' + ns + '-' + k + ':' + v + ';';
+    });
+  });
   ['primary-font-family', 'primary-text-color'].forEach(function (k) {
     var v = String(cs.getPropertyValue('--' + k) || '').trim();
     if (v) out += '--' + k + ':' + v + ';';
@@ -880,14 +886,13 @@ window.BattmanLib.POPUPS.run = function (d) {
   setTimeout(function () { host.remove(); }, 1500);
 };
 
-// The forecast page (State card's tap): what Battman's real engine would do over the next hours. It is its own
-// page (www/battman-forecast.html), shown in a frame inside Battman's dialog: it reads the dashboard's hass and
-// theme from the page around it, as it always did. The ✕ gets its own strip above the page.
+// The "Next hours" forecast (State card's tap): the <battman-forecast-view> element (battman-forecast-view.js), which
+// shows what Battman's real engine would do over the next hours. The strip above it is for the ✕.
 window.BattmanLib.POPUPS.forecast = function (d, el) {
   window.BattmanLib.modal(el, {
     width: 'min(94vw,480px)', close: true,
-    css: '.bm .fc{padding-top:48px;background:var(--battman-surface-card,#000);border-radius:8px;overflow:hidden}.bm .fc iframe{display:block;width:100%;height:min(80vh,720px);border:0}',
-    html: '<div class="fc"><iframe src="' + (d.url || '/battmanfiles/battman-forecast.html') + '" title="Next hours"></iframe></div>',
+    css: '.bm .fc{padding-top:48px;background:var(--battman-surface-card,#000);border-radius:8px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}',
+    html: '<div class="fc"><battman-forecast-view></battman-forecast-view></div>',
   });
 };
 
