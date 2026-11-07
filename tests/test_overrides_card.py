@@ -111,5 +111,6 @@ def test_popups_fit_the_screen_and_the_close_button_has_room() -> None:
     assert ".bm .bm-scroll{" in lib and '<div class="bm-scroll">' in lib
     assert "82vh" not in lib and "90vh" not in lib                       # no popup scrolls itself or measures in vh
     card = (WWW / "battman-overrides.js").read_text()
-    assert card.count("padding:0 52px") >= 4                             # the quick edit, help, dock help and control centre
+    assert card.count("padding:0 60px") >= 4                             # the quick edit, help, dock help and control centre
+    assert ".bm .x{position:absolute;top:10px;right:10px;" in lib and "border-radius:10px" in lib.split(".bm .x{")[1].split("}")[0]   # a rounded square in the title bar
     assert 'dlg.querySelector(".bm-scroll")' in card                       # the Save preset overlay is scrolled into view

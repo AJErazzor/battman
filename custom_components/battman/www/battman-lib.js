@@ -265,7 +265,7 @@ window.BattmanLib.correctTotals = function (btn, ids) {
     var hass = document.querySelector('home-assistant').hass;
     var dlg = L.modal(btn, {
       width: 'min(94vw,420px)', close: true,
-      css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 48px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
+      css: L.POPUP_CSS + '.bm .ph{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--battman-orange,#f90);padding:4px 60px 8px 0;margin-bottom:8px;border-bottom:1px solid var(--battman-orange-border,#a60)}',
       html: '<div class="pop"><div class="ph">Correct totals</div>' + L.totalsForm(hass.states) + '</div>',
     });
     if (!dlg) L.toast(btn, "Correct totals can't open in this browser.");
@@ -531,7 +531,8 @@ window.BattmanLib.modal = function (el, o) {
     '.bm .bm-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}' +
     'dialog.bm:focus,.bm button:focus:not(:focus-visible){outline:none}' +
     'dialog.bm::backdrop{background:rgba(0,0,0,.55)}' +
-    '.bm .x{position:absolute;top:8px;right:4px;z-index:2;width:48px;height:48px;border-radius:24px;border:0;background:color-mix(in srgb,var(--battman-surface-card,#000) 80%,transparent);color:var(--battman-text-muted,#999);font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '.bm .x{position:absolute;top:10px;right:10px;z-index:2;width:44px;height:38px;padding:0;border-radius:10px;border:1px solid var(--battman-border-neutral-soft,#333);background:var(--battman-surface-card,#000);color:var(--battman-text-muted,#999);font-size:18px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '.bm .x:active{filter:brightness(1.5)}' +
     (o.css || '') + '</style>' + (o.close ? '<button class="x" type="button" aria-label="Close">✕</button>' : '') + '<div class="bm-scroll">' + o.html + '</div>';
   // The page's own overflow, remembered once while no dialog is open. (dialog.close() fires its close event on a
   // later tick, so a dialog opened over another must not take the first one's "hidden" for the original.)
