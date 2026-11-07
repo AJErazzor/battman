@@ -105,6 +105,32 @@ process.stdout.write(JSON.stringify({ calls, afterAsk, cancelled, afterBackdrop,
 
 
 @needs_node
+def test_a_dialog_opened_over_another_does_not_lock_the_page() -> None:
+    """dialog.close() fires its close event on a LATER tick. Open B over A: A's late close must neither clear B
+    nor leave the page's overflow stuck on "hidden"."""
+    out = _node("""
+const queue = [], docEl = { style: { overflow: '' } };
+const mk = () => { const ls = {}, d = { open: false, attrs: {}, setAttribute(k, v) { d.attrs[k] = v; },
+  querySelector: () => ({ addEventListener() {} }), addEventListener(n, f) { ls[n] = f; }, showModal() { d.open = true; },
+  close() { if (!d.open) return; d.open = false; queue.push(() => ls.close && ls.close()); }, remove() {} }; return d; };
+globalThis.document = { body: { appendChild() {} }, documentElement: docEl, createElement: mk, addEventListener() {}, removeEventListener() {} };
+globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+const L = window.BattmanLib, flush = () => { while (queue.length) queue.shift()(); };
+const a = L.modal({}, { html: 'A' }), duringA = docEl.style.overflow;
+const b = L.modal({}, { html: 'B' });                   // A is closed, but its close event has not fired yet
+flush();                                                 // ...now it does
+const afterAFlush = { overflow: docEl.style.overflow, bIsCurrent: L._modal === b, bOpen: b.open };
+b.close(); flush();
+const afterB = { overflow: docEl.style.overflow, current: L._modal };
+const c = L.modal({}, { html: 'C' }); c.close(); flush();   // a dialog on its own still releases the page
+process.stdout.write(JSON.stringify({ duringA, afterAFlush, afterB, afterC: docEl.style.overflow }));""")
+    assert out["duringA"] == "hidden"
+    assert out["afterAFlush"] == {"overflow": "hidden", "bIsCurrent": True, "bOpen": True}   # still locked: B is open
+    assert out["afterB"] == {"overflow": "", "current": None}                                  # released once B closes
+    assert out["afterC"] == ""
+
+
+@needs_node
 def test_active_and_curtail_ask_first() -> None:
     """Active / Curtail ask in the same dialog; only the confirm button flips the switch."""
     out = _node("""
