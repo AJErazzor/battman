@@ -186,6 +186,6 @@ async def test_net_target_without_totals(hass: HomeAssistant, hass_client) -> No
 
 def test_lib_open_popup_gone() -> None:
     """The library's openPopup (with its renaming slip fixed in v0.16.0) was never used; v0.23.1
-    removed it, with renderDock and isVisible (test_v0231)."""
+    removed it, with renderDock and isVisible (an earlier release)."""
     js = (WWW / "battman-lib.js").read_text()
     assert "openPopup" not in js and "{bmc: cfg}" not in js

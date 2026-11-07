@@ -41,7 +41,7 @@ async def test_settings_view(hass: HomeAssistant, hass_client) -> None:
 async def test_mode_colours_sensor(hass: HomeAssistant) -> None:
     """The theme and its saved colours come from Battman's own parameters sensor (v0.26.0: named
     directly, whichever engine is in charge, so Migrate doesn't rewrite Battman's packages)."""
-    from .test_v0260 import lib_colours
+    from .test_battman_device_and_colours import lib_colours
 
     (Path(hass.config.config_dir) / "configuration.yaml").write_text("homeassistant:\n  packages: !include_dir_named packages\n")
     await _setup(hass)

@@ -20,7 +20,7 @@ from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from .test_v0130 import run_js
+from .test_amber_grid_state_card_countdown import run_js
 from .dashboard_views import built
 from .snapshots import assert_snapshot
 

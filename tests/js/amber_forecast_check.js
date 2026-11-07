@@ -1,4 +1,4 @@
-// Real-browser check of the Amber forecast chart card (run by tests/test_v0270.py): it draws from
+// Real-browser check of the Amber forecast chart card (run by tests/test_amber_forecast_chart.py): it draws from
 // the two Amber forecast sensors, the range pills and legend taps are kept per device, the tooltip
 // names the interval, and a missing sensor or empty forecast is said on the card.
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node amber_forecast_check.js <www dir>

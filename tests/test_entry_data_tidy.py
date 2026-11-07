@@ -43,24 +43,3 @@ async def test_second_setup_changes_nothing(hass) -> None:
     assert await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
     assert dict(entry.data) == before
-
-
-async def test_old_in_charge_sensor_is_removed_and_a_fresh_install_never_has_it(hass) -> None:
-    """Upgrading from a version that added binary_sensor.battman_in_charge drops its registry entry
-    (so the install matches a fresh one); setting up again, or a fresh install, has nothing to drop."""
-    from homeassistant.helpers import entity_registry as er
-
-    assert await async_setup_component(hass, "lovelace", {})
-    entry = MockConfigEntry(domain="battman", title="Battman", data=dict(DONE))
-    entry.add_to_hass(hass)
-    reg = er.async_get(hass)
-    reg.async_get_or_create("binary_sensor", "battman", f"{entry.entry_id}_in_charge", config_entry=entry,
-                            suggested_object_id="battman_in_charge")
-    assert reg.async_get("binary_sensor.battman_in_charge") is not None
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    assert reg.async_get("binary_sensor.battman_in_charge") is None
-    assert hass.states.get("binary_sensor.battman_in_charge") is None
-    assert await hass.config_entries.async_reload(entry.entry_id)        # nothing left to drop: still fine
-    await hass.async_block_till_done()
-    assert reg.async_get("binary_sensor.battman_in_charge") is None

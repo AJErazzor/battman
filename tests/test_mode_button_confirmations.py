@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from homeassistant.core import HomeAssistant
 
-from .test_v0100 import _la, _set, _setup
+from .test_live_activity_install import _la, _set, _setup
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 LIB = ROOT / "www/battman-lib.js"

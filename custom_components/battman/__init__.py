@@ -11,7 +11,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
@@ -51,7 +50,6 @@ PLATFORMS: list[str] = ["button", "sensor"]
 DASHBOARD_DONE = "dashboard_created_on_install"
 # Which notification automations Battman has already made once (button: Create automations).
 AUTOMATIONS_OFFERED = "automations_offered"   # ids of the notification automations Battman has already made once
-LEGACY_LIVE_ACTIVITY_DONE = "live_activity_created_on_install"   # before v0.34: the same thing for the Live Activity ones
 # And the engine automations/scripts (they do nothing unless Battman is enabled). Create makes any missing.
 ENGINE_DONE = "engine_created_on_install"
 # Everything Battman keeps in its config entry's data. Anything else was left by an older version
@@ -114,23 +112,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Battman from a config entry."""
-    # Idempotent and based on the data itself (not on which version came before), so an upgrade from
-    # any older version, or none, ends in the same state. Done first: nothing is listening yet.
-    data = dict(entry.data)
-    if data.pop(LEGACY_LIVE_ACTIVITY_DONE, False) and AUTOMATIONS_OFFERED not in data:
-        data[AUTOMATIONS_OFFERED] = list(notifications.LIVE_ACTIVITY_IDS)   # already made: not made again
-    data = {k: v for k, v in data.items() if k in ENTRY_DATA_KEYS}
+    # Anything in the entry's data that Battman doesn't keep any more is dropped, so every install ends in the same state.
+    data = {k: v for k, v in entry.data.items() if k in ENTRY_DATA_KEYS}
     if data != dict(entry.data):
         hass.config_entries.async_update_entry(entry, data=data)
-    # The "In charge" sensor Battman used to add is gone (its engine is always in charge): remove the
-    # registry entry an older version left, so an upgraded install matches a fresh one. Based on what's
-    # in the registry, not on the version before, and does nothing when it isn't there.
-    registry = er.async_get(hass)
-    if stale := registry.async_get_entity_id("binary_sensor", DOMAIN, f"{entry.entry_id}_in_charge"):
-        registry.async_remove(stale)
-    # The button that created only the Live Activity automations is now "Create automations": drop the old one.
-    if stale := registry.async_get_entity_id("button", DOMAIN, f"{entry.entry_id}_create_live_activity"):
-        registry.async_remove(stale)
     dst = themes.dst_dir(hass)
     try:
         if await hass.async_add_executor_job(themes.install, dst):
@@ -154,8 +139,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await async_create_dashboard_and_report(hass, notify=False)
         hass.config_entries.async_update_entry(entry, data={**entry.data, DASHBOARD_DONE: True})
 
-    # the Live Activity settings moved into the parameters sensor (v0.26.0): carry them over
-    notifications.async_carry_over(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Battman's template sensors: packages/battman/*.yaml, written and reloaded once HA is up

@@ -213,9 +213,6 @@ class BattmanNemSensor(SensorEntity):
         # not on the Battman device: they're OpenNEM's figures, not Battman settings or controls
 
     async def async_added_to_hass(self) -> None:
-        reg = er.async_get(self.hass)
-        if (e := reg.async_get(self.entity_id)) is not None and e.device_id is not None:
-            reg.async_update_entity(self.entity_id, device_id=None)   # on the device before v0.26.0
         self.async_on_remove(async_dispatcher_connect(self.hass, SIGNAL, self._refresh))
         self._refresh()
 

@@ -5,6 +5,8 @@
   Battman's settings or controls. Their entity IDs stay sensor.battman_nem_*.
 """
 
+from pathlib import Path
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -56,22 +58,6 @@ async def test_made_and_removed_with_opennem(hass: HomeAssistant) -> None:
     assert _nem(hass) == [] and hass.states.get("sensor.battman_nem_wind") is None
 
 
-async def test_moved_off_the_device_on_update(hass: HomeAssistant) -> None:
-    """Before v0.26.0 they sat on the Battman device: the update moves them off, same entity."""
-    MockConfigEntry(domain="opennem", title="OpenNEM").add_to_hass(hass)
-    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
-    entry.add_to_hass(hass)
-    device = dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id,
-                                                      identifiers={(DOMAIN, entry.entry_id)}, name="Battman")
-    er.async_get(hass).async_get_or_create("sensor", DOMAIN, f"{entry.entry_id}_nem_wind", config_entry=entry,
-                                           device_id=device.id, suggested_object_id="battman_nem_wind")
-    assert await async_setup_component(hass, "lovelace", {})
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    e = er.async_get(hass).async_get("sensor.battman_nem_wind")
-    assert e is not None and e.device_id is None
-
-
 async def test_stale_ones_removed_without_opennem(hass: HomeAssistant) -> None:
     """OpenNEM uninstalled while HA was off: Battman's leftover NEM entities go at startup."""
     entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
@@ -82,58 +68,6 @@ async def test_stale_ones_removed_without_opennem(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert _nem(hass) == []
-
-
-# ── the Live Activity settings move into the parameters sensor ───────────────────────────
-
-from pathlib import Path
-
-from homeassistant.core import State
-from pytest_homeassistant_custom_component.common import mock_restore_cache
-
-OLD = {  # the old entities: (domain, key) -> (entity_id, last state)
-    ("switch", "live_activity"): ("switch.battman_live_activity", "on"),
-    ("select", "live_activity_phone"): ("select.battman_live_activity_phone", "mobile_app_ajs_iphone"),
-    ("text", "live_activity_follow"): ("text.battman_live_activity_follow", "binary_sensor.car_ignition"),
-    ("text", "live_activity_follow_on"): ("text.battman_live_activity_follow_on", "on"),
-    ("text", "live_activity_follow_off"): ("text.battman_live_activity_follow_off", "off"),
-    ("number", "live_activity_follow_delay"): ("number.battman_live_activity_follow_delay", "3.0"),
-    ("number", "live_activity_spike_alert"): ("number.battman_live_activity_spike_alert", "0.55"),
-}
-
-
-async def _updated_from_v025(hass):
-    """A v0.25.0 install with its Live Activity setting entities and their saved values, updated."""
-    (Path(hass.config.config_dir) / "configuration.yaml").write_text("homeassistant:\n  packages: !include_dir_named packages\n")
-    entry = MockConfigEntry(domain=DOMAIN, title="Battman", data={})
-    entry.add_to_hass(hass)
-    reg = er.async_get(hass)
-    for (domain, key), (entity_id, _v) in OLD.items():
-        reg.async_get_or_create(domain, DOMAIN, f"{entry.entry_id}_{key}", config_entry=entry,
-                                suggested_object_id=entity_id.split(".")[1])
-    mock_restore_cache(hass, [State(e, v) for e, v in OLD.values()])
-    assert await async_setup_component(hass, "lovelace", {})
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    return entry
-
-
-async def test_live_activity_settings_carried_over(hass: HomeAssistant) -> None:
-    await _updated_from_v025(hass)
-    a = hass.states.get("sensor.battman_parameters").attributes
-    assert a["alertNotifyTarget"] == "mobile_app_ajs_iphone"          # the old phone is now the shared notify target
-    assert {k: a[k] for k in a if k.startswith("liveActivity") and k != "liveActivitySpikeAlertOn"} == {
-        "liveActivity": True,
-        "liveActivityFollow": "binary_sensor.car_ignition", "liveActivityFollowOn": "on", "liveActivityFollowOff": "off",
-        "liveActivityFollowDelay": 3, "liveActivitySpikeAlert": 0.55}
-    reg = er.async_get(hass)
-    for entity_id, _v in OLD.values():
-        e = reg.async_get(entity_id)
-        if entity_id == "switch.battman_live_activity":
-            assert e is not None and e.platform == "template"     # the same entity ID, now Battman's template switch
-            assert hass.states.get(entity_id).state == "on"
-        else:
-            assert e is None and hass.states.get(entity_id) is None, entity_id
 
 
 async def test_battman_device_now(hass: HomeAssistant) -> None:

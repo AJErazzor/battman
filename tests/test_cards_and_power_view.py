@@ -26,7 +26,7 @@ async def test_power_view_first(hass: HomeAssistant, hass_client) -> None:
     data = await built(hass)
     power = data["views"][0]
     assert power["path"] == "power" and power["title"] == "Power" and power["theme"] == "Battman Nord"
-    assert {"type": "custom:battman-limits"} in power["sections"][1]["cards"]   # layout: test_v0130
+    assert {"type": "custom:battman-limits"} in power["sections"][1]["cards"]   # layout: test_amber_grid_state_card_countdown
 
 
 async def test_cards_api(hass: HomeAssistant, hass_client) -> None:

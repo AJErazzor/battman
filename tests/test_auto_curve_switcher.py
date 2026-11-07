@@ -10,7 +10,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .test_v0100 import _la, _set, _settle, _setup
+from .test_live_activity_install import _la, _set, _settle, _setup
 
 ROOT = Path(__file__).parents[1] / "custom_components/battman"
 MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]

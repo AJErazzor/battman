@@ -1,6 +1,6 @@
 // Real-browser check of the curve editors' button wiring (battman-curve-editor.js wireHandlers):
 // data-on-click / -input / -change / -mouseenter / -mouseleave inside a shadow root call the named
-// handler with its arguments ('text', numbers, this, this.value, event). Run by tests/test_v0220.py.
+// handler with its arguments ('text', numbers, this, this.value, event). Run by tests/test_curvy_and_pricy_cards.py.
 // usage: NODE_PATH=<node_modules with playwright> CHROME=<chromium> node curve_handlers_check.js <www dir>
 const { chromium } = require("playwright");
 const fs = require("fs");
