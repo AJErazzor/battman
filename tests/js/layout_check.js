@@ -7,6 +7,7 @@ const path = require("path");
 (async () => {
   const dir = process.argv[3];
   fs.writeFileSync(path.join(dir, "battman-cards.js"), fs.readFileSync(process.argv[2], "utf8"));
+  fs.copyFileSync(path.join(path.dirname(process.argv[2]), "battman-card-base.js"), path.join(dir, "battman-card-base.js"));   // what cards.js imports
   fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html><html><body>
 <script>
 window.loadCardHelpers = async () => ({ createCardElement: (cfg) => { const d = document.createElement("div"); d.className = "inner"; return d; } });

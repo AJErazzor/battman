@@ -55,7 +55,8 @@ def test_the_one_script_starts_the_rest_and_survives_a_broken_one(tmp_path) -> N
     everything = {"battman-countdown", "battman-house", "battman-log", "battman-settings", "battman-curvy", "battman-pricy",
                   "battman-forecast-view", "battman-pie-card", "battman-state"}
     ok = run(WWW)
-    assert set(ok["defined"]) == everything and ok["lib"] and ok["enginelog"] and ok["errors"] == []
+    assert set(ok["defined"]) == everything, set(ok["defined"]) ^ everything
+    assert ok["lib"] and ok["enginelog"] and ok["errors"] == [], ok
     broken = tmp_path / "www"
     shutil.copytree(WWW, broken, ignore=shutil.ignore_patterns("images", "previews", "vendor"))
     (broken / "battman-curvy.js").write_text("this is not javascript (\n")

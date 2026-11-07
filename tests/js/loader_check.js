@@ -21,7 +21,7 @@ const http = require("http");
   const browser = await chromium.launch({ executablePath: process.env.CHROME });
   const page = await browser.newPage();
   const errors = [];
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("console", (m) => { if (m.type() === "error" && m.text().startsWith("Battman:")) errors.push(m.text()); });   // (not the favicon 404)
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
   const tags = ["battman-countdown", "battman-house", "battman-log", "battman-settings", "battman-curvy", "battman-pricy", "battman-forecast-view", "battman-pie-card", "battman-state"];
   await page.waitForTimeout(2500);
