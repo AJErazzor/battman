@@ -555,6 +555,9 @@ def test_settings_page_has_a_summary_for_every_section_and_a_heading_for_every_s
     for pat in (r"\brow\('((?:[^'\\]|\\.)*)'", r"numParam\('\w+', '((?:[^'\\]|\\.)*)'", r"\bsw\('\w+', '((?:[^'\\]|\\.)*)'",
                 r"\bnum\('[^']*', '[^']*', '((?:[^'\\]|\\.)*)'"):
         labels |= {x.replace("\\'", "'") for x in re.findall(pat, SETTINGS_JS)}
+    labels |= set(re.findall(r"side === 'buy' \? '([^']+)' : '([^']+)'", SETTINGS_JS)[0])           # Buy/Sell rules enabled
+    labels |= set(re.findall(r"\b(?:q|stateRow)\('\w+', '([^']+)'", SETTINGS_JS))                       # quarterly bills, Live Activity
+    assert {"Buy rules enabled", "Sell rules enabled", "Q1 · Jul – Sep", "Show when it becomes"} <= labels
     headings = re.findall(r"^#{3,4} (.+)$", page, re.M)
     missing = sorted(l for l in labels if not any(h == l or h.startswith(l + " (") for h in headings))
     assert not missing, missing
@@ -643,14 +646,16 @@ def test_help_panel_in_a_browser(tmp_path) -> None:
         assert s["expand"] == "Expand" and s["chips"] and s["body"]
         assert s["href"].startswith("/dash/help?page=intermediate/settings#")
         assert o["child"]["title"] == s["chips"][0] and o["child"]["back"] == f"← {s['title']}" and o["child"]["chips"] == []
-        assert o["child"]["href"] != s["href"] and o["backTo"] == s["title"]
+        assert o["child"]["focus"] == f"← {s['title']}"                            # focus moves to Back, not the page
+        assert o["child"]["href"] != s["href"] and o["backTo"] == s["title"] and o["backFocus"] == s["chips"][0]
         assert o["expanded"]["expand"] == "Less" and len(o["expanded"]["body"]) > len(s["body"]) and o["expanded"]["chips"] == []
-        assert o["less"]["body"] == s["body"]
+        assert o["expanded"]["focus"] == "Less" and o["less"]["focus"] == "Expand"
+        assert o["less"]["body"] == s["body"] and o["escAfterButtons"] is False
         assert o["group"]["pressed"] == [group] and o["group"]["title"] != s["title"]
         assert o["closed"] == {"panel": False, "focus": group, "pressed": 0}       # Escape: focus back on the tag
         assert o["browse"]["at"] == s["href"] and o["browse"]["nav"] == [s["href"]] and not o["browse"]["panel"]
         assert o["fetches"] == 1                                                  # the page is read once
         assert not o["overflow"]
     d, p = out["desktop"]["summary"], out["phone"]["summary"]
-    assert d["width"] == 400 and d["left"] == 800 and d["top"] == 0               # a side panel on the right
-    assert p["left"] == 0 and p["width"] == 390 and p["top"] > 0 and p["bottom"] == 800    # a bottom sheet
+    assert d["width"] == 400 and d["left"] == 800 and d["top"] == 56              # a side panel on the right, under HA's toolbar
+    assert p["left"] == 0 and p["width"] == 390 and p["top"] > 56 and p["bottom"] == 800   # a bottom sheet

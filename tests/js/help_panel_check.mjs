@@ -76,7 +76,7 @@ try {
         chips: [...p.querySelectorAll(".bh-chip")].map((c) => c.textContent), expand: (p.querySelector("[data-bh-expand]") || {}).textContent || null,
         back: (p.querySelector("[data-bh-back]") || {}).textContent || null, href: p.querySelector(".bh-all").getAttribute("href"),
         left: Math.round(b.left), top: Math.round(b.top), width: Math.round(b.width), bottom: Math.round(b.bottom),
-        focused: root.activeElement === p, pressed: [...root.querySelectorAll('.bh-tag[aria-expanded="true"]')].map((t) => t.dataset.help)};`);
+        focused: root.activeElement === p, focus: root.activeElement === p ? "panel" : (root.activeElement ? root.activeElement.textContent : null), pressed: [...root.querySelectorAll('.bh-tag[aria-expanded="true"]')].map((t) => t.dataset.help)};`);
     r.hidden = await q(`return [...root.querySelectorAll(".bh-tag")].map((t) => getComputedStyle(t).display);`);
     await q(`root.querySelector(".wrap").classList.add("helpmode");`);
     r.shown = await q(`return [...root.querySelectorAll(".bh-tag")].map((t) => getComputedStyle(t).display + " " + getComputedStyle(t).borderRadius);`);
@@ -87,12 +87,16 @@ try {
       await page.locator("#host .bh-chip").first().click();
       r.child = await panel();
       await page.locator("#host [data-bh-back]").click();
-      r.backTo = (await panel()).title;
+      const back = await panel();
+      r.backTo = back.title;
+      r.backFocus = back.focus;
     }
     await page.locator("#host [data-bh-expand]").click();
     r.expanded = await panel();
     await page.locator("#host [data-bh-expand]").click();
     r.less = await panel();
+    await page.keyboard.press("Escape");                       // focus stayed in the panel, so Esc still closes it
+    r.escAfterButtons = await q(`return !!root.querySelector(".bh-panel")`);
     await page.locator("#host .bh-tag.small").click();
     await page.waitForFunction((t) => document.getElementById("host").shadowRoot.querySelector(".bh-panel h2").textContent !== t, r.summary.title);
     r.group = await panel();

@@ -1,6 +1,8 @@
 # Settings
 
-The **Settings** view on the Battman dashboard holds every Battman setting, in sections you can fold away and drag into the order you like. Each change is saved as you make it: the card refuses a value Battman won't accept before sending it, then waits for the setting to change and tells you if it didn't, and only a Home Assistant administrator can save, because Home Assistant only lets administrators send the event Battman uses.
+The **Settings** view on the Battman dashboard holds every Battman setting, in sections you can fold away and drag into the order you like.
+
+Each change is saved as you make it. The card refuses a value Battman won't accept before sending it, then checks that the setting changed and tells you if it didn't. Only a Home Assistant administrator can save a setting.
 
 - **What you see next to a control:** "Saving…", then "✓ Saved", or "Not saved:" and the reason. If the setting hasn't changed after 5 seconds it says so ("Not saved: … didn't change."). Someone who isn't an administrator gets "Not saved: Unauthorized". The **Live Activity** switch and **Run engine now** work for anyone.
 - **What it refuses:** "Enter a number", "Must be at least …", "Must be at most …". Settings that take whole numbers drop anything after the decimal point (2.7 becomes 2). "Not set yet" under a setting means Battman has no value for it yet.
@@ -17,14 +19,14 @@ SOC means the battery's state of charge, as a %. Prices are in c/kWh (cents per 
 How readily the battery charges from the grid when the buy price is positive. Battman charges while the battery is below your buy SOC curve for the hour (set on Curvy) and the price is at or below its buy price. That price starts at the hour's preferred buy price (set on Pricy), and these two offsets say how far below the curve the battery must be before Battman will pay more, up to the hour's high buy price.
 <!-- /guide:summary -->
 
-The card's note: "How hard the battery charges when grid prices are positive. Higher offsets mean more cautious charging." At a positive price, Battman doesn't buy in the evening peak (5 pm to 9 pm) unless a Buy override on the Overrides card says so.
+The card's note: "How hard the battery charges when grid prices are positive. Higher offsets mean more cautious charging." At a positive price, Battman doesn't buy in the evening peak (5 pm until 9 pm) unless a Buy override on the Overrides card says so.
 
 For example, with the buy curve at 50% this hour and the offsets at 1 and 10: above 49% Battman pays only the preferred price; from 49% down to 40% the price it will pay rises steadily towards the high price; at 40% or below it pays up to the high price.
 
 **↻ Reset** puts both offsets back to the values under [Reset defaults](#defaults).
 
 > [!WARNING]
-> **Reset here also clears Buy Anytime.** The Buy section's **↻ Reset** sends a Buy Anytime price of 0 along with the two offsets, so a Buy Anytime override that's set on the Overrides card is switched off too.
+> **Reset here also stops Buy Anytime.** The Buy section's **↻ Reset** sends a Buy Anytime price of 0 along with the two offsets. With its price at 0, a Buy Anytime override set on the Overrides card stops buying, although the Overrides card still shows it as on because its SOC is kept.
 
 ### Prorate price SOC offset
 
@@ -77,7 +79,7 @@ The engine's log gives "Rule Active" as the reason when a rule made it buy.
 
 ### Round to
 
-"Decimal places for the price target". 2 to start with. The target is in $/kWh at this point, so 2 places rounds to a whole cent and 3 to a tenth of a cent. At 0 the target isn't rounded.
+"Decimal places for the price target". 2 to start with. The target is worked out in dollars per kWh, so 2 places rounds to a whole cent and 3 to a tenth of a cent. At 0 the target isn't rounded.
 
 ### Round type
 
@@ -114,7 +116,7 @@ The card's note: "Switches to a more aggressive charging curve when the house us
 
 "Use that triggers the needy curve", in kW. When the house's average power use over the last 30 minutes is above this, Battman uses the high curves, at any time of day.
 
-3.5 kW to start with. From 0 to 20. If the 30-minute average has no value (`sensor.battman_load_30m_avg`, from Sigenergy's consumed power), the check is skipped and the log says so.
+3.5 kW to start with. From 0 to 20. The check uses the house's average power use over the last 30 minutes (Battman works it out from Sigenergy's consumed power, as `sensor.battman_load_30m_avg`). If that average has no value yet, the check is skipped and the log says so.
 
 > [!NOTE]
 > Curvy and Pricy open on their high curve by a separate helper, **Battman high consumption**, not by this setting, so the curve they open on can differ from the one the engine is using.
@@ -300,7 +302,7 @@ April to June's bill (91 days).
 How readily the battery sells to the grid below its preferred price. Battman sells while the battery is above your sell SOC curve for the hour (set on Curvy) and the feed-in price is at or above its sell price, which starts at the hour's preferred sell price (set on Pricy). While today's earnings haven't yet covered today's costs, these offsets let it accept less when the battery is well above the curve, down to the hour's low sell price.
 <!-- /guide:summary -->
 
-The card's note: "When and how much the battery exports. SOC offsets stop it running too low." Battman never sells while the feed-in price is negative, and its normal selling never goes below the [Sell price protection](#protection) floor. **↻ Reset** puts both offsets back to the values under [Reset defaults](#defaults).
+The card's note: "When and how much the battery exports. SOC offsets stop it running too low." Normal selling stops while the feed-in price is negative (a Drain override on the Overrides card goes by the buy price instead, so it can still run then), and normal selling never goes below the [Sell price protection](#protection) floor. **↻ Reset** puts both offsets back to the values under [Reset defaults](#defaults).
 
 "Today's costs" are today's buying plus the [daily network charge](#billing). Once today's sales cover them, Battman sticks to the preferred price.
 
@@ -413,7 +415,7 @@ Stops Battman selling for less than you've been paying for grid power. Once your
 
 The card's note: "Stops selling below a margin over what you've been paying, once today's grid import and average buy price are both above these thresholds."
 
-Protection also needs what you've spent on imports since the reset hour to be more than you've earned from exports since then. It sets a floor under normal selling (from the curves and the sell rules), not under spike selling or a Sell override. The engine's log shows "Min Sell:" and the floor while it applies.
+Protection also needs what you've spent on imports since the reset hour to be more than you've earned from exports since then. It sets a floor under normal selling (from the curves and the sell rules), not under spike selling or a Sell override that sets a price. A Sell override that sets only a SOC keeps to the floor. The engine's log shows "Min Sell:" and the floor while it applies.
 
 These settings are kept with Battman's buy total (`sensor.battman_buy_total`), not with the other settings, and **↻ Reset** doesn't cover them. The card takes any number from 0 up. "Not set yet" shows until that sensor's first update.
 

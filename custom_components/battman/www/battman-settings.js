@@ -165,7 +165,7 @@ class BattmanSettingsCard extends BattmanCardBase {
 `;
   static html = `<ha-card><div class="frame"><div class="page">
 <h2 class="hdr"><img src="${FILES}/images/battman-wrench.webp" alt="Battman" class="who"><img src="${FILES}/images/settings-line.webp" alt="Settings" class="word">${VERSION ? `<span class="ver">Battman v${VERSION}</span>` : ''}</h2>
-<div class="bar"><span class="barl"><button class="rst" data-runengine="1">Run engine now</button><span class="runmsg" id="runmsg"></span></span><span class="barr"><button class="rst helpbtn" data-helpmode aria-pressed="false" hidden><span class="qtag" aria-hidden="true">?</span>Help</button><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></span></div>
+<div class="bar"><span class="barl"><button class="rst" data-runengine="1">Run engine now</button><span class="runmsg" id="runmsg"></span></span><span class="barr"><span class="runmsg" id="helpmsg" role="status"></span><button class="rst helpbtn" data-helpmode aria-pressed="false" hidden><span class="qtag" aria-hidden="true">?</span>Help</button><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></span></div>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
 </div></div></ha-card>`;
 
@@ -744,26 +744,31 @@ class BattmanSettingsCard extends BattmanCardBase {
     const HELP_PAGE = 'intermediate/settings';
     let help = null;        // {mod, summaries} once loaded
     let helpOn = false;
+    let helpLoading = null;     // the first load, while it's under way
     function decorate(sec) {
       if (!help || !sec) return;
       const id = sec.dataset.sec, title = SECTIONS[id].title.replace(/&amp;/g, '&');
       const right = sec.querySelector('.gright');
       if (help.summaries['settings.' + id] && right && !right.querySelector('.bh-tag')) {
         right.insertAdjacentHTML('afterbegin', help.mod.tagHtml('settings.' + id, title));
+        help.mod.retag(root, right.querySelector('.bh-tag'));
       }
       sec.querySelectorAll('.body .subdiv').forEach((d) => {
         if (d.querySelector('.bh-tag')) return;
         const text = d.textContent.trim(), sid = 'settings.' + id + '.' + help.mod.slugify(text);
-        if (help.summaries[sid]) d.insertAdjacentHTML('beforeend', help.mod.tagHtml(sid, text, true));
+        if (!help.summaries[sid]) return;
+        d.insertAdjacentHTML('beforeend', help.mod.tagHtml(sid, text, true));
+        help.mod.retag(root, d.querySelector('.bh-tag'));     // a redraw replaced the tag the open panel came from
       });
     }
     async function setHelp(on) {
       const frame = root.querySelector('.frame');
       if (on && !help) {
-        const out = root.getElementById('runmsg');
+        if (helpLoading) return helpLoading;               // pressed again while it loads
+        const out = root.getElementById('helpmsg');
         const tell = (text, cls) => { if (out) { out.textContent = text; out.className = 'runmsg ' + cls; } };
         tell('Loading help…', 'busy');
-        try {
+        helpLoading = (async () => {
           const mod = await import('./battman-help-panel.js');
           const page = await mod.loadPage(getHass(), HELP_PAGE);
           help = { mod, summaries: page.summaries };
@@ -771,10 +776,16 @@ class BattmanSettingsCard extends BattmanCardBase {
           st.textContent = mod.TAG_CSS;
           root.appendChild(st);
           root.querySelectorAll('.sec').forEach(decorate);
+        })();
+        try {
+          await helpLoading;
           tell('', '');
         } catch (e) {
-          tell('Help didn\'t load: ' + ((e && e.message) || e), 'bad');
+          const why = (e && e.body && e.body.message) || (e && e.message) || (e && e.error) || String(e);
+          tell('Help didn\'t load: ' + why, 'bad');
           return;
+        } finally {
+          helpLoading = null;
         }
       }
       helpOn = on;
@@ -1090,7 +1101,10 @@ class BattmanSettingsCard extends BattmanCardBase {
       root.addEventListener('click', (e) => { onClick(e).catch((x) => console.error('Battman settings', x)); });
       root.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.target.matches('input')) e.target.blur();
-        if (e.key === 'Escape' && helpOn) {               // Esc: close the help panel, then leave help mode
+        // Esc: close the help panel, then leave help mode (not while Esc is closing a list or leaving a box)
+        if (e.key === 'Escape' && helpOn && !e.defaultPrevented) {
+          const inField = e.composedPath().some((n) => n.matches && n.matches('input, select, textarea, ha-entity-picker, ha-combo-box'));
+          if (inField) return;
           if (root.querySelector('.bh-panel')) help.mod.closePanel(root); else setHelp(false);
         }
       });
@@ -1107,7 +1121,9 @@ class BattmanSettingsCard extends BattmanCardBase {
         root.querySelectorAll('ha-entity-picker').forEach((p) => { p.hass = getHass(); });
       }, 250);
     }
-    return { hassChanged, themeChanged: hassChanged };
+    // the card left the page (another view): the help panel closes; help mode stays as it was
+    function pause() { if (help) help.mod.closePanel(root); }
+    return { hassChanged, themeChanged: hassChanged, pause };
   }
 }
 battmanDefine("battman-settings", BattmanSettingsCard);

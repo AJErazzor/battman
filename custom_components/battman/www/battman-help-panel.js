@@ -44,14 +44,14 @@ export const TAG_CSS = `
 `;
 
 const PANEL_CSS = `
-.bh-panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(400px, 100vw); z-index: 7; box-sizing: border-box;
+.bh-panel { position: fixed; top: var(--header-height, 56px); right: 0; bottom: 0; width: min(400px, 100vw); z-index: 7; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; overflow-y: auto;
   background: var(--battman-surface-popup, var(--card-background-color)); color: var(--battman-text-bright, var(--primary-text-color));
   border-left: 1px solid var(--battman-border-neutral, var(--divider-color)); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
   font: 14px/1.55 var(--primary-font-family, sans-serif); }
 @media (max-width: 700px) {
   .bh-panel { top: auto; left: 0; width: auto; max-height: 75vh; border-left: 0; border-top: 1px solid var(--battman-border-neutral, var(--divider-color));
-    border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3); }
+    border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3); padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
 }
 .bh-head { display: flex; align-items: center; gap: 8px; }
 .bh-crumb { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--battman-text-muted, var(--secondary-text-color)); }
@@ -143,6 +143,21 @@ function draw(panel) {
     <a class="bh-all" href="${esc(`${helpView()}?page=${page}#${head.anchor}`)}" data-bh-go="${esc(head.anchor)}">Browse all help</a>`;
 }
 
+// draw again, then put focus back where it makes sense (the pressed control is gone), else on the panel
+function redraw(panel, focus) {
+  draw(panel);
+  panel.scrollTop = 0;
+  (panel.querySelector(focus) || panel).focus({ preventScroll: true });
+}
+
+// A card redrew its tags: the tag for the open panel is a new element, so mark it and return focus to it later.
+export function retag(root, tag) {
+  const panel = root.querySelector(".bh-panel");
+  if (!panel || !panel._state || panel._state.id !== tag.dataset.help) return;
+  tag.setAttribute("aria-expanded", "true");
+  panel._state.from = tag;
+}
+
 function go(root, url) {
   closePanel(root);
   window.history.pushState(null, "", url);
@@ -154,9 +169,13 @@ function onPanelClick(root, panel, e) {
   if (!t) return;
   const st = panel._state;
   if (t.dataset.bhClose !== undefined) return closePanel(root);
-  if (t.dataset.bhExpand !== undefined) { st.view = st.view === "all" ? "summary" : "all"; return draw(panel); }
-  if (t.dataset.bhBack !== undefined) { st.child = null; return draw(panel); }
-  if (t.dataset.bhChild !== undefined) { st.child = st.data.summaries[st.id].children[Number(t.dataset.bhChild)]; return draw(panel); }
+  if (t.dataset.bhExpand !== undefined) { st.view = st.view === "all" ? "summary" : "all"; return redraw(panel, "[data-bh-expand]"); }
+  if (t.dataset.bhBack !== undefined) {
+    const i = st.data.summaries[st.id].children.indexOf(st.child);
+    st.child = null;
+    return redraw(panel, `[data-bh-child="${i}"]`);
+  }
+  if (t.dataset.bhChild !== undefined) { st.child = st.data.summaries[st.id].children[Number(t.dataset.bhChild)]; return redraw(panel, "[data-bh-back]"); }
   if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   if (t.dataset.bhGo !== undefined) { e.preventDefault(); return go(root, t.getAttribute("href")); }
   if (t.dataset.page !== undefined) {           // a link in the guide's text: open that page in the Help view
