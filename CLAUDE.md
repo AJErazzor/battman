@@ -15,6 +15,7 @@ When a change alters what someone sees or does, update the guide in the same cha
 | The device buttons or actions (`button.py`, `services.py`, `services.yaml`, `dashboard.py`, the button and service text in `translations/en.json`) | `guide/start/device-page.md` |
 | A Repair (anything under `issues` in `translations/en.json`, or the code that raises one) | `guide/help/repairs.md` |
 | Which views a new dashboard has (`views/*.yaml`) | `guide/start/device-page.md` (the list of views) |
+| The Show help setting or how the Help view is added and removed (`help_setting.py`, `dashboard.py`) | `guide/README.md` (Showing or hiding the guide) |
 
 Rules for the guide:
 

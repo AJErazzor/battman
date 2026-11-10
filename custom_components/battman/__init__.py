@@ -20,6 +20,7 @@ from . import (
     dependencies,
     engine,
     engine_log,
+    help_setting,
     notifications,
     package_files,
     required_entities,
@@ -145,6 +146,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_update_entry(entry, data={**entry.data, DASHBOARD_DONE: True})
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Settings → Dashboard options → Show help: the Help view follows it
+    help_setting.async_start(hass, entry)
 
     # Battman's template sensors: packages/battman/*.yaml, written and reloaded once HA is up
     package_files.async_start(hass, entry)

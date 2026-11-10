@@ -14,7 +14,7 @@ tracks:
     pages:
       - slug: device-page
         title: The Battman device page
-        summary: Create dashboard, Create help view and Create automations, and what each one never does.
+        summary: Create dashboard and Create automations, and what each one never does.
   - id: help
     title: Troubleshooting
     summary: When something isn't right.

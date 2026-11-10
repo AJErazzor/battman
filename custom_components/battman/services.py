@@ -13,7 +13,6 @@ from .const import DOMAIN
 
 SERVICE_CREATE_DASHBOARD = "create_dashboard"
 SERVICE_CREATE_AUTOMATIONS = "create_automations"
-SERVICE_CREATE_HELP_VIEW = "create_help_view"
 ISSUE_DASHBOARD = "dashboard_unavailable"
 ISSUES_URL = "https://github.com/AJErazzor/battman/issues"
 
@@ -45,37 +44,6 @@ async def async_create_dashboard_and_report(hass: HomeAssistant, notify: bool) -
     if notify:
         persistent_notification.async_create(
             hass, result["message"], title="Battman dashboard", notification_id="battman_dashboard"
-        )
-    return result
-
-
-def _help_message(outcome: str, url_path: str) -> str:
-    if outcome == dashboard.ADDED:
-        return (f"Added the Help view to your Battman dashboard at /{url_path}. It's the last tab; "
-                "nothing else on the dashboard changed.")
-    if outcome == dashboard.EXISTS:
-        return f"Your Battman dashboard already has a Help view (/{url_path}/{dashboard.HELP_PATH}), so nothing changed."
-    if outcome == dashboard.NO_DASHBOARD:
-        return (f"There's no Battman dashboard at /{url_path}, so nothing changed. Press Create dashboard on "
-                "the Battman device: a new Battman dashboard includes the Help view.")
-    return (f"Battman can't change what's at /{url_path} (a dashboard written in YAML, one with no saved views yet, "
-            "or something that isn't a dashboard), so nothing changed. To add the Help view yourself, add a view "
-            "with the card type: custom:battman-guide.")
-
-
-async def async_create_help_view_and_report(hass: HomeAssistant, notify: bool) -> dict:
-    """Add the Help view to the Battman dashboard if it hasn't one, and say what happened."""
-    try:
-        outcome, url_path = await dashboard.async_add_help_view(hass)
-    except dashboard.DashboardUnavailable as err:
-        result = {"added": False, "outcome": "error", "url_path": dashboard.BASE_URL_PATH,
-                  "message": f"Could not add the Help view: {err}"}
-    else:
-        result = {"added": outcome == dashboard.ADDED, "outcome": outcome, "url_path": url_path,
-                  "message": _help_message(outcome, url_path)}
-    if notify:
-        persistent_notification.async_create(
-            hass, result["message"], title="Battman help view", notification_id="battman_help_view"
         )
     return result
 
@@ -123,12 +91,4 @@ def async_register_services(hass: HomeAssistant) -> None:
 
     async_register_admin_service(
         hass, DOMAIN, SERVICE_CREATE_AUTOMATIONS, _create_automations, supports_response=SupportsResponse.OPTIONAL
-    )
-
-    async def _create_help_view(call: ServiceCall) -> ServiceResponse:
-        result = await async_create_help_view_and_report(hass, notify=not call.return_response)
-        return result if call.return_response else None
-
-    async_register_admin_service(
-        hass, DOMAIN, SERVICE_CREATE_HELP_VIEW, _create_help_view, supports_response=SupportsResponse.OPTIONAL
     )

@@ -13,7 +13,7 @@ This guide is written from Battman's own code, so it describes what your install
 
 **Getting started**
 
-- [The Battman device page](start/device-page.md): the three buttons on the Battman device (**Create dashboard**, **Create help view** and **Create automations**), what each one does, and what it never does.
+- [The Battman device page](start/device-page.md): the two buttons on the Battman device (**Create dashboard** and **Create automations**), what each one does, and what it never does.
 
 **Troubleshooting**
 
@@ -22,8 +22,42 @@ This guide is written from Battman's own code, so it describes what your install
 ## Finding the guide
 
 - **On the Battman dashboard** it's the **Help** tab, the last one.
-- **No Help tab?** Battman never changes your dashboard by itself, so a dashboard made by an earlier version hasn't got one. Open the [Battman device](start/device-page.md#create-help-view) and press **Create help view**.
+- **No Help tab?** Turn on **Show help**: see [Showing or hiding the guide](#showing-or-hiding-the-guide).
 - **On GitHub** these pages are in the `custom_components/battman/guide` folder of the Battman repository.
+
+## Showing or hiding the guide
+
+The **Show help** switch is on the Battman dashboard's **Settings** view, under **Dashboard options**. It's on unless you turn it off.
+
+- **Turning it off** takes the Help view off the Battman dashboard at `/battman`. Nothing else on the dashboard changes.
+- **Turning it on** adds the Help view back as the last tab, if the dashboard hasn't got one. Nothing else on the dashboard changes.
+- **While it's off**, **Create dashboard** makes the dashboard without the Help view.
+
+After you flip it, Home Assistant says "Your dashboard was updated. Refresh to see changes?": press **Refresh** to see the Help tab come or go.
+
+Battman only changes the dashboard when you flip the switch. If you delete or move the Help view yourself, it stays as you left it. To get it back after deleting it, turn **Show help** off and on again.
+
+If Battman can't make the change, a notification says why:
+
+| What it found | Message |
+|---|---|
+| No dashboard at `/battman` (turning it on) | "Show help is on, but there's no Battman dashboard at /battman to add the Help view to. Press Create dashboard on the Battman device: a new Battman dashboard includes it." |
+| Something at `/battman` Battman can't change (turning it on) | "Show help is on, but Battman can't change what's at /battman (a dashboard written in YAML, one with no saved views yet, or something that isn't a dashboard), so nothing changed. To add the Help view yourself, add a view with the card type: custom:battman-guide." |
+| Something at `/battman` Battman can't change (turning it off) | "Show help is off, but Battman can't change what's at /battman (a dashboard written in YAML, one with no saved views yet, or something that isn't a dashboard), so nothing changed. Remove the Help view yourself if you don't want it." |
+| Saving the dashboard failed | "Could not add the Help view:" or "Could not remove the Help view:" followed by the reason. |
+
+### Adding the guide yourself
+
+The guide is one card, **Battman Help** (`custom:battman-guide`). It reads best on a view of its own in panel layout, on any dashboard:
+
+```yaml
+type: panel
+path: help
+title: Help
+icon: mdi:help-circle-outline
+cards:
+  - type: custom:battman-guide
+```
 
 ## The status line
 

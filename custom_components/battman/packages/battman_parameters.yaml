@@ -674,6 +674,20 @@ template:
                  else false }}
             {% endif %}
 
+          # Settings → Dashboard options → Show help: the Help view (Battman's guide) on the Battman
+          # dashboard. Battman adds or removes that view when this changes (help_setting.py).
+          showHelp: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.showHelp is defined %}
+              {{ trigger.event.data.showHelp | bool }}
+            {% else %}
+              {{ this.attributes.showHelp
+                 if this.attributes.showHelp is defined
+                 else true }}
+            {% endif %}
+
           # 'show' / 'hide' — read directly as a string in the dock timer-row's
           # display template (same `=== 'show'` pattern the override pins use).
           alwaysShowOverrideTimer: >
