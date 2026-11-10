@@ -48,7 +48,7 @@ dashboard you own, so every Battman card on it has the editor.
 |---|---|---|
 | `battman-limits` | Grid export, PV max and max charge limits; tap one to change it | button-card, card-mod |
 | `battman-profitloss` | Today's sell, buy, gross, and net after the daily network charge | button-card |
-| `battman-amber5minpricegrid` | SELL / BUY now with sparkline and 5-min countdown, then the next 8 periods | button-card |
+| `battman-amber5minpricegrid` | SELL / BUY now with the 5-min countdown (and "Estimating" while the new price is), then the next 8 periods | button-card |
 | `battman-amber24hourforecasttable` | Every Amber forecast interval: Sell, SS, Buy, SS, colour banded (built from Amber's forecast sensors) | button-card |
 | `battman-state` | What the engine is doing; tap for the next hours' forecast (the engine's own decisions, slot by slot) | button-card |
 | `battman-batterymode` | Active / Curtail switches (each asks "are you sure?"), Engine log popup (info button), battery mode buttons (Sell, Sell Solar, HOOOOVER, House Party and Buy ask first when the press goes against the price: see [Mode button confirmations](#mode-button-confirmations)) | button-card, card-mod |
