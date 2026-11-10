@@ -85,7 +85,7 @@ you'd paste onto a view, with a two-line header:
 type: vertical-stack
 cards:
   - type: custom:button-card
-    entity: number.sigen_plant_grid_export_limitation
+    entity: '[[map:sigen_grid_export_limit]]'
   - type: custom:button-card
     entity: '[[map:parameters]]'
     ...

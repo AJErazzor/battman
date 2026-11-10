@@ -18,11 +18,13 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import IntegrationNotFound, async_get_integration
 
-from .const import DOMAIN
+from . import blueprint_install, sigen_entities
+from .const import DOMAIN, SIGEN_MAP
 
 ISSUE_MISSING = "missing_entities"
 ISSUE_TOO_OLD = "integration_too_old"
 ISSUE_OVERRIDDEN = "map_choice_ignored"
+IDS_KEY = "battman_sigen_ids"
 
 # Entity map entries Battman now uses by name: map name -> the entity it uses. A different
 # entity picked for one of these on the Configure screen no longer applies, so a Repair says so.
@@ -115,11 +117,18 @@ REQUIRED: dict[str, tuple[str, str]] = {
 }
 
 
+def required(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
+    """REQUIRED with the Sigen entities whose ID depends on the integration's version under the ID this HA has."""
+    resolved = sigen_entities.resolve(hass)
+    swap = {default: resolved[name] for name, (_d, _k, default) in SIGEN_MAP.items()}
+    return {swap.get(entity_id, entity_id): why for entity_id, why in REQUIRED.items()}
+
+
 def missing(hass: HomeAssistant) -> dict[str, str]:
     """entity -> 'not found' / 'disabled', for each required entity that isn't usable."""
     reg = er.async_get(hass)
     out: dict[str, str] = {}
-    for entity_id in REQUIRED:
+    for entity_id in required(hass):
         entry = reg.async_get(entity_id)
         if entry is not None and entry.disabled_by is not None:
             out[entity_id] = "disabled"
@@ -132,12 +141,13 @@ def missing(hass: HomeAssistant) -> dict[str, str]:
 def async_check(hass: HomeAssistant) -> dict[str, str]:
     """Raise (or clear) the missing-entities Repair. Returns what's missing."""
     gone = missing(hass)
+    needs = required(hass)
     if gone:
         ir.async_create_issue(
             hass, DOMAIN, ISSUE_MISSING, is_fixable=False, severity=ir.IssueSeverity.WARNING,
             translation_key=ISSUE_MISSING,
             translation_placeholders={"missing": "\n".join(
-                f"- `{e}` ({REQUIRED[e][0]}, from {REQUIRED[e][1]}): {why}" for e, why in gone.items())},
+                f"- `{e}` ({needs[e][0]}, from {needs[e][1]}): {why}" for e, why in gone.items())},
         )
     else:
         ir.async_delete_issue(hass, DOMAIN, ISSUE_MISSING)
@@ -192,6 +202,12 @@ def async_start(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     @callback
     def _check(_event: Event | None = None) -> None:
+        # the blueprints name the Sigen entities whose ID depends on the integration's version:
+        # rewrite them when the IDs this HA has change (the integration set up after Battman, say)
+        ids = sigen_entities.resolve(hass)
+        if hass.data.get(IDS_KEY) != ids:
+            hass.data[IDS_KEY] = ids
+            hass.async_create_task(blueprint_install.async_install(hass))
         async_check(hass)
         async_check_choices(hass, entry)
         hass.async_create_task(async_check_versions(hass))

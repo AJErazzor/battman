@@ -35,6 +35,21 @@ Power** (Overrides card; Battman's Repair names it until you do), **Sigen PV Pow
 actual-solar overlay), and **PV Power** and **Third-Party PV Power** if you have a third-party
 solar inverter (Log card). Settings → Entities → search → Enable.
 
+Sigenergy-Local-Modbus 2.0 renamed four entities in English, and a fresh 2.x install builds their
+IDs from the new names (an install that was upgraded keeps the old IDs). Battman finds these four in
+the entity registry by the integration's register key, so it works with the IDs your install has:
+
+| 1.x ID | Fresh 2.x ID |
+|---|---|
+| `number.sigen_plant_pv_max_power_limit` | `number.sigen_plant_pv_maximum_power_limit` |
+| `number.sigen_plant_ess_max_charging_limit` | `number.sigen_plant_ess_maximum_charging_power_limit` |
+| `number.sigen_plant_grid_export_limitation` | `number.sigen_plant_grid_export_power_limit` |
+| `sensor.sigen_plant_available_max_active_power` | `sensor.sigen_plant_available_maximum_active_power` |
+
+When none is found, Battman uses the 1.x ID and the Repair names it as missing. The map
+(`/api/battman/entities`) carries them as `sigen_pv_max_power_limit`, `sigen_ess_max_charging_limit`,
+`sigen_grid_export_limit` and `sigen_available_max_active_power`.
+
 Battman's own pieces that other parts rely on:
 
 - **Entity map** (`/api/battman/entities`): every Battman page (Battman's engine entities).

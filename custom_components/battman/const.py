@@ -59,6 +59,18 @@ FACTORY_MAP: dict[str, str] = {
 # sensors are named directly where they're used.
 ENTITY_MAP_DEFAULTS: dict[str, str] = {**ENGINE_MAP, **FACTORY_MAP}
 
+# The few Sigenergy-Local-Modbus entities whose ID differs between its 1.x and 2.x on a fresh install
+# (2.0 renamed them in English and builds a new install's IDs from the names). Battman looks each up
+# in the entity registry by the integration's register key, so one name per version isn't needed.
+# map name -> (domain, the integration's register key, the ID 1.x gives it: used when it isn't found,
+# so a Repair names a missing entity).
+SIGEN_MAP: dict[str, tuple[str, str, str]] = {
+    "sigen_pv_max_power_limit": ("number", "plant_pv_max_power_limit", "number.sigen_plant_pv_max_power_limit"),
+    "sigen_ess_max_charging_limit": ("number", "plant_ess_max_charging_limit", "number.sigen_plant_ess_max_charging_limit"),
+    "sigen_grid_export_limit": ("number", "plant_grid_point_maximum_export_limitation", "number.sigen_plant_grid_export_limitation"),
+    "sigen_available_max_active_power": ("sensor", "plant_available_max_active_power", "sensor.sigen_plant_available_max_active_power"),
+}
+
 # Authenticated, admin-only API the theme studio uses to save your own themes.
 THEMES_URL = "/api/battman/themes"
 
