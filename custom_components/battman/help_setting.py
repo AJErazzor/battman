@@ -29,11 +29,14 @@ def _message(show: bool, outcome: str, url_path: str) -> str | None:
     if show and outcome == dashboard.NO_DASHBOARD:
         return (f"Show help is on, but there's no Battman dashboard at /{url_path} to add the Help view to. "
                 "Press Create dashboard on the Battman device: a new Battman dashboard includes it.")
+    if outcome == dashboard.NOT_EDITABLE and show:
+        return (f"Show help is on, but Battman can't change what's at /{url_path} (a dashboard written in YAML, one "
+                "with no saved views yet, or something that isn't a dashboard), so nothing changed. To add the Help "
+                "view yourself, add a view with the card type: custom:battman-guide.")
     if outcome == dashboard.NOT_EDITABLE:
-        return (f"Show help is {'on' if show else 'off'}, but Battman can't change what's at /{url_path} (a dashboard "
-                "written in YAML, one with no saved views yet, or something that isn't a dashboard), so nothing "
-                + ("changed. To add the Help view yourself, add a view with the card type: custom:battman-guide."
-                   if show else "changed. Remove the Help view yourself if you don't want it."))
+        # only a YAML dashboard comes back this way when turning it off (the others can't hold a Help view)
+        return (f"Show help is off, but the dashboard at /{url_path} is written in YAML, so Battman can't change it. "
+                "Remove the Help view yourself if you don't want it.")
     return None
 
 
