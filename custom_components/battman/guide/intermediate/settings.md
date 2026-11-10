@@ -7,7 +7,7 @@ Each change is saved as you make it. The card refuses a value Battman won't acce
 - **What you see next to a control:** "Saving…", then "✓ Saved", or "Not saved:" and the reason. If the setting hasn't changed after 5 seconds it says so ("Not saved: … didn't change."). Someone who isn't an administrator gets "Not saved: Unauthorized". The **Live Activity** switch and **Run engine now** work for anyone.
 - **What it refuses:** "Enter a number", "Must be at least …", "Must be at most …". Settings that take whole numbers drop anything after the decimal point (2.7 becomes 2). "Not set yet" under a setting means Battman has no value for it yet.
 - **When a change takes effect:** while Battman is Active, a change to most settings runs the engine straight away. Buy rules, Sell rules, Sell price protection and Power provider are kept elsewhere, so they apply at the engine's next run, normally within a few minutes when Amber's price next updates.
-- **Run engine now**, at the top, runs the engine once, straight away, even while Active is off. It says "✓ Ran" once the engine has run, or "Didn't run: the engine's run sensor didn't change" after 15 seconds.
+- **Run engine now**, at the top, runs the engine once, straight away, even while Active is off. That can change the battery mode while Battman is meant to be off ([issue #128](https://github.com/AJErazzor/battman/issues/128)). It says "✓ Ran" once the engine has run, or "Didn't run: the engine's run sensor didn't change" after 15 seconds.
 - **Collapse all** and **Show all** fold or open every section; a section's title folds just that one. Drag a section by its dotted grip to move it. This device remembers the order and what's folded; to begin with every section is open except **Reset defaults**.
 
 SOC means the battery's state of charge, as a %. Prices are in c/kWh (cents per kWh) unless a setting says otherwise. Where this page says "points", it means points of SOC: 10 points below a 50% curve is 40%.
@@ -26,7 +26,7 @@ For example, with the buy curve at 50% this hour and the offsets at 1 and 10: ab
 **↻ Reset** puts both offsets back to the values under [Reset defaults](#defaults).
 
 > [!WARNING]
-> **Reset here also stops Buy Anytime.** The Buy section's **↻ Reset** sends a Buy Anytime price of 0 along with the two offsets. With its price at 0, a Buy Anytime override set on the Overrides card stops buying, although the Overrides card still shows it as on because its SOC is kept.
+> **Reset here also stops Buy Anytime.** The Buy section's **↻ Reset** sends a Buy Anytime price of 0 along with the two offsets. With its price at 0, a Buy Anytime override set on the Overrides card stops buying, although the Overrides card still shows it as on because its SOC is kept. See [issue #125](https://github.com/AJErazzor/battman/issues/125).
 
 ### Prorate price SOC offset
 
@@ -155,7 +155,7 @@ Good to know:
 "Hour the month's own curve goes back. Repeat checks stop then". 8pm to start with, or **Off**. With **Off**, a preset stays until a later check picks another or finds no rule, the month ends, or you switch the switcher off.
 
 > [!WARNING]
-> **Don't set Reset at to the same hour as Check at.** Then the two take turns: one day the check applies a preset, the next day at that hour the curve is put back and no check runs, and so on.
+> **Don't set Reset at to the same hour as Check at.** Then the two take turns: one day the check applies a preset, the next day at that hour the curve is put back and no check runs, and so on. See [issue #127](https://github.com/AJErazzor/battman/issues/127).
 
 ### Forecast used
 
@@ -264,7 +264,7 @@ The card's note: "Install details, income, expenses and pre-solar bills, for pay
 "Maintenance, repairs, parts: lifetime total", in $. 0 to start with. From 0 to 50,000.
 
 > [!WARNING]
-> **Nothing uses this yet.** Battman saves it, but the Solar System card leaves it out of its sums.
+> **Nothing uses this yet.** Battman saves it, but the Solar System card leaves it out of its sums. See [issue #124](https://github.com/AJErazzor/battman/issues/124).
 
 <a id="system-pre-solar-quarterly-bills"></a>
 ### Pre-solar quarterly bills
@@ -436,7 +436,7 @@ These settings are kept with Battman's buy total (`sensor.battman_buy_total`), n
 "Let last-chance discharge intervals ignore protection". Off to begin with.
 
 > [!WARNING]
-> **This setting does nothing.** The engine applies the protection floor again after every other step, so a sell rule's last chance never goes below it, whether this is on or off.
+> **This setting does nothing.** The engine applies the protection floor again after every other step, so a sell rule's last chance never goes below it, whether this is on or off. See [issue #123](https://github.com/AJErazzor/battman/issues/123).
 
 ### Reset hour
 
@@ -625,7 +625,7 @@ When the mode buttons on the Battery mode card ask before acting. The question n
 "Blank or 0: never", in c/kWh. 0 to start with. From 0 to 99. Above this buy price, **Buy** asks "Buy is …c, above your …c limit. Buy anyway?".
 
 > [!WARNING]
-> **Blank isn't accepted.** Clearing the box gets "Enter a number". To never ask, enter 0.
+> **Blank isn't accepted.** Clearing the box gets "Enter a number". To never ask, enter 0. See [issue #126](https://github.com/AJErazzor/battman/issues/126).
 
 <a id="defaults"></a>
 ## Reset defaults
