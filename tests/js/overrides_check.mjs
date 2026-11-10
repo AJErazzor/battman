@@ -48,7 +48,7 @@ function world(attrs = {}, extra = {}) {
   Object.assign(st, clone(extra));
   const sent = [], calls = [];
   const hass = { states: st, connection: { sendMessage: (m) => sent.push(m) }, callService: (d, s, x) => calls.push([d, s, x]),
-    callApi: async () => ({ entities: { parameters: PE, override_timer: TM, sell_total: "sensor.battman_sell_total", buy_total: "sensor.battman_buy_total", apply_scene_script: "script.battman_apply_scene" } }) };
+    callApi: async () => ({ entities: { parameters: PE, override_timer: TM, sell_total: "sensor.battman_sell_total", buy_total: "sensor.battman_buy_total", apply_scene_script: "script.battman_apply_scene", sigen_available_max_active_power: "sensor.sigen_plant_available_max_active_power" } }) };
   cur.hass = hass;
   return { st, hass, sent, calls, ev: () => sent.map((m) => m.event_data) };
 }

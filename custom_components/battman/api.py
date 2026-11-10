@@ -13,7 +13,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.http import KEY_HASS
 
-from . import cards, guide, images, themes
+from . import cards, guide, images, sigen_entities, themes
 from .const import (
     CARDS_URL,
     ENTITY_MAP_DEFAULTS,
@@ -29,8 +29,9 @@ PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
 
 
 def entity_map(hass: HomeAssistant) -> dict[str, str]:
-    """The entity map: Battman's engine entries, pointing at Battman's own entities."""
-    return dict(ENTITY_MAP_DEFAULTS)
+    """The entity map: Battman's engine entries (Battman's own entities), plus the few Sigen entities
+    whose ID depends on the Sigenergy-Local-Modbus version."""
+    return {**ENTITY_MAP_DEFAULTS, **sigen_entities.resolve(hass)}
 
 
 def _load_views() -> list[tuple[str, Any]]:

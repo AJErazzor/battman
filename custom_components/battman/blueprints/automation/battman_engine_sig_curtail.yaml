@@ -1,4 +1,4 @@
-# Battman engine.
+# Battman engine. [[map:...]] markers are filled from Battman's entity map.
 # Managed by Battman: written into your config and replaced on every Battman update.
 # Don't edit this copy.
 
@@ -25,7 +25,7 @@ actions:
     data:
       value: 0
     target:
-      entity_id: number.sigen_plant_grid_export_limitation
+      entity_id: [[map:sigen_grid_export_limit]]
     alias: Set export limit to 0
     enabled: true
   - action: persistent_notification.create
@@ -40,7 +40,7 @@ actions:
     data:
       value: '{{ max_export_kw }}'
     target:
-      entity_id: number.sigen_plant_grid_export_limitation
+      entity_id: [[map:sigen_grid_export_limit]]
     alias: Set export limit to max export limit
     enabled: true
   - action: persistent_notification.create

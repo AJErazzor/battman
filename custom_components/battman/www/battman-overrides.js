@@ -896,12 +896,13 @@ class BattmanOverrides extends BattmanCardBase {
       + `${rowHtml(OVERRIDES[0], a, {}, E)}${rowHtml(OVERRIDES[3], a, {}, E)}</div>`;
   }
 
-  // The entities Battman's map names (the parameters sensor, the override timer, the totals, the scene script), then the card starts.
+  // The entities Battman's map names (the parameters sensor, the override timer, the totals, the scene script, Sigen's available power), then the card starts.
   run(root) {
     let inner = null;
-    battmanMap(this.hass, ["parameters", "override_timer", "sell_total", "buy_total", "apply_scene_script"])
+    battmanMap(this.hass, ["parameters", "override_timer", "sell_total", "buy_total", "apply_scene_script", "sigen_available_max_active_power"])
       .then((m) => {
-        Object.assign(E, { params: m.parameters, timer: m.override_timer, sellTotal: m.sell_total, buyTotal: m.buy_total, scene: m.apply_scene_script });
+        Object.assign(E, { params: m.parameters, timer: m.override_timer, sellTotal: m.sell_total, buyTotal: m.buy_total, scene: m.apply_scene_script,
+          chargeKw: m.sigen_available_max_active_power });
         inner = this.start(root);
       })
       .catch((e) => this.problem(e.message));
