@@ -1,6 +1,6 @@
 # Battman dashboard view: Help (Battman's built-in guide)
 # Edit like any dashboard YAML. Files in this folder become views, in filename order.
-# Create help view (on the Battman device) adds this view to a Battman dashboard that hasn't got one.
+# Settings → Dashboard options → Show help adds this view to the Battman dashboard, or takes it off.
 type: panel
 path: help
 title: Help

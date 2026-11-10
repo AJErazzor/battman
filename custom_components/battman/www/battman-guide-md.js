@@ -192,3 +192,71 @@ export function renderPage(markdown, page) {
   const h1 = headings.find((h) => h.depth === 1);
   return { html, title: h1 ? h1.text : "", headings, ids: [...ids], links, directives };
 }
+
+// ── a page's outline: its headings and summary blocks (for the "?" help panels on Battman's cards) ──
+//
+// A summary block sits straight under a heading:
+//   <a id="buy"></a>
+//   ## Buy
+//   <!-- guide:summary id="settings.buy" -->
+//   Two or three sentences that stand on their own.
+//   <!-- /guide:summary -->
+// A card's "?" names the summary's id; the panel shows the summary, the headings one level down as
+// chips (each opens its own part of the page), the whole section on Expand, and a link to the Help view.
+
+const inlinePlain = (s) => String(s).replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "").trim();
+
+// [{depth, title, anchor, start, end}]: start = the heading's line, end = the line where its section ends
+// (the next heading at the same depth or higher, or the end of the page). Anchors are what the Help view
+// uses: the <a id> straight above the heading, else GitHub's id for the heading text.
+export function outline(markdown) {
+  const lines = String(markdown).split("\n");
+  const heads = [];
+  const counts = new Map();
+  let fence = false;
+  let anchor = null;
+  lines.forEach((line, i) => {
+    if (/^\s*(```|~~~)/.test(line)) { fence = !fence; anchor = null; return; }
+    if (fence) return;
+    const a = /^<a id="([a-z0-9][a-z0-9-]*)"><\/a>\s*$/.exec(line);
+    if (a) { anchor = a[1]; return; }
+    const h = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
+    if (h) {
+      const title = inlinePlain(h[2]);
+      const base = slugify(title);
+      const n = counts.get(base) || 0;
+      counts.set(base, n + 1);
+      heads.push({ depth: h[1].length, title, anchor: anchor || (n ? `${base}-${n}` : base), start: i });
+      anchor = null;
+      return;
+    }
+    if (line.trim()) anchor = null;
+  });
+  heads.forEach((h, k) => {
+    const next = heads.slice(k + 1).find((x) => x.depth <= h.depth);
+    h.end = next ? next.start : lines.length;
+  });
+  return heads;
+}
+
+// The page's summaries: {id: {id, markdown, head, children: [heads one level down], section: markdown}}.
+export function summaries(markdown) {
+  const text = String(markdown);
+  const lines = text.split("\n");
+  const heads = outline(text);
+  const out = {};
+  const re = /<!--\s*guide:summary id="([a-z0-9][a-zA-Z0-9.-]*)"\s*-->\n?([\s\S]*?)<!--\s*\/guide:summary\s*-->/g;
+  for (const m of text.matchAll(re)) {
+    const line = text.slice(0, m.index).split("\n").length - 1;
+    const head = [...heads].reverse().find((h) => h.start < line);
+    if (!head) continue;
+    const children = heads.filter((h) => h.start > head.start && h.start < head.end && h.depth === head.depth + 1);
+    out[m[1]] = { id: m[1], markdown: m[2].trim(), head, children, section: sectionOf(lines, head) };
+  }
+  return out;
+}
+
+// The markdown under a heading, down to the end of its section (the heading itself left out).
+export function sectionOf(lines, head) {
+  return lines.slice(head.start + 1, head.end).join("\n").replace(/<!--\s*\/?guide:summary[^>]*-->\n?/g, "").trim();
+}

@@ -1,11 +1,10 @@
 # The Battman device page
 
-Battman has a device page in Home Assistant with three buttons. To open it, go to **Settings → Devices & services → Battman** and select **Battman** in the list (Home Assistant lists it under **Services**, as Battman isn't a physical device). The buttons are under **Controls**.
+Battman has a device page in Home Assistant with two buttons. To open it, go to **Settings → Devices & services → Battman** and select **Battman** in the list (Home Assistant lists it under **Services**, as Battman isn't a physical device). The buttons are under **Controls**.
 
 | Button | What it does | What it never does |
 |---|---|---|
 | [Create dashboard](#create-dashboard) | Makes the Battman dashboard at `/battman`, if there's nothing there | Change or replace a dashboard that's already there |
-| [Create help view](#create-help-view) | Adds the Help view to your Battman dashboard, if it hasn't got one | Change anything else on the dashboard |
 | [Create automations](#create-automations) | Adds any of Battman's automations and scripts that are missing | Change ones that already exist |
 
 Each button tells you what it did in a notification (the bell in the sidebar). Each one is also an action, so you can use it in a script or automation.
@@ -14,7 +13,7 @@ Each button tells you what it did in a notification (the bell in the sidebar). E
 
 ## Create dashboard
 
-**Create dashboard** makes the Battman dashboard at `/battman`, with Battman's views: Power, Curvy, Pricy, Finances, Settings, Log, Theme and Help. It shows up in the sidebar as **Battman**.
+**Create dashboard** makes the Battman dashboard at `/battman`, with Battman's views: Power, Curvy, Pricy, Finances, Settings, Log, Theme and Help. It shows up in the sidebar as **Battman**. The Help view is left out while **Show help** is off ([Showing or hiding the guide](../README.md#showing-or-hiding-the-guide)).
 
 - **It only creates.** If something is already at `/battman`, nothing changes and the notification says: "There's already a dashboard at /battman, so nothing was created. For a fresh Battman dashboard, delete that one first."
 - **When it works**, the notification says: "Created the Battman dashboard at /battman. It's yours: edit it like any dashboard."
@@ -45,48 +44,6 @@ action: battman.create_dashboard
 ```
 
 Add `response_variable: result` and the action returns what happened (`created`, `url_path` and `message`) instead of posting a notification.
-
-## Create help view
-
-**Create help view** adds the Help view, the guide you're reading, as the last tab of the Battman dashboard at `/battman`.
-
-- **It only adds.** It adds the one view and leaves every other view, and the dashboard's own settings, as they are.
-- **It only adds a missing view.** If the dashboard already has a view at `/battman/help`, nothing changes.
-
-Use it if your Battman dashboard has no **Help** tab. A dashboard made by **Create dashboard** has one already.
-
-What the notification says:
-
-| What it found | Message |
-|---|---|
-| No Help view yet | "Added the Help view to your Battman dashboard at /battman. It's the last tab; nothing else on the dashboard changed." |
-| A Help view already | "Your Battman dashboard already has a Help view (/battman/help), so nothing changed." |
-| No dashboard at `/battman` | "There's no Battman dashboard at /battman, so nothing changed. Press Create dashboard on the Battman device: a new Battman dashboard includes the Help view." |
-| Something Battman can't change at `/battman` | "Battman can't change what's at /battman (a dashboard written in YAML, one with no saved views yet, or something that isn't a dashboard), so nothing changed. To add the Help view yourself, add a view with the card type: custom:battman-guide." |
-| Saving the dashboard failed | "Could not add the Help view:" followed by the reason. Nothing was added. |
-
-The Help view is an ordinary view, so you can move it, rename it or delete it like any other. To get it back after deleting it, press **Create help view** again.
-
-### Adding the guide yourself
-
-The guide is one card, **Battman Help** (`custom:battman-guide`). It reads best on a view of its own in panel layout:
-
-```yaml
-type: panel
-path: help
-title: Help
-icon: mdi:help-circle-outline
-cards:
-  - type: custom:battman-guide
-```
-
-### As an action
-
-```yaml
-action: battman.create_help_view
-```
-
-With `response_variable`, it returns `added`, `outcome` (`added`, `exists`, `no_dashboard`, `not_editable` or `error`), `url_path` and `message`.
 
 ## Create automations
 

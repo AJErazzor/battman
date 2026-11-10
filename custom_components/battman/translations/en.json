@@ -15,9 +15,6 @@
       "create_dashboard": {
         "name": "Create dashboard"
       },
-      "create_help_view": {
-        "name": "Create help view"
-      },
       "create_automations": {
         "name": "Create automations"
       }
@@ -71,10 +68,6 @@
     "create_dashboard": {
       "name": "Create dashboard",
       "description": "Creates the Battman dashboard at /battman, with all of Battman's views, as a normal dashboard you can edit. Does nothing if something is already at /battman: delete it first for a fresh copy."
-    },
-    "create_help_view": {
-      "name": "Create help view",
-      "description": "Adds the Help view (Battman's built-in guide) as the last tab of the Battman dashboard at /battman, if it hasn't got one. Never changes or removes anything else on the dashboard."
     },
     "create_automations": {
       "name": "Create automations",

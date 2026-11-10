@@ -75,9 +75,9 @@ everything into cards so less and less of it is fixed.
   nothing is created and the message says so.
 - **Theme:** pick one under **Settings → Dashboard options**, or use **Make Active** in
   the Theme view (they do the same thing).
-- **No Help tab?** Dashboards made before the guide existed don't have one. Press
-  **Create help view** on the Battman device (or run `battman.create_help_view`): it adds the
-  Help view as the last tab and changes nothing else.
+- **No Help tab?** Turn on **Settings → Dashboard options → Show help** on the dashboard (if it's
+  already on, turn it off and on again): it adds the Help view as the last tab and changes nothing else.
+  Turning it off takes the Help view off.
 
 ## The guide
 

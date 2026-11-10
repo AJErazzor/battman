@@ -7,8 +7,8 @@
 - The pages describe Battman as it is: none of the old words below appear.
 - Only the Help card's small stub loads on every page; the guide itself loads when the card is shown.
 - /api/battman/guide serves the contents and the pages, and nothing else.
-- Create help view adds the Help view to the Battman dashboard only when it's missing, and changes
-  nothing else; the default dashboard has it as its last view.
+- Settings → Dashboard options → Show help adds the Help view to the Battman dashboard or takes it
+  off, and changes nothing else; the default dashboard has it as its last view (unless it's off).
 """
 
 import hashlib
@@ -98,7 +98,7 @@ def test_pages_render_and_every_link_lands() -> None:
         assert [h["depth"] for h in page["headings"]].count(1) == 1, pid
         assert "<script" not in page["html"].lower() and "javascript:" not in page["html"].lower(), pid
         assert 'class="deadlink"' not in page["html"], (pid, [l for l in page["links"] if l["kind"] == "none"])
-        assert {d["name"] for d in page["directives"]} <= {"repairs"}, pid
+        assert {d["name"] for d in page["directives"]} <= {"repairs", "summary"}, pid
         for link in page["links"]:
             assert link["kind"] in ("page", "ha", "external"), (pid, link)
             if link["kind"] == "page":
@@ -157,17 +157,14 @@ def test_repairs_page_covers_every_repair_by_its_title() -> None:
 
 
 def test_device_page_quotes_the_messages() -> None:
-    from custom_components.battman import dashboard, services
-
     page = (GUIDE / "start/device-page.md").read_text(encoding="utf-8")
-    for outcome in (dashboard.ADDED, dashboard.EXISTS, dashboard.NO_DASHBOARD, dashboard.NOT_EDITABLE):
-        assert f'"{services._help_message(outcome, "battman")}"' in page, outcome
     src = (ROOT / "services.py").read_text(encoding="utf-8")
     for quoted in ("It's yours: edit it like any dashboard.", "For a fresh Battman dashboard, delete that one first.",
                    "All Battman automations and scripts already exist; nothing changed."):
         assert quoted in src and quoted in page, quoted
     en = json.loads((ROOT / "translations/en.json").read_text(encoding="utf-8"))
-    for key in ("create_dashboard", "create_help_view", "create_automations"):
+    assert set(en["entity"]["button"]) == {"create_dashboard", "create_automations"}
+    for key in ("create_dashboard", "create_automations"):
         assert f"**{en['entity']['button'][key]['name']}**" in page, key
     from custom_components.battman import engine, notifications
 
@@ -232,7 +229,7 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert out["before"] == ["battman-guide.js"]                           # only the stub, until the card is shown
     assert {"battman-guide-view.js", "battman-guide-md.js", "vendor/marked.esm.js"} <= set(out["after"])
     assert out["home"]["h1"].startswith("Battman help") and out["home"]["current"] == "Battman help"
-    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Battman's Repairs"]
+    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Settings", "Battman's Repairs"]
     assert out["home"]["scripts"] == 0
     assert "Active: On" in out["status"] and "Mode: Self Consume" in out["status"] and "3 min ago" in out["status"]
     assert "Curtail: Off" in out["status"] and "Repairs: 1 open" in out["status"]     # ignored and other domains left out
@@ -251,7 +248,7 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert phone["btn"] != "none"
 
 
-# ── Home Assistant: the API, the Help view and Create help view ─────────────────────────────
+# ── Home Assistant: the API and the Help view ─────────────────────────────────────────────
 
 
 async def _setup(hass):
@@ -265,10 +262,6 @@ async def _setup(hass):
 
 async def _cfg(hass):
     return await hass.data[LOVELACE_DATA].dashboards["battman"].async_load(False)
-
-
-async def _help(hass):
-    return await hass.services.async_call("battman", "create_help_view", {}, blocking=True, return_response=True)
 
 
 async def test_guide_api(hass: HomeAssistant, hass_client, hass_client_no_auth) -> None:
@@ -296,130 +289,172 @@ async def test_help_view_is_the_dashboards_last_view(hass: HomeAssistant) -> Non
     views = (await _cfg(hass))["views"]
     assert views[-1] == yaml.safe_load((ROOT / "views/40-help.yaml").read_text())
     assert views[-1]["cards"] == [{"type": "custom:battman-guide"}] and views[-1]["type"] == "panel"
-    r = await _help(hass)                                    # a new dashboard has it: nothing to add
-    assert r["outcome"] == "exists" and r["added"] is False
 
 
-async def test_create_help_view_adds_only_the_help_view(hass: HomeAssistant) -> None:
-    await _setup(hass)
-    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
-    # a dashboard made before the Help view, that you've since changed
-    cfg = await _cfg(hass)
-    mine = {**cfg, "title": "My battery", "views": [{**v, "title": v["title"] + "!"} for v in cfg["views"] if v["path"] != "help"]}
-    mine["views"].append({"title": "Mine", "path": "mine", "cards": [{"type": "markdown", "content": "hello"}]})
-    await dash.async_save(mine)
-
-    r = await _help(hass)
-    assert r == {"added": True, "outcome": "added", "url_path": "battman",
-                 "message": "Added the Help view to your Battman dashboard at /battman. It's the last tab; "
-                            "nothing else on the dashboard changed."}
-    after = await _cfg(hass)
-    assert after["views"][:-1] == mine["views"] and after["title"] == "My battery"      # everything else as it was
-    assert after["views"][-1]["path"] == "help" and after["views"][-1]["cards"] == [{"type": "custom:battman-guide"}]
-
-    r = await _help(hass)                                    # again: already there, nothing changes
-    assert r["outcome"] == "exists" and r["message"].startswith("Your Battman dashboard already has a Help view (/battman/help)")
-    assert await _cfg(hass) == after
-
-    # moved and renamed by you: still found by its path, so not added twice
-    moved = {**after, "views": [{**after["views"][-1], "title": "Guide"}, *after["views"][:-1]]}
-    await dash.async_save(moved)
-    assert (await _help(hass))["outcome"] == "exists" and await _cfg(hass) == moved
+# ── Show help (Settings → Dashboard options): the Help view follows it ─────────────────────
 
 
-async def test_create_help_view_never_makes_or_rewrites_a_dashboard(hass: HomeAssistant) -> None:
-    from custom_components.battman import dashboard
-
-    await _setup(hass)
-    item_id = hass.data[LOVELACE_DATA].dashboards["battman"].config["id"]
-    await dashboard._collection(hass).async_delete_item(item_id)
+async def _show(hass, on: bool) -> None:
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "showHelp": on})
     await hass.async_block_till_done()
-    r = await _help(hass)
-    assert r["outcome"] == "no_dashboard" and "Press Create dashboard" in r["message"]
-    assert "battman" not in hass.data[LOVELACE_DATA].dashboards
-
-    # a dashboard with no saved views (HA draws it for you), or one drawn by a strategy: left alone
-    await dashboard._collection(hass).async_create_item(
-        {"allow_single_word": True, "title": "Battman", "url_path": "battman", "require_admin": False, "show_in_sidebar": True})
     await hass.async_block_till_done()
-    assert (await _help(hass))["outcome"] == "not_editable"
-    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
-    strategy = {"strategy": {"type": "original-states"}}
-    await dash.async_save(strategy)
-    r = await _help(hass)
-    assert r["outcome"] == "not_editable" and "type: custom:battman-guide" in r["message"]
-    assert await _cfg(hass) == strategy
 
 
-async def test_create_help_view_button(hass: HomeAssistant) -> None:
-    await _setup(hass)
-    state = hass.states.get("button.battman_create_help_view")
-    assert state is not None and state.attributes["friendly_name"] == "Battman Create help view"
-    await hass.services.async_call("button", "press", {"entity_id": state.entity_id}, blocking=True)
-    await hass.async_block_till_done()
+def _note(hass):
     from homeassistant.components import persistent_notification
 
-    note = persistent_notification._async_get_or_create_notifications(hass)["battman_help_view"]
-    assert note["title"] == "Battman help view" and "already has a Help view" in note["message"]
+    return persistent_notification._async_get_or_create_notifications(hass).get("battman_help_view")
 
 
-async def test_create_help_view_says_when_saving_fails(hass: HomeAssistant, monkeypatch) -> None:
-    await _setup(hass)
+async def test_show_help_takes_the_help_view_off_and_puts_it_back(hass: HomeAssistant) -> None:
+    from . import engine_harness as H
+
+    await H.start(hass)
+    assert hass.states.get("sensor.battman_parameters").attributes["showHelp"] is True       # on by default
     dash = hass.data[LOVELACE_DATA].dashboards["battman"]
     cfg = await _cfg(hass)
-    without = {**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"]}
-    await dash.async_save(without)
+    # a dashboard you've changed: your own view, titles, the Help view moved to the front and renamed
+    help_view = next(v for v in cfg["views"] if v["path"] == "help")
+    mine = {**cfg, "title": "My battery",
+            "views": [{**help_view, "title": "Guide"}, *[{**v, "title": v["title"] + "!"} for v in cfg["views"] if v["path"] != "help"],
+                      {"title": "Mine", "path": "mine", "cards": [{"type": "markdown", "content": "hello"}]}]}
+    await dash.async_save(mine)
+
+    await _show(hass, False)                                  # off: the Help view goes, nothing else changes
+    off = await _cfg(hass)
+    assert off == {**mine, "views": mine["views"][1:]}
+    assert _note(hass) is None
+
+    await _show(hass, True)                                   # on: back as the last tab, nothing else changes
+    on = await _cfg(hass)
+    assert on["views"][:-1] == off["views"] and on["title"] == "My battery"
+    assert on["views"][-1] == yaml.safe_load((ROOT / "views/40-help.yaml").read_text())
+
+    # another setting changing, or the same value again, leaves the dashboard alone
+    await dash.async_save(off)
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "billInflation": 3})
+    await _show(hass, True)
+    assert await _cfg(hass) == off                            # you deleted it by hand: it stays deleted
+
+    # while it's off, a new dashboard is made without it
+    await _show(hass, False)
+    from custom_components.battman import dashboard
+
+    await dashboard._collection(hass).async_delete_item(dash.config["id"])
+    await hass.async_block_till_done()
+    created, _ = await dashboard.async_create(hass)
+    assert created and "help" not in [v["path"] for v in (await _cfg(hass))["views"]]
+    await _show(hass, True)
+    assert [v["path"] for v in (await _cfg(hass))["views"]][-1] == "help"
+
+
+async def test_show_help_says_when_it_cant(hass: HomeAssistant, monkeypatch) -> None:
+    from homeassistant.components import frontend
+
+    from custom_components.battman import dashboard, help_setting
+
+    from . import engine_harness as H
+
+    await H.start(hass)
+    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
+    readme = (GUIDE / "README.md").read_text(encoding="utf-8")
+
+    # saving fails: says so, nothing changes
+    before = await _cfg(hass)
 
     async def broken(_config):
         raise OSError("disk full")
 
     monkeypatch.setattr(dash, "async_save", broken)
-    r = await _help(hass)
-    assert r["outcome"] == "error" and r["added"] is False
-    assert r["message"] == "Could not add the Help view: Saving the dashboard failed: disk full"
-    assert await _cfg(hass) == without
+    await _show(hass, False)
+    assert _note(hass)["message"] == "Could not remove the Help view: Saving the dashboard failed: disk full"
+    assert await _cfg(hass) == before
+    monkeypatch.undo()
 
-
-async def test_two_presses_at_once_add_one_help_view(hass: HomeAssistant) -> None:
-    import asyncio
-
-    await _setup(hass)
-    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
-    cfg = await _cfg(hass)
-    await dash.async_save({**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"]})
-    a, b = await asyncio.gather(_help(hass), _help(hass))
-    assert sorted([a["outcome"], b["outcome"]]) == ["added", "exists"]
-    assert [v["path"] for v in (await _cfg(hass))["views"]].count("help") == 1
-
-
-async def test_create_help_view_leaves_yaml_dashboards_and_panels_alone(hass: HomeAssistant) -> None:
-    from homeassistant.components import frontend
-    from custom_components.battman import dashboard
-
-    await _setup(hass)
-    item_id = hass.data[LOVELACE_DATA].dashboards["battman"].config["id"]
-    await dashboard._collection(hass).async_delete_item(item_id)
+    # no dashboard to add it to
+    await dashboard._collection(hass).async_delete_item(dash.config["id"])
     await hass.async_block_till_done()
+    await _show(hass, True)
+    msg = _note(hass)["message"]
+    assert msg == help_setting._message(True, dashboard.NO_DASHBOARD, "battman") and f'"{msg}"' in readme
+    assert "battman" not in hass.data[LOVELACE_DATA].dashboards               # never makes one
+    await _show(hass, False)                                                   # nothing to take off: nothing said
+    assert _note(hass) is None
 
-    class YamlDashboard:                           # what HA keeps for a dashboard written in YAML
+    # a YAML dashboard, a dashboard with no saved views, something that isn't a dashboard: left alone
+    class YamlDashboard:
         mode = "yaml"
 
         async def async_load(self, force):
-            return {"views": [{"path": "home", "cards": []}]}
+            return {"views": [{"path": "help", "cards": [{"type": "custom:battman-guide"}]}]}
 
         async def async_save(self, config):
             raise AssertionError("a YAML dashboard must not be written")
 
     hass.data[LOVELACE_DATA].dashboards["battman"] = YamlDashboard()
-    r = await _help(hass)
-    assert r["outcome"] == "not_editable" and "written in YAML" in r["message"]
+    for on in (True, False):
+        await _show(hass, on)
+        msg = _note(hass)["message"]
+        assert msg == help_setting._message(on, dashboard.NOT_EDITABLE, "battman") and f'"{msg}"' in readme
     del hass.data[LOVELACE_DATA].dashboards["battman"]
-
-    # something at /battman that isn't a dashboard: not "press Create dashboard" (that wouldn't help either)
+    await dashboard._collection(hass).async_create_item(
+        {"allow_single_word": True, "title": "Battman", "url_path": "battman", "require_admin": False, "show_in_sidebar": True})
+    await hass.async_block_till_done()
+    await _show(hass, True)
+    assert "written in YAML, one with no saved views yet" in _note(hass)["message"]
+    strategy = {"strategy": {"type": "original-states"}}
+    await hass.data[LOVELACE_DATA].dashboards["battman"].async_save(strategy)
+    await _show(hass, False)
+    assert _note(hass) is None                       # nothing there to take off: nothing to say
+    await _show(hass, True)
+    assert await _cfg(hass) == strategy
+    await dashboard._collection(hass).async_delete_item(hass.data[LOVELACE_DATA].dashboards["battman"].config["id"])
+    await hass.async_block_till_done()
     frontend.async_register_built_in_panel(hass, "iframe", "Other", "mdi:web", frontend_url_path="battman",
                                            config={"url": "https://example.org"})
-    r = await _help(hass)
-    assert r["outcome"] == "not_editable" and "something that isn't a dashboard" in r["message"]
+    await _show(hass, False)
+    await _show(hass, True)
+    assert "something that isn't a dashboard" in _note(hass)["message"]
+
+
+async def test_only_the_guides_help_view_is_taken_off(hass: HomeAssistant) -> None:
+    """A view of yours at /battman/help without the guide card is yours: turning Show help off leaves it."""
+    import asyncio
+
+    from custom_components.battman import dashboard
+
+    await _setup(hass)
+    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
+    cfg = await _cfg(hass)
+    yours = {"path": "help", "title": "Our house rules", "cards": [{"type": "markdown", "content": "Be nice"}]}
+    await dash.async_save({**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"] + [yours]})
+    assert (await dashboard.async_remove_help_view(hass))[0] == "absent"
+    assert (await dashboard.async_add_help_view(hass))[0] == "exists"          # and nothing added beside it
+    # the guide card in a sections view at /battman/help: that one is Battman's
+    sections = {"path": "help", "type": "sections", "sections": [{"cards": [{"type": "custom:battman-guide"}]}]}
+    await dash.async_save({**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"] + [sections]})
+    assert (await dashboard.async_remove_help_view(hass))[0] == "removed"
+    # two changes at once don't add it twice
+    a, b = await asyncio.gather(dashboard.async_add_help_view(hass), dashboard.async_add_help_view(hass))
+    assert sorted([a[0], b[0]]) == ["added", "exists"]
+    assert [v["path"] for v in (await _cfg(hass))["views"]].count("help") == 1
+
+
+async def test_create_help_view_button_is_gone(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import entity_registry as er
+
+    reg = er.async_get(hass)
+    entry = MockConfigEntry(domain="battman", title="Battman", data={})
+    entry.add_to_hass(hass)
+    # left in the registry by v0.49.0
+    reg.async_get_or_create("button", "battman", f"{entry.entry_id}_create_help_view", config_entry=entry,
+                            suggested_object_id="battman_create_help_view")
+    assert await async_setup_component(hass, "lovelace", {})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert reg.async_get_entity_id("button", "battman", f"{entry.entry_id}_create_help_view") is None
+    assert hass.states.get("button.battman_create_help_view") is None
+    assert not hass.services.has_service("battman", "create_help_view")
 
 
 def test_every_repair_id_is_its_translation_key() -> None:
@@ -445,7 +480,7 @@ async def test_device_buttons_and_actions_are_for_admins(hass: HomeAssistant, ha
     await _setup(hass)
     user = await hass.auth.async_create_user("Someone", group_ids=["system-users"])   # an ordinary, non-admin user
     assert not user.is_admin
-    for service in ("create_dashboard", "create_help_view", "create_automations"):
+    for service in ("create_dashboard", "create_automations"):
         with pytest.raises(Unauthorized):
             await hass.services.async_call("battman", service, {}, blocking=True, return_response=True,
                                            context=Context(user_id=user.id))
@@ -454,7 +489,7 @@ async def test_device_buttons_and_actions_are_for_admins(hass: HomeAssistant, ha
         assert r["message"], service
         r = await hass.services.async_call("battman", service, {}, blocking=True, return_response=True)
         assert r["message"], service
-    for button in ("button.battman_create_dashboard", "button.battman_create_help_view", "button.battman_create_automations"):
+    for button in ("button.battman_create_dashboard", "button.battman_create_automations"):
         with pytest.raises(HomeAssistantError) as err:
             await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True,
                                            context=Context(user_id=user.id))
@@ -464,3 +499,163 @@ async def test_device_buttons_and_actions_are_for_admins(hass: HomeAssistant, ha
     page = (GUIDE / "start/device-page.md").read_text(encoding="utf-8")
     en = json.loads((ROOT / "translations/en.json").read_text(encoding="utf-8"))
     assert f'"{en["exceptions"]["admin_only"]["message"]}"' in page
+
+
+
+# ── "?" help on cards: summaries in the guide, the panel, the Settings card ──────────────────
+
+
+@NEEDS_NODE
+def test_outline_and_summaries() -> None:
+    md = ("# Settings\n\nIntro\n\n<a id=\"buy\"></a>\n## Buy\n\n<!-- guide:summary id=\"settings.buy\" -->\nHow hard it **charges**.\n"
+          "<!-- /guide:summary -->\n\n### Prorate price SOC offset\n\nText\n\n```yaml\n# not a heading\n```\n\n### High price\n\n"
+          "More\n\n<a id=\"rules\"></a>\n## Buy rules\n\nNo summary here.\n")
+    script = f"""
+const {{ summaries, outline }} = await import({json.dumps(str(WWW / "battman-guide-md.js"))});
+process.stdout.write(JSON.stringify({{ s: summaries({json.dumps(md)}), o: outline({json.dumps(md)}) }}));
+"""
+    r = json.loads(subprocess.run(["node", "--input-type=module", "-"], input=script, capture_output=True, text=True,
+                                  check=True).stdout)
+    assert list(r["s"]) == ["settings.buy"]
+    buy = r["s"]["settings.buy"]
+    assert buy["markdown"] == "How hard it **charges**." and buy["head"]["title"] == "Buy" and buy["head"]["anchor"] == "buy"
+    assert [(c["title"], c["anchor"]) for c in buy["children"]] == [("Prorate price SOC offset", "prorate-price-soc-offset"),
+                                                                     ("High price", "high-price")]
+    assert "# not a heading" in buy["section"] and "guide:summary" not in buy["section"] and "Buy rules" not in buy["section"]
+    assert [h["title"] for h in r["o"]] == ["Settings", "Buy", "Prorate price SOC offset", "High price", "Buy rules"]
+
+
+SETTINGS_JS = (WWW / "battman-settings.js").read_text()
+
+
+def _settings_page() -> str:
+    return (GUIDE / "intermediate/settings.md").read_text(encoding="utf-8")
+
+
+def test_settings_page_has_a_summary_for_every_section_and_a_heading_for_every_setting() -> None:
+    page = _settings_page()
+    keys = re.findall(r"^\s+(\w+):\s+\{ title: '((?:[^'\\]|\\.)*)'", SETTINGS_JS, re.M)
+    assert len(keys) == 15
+    ids = re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)
+    assert len(ids) == len(set(ids))
+    for key, title in keys:
+        kebab = re.sub(r"([A-Z])", lambda m: "-" + m.group(1).lower(), key)
+        title = title.replace("&amp;", "&")
+        assert re.search(rf'<a id="{kebab}"></a>\n## {re.escape(title)}\n\n<!-- guide:summary id="settings.{key}" -->', page), key
+    # a sub-group summary belongs to a sub-group the card really shows
+    subdivs = {re.sub(r"[^a-z0-9 -]", "", t.replace("&amp;", "&").lower()).strip().replace(" ", "-")
+               for t in re.findall(r'<div class="subdiv">([^<]+)</div>', SETTINGS_JS)}
+    for sid in ids:
+        parts = sid.split(".")
+        assert parts[0] == "settings" and parts[1] in dict(keys), sid
+        if len(parts) == 3:
+            assert parts[2] in subdivs, sid
+    # every setting the card shows has a heading of its own (two with the same label say which, in brackets)
+    labels = set()
+    for pat in (r"\brow\('((?:[^'\\]|\\.)*)'", r"numParam\('\w+', '((?:[^'\\]|\\.)*)'", r"\bsw\('\w+', '((?:[^'\\]|\\.)*)'",
+                r"\bnum\('[^']*', '[^']*', '((?:[^'\\]|\\.)*)'"):
+        labels |= {x.replace("\\'", "'") for x in re.findall(pat, SETTINGS_JS)}
+    labels |= set(re.findall(r"side === 'buy' \? '([^']+)' : '([^']+)'", SETTINGS_JS)[0])           # Buy/Sell rules enabled
+    labels |= set(re.findall(r"\b(?:q|stateRow)\('\w+', '([^']+)'", SETTINGS_JS))                       # quarterly bills, Live Activity
+    assert {"Buy rules enabled", "Sell rules enabled", "Q1 · Jul – Sep", "Show when it becomes"} <= labels
+    headings = re.findall(r"^#{3,4} (.+)$", page, re.M)
+    missing = sorted(l for l in labels if not any(h == l or h.startswith(l + " (") for h in headings))
+    assert not missing, missing
+
+
+def test_settings_card_help_mode() -> None:
+    """The Help button follows Show help; the panel and the guide load only when help is turned on."""
+    assert 'data-helpmode aria-pressed="false" hidden' in SETTINGS_JS
+    assert "(attrs('parameters') || {}).showHelp !== false" in SETTINGS_JS
+    assert "import('./battman-help-panel.js')" in SETTINGS_JS
+    static = re.findall(r'^import .* from "([^"]+)";', SETTINGS_JS, re.M)
+    assert static == ["./battman-card-base.js"]                    # no guide, panel or Markdown reader up front
+    assert "HELP_PAGE = 'intermediate/settings'" in SETTINGS_JS
+    panel = (WWW / "battman-help-panel.js").read_text()
+    assert re.findall(r'^import .* from "([^"]+)";', panel, re.M) == ["./battman-guide-md.js"]
+
+
+async def test_show_help_appearing_or_coming_back_changes_nothing(hass: HomeAssistant, monkeypatch) -> None:
+    """The setting appearing for the first time (an update), the sensor coming back, or a template reload
+    leave the dashboard as it is; only turning it on or off changes it."""
+    from . import engine_harness as H
+
+    await H.start(hass)
+    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
+    cfg = await _cfg(hass)
+    without = {**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"]}
+    await dash.async_save(without)
+
+    # as on the first start after an update: the sensor without the setting, then a settings change adds it (on)
+    st = hass.states.get("sensor.battman_parameters")
+    hass.states.async_set(st.entity_id, st.state, {k: v for k, v in st.attributes.items() if k != "showHelp"})
+    await hass.async_block_till_done()
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "billInflation": 2})
+    await hass.async_block_till_done()
+    assert hass.states.get(st.entity_id).attributes["showHelp"] is True
+    for _ in range(2):                                  # unavailable and back, then a template reload
+        hass.states.async_set(st.entity_id, "unavailable", {})
+        await hass.async_block_till_done()
+        hass.states.async_set(st.entity_id, st.state, dict(st.attributes))
+        await hass.async_block_till_done()
+    await hass.services.async_call("template", "reload", blocking=True)
+    await hass.async_block_till_done()
+    assert await _cfg(hass) == without
+
+    # the switch already on with no Help tab (as after an update): off and on again adds it
+    await _show(hass, False)
+    await _show(hass, True)
+    assert (await _cfg(hass))["views"][-1]["path"] == "help"
+
+    # a change that works clears an earlier problem notification; one that can't add it says why
+    await _show(hass, False)
+
+    async def broken(_config):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(dash, "async_save", broken)
+    await _show(hass, True)
+    assert _note(hass)["message"] == "Could not add the Help view: Saving the dashboard failed: disk full"
+    monkeypatch.undo()
+    await _show(hass, False)
+    await _show(hass, True)
+    assert _note(hass) is None and (await _cfg(hass))["views"][-1]["path"] == "help"
+
+
+@pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
+                    reason="needs Chromium, Node and Playwright")
+def test_help_panel_in_a_browser(tmp_path) -> None:
+    page = _settings_page()
+    ids = re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)
+    section = next(i for i in ids if i.count(".") == 1 and f'id="{i}.' in page)     # a section that has sub-groups
+    group = next(i for i in ids if i.startswith(section + "."))
+    r = subprocess.run(["node", str(Path(__file__).parent / "js/help_panel_check.mjs"), str(ROOT)],
+                       capture_output=True, text=True, timeout=180,
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "OUT_DIR": str(tmp_path),
+                            "GUIDE_JSON": json.dumps({"pages": _pages()}), "HELP_PAGE": "intermediate/settings",
+                            "HELP_IDS": json.dumps([section, group])})
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out["errors"] == [], out["errors"]
+    for name in ("desktop", "phone"):
+        o = out[name]
+        assert o["hidden"] == ["none", "none"]                                    # tags show only in help mode
+        assert o["shown"] == ["inline-flex 6px", "inline-flex 5px"]               # rounded corners, not circles
+        s = o["summary"]
+        assert s["label"] == f"Help: {s['title']}" and s["focused"] and s["pressed"] == [section]
+        assert s["expand"] == "Expand" and s["chips"] and s["body"]
+        assert s["href"].startswith("/dash/help?page=intermediate/settings#")
+        assert o["child"]["title"] == s["chips"][0] and o["child"]["back"] == f"← {s['title']}" and o["child"]["chips"] == []
+        assert o["child"]["focus"] == f"← {s['title']}"                            # focus moves to Back, not the page
+        assert o["child"]["href"] != s["href"] and o["backTo"] == s["title"] and o["backFocus"] == s["chips"][0]
+        assert o["expanded"]["expand"] == "Less" and len(o["expanded"]["body"]) > len(s["body"]) and o["expanded"]["chips"] == []
+        assert o["expanded"]["focus"] == "Less" and o["less"]["focus"] == "Expand"
+        assert o["less"]["body"] == s["body"] and o["escAfterButtons"] is False
+        assert o["group"]["pressed"] == [group] and o["group"]["title"] != s["title"]
+        assert o["closed"] == {"panel": False, "focus": group, "pressed": 0}       # Escape: focus back on the tag
+        assert o["browse"]["at"] == s["href"] and o["browse"]["nav"] == [s["href"]] and not o["browse"]["panel"]
+        assert o["fetches"] == 1                                                  # the page is read once
+        assert not o["overflow"]
+    d, p = out["desktop"]["summary"], out["phone"]["summary"]
+    assert d["width"] == 400 and d["left"] == 800 and d["top"] == 56              # a side panel on the right, under HA's toolbar
+    assert p["left"] == 0 and p["width"] == 390 and p["top"] > 56 and p["bottom"] == 800   # a bottom sheet
