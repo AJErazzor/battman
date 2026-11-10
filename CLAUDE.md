@@ -44,5 +44,7 @@ pull request.
 
 ## Releases
 
-A pull request whose title starts with `major:`, `minor:` or `patch:` publishes a HACS release when it's
-merged into `main`, once the tests pass. Any other title releases nothing.
+A merge into `main` publishes a HACS release when a commit in it has a message starting with `major:`,
+`minor:` or `patch:`, once the tests pass. The release workflow reads commit messages, not the pull request
+title, so put the prefix on the commit message (for a squash merge, the commit title) as well as the PR title.
+Anything else releases nothing.
