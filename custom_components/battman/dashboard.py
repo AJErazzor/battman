@@ -7,6 +7,11 @@ Battman cards on it (custom:battman-<id>) keep updating with releases; the views
 layout doesn't. For a fresh copy: delete the dashboard and press Create dashboard again.
 If something is already at /battman, nothing is created and the message says so.
 
+Create help view (the button, or battman.create_help_view) adds the Help view (views/40-help.yaml,
+Battman's built-in guide) as the last tab of the dashboard at /battman, only if that dashboard has no
+view at /battman/help. It never changes or removes anything else on the dashboard, and it does nothing
+to a dashboard written in YAML or one with no saved views.
+
 HA has no public API for an integration to create a dashboard. This uses the same two
 steps HA uses for its own Map dashboard (create the dashboard item, then save its
 config), reaching HA's dashboards collection through the `lovelace/dashboards/list`
@@ -25,6 +30,13 @@ _LOGGER = logging.getLogger(__name__)
 BASE_URL_PATH = "battman"
 TITLE = "Battman"
 ICON = "mdi:battery-charging-medium"
+HELP_PATH = "help"
+
+# What Create help view found (async_add_help_view)
+ADDED = "added"                  # the Help view is now the dashboard's last tab
+EXISTS = "exists"                # the dashboard already has a view at /battman/help: nothing changed
+NO_DASHBOARD = "no_dashboard"    # nothing at /battman (or something that isn't a dashboard): nothing changed
+NOT_EDITABLE = "not_editable"    # a YAML dashboard, or one with no saved views: nothing changed
 
 
 class DashboardUnavailable(Exception):
@@ -91,3 +103,37 @@ async def async_create(hass: HomeAssistant) -> tuple[bool, str]:
         raise DashboardUnavailable(f"Creating the dashboard failed: {err}") from err
     _LOGGER.info("Created the Battman dashboard at /%s", url_path)
     return True, url_path
+
+
+async def async_add_help_view(hass: HomeAssistant) -> tuple[str, str]:
+    """Add the Help view to the dashboard at /battman if it hasn't one. Returns (outcome, url_path).
+
+    Only ever appends that one view; every other view, and the dashboard's own settings, stay as they are.
+    """
+    from homeassistant.components.lovelace.const import MODE_STORAGE, ConfigNotFound  # noqa: PLC0415
+
+    from .api import async_build_view  # noqa: PLC0415
+
+    url_path = BASE_URL_PATH
+    dash = _lovelace(hass).dashboards.get(url_path)
+    if dash is None:
+        return NO_DASHBOARD, url_path
+    if getattr(dash, "mode", None) != MODE_STORAGE:
+        return NOT_EDITABLE, url_path
+    try:
+        config = await dash.async_load(False)
+    except ConfigNotFound:
+        return NOT_EDITABLE, url_path
+    # a dashboard Home Assistant draws for you (no saved views, or one drawn by code) is left alone
+    views = config.get("views") if isinstance(config, dict) else None
+    if not isinstance(views, list):
+        return NOT_EDITABLE, url_path
+    if any(isinstance(v, dict) and v.get("path") == HELP_PATH for v in views):
+        return EXISTS, url_path
+    view = await async_build_view(hass, HELP_PATH)
+    try:
+        await dash.async_save({**config, "views": [*views, view]})
+    except Exception as err:  # noqa: BLE001
+        raise DashboardUnavailable(f"Saving the dashboard failed: {err}") from err
+    _LOGGER.info("Added the Help view to the Battman dashboard at /%s", url_path)
+    return ADDED, url_path

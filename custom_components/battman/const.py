@@ -69,3 +69,6 @@ CARDS_URL = "/api/battman/cards"
 # authenticated, like /local/, because an <img> can't send a login).
 IMAGES_URL = "/api/battman/images"
 IMAGE_URL = "/api/battman/image"
+
+# Battman's built-in guide (the Help view's card): its contents, and one page's Markdown.
+GUIDE_URL = "/api/battman/guide"

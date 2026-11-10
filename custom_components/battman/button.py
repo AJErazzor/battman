@@ -8,13 +8,19 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .entity import device_info
-from .services import async_create_automations_and_report, async_create_dashboard_and_report
+from .services import (
+    async_create_automations_and_report,
+    async_create_dashboard_and_report,
+    async_create_help_view_and_report,
+)
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities([BattmanCreateDashboardButton(entry), BattmanCreateAutomationsButton(entry)])
+    async_add_entities(
+        [BattmanCreateDashboardButton(entry), BattmanCreateHelpViewButton(entry), BattmanCreateAutomationsButton(entry)]
+    )
 
 
 class BattmanCreateDashboardButton(ButtonEntity):
@@ -30,6 +36,21 @@ class BattmanCreateDashboardButton(ButtonEntity):
 
     async def async_press(self) -> None:
         await async_create_dashboard_and_report(self.hass, notify=True)
+
+
+class BattmanCreateHelpViewButton(ButtonEntity):
+    """Add the Help view (Battman's guide) to the Battman dashboard if it hasn't one (changes nothing else)."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "create_help_view"
+    _attr_icon = "mdi:help-circle-outline"
+
+    def __init__(self, entry: ConfigEntry) -> None:
+        self._attr_unique_id = f"{entry.entry_id}_create_help_view"
+        self._attr_device_info = device_info(entry)
+
+    async def async_press(self) -> None:
+        await async_create_help_view_and_report(self.hass, notify=True)
 
 
 class BattmanCreateAutomationsButton(ButtonEntity):

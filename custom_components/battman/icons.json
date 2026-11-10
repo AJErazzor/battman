@@ -3,6 +3,9 @@
     "create_dashboard": {
       "service": "mdi:view-dashboard-edit"
     },
+    "create_help_view": {
+      "service": "mdi:help-circle-outline"
+    },
     "create_automations": {
       "service": "mdi:robot-outline"
     }

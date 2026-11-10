@@ -31,6 +31,8 @@ from .api import (
     BattmanCardsView,
     BattmanCardView,
     BattmanEntityMapView,
+    BattmanGuidePageView,
+    BattmanGuideView,
     BattmanImagesView,
     BattmanImageView,
     BattmanThemeSaveView,
@@ -94,6 +96,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(BattmanImagesView())
     hass.http.register_view(BattmanImageView())
     hass.http.register_view(engine_log.BattmanLogView())
+    hass.http.register_view(BattmanGuideView(str(integration.version)))
+    hass.http.register_view(BattmanGuidePageView())
     # Battman's cards that exist at start are passed along (?cards=) so they exist before any dashboard draws them.
     local = cards.local_dir(hass)
     card_list = await hass.async_add_executor_job(cards.list_cards, local)
@@ -102,7 +106,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # One script starts all of Battman's (www/battman.js lists them): the Amber countdown, the card library
     # (window.BattmanLib: the Overrides card's rows and popups, Battman's own dialog), the engine log renderer, the
     # House, Log, Cost, Settings, Theme studio, Curvy, Pricy, Amber forecast, Solar, Mode strip, NEM pie and forecast
-    # view cards, and the wrapper for the cards written as YAML (custom:battman-<id>).
+    # view cards, the Help view's guide card (a small stub: the guide itself loads only when it's opened), and the
+    # wrapper for the cards written as YAML (custom:battman-<id>).
     frontend.add_extra_js_url(hass, f"{static_v}/battman.js?cards={ids}")
     async_register_services(hass)
     # "Battman updated, restart to finish" Repair, checked every few minutes
