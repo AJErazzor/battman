@@ -10,6 +10,8 @@ Battman has a device page in Home Assistant with three buttons. To open it, go t
 
 Each button tells you what it did in a notification (the bell in the sidebar). Each one is also an action, so you can use it in a script or automation.
 
+**Only an administrator can press them.** Anyone else gets "Only a Home Assistant administrator can press this button", and the actions refuse them too. An automation can still use the actions.
+
 ## Create dashboard
 
 **Create dashboard** makes the Battman dashboard at `/battman`, with Battman's views: Power, Curvy, Pricy, Finances, Settings, Log, Theme and Help. It shows up in the sidebar as **Battman**.

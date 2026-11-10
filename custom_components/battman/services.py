@@ -6,6 +6,7 @@ from homeassistant.components import persistent_notification
 
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.service import async_register_admin_service
 
 from . import dashboard, engine, notifications
 from .const import DOMAIN
@@ -110,22 +111,24 @@ def async_register_services(hass: HomeAssistant) -> None:
         result = await async_create_dashboard_and_report(hass, notify=not call.return_response)
         return result if call.return_response else None
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_CREATE_DASHBOARD, _create, supports_response=SupportsResponse.OPTIONAL
+    # admin only, like editing a dashboard or the automations in Home Assistant itself (a script or automation
+    # with no user behind it can still run them)
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_CREATE_DASHBOARD, _create, supports_response=SupportsResponse.OPTIONAL
     )
 
     async def _create_automations(call: ServiceCall) -> ServiceResponse:
         result = await async_create_automations_and_report(hass, notify=not call.return_response)
         return result if call.return_response else None
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_CREATE_AUTOMATIONS, _create_automations, supports_response=SupportsResponse.OPTIONAL
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_CREATE_AUTOMATIONS, _create_automations, supports_response=SupportsResponse.OPTIONAL
     )
 
     async def _create_help_view(call: ServiceCall) -> ServiceResponse:
         result = await async_create_help_view_and_report(hass, notify=not call.return_response)
         return result if call.return_response else None
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_CREATE_HELP_VIEW, _create_help_view, supports_response=SupportsResponse.OPTIONAL
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_CREATE_HELP_VIEW, _create_help_view, supports_response=SupportsResponse.OPTIONAL
     )

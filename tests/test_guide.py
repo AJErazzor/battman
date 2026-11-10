@@ -435,3 +435,32 @@ def test_every_repair_id_is_its_translation_key() -> None:
             assert issue_id == key, (f.name, issue_id, key)
             calls += 1
     assert calls >= 12
+
+
+async def test_device_buttons_and_actions_are_for_admins(hass: HomeAssistant, hass_admin_user) -> None:
+    """Only an administrator can press Battman's buttons or run their actions; an automation (no user) can."""
+    from homeassistant.core import Context
+    from homeassistant.exceptions import HomeAssistantError, Unauthorized
+
+    await _setup(hass)
+    user = await hass.auth.async_create_user("Someone", group_ids=["system-users"])   # an ordinary, non-admin user
+    assert not user.is_admin
+    for service in ("create_dashboard", "create_help_view", "create_automations"):
+        with pytest.raises(Unauthorized):
+            await hass.services.async_call("battman", service, {}, blocking=True, return_response=True,
+                                           context=Context(user_id=user.id))
+        r = await hass.services.async_call("battman", service, {}, blocking=True, return_response=True,
+                                           context=Context(user_id=hass_admin_user.id))
+        assert r["message"], service
+        r = await hass.services.async_call("battman", service, {}, blocking=True, return_response=True)
+        assert r["message"], service
+    for button in ("button.battman_create_dashboard", "button.battman_create_help_view", "button.battman_create_automations"):
+        with pytest.raises(HomeAssistantError) as err:
+            await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True,
+                                           context=Context(user_id=user.id))
+        assert str(err.value) == "Only a Home Assistant administrator can press this button", button
+        await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True,
+                                       context=Context(user_id=hass_admin_user.id))
+    page = (GUIDE / "start/device-page.md").read_text(encoding="utf-8")
+    en = json.loads((ROOT / "translations/en.json").read_text(encoding="utf-8"))
+    assert f'"{en["exceptions"]["admin_only"]["message"]}"' in page

@@ -152,5 +152,10 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "admin_only": {
+      "message": "Only a Home Assistant administrator can press this button"
+    }
   }
 }
