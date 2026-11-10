@@ -7,7 +7,7 @@ Battman runs a home battery from Home Assistant. It works with a Sigenergy syste
 This guide is written from Battman's own code, so it describes what your installed version does.
 
 > [!NOTE]
-> The guide is new, and more pages arrive with each release: installing Battman, the Power view, every card, the settings, how the engine decides, and a guide for developers.
+> The guide doesn't cover all of Battman yet. These are its pages so far.
 
 ## In this guide
 
@@ -22,7 +22,7 @@ This guide is written from Battman's own code, so it describes what your install
 ## Finding the guide
 
 - **On the Battman dashboard** it's the **Help** tab, the last one.
-- **No Help tab?** Dashboards made before the guide existed don't have one, because Battman never changes your dashboard by itself. Open the [Battman device](start/device-page.md#create-help-view) and press **Create help view**.
+- **No Help tab?** Battman never changes your dashboard by itself, so a dashboard made by an earlier version hasn't got one. Open the [Battman device](start/device-page.md#create-help-view) and press **Create help view**.
 - **On GitHub** these pages are in the `custom_components/battman/guide` folder of the Battman repository.
 
 ## The status line

@@ -51,7 +51,7 @@ Add `response_variable: result` and the action returns what happened (`created`,
 - **It only adds.** It adds the one view and leaves every other view, and the dashboard's own settings, as they are.
 - **It only adds a missing view.** If the dashboard already has a view at `/battman/help`, nothing changes.
 
-Use it if your Battman dashboard was made before the Help view existed. A dashboard made by **Create dashboard** already has it.
+Use it if your Battman dashboard has no **Help** tab. A dashboard made by **Create dashboard** has one already.
 
 What the notification says:
 
@@ -60,7 +60,8 @@ What the notification says:
 | No Help view yet | "Added the Help view to your Battman dashboard at /battman. It's the last tab; nothing else on the dashboard changed." |
 | A Help view already | "Your Battman dashboard already has a Help view (/battman/help), so nothing changed." |
 | No dashboard at `/battman` | "There's no Battman dashboard at /battman, so nothing changed. Press Create dashboard on the Battman device: a new Battman dashboard includes the Help view." |
-| A dashboard Battman can't change | "Battman can't change the dashboard at /battman (it's written in YAML, or it has no saved views yet), so nothing changed. To add the Help view yourself, add a view to it with the card type: custom:battman-guide." |
+| Something Battman can't change at `/battman` | "Battman can't change what's at /battman (a dashboard written in YAML, one with no saved views yet, or something that isn't a dashboard), so nothing changed. To add the Help view yourself, add a view with the card type: custom:battman-guide." |
+| Saving the dashboard failed | "Could not add the Help view:" followed by the reason. Nothing was added. |
 
 The Help view is an ordinary view, so you can move it, rename it or delete it like any other. To get it back after deleting it, press **Create help view** again.
 
@@ -83,7 +84,7 @@ cards:
 action: battman.create_help_view
 ```
 
-With `response_variable`, it returns `added`, `outcome` (`added`, `exists`, `no_dashboard` or `not_editable`), `url_path` and `message`.
+With `response_variable`, it returns `added`, `outcome` (`added`, `exists`, `no_dashboard`, `not_editable` or `error`), `url_path` and `message`.
 
 ## Create automations
 
@@ -99,14 +100,16 @@ Good to know:
 - **It never changes one that exists.** Each automation and script is matched by its id, and only missing ones are written.
 - **To put one back to Battman's version**, delete it (Settings → Automations & scenes), then press **Create automations**.
 - **It brings back ones you deleted on purpose.** If you don't want an alert, switch it off under **Settings → Notifications** on the Battman dashboard, or turn the automation off, rather than deleting it.
-- **When it adds any, it reloads all your automations and scripts**, not just Battman's. If nothing is missing, it changes and reloads nothing.
+- **It reloads all your automations and scripts**, not just Battman's, when it adds any, or when one of the engine's is in the file but Home Assistant hasn't loaded it. Otherwise it changes and reloads nothing.
 - **Battman writes them once by itself**, when you first add it, and again for any that a new release adds. After that only this button (or the action) writes them.
 
 What the notification says:
 
 - "Created:" followed by the ids it added, when it added any.
 - "All Battman automations and scripts already exist; nothing changed."
-- "Could not create the Battman automations:" followed by the reason, when it couldn't write or load them. If Home Assistant didn't load what Battman wrote, a Repair says which: see [Battman's engine automations didn't load](../help/repairs.md#engine-not-loaded) and [Battman automations didn't load](../help/repairs.md#notifications-not-loaded).
+- "Could not create the Battman automations:" followed by the reason, when it couldn't write to `automations.yaml` or `scripts.yaml`, or Home Assistant didn't load the engine's.
+
+If Home Assistant didn't load what Battman wrote, a Repair also says which: see [Battman's engine automations didn't load](../help/repairs.md#engine-not-loaded) and [Battman automations didn't load](../help/repairs.md#notifications-not-loaded). For the notification automations that Repair is the only sign: the message still says "Created:".
 
 ### As an action
 

@@ -21,6 +21,7 @@ Battman shows a Repair instead of failing.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from homeassistant.core import HomeAssistant
@@ -36,7 +37,7 @@ HELP_PATH = "help"
 ADDED = "added"                  # the Help view is now the dashboard's last tab
 EXISTS = "exists"                # the dashboard already has a view at /battman/help: nothing changed
 NO_DASHBOARD = "no_dashboard"    # nothing at /battman (or something that isn't a dashboard): nothing changed
-NOT_EDITABLE = "not_editable"    # a YAML dashboard, or one with no saved views: nothing changed
+NOT_EDITABLE = "not_editable"    # a YAML dashboard, one with no saved views, or not a dashboard: nothing changed
 
 
 class DashboardUnavailable(Exception):
@@ -110,6 +111,13 @@ async def async_add_help_view(hass: HomeAssistant) -> tuple[str, str]:
 
     Only ever appends that one view; every other view, and the dashboard's own settings, stay as they are.
     """
+    # one at a time: two presses together must not both find the view missing and add it twice
+    lock = hass.data.setdefault(f"{__name__}.help_lock", asyncio.Lock())
+    async with lock:
+        return await _add_help_view(hass)
+
+
+async def _add_help_view(hass: HomeAssistant) -> tuple[str, str]:
     from homeassistant.components.lovelace.const import MODE_STORAGE, ConfigNotFound  # noqa: PLC0415
 
     from .api import async_build_view  # noqa: PLC0415
@@ -117,7 +125,8 @@ async def async_add_help_view(hass: HomeAssistant) -> tuple[str, str]:
     url_path = BASE_URL_PATH
     dash = _lovelace(hass).dashboards.get(url_path)
     if dash is None:
-        return NO_DASHBOARD, url_path
+        # something that isn't a dashboard (a panel) at /battman can't take a view; Create dashboard wouldn't help
+        return (NOT_EDITABLE if _taken(hass, url_path) else NO_DASHBOARD), url_path
     if getattr(dash, "mode", None) != MODE_STORAGE:
         return NOT_EDITABLE, url_path
     try:

@@ -130,6 +130,18 @@ try {
   await waitH1("Page not found");
   out.missing = await inCard(`return r.querySelector("article").textContent.includes("nope/nothing")`);
 
+  // other parts of the address (?kiosk …) are kept when moving between pages
+  await page.evaluate(() => { history.pushState(null, "", "/dash/help?kiosk=1"); window.dispatchEvent(new CustomEvent("location-changed")); });
+  await waitH1("Battman help");
+  await inCard(`r.querySelector('nav.toc a[data-page="help/repairs"]').click()`);
+  await waitH1("Battman's Repairs");
+  out.keep = await page.evaluate(() => location.pathname + location.search);
+  out.copyIds = await inCard(`return [...r.querySelectorAll("article h3 button.hlink")].map((b) => b.dataset.copy)`);
+  // a malformed #… in the address doesn't stop the page drawing
+  await page.evaluate(() => { history.pushState(null, "", "/dash/help?page=start/device-page#%E0%A4%A"); window.dispatchEvent(new CustomEvent("location-changed")); });
+  await waitH1("The Battman device page");
+  out.badHash = true;
+
   // phone width: the contents fold behind a button
   await page.setViewportSize({ width: 390, height: 800 });
   await page.evaluate(() => { history.pushState(null, "", "/dash/help"); window.dispatchEvent(new CustomEvent("location-changed")); });

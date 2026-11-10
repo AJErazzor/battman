@@ -138,7 +138,7 @@ export function mount(card) {
   let index = null;
   let map = null;
   let shown = null;          // the page id on screen
-  let repairs = null;        // Battman's open Repairs, or null when they couldn't be read
+  let repairs;               // Battman's open Repairs: undefined until first read, null when they couldn't be read
   let paused = false;
   let moved = false;         // false until the first page is shown (don't take the focus on load)
   let timer = null;
@@ -163,14 +163,24 @@ export function mount(card) {
   // where we are: {page, anchor} from the address
   function here() {
     const page = new URLSearchParams(window.location.search).get("page") || "home";
-    return { page, anchor: decodeURIComponent(window.location.hash.slice(1)) };
+    let anchor = window.location.hash.slice(1);
+    try { anchor = decodeURIComponent(anchor); } catch (e) { /* not encoded: use it as it is */ }
+    return { page, anchor };
   }
 
-  function go(page, anchor, replace) {
-    const url = viewPath + pageHref(page, anchor).replace(/^\?$/, "").replace(/^\?#/, "#");
-    window.history[replace ? "replaceState" : "pushState"](null, "", url);
-    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: !!replace } }));
-    show();
+  // the address of a page on this view, keeping anything else in the address (?kiosk, ?edit=1 …)
+  function urlFor(page, anchor) {
+    const q = new URLSearchParams(window.location.search);
+    if (page === "home") q.delete("page");
+    else q.set("page", page);
+    const search = q.toString().replace(/%2F/g, "/");
+    return viewPath + (search ? `?${search}` : "") + (anchor ? `#${anchor}` : "");
+  }
+
+  // open a page: a new entry in the browser's history (Back returns), then location-changed draws it
+  function go(page, anchor) {
+    window.history.pushState(null, "", urlFor(page, anchor));
+    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
   }
 
   function scrollTo(anchor) {
@@ -268,7 +278,9 @@ export function mount(card) {
       const name = el.dataset.directive;
       if (name === "repairs") {
         el.className = "directive repairs";
-        if (!repairs) {
+        if (repairs === undefined) {
+          el.innerHTML = `<span class="muted">Checking Battman's open Repairs…</span>`;
+        } else if (!repairs) {
           el.innerHTML = `<span class="muted">Your open Battman Repairs couldn't be read here. See Settings → Repairs.</span>`;
         } else if (!repairs.length) {
           el.innerHTML = `<b>Right now:</b> Battman has no open Repairs.`;
@@ -313,7 +325,7 @@ export function mount(card) {
     }
     if (a.matches("button[data-copy]")) {
       const id = a.dataset.copy;
-      copy(window.location.origin + viewPath + pageHref(shown, id).replace(/^\?#/, "#"), "Link to this section copied");
+      copy(window.location.origin + urlFor(shown, id), "Link to this section copied");
       return;
     }
     if (a.matches("button[data-copy-code]")) {
@@ -339,9 +351,15 @@ export function mount(card) {
     }
   });
 
-  const onLocation = () => { if (!paused) show(); };
-  window.addEventListener("location-changed", onLocation);
-  window.addEventListener("popstate", onLocation);
+  // listening only while the card is on the page: a card that's been removed holds on to nothing
+  const onLocation = () => show();
+  function listen(on) {
+    const f = on ? "addEventListener" : "removeEventListener";
+    window[f]("location-changed", onLocation);
+    window[f]("popstate", onLocation);
+    clearInterval(timer);
+    timer = on ? setInterval(loadRepairs, 30000) : null;
+  }
 
   async function start() {
     try {
@@ -359,28 +377,28 @@ export function mount(card) {
     }
     drawStatus();
     drawToc();
-    await show();
     loadRepairs();
-    timer = setInterval(() => { if (!paused) loadRepairs(); }, 60000);
+    await show();
   }
+  listen(true);
   start();
 
-  let lastDraw = 0;
+  // the status line follows hass, redrawn at most every 2 seconds (and always with the latest)
+  let redraw = null;
   return {
     hassChanged(h) {
       hass = h;
-      const now = Date.now();
-      if (!paused && now - lastDraw > 2000) {
-        lastDraw = now;
-        drawStatus();
-      }
+      if (!paused && !redraw) redraw = setTimeout(() => { redraw = null; drawStatus(); }, 2000);
     },
     pause() {
       paused = true;
+      listen(false);
     },
     resume() {
       paused = false;
+      listen(true);
       drawStatus();
+      loadRepairs();
       show();
     },
   };

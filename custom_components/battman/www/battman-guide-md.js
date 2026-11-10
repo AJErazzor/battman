@@ -9,7 +9,8 @@
 // - Raw HTML is escaped, except the few tags the pages use: <details>, <summary>, <br>, <kbd> and
 //   anchors (<a id="name"></a>). An HTML comment <!-- guide:name key="value" --> marks a live part of
 //   the page (the view fills it in); any other comment is dropped.
-// - Headings get GitHub's ids (so the same #anchors work on GitHub) and a copy-link button.
+// - Headings get GitHub's ids (so the same #anchors work on GitHub) and a copy-link button. A heading with its
+//   own anchor just before it (<a id="packages-not-loaded"></a>) copies that anchor, which never changes.
 // - GitHub's callouts (> [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]) are drawn as callouts.
 // - Code blocks get a Copy button. Images aren't drawn yet (their alt text is shown).
 //
@@ -85,7 +86,7 @@ export function directive(comment) {
 }
 
 // Raw HTML from a page: the allowed tags and guide: comments kept, everything else escaped.
-function cleanHtml(raw, ids) {
+function cleanHtml(raw, ids, onAnchor) {
   return String(raw).split(/(<!--[\s\S]*?-->|<\/?[a-zA-Z][^<>]*>)/).map((part) => {
     if (!part) return "";
     if (part.startsWith("<!--")) {
@@ -96,7 +97,7 @@ function cleanHtml(raw, ids) {
       for (const [re, out] of ALLOWED) {
         const m = re.exec(part);
         if (m) {
-          if (m[1] && re.source.includes(" id=")) ids.add(m[1]);
+          if (m[1] && re.source.includes(" id=")) { ids.add(m[1]); onAnchor(m[1]); }
           return out(m);
         }
       }
@@ -120,6 +121,8 @@ export function renderPage(markdown, page) {
     counts.set(base, n + 1);
     return n ? `${base}-${n}` : base;
   };
+  let anchor = null;           // a fixed anchor waiting for the heading straight after it
+  const ANCHOR_ONLY = /^\s*<span class="anchor" id="[^"]+"><\/span>\s*$/;
   const marked = new Marked({ gfm: true, breaks: false });
   marked.use({
     renderer: {
@@ -128,9 +131,11 @@ export function renderPage(markdown, page) {
         const text = plain(inner);
         const id = unique(slugify(text));
         ids.add(id);
-        headings.push({ depth, text, id });
+        const link = anchor || id;
+        anchor = null;
+        headings.push({ depth, text, id, link });
         const copy = depth >= 2
-          ? `<button class="hlink" type="button" data-copy="${esc(id)}" aria-label="Copy a link to ${esc(text)}" title="Copy a link to this section">#</button>`
+          ? `<button class="hlink" type="button" data-copy="${esc(link)}" aria-label="Copy a link to ${esc(text)}" title="Copy a link to this section">#</button>`
           : "";
         return `<h${depth} id="${esc(id)}">${inner}${copy}</h${depth}>\n`;
       },
@@ -149,8 +154,13 @@ export function renderPage(markdown, page) {
       image({ text }) {
         return `<span class="imgalt">${esc(text)}</span>`;
       },
+      paragraph({ tokens }) {
+        const inner = this.parser.parseInline(tokens);
+        if (!ANCHOR_ONLY.test(inner)) anchor = null;
+        return `<p>${inner}</p>\n`;
+      },
       html({ text }) {
-        const out = cleanHtml(text, ids);
+        const out = cleanHtml(text, ids, (a) => { anchor = a; });
         for (const m of out.matchAll(/data-directive="([^"]*)" data-args="([^"]*)"/g)) {
           directives.push({ name: m[1], args: JSON.parse(plain(m[2])) });
         }

@@ -53,7 +53,7 @@ homeassistant:
 
 1. Check that `configuration.yaml` has `automation: !include automations.yaml` and `script: !include scripts.yaml`. They're there by default.
 2. Look in the Home Assistant log (**Settings → System → Logs**) for an error about `automations.yaml` or `scripts.yaml`. A YAML mistake anywhere in either file stops Home Assistant loading it.
-3. Restart Home Assistant, or press **Create automations** on the [Battman device](../start/device-page.md#create-automations).
+3. Press **Create automations** on the [Battman device](../start/device-page.md#create-automations). It loads them again and checks; the Repair clears when they've loaded.
 
 <a id="notifications-not-loaded"></a>
 ### Battman automations didn't load
@@ -85,7 +85,7 @@ frontend:
 
 **Why it appears:** Battman needs **button-card**, **card-mod** and **modern-circular-gauge**. It checks for them when it starts.
 
-**Fix:** install each one with HACS (they're under **Frontend**), restart Home Assistant, then refresh your browser. Because Battman only checks when it starts, the Repair stays until that restart.
+**Fix:** in HACS, search for each one by name and download it. Then restart Home Assistant and refresh your browser. Because Battman only checks when it starts, the Repair stays until that restart.
 
 ## The integrations Battman reads
 
@@ -98,7 +98,7 @@ Battman reads Sigenergy, Amber and Solcast entities by their own names. These Re
 
 **Why it appears:** Battman needs entities from three integrations:
 
-- **Sigenergy-Local-Modbus**, version 1.1.0 or newer. Some of the entities Battman needs are disabled when the integration is first set up.
+- **Sigenergy-Local-Modbus**, version 1.1.0 or newer. It ships some of the entities Battman needs disabled (Battman's `DEPENDENCIES.md` lists them).
 - **Amber**, through **amber2mqtt** (MQTT).
 - **Solcast PV Forecast**.
 
@@ -106,7 +106,7 @@ It checks when Home Assistant starts and whenever entities change.
 
 **Fix:**
 
-- **"disabled"**: enable the entity under **Settings → Entities**.
+- **"disabled"**: enable the entity under **Settings → Devices & services → Entities**.
 - **"not found"**: install or set up the integration named. If the entity exists under a different name, rename it to the name in the Repair.
 
 This Repair doesn't report an entity that exists but is unavailable (for example, when its integration can't reach the device).
@@ -130,16 +130,16 @@ This Repair doesn't report an entity that exists but is unavailable (for example
 <a id="opennem-choose"></a>
 ### Pick your OpenNEM region
 
-**What it means:** OpenNEM has more than one region, and Battman doesn't know which one its NEM sensors should read. Until you pick one, the NEM sensors are unavailable.
+**What it means:** OpenNEM has more than one region, and Battman doesn't know which one its NEM sensors should read. Until you pick one, the NEM sensors have no value.
 
 **Fix:** go to **Settings → Devices & services → Battman**, select the gear icon (**Configure**), and pick the region.
 
 <a id="map-choice-ignored"></a>
 ### Battman no longer uses some of your Configure choices
 
-**What it means:** Battman's **Configure** screen still holds choices it no longer uses. Battman reads the Sigenergy, Amber and Solcast entities by their own names, so those choices change nothing.
+**What it means:** Battman has entity choices saved from its **Configure** screen that it no longer uses. Battman reads the Sigenergy, Amber and Solcast entities by their own names, so those choices change nothing.
 
-**Fix:** go to **Settings → Devices & services → Battman**, select the gear icon (**Configure**), and save. Entries that are no longer there are dropped. If one of your entities has a different name from the one Battman uses, rename it under **Settings → Entities**.
+**Fix:** go to **Settings → Devices & services → Battman**, select the gear icon (**Configure**), and press **Submit**. Choices that are no longer on the screen are dropped. If one of your entities has a different name from the one Battman uses, rename it under **Settings → Devices & services → Entities**.
 
 ## The dashboard and cards
 

@@ -115,7 +115,8 @@ def test_markdown_rules() -> None:
     md = ("# T\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>\n\n"
           "[a](javascript:alert(1)) [b](../help/repairs.md#local-cards) [c](/config/repairs) [d](https://example.org) "
           "[e](#same) [f](../README.md)\n\n> [!WARNING]\n> Careful\n\n<details>\n<summary>More</summary>\n\nx\n\n</details>\n\n"
-          "<!-- private note -->\n\n<!-- guide:repairs -->\n\n## Same\n\n## Same\n\n```yaml\na: <b>\n```\n")
+          "<!-- private note -->\n\n<!-- guide:repairs -->\n\n## Same\n\n## Same\n\n```yaml\na: <b>\n```\n\n"
+          '<a id="fixed-name"></a>\n### A title that may change\n\n<a id="stray"></a>\n\ntext\n\n### Plain\n')
     script = f"""
 const {{ renderPage, resolveLink, slugify }} = await import({json.dumps(str(WWW / "battman-guide-md.js"))});
 process.stdout.write(JSON.stringify({{ out: renderPage({json.dumps(md)}, "start/x"),
@@ -134,7 +135,10 @@ process.stdout.write(JSON.stringify({{ out: renderPage({json.dumps(md)}, "start/
     assert '<div class="callout warning" role="note"><p class="callout-title">Warning</p>' in html
     assert "<details>" in html and "<summary>More</summary>" in html
     assert "private note" not in html and 'data-directive="repairs"' in html
-    assert [h["id"] for h in r["out"]["headings"]] == ["t", "same", "same-1"]
+    assert [h["id"] for h in r["out"]["headings"]] == ["t", "same", "same-1", "a-title-that-may-change", "plain"]
+    # the # button copies a section's fixed anchor when it has one (headings can be retitled; anchors stay)
+    assert [h["link"] for h in r["out"]["headings"]][3:] == ["fixed-name", "plain"]
+    assert 'data-copy="fixed-name"' in html and 'data-copy="a-title-that-may-change"' not in html
     assert "a: &lt;b&gt;" in html and "data-copy-code" in html
     assert r["slugs"] == ["battmans-repairs", "create-help-view", "restart-now-please"]   # GitHub's ids
     assert r["up"] == {"kind": "none"} and r["file"] == {"kind": "none"}
@@ -239,6 +243,9 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert rep["open"] == ["Battman's package files aren't loaded"] and rep["openLink"] == "?page=help/repairs#packages-not-loaded"
     assert rep["codeCopy"] >= 2
     assert out["missing"] is True
+    assert out["keep"] == "/dash/help?kiosk=1&page=help/repairs"           # other parts of the address are kept
+    assert out["copyIds"][:2] == ["restart-required", "packages-not-loaded"]  # the # buttons copy the fixed anchors
+    assert out["badHash"] is True                                           # a malformed #… still draws the page
     phone = out["phone"]
     assert (phone["before"], phone["after"], phone["expanded"], phone["overflow"]) == ("none", "block", "true", False)
     assert phone["btn"] != "none"
@@ -354,3 +361,77 @@ async def test_create_help_view_button(hass: HomeAssistant) -> None:
 
     note = persistent_notification._async_get_or_create_notifications(hass)["battman_help_view"]
     assert note["title"] == "Battman help view" and "already has a Help view" in note["message"]
+
+
+async def test_create_help_view_says_when_saving_fails(hass: HomeAssistant, monkeypatch) -> None:
+    await _setup(hass)
+    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
+    cfg = await _cfg(hass)
+    without = {**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"]}
+    await dash.async_save(without)
+
+    async def broken(_config):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(dash, "async_save", broken)
+    r = await _help(hass)
+    assert r["outcome"] == "error" and r["added"] is False
+    assert r["message"] == "Could not add the Help view: Saving the dashboard failed: disk full"
+    assert await _cfg(hass) == without
+
+
+async def test_two_presses_at_once_add_one_help_view(hass: HomeAssistant) -> None:
+    import asyncio
+
+    await _setup(hass)
+    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
+    cfg = await _cfg(hass)
+    await dash.async_save({**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"]})
+    a, b = await asyncio.gather(_help(hass), _help(hass))
+    assert sorted([a["outcome"], b["outcome"]]) == ["added", "exists"]
+    assert [v["path"] for v in (await _cfg(hass))["views"]].count("help") == 1
+
+
+async def test_create_help_view_leaves_yaml_dashboards_and_panels_alone(hass: HomeAssistant) -> None:
+    from homeassistant.components import frontend
+    from custom_components.battman import dashboard
+
+    await _setup(hass)
+    item_id = hass.data[LOVELACE_DATA].dashboards["battman"].config["id"]
+    await dashboard._collection(hass).async_delete_item(item_id)
+    await hass.async_block_till_done()
+
+    class YamlDashboard:                           # what HA keeps for a dashboard written in YAML
+        mode = "yaml"
+
+        async def async_load(self, force):
+            return {"views": [{"path": "home", "cards": []}]}
+
+        async def async_save(self, config):
+            raise AssertionError("a YAML dashboard must not be written")
+
+    hass.data[LOVELACE_DATA].dashboards["battman"] = YamlDashboard()
+    r = await _help(hass)
+    assert r["outcome"] == "not_editable" and "written in YAML" in r["message"]
+    del hass.data[LOVELACE_DATA].dashboards["battman"]
+
+    # something at /battman that isn't a dashboard: not "press Create dashboard" (that wouldn't help either)
+    frontend.async_register_built_in_panel(hass, "iframe", "Other", "mdi:web", frontend_url_path="battman",
+                                           config={"url": "https://example.org"})
+    r = await _help(hass)
+    assert r["outcome"] == "not_editable" and "something that isn't a dashboard" in r["message"]
+
+
+def test_every_repair_id_is_its_translation_key() -> None:
+    """The Help view links an open Repair to its section by the Repair's id; the page is checked against the
+    translation keys. So each Repair Battman raises must use the same name for both."""
+    calls = 0
+    for f in ROOT.glob("*.py"):
+        for m in re.finditer(r"async_create_issue\((.*?)\n\s*\)", f.read_text(), re.S):
+            body = m.group(1)
+            args = [a.strip() for a in re.split(r",\s*", body) if a.strip()]
+            issue_id = args[2]                                   # (hass, DOMAIN, <id>, ...)
+            key = re.search(r"translation_key=(\w+)", body).group(1)
+            assert issue_id == key, (f.name, issue_id, key)
+            calls += 1
+    assert calls >= 12

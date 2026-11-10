@@ -57,9 +57,9 @@ def _help_message(outcome: str, url_path: str) -> str:
     if outcome == dashboard.NO_DASHBOARD:
         return (f"There's no Battman dashboard at /{url_path}, so nothing changed. Press Create dashboard on "
                 "the Battman device: a new Battman dashboard includes the Help view.")
-    return (f"Battman can't change the dashboard at /{url_path} (it's written in YAML, or it has no saved views "
-            "yet), so nothing changed. To add the Help view yourself, add a view to it with the card "
-            "type: custom:battman-guide.")
+    return (f"Battman can't change what's at /{url_path} (a dashboard written in YAML, one with no saved views yet, "
+            "or something that isn't a dashboard), so nothing changed. To add the Help view yourself, add a view "
+            "with the card type: custom:battman-guide.")
 
 
 async def async_create_help_view_and_report(hass: HomeAssistant, notify: bool) -> dict:
