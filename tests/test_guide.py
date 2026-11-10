@@ -98,7 +98,7 @@ def test_pages_render_and_every_link_lands() -> None:
         assert [h["depth"] for h in page["headings"]].count(1) == 1, pid
         assert "<script" not in page["html"].lower() and "javascript:" not in page["html"].lower(), pid
         assert 'class="deadlink"' not in page["html"], (pid, [l for l in page["links"] if l["kind"] == "none"])
-        assert {d["name"] for d in page["directives"]} <= {"repairs"}, pid
+        assert {d["name"] for d in page["directives"]} <= {"repairs", "summary"}, pid
         for link in page["links"]:
             assert link["kind"] in ("page", "ha", "external"), (pid, link)
             if link["kind"] == "page":
@@ -498,3 +498,74 @@ async def test_device_buttons_and_actions_are_for_admins(hass: HomeAssistant, ha
     page = (GUIDE / "start/device-page.md").read_text(encoding="utf-8")
     en = json.loads((ROOT / "translations/en.json").read_text(encoding="utf-8"))
     assert f'"{en["exceptions"]["admin_only"]["message"]}"' in page
+
+
+
+# ── "?" help on cards: summaries in the guide, the panel, the Settings card ──────────────────
+
+
+@NEEDS_NODE
+def test_outline_and_summaries() -> None:
+    md = ("# Settings\n\nIntro\n\n<a id=\"buy\"></a>\n## Buy\n\n<!-- guide:summary id=\"settings.buy\" -->\nHow hard it **charges**.\n"
+          "<!-- /guide:summary -->\n\n### Prorate price SOC offset\n\nText\n\n```yaml\n# not a heading\n```\n\n### High price\n\n"
+          "More\n\n<a id=\"rules\"></a>\n## Buy rules\n\nNo summary here.\n")
+    script = f"""
+const {{ summaries, outline }} = await import({json.dumps(str(WWW / "battman-guide-md.js"))});
+process.stdout.write(JSON.stringify({{ s: summaries({json.dumps(md)}), o: outline({json.dumps(md)}) }}));
+"""
+    r = json.loads(subprocess.run(["node", "--input-type=module", "-"], input=script, capture_output=True, text=True,
+                                  check=True).stdout)
+    assert list(r["s"]) == ["settings.buy"]
+    buy = r["s"]["settings.buy"]
+    assert buy["markdown"] == "How hard it **charges**." and buy["head"]["title"] == "Buy" and buy["head"]["anchor"] == "buy"
+    assert [(c["title"], c["anchor"]) for c in buy["children"]] == [("Prorate price SOC offset", "prorate-price-soc-offset"),
+                                                                     ("High price", "high-price")]
+    assert "# not a heading" in buy["section"] and "guide:summary" not in buy["section"] and "Buy rules" not in buy["section"]
+    assert [h["title"] for h in r["o"]] == ["Settings", "Buy", "Prorate price SOC offset", "High price", "Buy rules"]
+
+
+SETTINGS_JS = (WWW / "battman-settings.js").read_text()
+
+
+def _settings_page() -> str:
+    return (GUIDE / "intermediate/settings.md").read_text(encoding="utf-8")
+
+
+def test_settings_page_has_a_summary_for_every_section_and_a_heading_for_every_setting() -> None:
+    page = _settings_page()
+    keys = re.findall(r"^\s+(\w+):\s+\{ title: '((?:[^'\\]|\\.)*)'", SETTINGS_JS, re.M)
+    assert len(keys) == 15
+    ids = re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)
+    assert len(ids) == len(set(ids))
+    for key, title in keys:
+        kebab = re.sub(r"([A-Z])", lambda m: "-" + m.group(1).lower(), key)
+        title = title.replace("&amp;", "&")
+        assert re.search(rf'<a id="{kebab}"></a>\n## {re.escape(title)}\n\n<!-- guide:summary id="settings.{key}" -->', page), key
+    # a sub-group summary belongs to a sub-group the card really shows
+    subdivs = {re.sub(r"[^a-z0-9 -]", "", t.replace("&amp;", "&").lower()).strip().replace(" ", "-")
+               for t in re.findall(r'<div class="subdiv">([^<]+)</div>', SETTINGS_JS)}
+    for sid in ids:
+        parts = sid.split(".")
+        assert parts[0] == "settings" and parts[1] in dict(keys), sid
+        if len(parts) == 3:
+            assert parts[2] in subdivs, sid
+    # every setting the card shows has a heading of its own (two with the same label say which, in brackets)
+    labels = set()
+    for pat in (r"\brow\('((?:[^'\\]|\\.)*)'", r"numParam\('\w+', '((?:[^'\\]|\\.)*)'", r"\bsw\('\w+', '((?:[^'\\]|\\.)*)'",
+                r"\bnum\('[^']*', '[^']*', '((?:[^'\\]|\\.)*)'"):
+        labels |= {x.replace("\\'", "'") for x in re.findall(pat, SETTINGS_JS)}
+    headings = re.findall(r"^#{3,4} (.+)$", page, re.M)
+    missing = sorted(l for l in labels if not any(h == l or h.startswith(l + " (") for h in headings))
+    assert not missing, missing
+
+
+def test_settings_card_help_mode() -> None:
+    """The Help button follows Show help; the panel and the guide load only when help is turned on."""
+    assert 'data-helpmode aria-pressed="false" hidden' in SETTINGS_JS
+    assert "(attrs('parameters') || {}).showHelp !== false" in SETTINGS_JS
+    assert "import('./battman-help-panel.js')" in SETTINGS_JS
+    static = re.findall(r'^import .* from "([^"]+)";', SETTINGS_JS, re.M)
+    assert static == ["./battman-card-base.js"]                    # no guide, panel or Markdown reader up front
+    assert "HELP_PAGE = 'intermediate/settings'" in SETTINGS_JS
+    panel = (WWW / "battman-help-panel.js").read_text()
+    assert re.findall(r'^import .* from "([^"]+)";', panel, re.M) == ["./battman-guide-md.js"]
