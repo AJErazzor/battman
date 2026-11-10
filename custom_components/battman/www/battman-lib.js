@@ -490,7 +490,32 @@ window.BattmanLib.setMode = function (d, el) {
 // document.body, outside the themed view, so the Battman colours are read off the tapped element and set on it.
 window.BattmanLib.MODAL_KEYS = ['surface-popup', 'surface-card', 'text-bright', 'text-muted', 'text-dim', 'orange', 'orange-wash',
   'orange-border', 'orange-border-strong', 'border-neutral', 'green', 'yellow', 'amber', 'blue', 'purple', 'darkred', 'red', 'font'];
+// The element to read the theme's colours from. Normally the tapped element itself. But HA 2026.10 sends the tap
+// event (ll-custom) from <home-assistant>, above the view the theme is applied to, so there the tapped element is not
+// known and carries no --battman-* colours: then take the first Battman card on the page that does (it sits in the
+// themed view). Without any, the original element, as before.
+window.BattmanLib.themedEl = function (el) {
+  var has = function (n) {
+    try {
+      var cs = getComputedStyle(n);
+      return !!(String(cs.getPropertyValue('--battman-surface-popup') || '').trim() || String(cs.getPropertyValue('--battman-surface-card') || '').trim());
+    } catch (e) { return false; }
+  };
+  if (el && el.nodeType === 1 && has(el)) return el;
+  var found = null;
+  var walk = function (root) {
+    var all = root.querySelectorAll ? root.querySelectorAll('*') : [];
+    for (var i = 0; i < all.length && !found; i++) {
+      var n = all[i];
+      if (n.localName && n.localName.indexOf('battman-') === 0 && has(n)) { found = n; return; }
+      if (n.shadowRoot) walk(n.shadowRoot);
+    }
+  };
+  try { walk(document.querySelector('home-assistant') || document); } catch (e) { found = null; }
+  return found || el;
+};
 window.BattmanLib.modalTheme = function (el) {
+  el = window.BattmanLib.themedEl(el);
   var cs = getComputedStyle(el || document.body), out = '';
   try { out = window.BattmanLib.themeStyle(el || document.body) || ''; } catch (e) { out = ''; }   // every --battman-* the theme defines
   window.BattmanLib.MODAL_KEYS.forEach(function (k) {
