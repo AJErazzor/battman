@@ -15,6 +15,13 @@ tracks:
       - slug: device-page
         title: The Battman device page
         summary: Create dashboard and Create automations, and what each one never does.
+  - id: intermediate
+    title: Using Battman
+    summary: The views and cards, and what every setting does.
+    pages:
+      - slug: settings
+        title: Settings
+        summary: Every section of the Settings view, and what each setting does.
   - id: help
     title: Troubleshooting
     summary: When something isn't right.

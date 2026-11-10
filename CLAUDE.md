@@ -16,6 +16,7 @@ When a change alters what someone sees or does, update the guide in the same cha
 | A Repair (anything under `issues` in `translations/en.json`, or the code that raises one) | `guide/help/repairs.md` |
 | Which views a new dashboard has (`views/*.yaml`) | `guide/start/device-page.md` (the list of views) |
 | The Show help setting or how the Help view is added and removed (`help_setting.py`, `dashboard.py`) | `guide/README.md` (Showing or hiding the guide) |
+| The Settings card (`www/battman-settings.js`): a section, a setting, its label, limits or default, or what it does | `guide/intermediate/settings.md` (the "?" on each section opens its summary block) |
 
 Rules for the guide:
 
@@ -25,8 +26,11 @@ Rules for the guide:
   them; if you have to, fix every link to them.
 - Link between pages with relative `.md` links (`../help/repairs.md#local-cards`), as GitHub does.
 - Known problems are stated plainly where they matter, not hidden.
+- A "?" on a card opens a summary block on a guide page: `<!-- guide:summary id="settings.buy" -->` … `<!-- /guide:summary -->`,
+  straight under the section's heading. Keep the ids; the card looks them up.
 - `tests/test_guide.py` checks the contents, every link and section, that every Repair is covered under its
-  own title, that the device page quotes the buttons' messages, and that no old words have crept in.
+  own title, that the device page quotes the buttons' messages, that every Settings section has a summary and every
+  setting a heading, and that no old words have crept in.
 
 ## Tests
 

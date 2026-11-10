@@ -15,6 +15,10 @@ This guide is written from Battman's own code, so it describes what your install
 
 - [The Battman device page](start/device-page.md): the two buttons on the Battman device (**Create dashboard** and **Create automations**), what each one does, and what it never does.
 
+**Using Battman**
+
+- [Settings](intermediate/settings.md): every section of the Settings view and what each setting does.
+
 **Troubleshooting**
 
 - [Battman's Repairs](help/repairs.md): every problem Battman can report under **Settings → Repairs**, what causes it and how to fix it.

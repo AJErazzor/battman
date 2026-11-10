@@ -229,7 +229,7 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert out["before"] == ["battman-guide.js"]                           # only the stub, until the card is shown
     assert {"battman-guide-view.js", "battman-guide-md.js", "vendor/marked.esm.js"} <= set(out["after"])
     assert out["home"]["h1"].startswith("Battman help") and out["home"]["current"] == "Battman help"
-    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Battman's Repairs"]
+    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Settings", "Battman's Repairs"]
     assert out["home"]["scripts"] == 0
     assert "Active: On" in out["status"] and "Mode: Self Consume" in out["status"] and "3 min ago" in out["status"]
     assert "Curtail: Off" in out["status"] and "Repairs: 1 open" in out["status"]     # ignored and other domains left out
@@ -617,3 +617,40 @@ async def test_show_help_appearing_or_coming_back_changes_nothing(hass: HomeAssi
     await _show(hass, False)
     await _show(hass, True)
     assert _note(hass) is None and (await _cfg(hass))["views"][-1]["path"] == "help"
+
+
+@pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
+                    reason="needs Chromium, Node and Playwright")
+def test_help_panel_in_a_browser(tmp_path) -> None:
+    page = _settings_page()
+    ids = re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)
+    section = next(i for i in ids if i.count(".") == 1 and f'id="{i}.' in page)     # a section that has sub-groups
+    group = next(i for i in ids if i.startswith(section + "."))
+    r = subprocess.run(["node", str(Path(__file__).parent / "js/help_panel_check.mjs"), str(ROOT)],
+                       capture_output=True, text=True, timeout=180,
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "OUT_DIR": str(tmp_path),
+                            "GUIDE_JSON": json.dumps({"pages": _pages()}), "HELP_PAGE": "intermediate/settings",
+                            "HELP_IDS": json.dumps([section, group])})
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out["errors"] == [], out["errors"]
+    for name in ("desktop", "phone"):
+        o = out[name]
+        assert o["hidden"] == ["none", "none"]                                    # tags show only in help mode
+        assert o["shown"] == ["inline-flex 6px", "inline-flex 5px"]               # rounded corners, not circles
+        s = o["summary"]
+        assert s["label"] == f"Help: {s['title']}" and s["focused"] and s["pressed"] == [section]
+        assert s["expand"] == "Expand" and s["chips"] and s["body"]
+        assert s["href"].startswith("/dash/help?page=intermediate/settings#")
+        assert o["child"]["title"] == s["chips"][0] and o["child"]["back"] == f"← {s['title']}" and o["child"]["chips"] == []
+        assert o["child"]["href"] != s["href"] and o["backTo"] == s["title"]
+        assert o["expanded"]["expand"] == "Less" and len(o["expanded"]["body"]) > len(s["body"]) and o["expanded"]["chips"] == []
+        assert o["less"]["body"] == s["body"]
+        assert o["group"]["pressed"] == [group] and o["group"]["title"] != s["title"]
+        assert o["closed"] == {"panel": False, "focus": group, "pressed": 0}       # Escape: focus back on the tag
+        assert o["browse"]["at"] == s["href"] and o["browse"]["nav"] == [s["href"]] and not o["browse"]["panel"]
+        assert o["fetches"] == 1                                                  # the page is read once
+        assert not o["overflow"]
+    d, p = out["desktop"]["summary"], out["phone"]["summary"]
+    assert d["width"] == 400 and d["left"] == 800 and d["top"] == 0               # a side panel on the right
+    assert p["left"] == 0 and p["width"] == 390 and p["top"] > 0 and p["bottom"] == 800    # a bottom sheet
