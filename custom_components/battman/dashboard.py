@@ -158,6 +158,13 @@ async def _editable(hass: HomeAssistant):
     return None, dash, config, views
 
 
+def _yaml(hass: HomeAssistant) -> bool:
+    from homeassistant.components.lovelace.const import MODE_STORAGE  # noqa: PLC0415
+
+    dash = _lovelace(hass).dashboards.get(BASE_URL_PATH)
+    return dash is not None and getattr(dash, "mode", None) != MODE_STORAGE
+
+
 async def _save(dash, config: dict) -> None:
     try:
         await dash.async_save(config)
@@ -192,7 +199,9 @@ async def async_remove_help_view(hass: HomeAssistant) -> tuple[str, str]:
     async with _lock(hass):
         outcome, dash, config, views = await _editable(hass)
         if outcome:
-            return (ABSENT if outcome == NO_DASHBOARD else outcome), BASE_URL_PATH
+            # only a dashboard written in YAML can hold a Help view Battman can't take off; nothing else at
+            # /battman (no dashboard, no saved views, a panel) has one to take off
+            return (NOT_EDITABLE if _yaml(hass) else ABSENT), BASE_URL_PATH
         keep = [v for v in views if not _is_help_view(v)]
         if len(keep) == len(views):
             return ABSENT, BASE_URL_PATH

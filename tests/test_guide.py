@@ -405,6 +405,7 @@ async def test_show_help_says_when_it_cant(hass: HomeAssistant, monkeypatch) -> 
     strategy = {"strategy": {"type": "original-states"}}
     await hass.data[LOVELACE_DATA].dashboards["battman"].async_save(strategy)
     await _show(hass, False)
+    assert _note(hass) is None                       # nothing there to take off: nothing to say
     await _show(hass, True)
     assert await _cfg(hass) == strategy
     await dashboard._collection(hass).async_delete_item(hass.data[LOVELACE_DATA].dashboards["battman"].config["id"])
@@ -569,3 +570,50 @@ def test_settings_card_help_mode() -> None:
     assert "HELP_PAGE = 'intermediate/settings'" in SETTINGS_JS
     panel = (WWW / "battman-help-panel.js").read_text()
     assert re.findall(r'^import .* from "([^"]+)";', panel, re.M) == ["./battman-guide-md.js"]
+
+
+async def test_show_help_appearing_or_coming_back_changes_nothing(hass: HomeAssistant, monkeypatch) -> None:
+    """The setting appearing for the first time (an update), the sensor coming back, or a template reload
+    leave the dashboard as it is; only turning it on or off changes it."""
+    from . import engine_harness as H
+
+    await H.start(hass)
+    dash = hass.data[LOVELACE_DATA].dashboards["battman"]
+    cfg = await _cfg(hass)
+    without = {**cfg, "views": [v for v in cfg["views"] if v["path"] != "help"]}
+    await dash.async_save(without)
+
+    # as on the first start after an update: the sensor without the setting, then a settings change adds it (on)
+    st = hass.states.get("sensor.battman_parameters")
+    hass.states.async_set(st.entity_id, st.state, {k: v for k, v in st.attributes.items() if k != "showHelp"})
+    await hass.async_block_till_done()
+    hass.bus.async_fire("battman_parameters_update", {"action": "SetAttribute", "billInflation": 2})
+    await hass.async_block_till_done()
+    assert hass.states.get(st.entity_id).attributes["showHelp"] is True
+    for _ in range(2):                                  # unavailable and back, then a template reload
+        hass.states.async_set(st.entity_id, "unavailable", {})
+        await hass.async_block_till_done()
+        hass.states.async_set(st.entity_id, st.state, dict(st.attributes))
+        await hass.async_block_till_done()
+    await hass.services.async_call("template", "reload", blocking=True)
+    await hass.async_block_till_done()
+    assert await _cfg(hass) == without
+
+    # the switch already on with no Help tab (as after an update): off and on again adds it
+    await _show(hass, False)
+    await _show(hass, True)
+    assert (await _cfg(hass))["views"][-1]["path"] == "help"
+
+    # a change that works clears an earlier problem notification; one that can't add it says why
+    await _show(hass, False)
+
+    async def broken(_config):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(dash, "async_save", broken)
+    await _show(hass, True)
+    assert _note(hass)["message"] == "Could not add the Help view: Saving the dashboard failed: disk full"
+    monkeypatch.undo()
+    await _show(hass, False)
+    await _show(hass, True)
+    assert _note(hass) is None and (await _cfg(hass))["views"][-1]["path"] == "help"

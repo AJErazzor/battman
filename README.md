@@ -8,6 +8,8 @@ Curvy, Pricy, Finances, Settings, Log, Theme), its cards and themes.
 
 ## Install (HACS)
 
+Battman needs **Home Assistant 2026.11 or later**. (On 2026.10 the popups come up without the theme's colours: HA starts the tap event above the themed view.)
+
 Before you start, have these in place (the full list, and why: [DEPENDENCIES.md](DEPENDENCIES.md)):
 
 - The integrations it reads: Sigenergy (Sigenergy-Local-Modbus), Amber, Solcast, and optionally OpenNEM.
@@ -73,8 +75,9 @@ everything into cards so less and less of it is fixed.
   nothing is created and the message says so.
 - **Theme:** pick one under **Settings → Dashboard options**, or use **Make Active** in
   the Theme view (they do the same thing).
-- **No Help tab?** Turn on **Settings → Dashboard options → Show help** on the dashboard: it adds
-  the Help view as the last tab and changes nothing else. Turning it off takes the Help view off.
+- **No Help tab?** Turn on **Settings → Dashboard options → Show help** on the dashboard (if it's
+  already on, turn it off and on again): it adds the Help view as the last tab and changes nothing else.
+  Turning it off takes the Help view off.
 
 ## The guide
 

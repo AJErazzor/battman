@@ -188,7 +188,7 @@ async def test_pricegrid_missing(hass: HomeAssistant) -> None:
     out = run_js([(js, unavailable, None), (js, no_fc, None), (js, gone, None)])
     hero = out[0].split("SELL", 1)[1][:3000]
     assert "—" in out[0] and "NaN" not in out[0]
-    assert "purple-soft-bg" not in out[0].split("BUY")[0].split("<div style='grid-column:1/-1;'>")[1].split("</svg>")[0]
+    assert "purple-soft-bg" not in out[0].split("BUY")[0].split("<div style='grid-column:1/-1;'>")[1].split("</battman-countdown>")[0]
     assert "text-muted" in hero                                   # neutral, not a price band
     assert "No BUY forecast from " + BUY_F in out[1]
     assert "Price grid: missing " + EST in out[2] and "SELL" not in out[2]

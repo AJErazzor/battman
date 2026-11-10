@@ -1,5 +1,5 @@
 # name: Amber 5-min price grid
-# description: SELL and BUY now with a sparkline, the 5-min countdown, and the next 8 periods.
+# description: SELL and BUY now with the 5-min countdown (and Estimating while the new price is), then the next 8 periods.
 #
 # A Battman card: on a dashboard it's `type: custom:battman-amber5minpricegrid`, and it updates
 # with Battman releases. [[map:name]] = an entry in Battman's entity map (quote it
@@ -93,47 +93,16 @@ cards:
           start_time: f.start_time
         }
       }));
-      const clamp = (val, lo, hi) =>
-        Math.max(lo, Math.min(hi, val));
-
-      // 0.9.8: flagged once, above the SELL sparkline, from each 5-min mark until the new price lands (~20 s).
-      // Amber's own 'estimate' attr is never true here (it just keeps the old price), so use the engine's sensor.
+      // 0.9.8: flagged from each 5-min mark until the new price lands (~20 s). Amber's own 'estimate' attr is never
+      // true here (it just keeps the old price), so use the engine's sensor. The countdown keeps running underneath, so
+      // how long the price took to lock in can be read straight off it.
       const est = states['[[map:estimated_price]]']?.state === 'on';
-      const makeHeroCell = (entity, label, periods, getMeta) => {
+      // Both halves mirror each other: a header row (18px) over a 26px number. Left: BUY/SELL + the price's time over the
+      // price. Right: "Estimating" (only while it is) over the countdown to the next 5-minute price.
+      const makeHeroCell = (entity, label, getMeta) => {
         const v = parseFloat(entity?.state);
         const m = getMeta(v);
         const t = time(entity);
-
-        const vals = [entity, ...periods]
-          .map(e => parseFloat(e?.state))
-          .filter(isFinite);
-
-        let sparkPts = '';
-        let sparkDot = '';
-
-        if (vals.length >= 2) {
-          const lo = label === 'BUY' ? 0 : -0.10;
-          const hi = label === 'BUY' ? 0.60 : 0.35;
-          const range = hi - lo;
-
-          const W = 58;
-          const H = 32;
-
-          const toY = val =>
-            H - ((clamp(val, lo, hi) - lo) / range) * (H - 2);
-
-          const pts = vals
-            .map((val, i) =>
-              `${(i / (vals.length - 1)) * W},${toY(val)}`
-            )
-            .join(' ');
-
-          sparkPts =
-            `<polyline points="${pts}" fill="none" stroke="${m.accent}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-
-          sparkDot =
-            `<circle cx="0" cy="${toY(vals[0])}" r="3" fill="${m.accent}"/>`;
-        }
 
         return `
           <div style="
@@ -141,6 +110,7 @@ cards:
             height:55px;
             display:flex;
             align-items:center;
+            justify-content:space-between;
             padding:0 12px;
             position:relative;
             overflow:hidden;
@@ -158,17 +128,10 @@ cards:
               filter:blur(45px);
               pointer-events:none;
             "></div>
-            ${label === 'SELL' && est
-              ? `<div style="position:absolute;top:2px;right:12px;width:60px;text-align:center;font-size:9px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;line-height:1;color:${m.accent};pointer-events:none;">Estimating</div>`
-              : ''}
 
-            <div style="flex:1;text-align:left;">
-              ${label === 'SELL'
-                ? `<div style='display:flex;align-items:baseline;margin-bottom:3px;width:100%;'><span style='flex-shrink:0;display:flex;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>${label}</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'>${t}</span></span><span style='flex:1;display:flex;justify-content:center;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>LEFT</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'><battman-countdown></battman-countdown></span></span></div>`
-                : `<div style='display:flex;align-items:baseline;margin-bottom:3px;width:100%;'><span style='flex-shrink:0;display:flex;align-items:baseline;gap:5px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>${label}</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'>${t}</span></span></div>`
-              }
-
-              ${est ? `<style>@keyframes bm-est-pulse{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 22px var(--bm-pc),0 0 10px var(--bm-pc),0 0 3px var(--bm-pc)}}</style>` : ''}
+            ${est ? `<style>@keyframes bm-est-pulse{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 22px var(--bm-pc),0 0 10px var(--bm-pc),0 0 3px var(--bm-pc)}}</style>` : ''}
+            <div style="text-align:left;">
+              <div style='display:flex;align-items:baseline;gap:5px;height:21px;line-height:21px;margin-bottom:3px;'><span style='font-size:11px;font-weight:700;color:${m.accent};text-transform:uppercase;letter-spacing:0.08em;'>${label}</span><span style='font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;'>${t}</span></div>
               <div style="
                 font-size:26px;
                 font-weight:900;
@@ -182,10 +145,10 @@ cards:
               </div>
             </div>
 
-            <svg width="60" height="34" style="opacity:0.65;flex-shrink:0;">
-              ${sparkPts}
-              ${sparkDot}
-            </svg>
+            <div style="text-align:right;">
+              <div style='height:21px;line-height:21px;margin-bottom:3px;font-size:18px;font-weight:900;color:${m.accent};letter-spacing:-0.2px;text-transform:uppercase;'>${est ? 'Estimating' : ''}</div>
+              <div style='font-size:26px;font-weight:900;color:${m.accent};letter-spacing:-0.5px;line-height:1;font-variant-numeric:tabular-nums;'><battman-countdown></battman-countdown></div>
+            </div>
           </div>
         `;
       };
@@ -246,7 +209,7 @@ cards:
       };
       const strip = (label, nowEntity, periods, getMeta) => {
         const heroHTML =
-          `<div style='grid-column:1/-1;'>${makeHeroCell(nowEntity, label, periods, getMeta)}</div>`;
+          `<div style='grid-column:1/-1;'>${makeHeroCell(nowEntity, label, getMeta)}</div>`;
 
         const periodHTML =
           periods.map((p, i) => {
