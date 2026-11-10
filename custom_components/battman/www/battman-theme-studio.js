@@ -1077,7 +1077,7 @@ textarea#yaml{
       vars={}; order=[];
       Object.keys(p.vars).forEach(function(k){vars[k]=String(p.vars[k]);order.push(k);});
       themeName=withPrefix(p.name);
-      captureAlphaProfile(); applyChromeVars();
+      captureAlphaProfile();   // renderAll() below applies the colours, once the font boxes are set
       $("fontOn").checked = vars["battman-font"]!==undefined;
       setFontFields(stripQuotes(vars["battman-font"]||"IM Fell English, Georgia, serif"));
       parseFx(); renderAll();
