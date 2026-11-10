@@ -5,6 +5,7 @@ them (a deleted one stays deleted); the create action is generic."""
 from datetime import timedelta
 from pathlib import Path
 
+import pytest
 import yaml
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
@@ -88,24 +89,29 @@ async def test_cheap_price_alert(hass: HomeAssistant) -> None:
     assert len(calls) == n
 
 
-async def test_offgrid_alert(hass: HomeAssistant, freezer) -> None:
+# Sigenergy-Local-Modbus 1.x stores the labels, 2.x stores the keys: the alert works with both
+GRID_FORMS = [("On Grid", "Off Grid (Auto)", "Off Grid (Manual)"), ("on_grid", "off_grid_auto", "off_grid_manual")]
+
+
+@pytest.mark.parametrize("on,auto,manual", GRID_FORMS)
+async def test_offgrid_alert(hass: HomeAssistant, freezer, on: str, auto: str, manual: str) -> None:
     await _setup(hass)
     calls = _phone(hass)
     s = hass.states.async_set
     s("sensor.sigen_plant_battery_state_of_charge", "50")
     s("sensor.sigen_plant_rated_energy_capacity", "40")
     s("sensor.sigen_plant_consumed_power", "2")
-    s("sensor.sigen_plant_grid_connection_status", "On Grid")
+    s("sensor.sigen_plant_grid_connection_status", on)
     await _set(hass, alertNotifyTarget="test_phone", offGridAlertDelay=0)
-    s("sensor.sigen_plant_grid_connection_status", "Off Grid (Auto)")
+    s("sensor.sigen_plant_grid_connection_status", auto)
     await _settle(hass)
     freezer.tick(timedelta(seconds=2))
     async_fire_time_changed(hass)
     await _settle(hass)
     assert calls == []                                              # off-grid alert is off
-    s("sensor.sigen_plant_grid_connection_status", "On Grid")
+    s("sensor.sigen_plant_grid_connection_status", on)
     await _set(hass, offGridAlert=True)
-    s("sensor.sigen_plant_grid_connection_status", "Off Grid (Auto)")
+    s("sensor.sigen_plant_grid_connection_status", auto)
     await _settle(hass)
     freezer.tick(timedelta(seconds=2))
     async_fire_time_changed(hass)
@@ -114,16 +120,16 @@ async def test_offgrid_alert(hass: HomeAssistant, freezer) -> None:
     assert calls[-1]["message"] == "Battery 50% · about 10 h at 2.0 kW"          # 40 kWh × 50% ÷ 2 kW
     assert calls[-1]["data"]["push"] == {"interruption-level": "time-sensitive"}
     n = len(calls)
-    s("sensor.sigen_plant_grid_connection_status", "On Grid")
+    s("sensor.sigen_plant_grid_connection_status", on)
     await _settle(hass)
     assert len(calls) == n                                          # restored alert is off
     await _set(hass, offGridRestoredAlert=True)
-    s("sensor.sigen_plant_grid_connection_status", "Off Grid (Manual)")
+    s("sensor.sigen_plant_grid_connection_status", manual)
     await _settle(hass)
     freezer.tick(timedelta(seconds=2))
     async_fire_time_changed(hass)
     await _settle(hass)
     assert calls[-1]["title"] == "🔌 Switched to off-grid"
-    s("sensor.sigen_plant_grid_connection_status", "On Grid")
+    s("sensor.sigen_plant_grid_connection_status", on)
     await _settle(hass)
     assert calls[-1]["title"] == "✅ Grid is back" and calls[-1]["message"] == "Battery 50%"

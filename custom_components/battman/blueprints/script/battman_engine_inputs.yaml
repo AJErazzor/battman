@@ -34,8 +34,12 @@ sequence:
     # Which sensors to read. Change these to use different ones.
     battery_soc: sensor.sigen_plant_battery_state_of_charge
     battery_capacity_kwh: sensor.sigen_plant_rated_energy_capacity
+    # Sigenergy-Local-Modbus 1.x stores "On Grid" / "Off Grid (Auto)" / "Off Grid (Manual)"; 2.x
+    # stores on_grid / off_grid_auto / off_grid_manual. The state is read in its 2.x form (lower
+    # case, spaces and brackets to underscores), so both versions give the same answer. Anything
+    # else (unknown, unavailable, a state this doesn't know) is not on grid.
     grid_status: sensor.sigen_plant_grid_connection_status
-    grid_status_on: On Grid
+    grid_status_on: on_grid
     pv_remaining: sensor.solcast_pv_forecast_forecast_remaining_today
     buy_price_now: sensor.amber_5min_current_general_price
     sell_price_now: sensor.amber_5min_current_feed_in_price
@@ -58,7 +62,7 @@ sequence:
       soc: '{{ states(battery_soc) | float(0) }}'
       capacity_kwh: '{{ states(battery_capacity_kwh) | float(0) | round(0) }}'
       mode_now: '{{ states(''input_select.battman_mode'') }}'
-      on_grid: '{{ states(grid_status) == grid_status_on }}'
+      on_grid: '{{ (states(grid_status) | lower | replace('' '', ''_'') | replace(''('', '''') | replace('')'', '''')) == grid_status_on }}'
       # P10 solar still to come today (kWh), or none when Solcast has no figure
       pv_remaining_p10: '{{ state_attr(pv_remaining, ''estimate10'') }}'
       # the 30-minute average home load (kW), or none when it has no value yet
