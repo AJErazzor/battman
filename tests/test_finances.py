@@ -28,7 +28,7 @@ async def test_dashboard_views_fill_the_map(hass: HomeAssistant, hass_client) ->
     client = await hass_client()
     data = await built(hass)
     assert data["errors"] == []
-    assert [v["path"] for v in data["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme"]
+    assert [v["path"] for v in data["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme", "help"]
     view = data["views"][3]
     assert view["title"] == "Finances" and view["path"] == "finances"
     assert view["theme"] == "Battman Coffee"

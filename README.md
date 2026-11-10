@@ -57,7 +57,8 @@ It's an ordinary dashboard and it's **yours from the start**: edit, rearrange, d
 Views, in order: **Power** (your control centre, built from Battman cards), **Curvy** (SOC
 curve editor), **Pricy** (price curve editor), **Finances** (cost chart, cost compare,
 Billing and Solar System cards), **Settings** (every setting on one page: drag its sections
-between two columns, the order is kept per device), **Log** and **Theme** (the theme studio).
+between two columns, the order is kept per device), **Log**, **Theme** (the theme studio) and
+**Help** (Battman's built-in guide).
 To fix a period's buy and sell totals, use **Correct Totals** on the Billing card: it opens a
 popup and asks before changing anything.
 
@@ -72,6 +73,16 @@ everything into cards so less and less of it is fixed.
   nothing is created and the message says so.
 - **Theme:** pick one under **Settings → Dashboard options**, or use **Make Active** in
   the Theme view (they do the same thing).
+- **No Help tab?** Dashboards made before the guide existed don't have one. Press
+  **Create help view** on the Battman device (or run `battman.create_help_view`): it adds the
+  Help view as the last tab and changes nothing else.
+
+## The guide
+
+Battman's guide ships with it and opens in the dashboard's **Help** view. The same pages are in
+[custom_components/battman/guide](custom_components/battman/guide/README.md), so you can read
+them here too. A page and section can be linked from any dashboard:
+`/battman/help?page=help/repairs#packages-not-loaded` opens the Repairs page at that section.
 
 ## Cards
 

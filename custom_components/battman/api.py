@@ -13,11 +13,12 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.http import KEY_HASS
 
-from . import cards, images, themes
+from . import cards, guide, images, themes
 from .const import (
     CARDS_URL,
     ENTITY_MAP_DEFAULTS,
     ENTITY_MAP_URL,
+    GUIDE_URL,
     IMAGE_URL,
     IMAGES_URL,
     THEMES_URL,
@@ -80,6 +81,19 @@ async def async_build_dashboard(hass: HomeAssistant) -> dict[str, Any]:
             errors.append(f"{name}: Battman entity map has no entry for: {', '.join(sorted(missing))}")
         views.append(filled)
     return {"views": views, "errors": errors}
+
+
+async def async_build_view(hass: HomeAssistant, path: str) -> dict[str, Any]:
+    """One of Battman's views (by its path), as Create dashboard would write it."""
+    from .dashboard import DashboardUnavailable  # noqa: PLC0415
+
+    built = await async_build_dashboard(hass)
+    for view in built["views"]:
+        if isinstance(view, dict) and view.get("path") == path:
+            if built["errors"]:
+                raise DashboardUnavailable("; ".join(built["errors"]))
+            return view
+    raise DashboardUnavailable(f"Battman has no view at {path!r}")
 
 
 class BattmanEntityMapView(HomeAssistantView):
@@ -188,3 +202,35 @@ class BattmanImageView(HomeAssistantView):
         return web.FileResponse(
             path, headers={"Content-Type": images.content_type(path), "Cache-Control": "no-cache"}
         )
+
+
+class BattmanGuideView(HomeAssistantView):
+    """GET /api/battman/guide -> {"version", "home", "tracks"}: the built-in guide's contents."""
+
+    url = GUIDE_URL
+    name = "api:battman:guide"
+    requires_auth = True
+
+    def __init__(self, version: str) -> None:
+        self._version = version
+
+    async def get(self, request):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        index = await hass.async_add_executor_job(guide.load_index)
+        return self.json({"version": self._version, **index})
+
+
+class BattmanGuidePageView(HomeAssistantView):
+    """GET /api/battman/guide/page/<id> -> {"id", "markdown"}: one page of the built-in guide."""
+
+    url = GUIDE_URL + "/page/{page_id:[a-z0-9/-]+}"
+    name = "api:battman:guide:page"
+    requires_auth = True
+
+    async def get(self, request, page_id: str):
+        hass: HomeAssistant = request.app[KEY_HASS]
+        try:
+            text = await hass.async_add_executor_job(guide.read_page, page_id)
+        except guide.GuideError as err:
+            return self.json({"message": str(err)}, status_code=404)
+        return self.json({"id": page_id, "markdown": text})

@@ -11,7 +11,8 @@ Battman checks for the dashboard cards at startup and raises a **Repair** naming
 
 
 Battman ships **Chart.js** 4.4.0 (`www/vendor/`), so the charts on the Log, Cost chart and Cost
-compare, Curvy and Pricy cards work without the internet. The only
+compare, Curvy and Pricy cards work without the internet, and **marked** 18.1.2, which draws the
+built-in guide's pages on the Help view. The only
 thing loaded from the internet is **Google Fonts**: the theme studio's font browser, and themes that
 turn on a custom font.
 

@@ -1,0 +1,24 @@
+# Battman's built-in guide: what's in it, in order. The Help view's contents come from this file.
+#
+# Each page is a Markdown file: <track>/<slug>.md (the home page is README.md). A page's address in the
+# Help view is ?page=<track>/<slug>, so once a page is published its track and slug never change.
+# tests/test_guide.py checks every page here has its file, every file is listed here, and every link
+# between pages (and to a section) lands.
+home:
+  title: Battman help
+  summary: What's in the guide and how to find your way round it.
+tracks:
+  - id: start
+    title: Getting started
+    summary: Finding your way round Battman.
+    pages:
+      - slug: device-page
+        title: The Battman device page
+        summary: Create dashboard, Create help view and Create automations, and what each one never does.
+  - id: help
+    title: Troubleshooting
+    summary: When something isn't right.
+    pages:
+      - slug: repairs
+        title: Battman's Repairs
+        summary: Every problem Battman can report under Settings → Repairs, and how to fix it.

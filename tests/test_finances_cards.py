@@ -98,7 +98,7 @@ async def test_finances_is_battman_cards(hass: HomeAssistant, hass_client) -> No
     client = await hass_client()
     data = await built(hass)
     assert data["errors"] == []
-    assert [v["path"] for v in data["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme"]
+    assert [v["path"] for v in data["views"]] == ["power", "curvy", "pricy", "finances", "settings", "log", "theme", "help"]
     fin = next(v for v in data["views"] if v["path"] == "finances")
     assert [c["type"] for c in fin["sections"][0]["cards"]] == [
         "custom:battman-cost-chart", "custom:battman-cost-compare", "custom:battman-billing", "custom:battman-solar-system"]
