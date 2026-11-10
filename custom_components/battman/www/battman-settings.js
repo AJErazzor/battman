@@ -590,7 +590,7 @@ class BattmanSettingsCard extends BattmanCardBase {
         + row('Simple battery mode', 'Simple buy / sell / self-consume buttons instead of the full mode controls', swHtml('data-pswitch="simpleBatteryMode"', !!p.simpleBatteryMode))
         + row('Always show override timer', 'Keep the override timer visible even when no timer is running', swHtml('data-pswitch="alwaysShowOverrideTimer" data-showhide', p.alwaysShowOverrideTimer === 'show'))
         + row('Dashboard theme', '', '<select class="wide" data-theme>' + opts + '</select>')
-        + row('Show help', 'The Help view (Battman\'s guide). Off takes it off the Battman dashboard; on puts it back', swHtml('data-pswitch="showHelp"', p.showHelp !== false))
+        + row('Show help', 'The Help view on the Battman dashboard', swHtml('data-pswitch="showHelp"', p.showHelp !== false))
         + '<div class="subdiv">Confirmations</div>'
         + row('Warn when a mode goes against the price', 'Sell at a negative feed-in, HOOOOVER or House Party at a non-negative buy', swHtml('data-pswitch="confirmPriceMismatch"', p.confirmPriceMismatch !== false))
         + numParam('confirmBuyAbove', 'Warn on Buy above', 'Blank or 0: never', 'c/kWh')
