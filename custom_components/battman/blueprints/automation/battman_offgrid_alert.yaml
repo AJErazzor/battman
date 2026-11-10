@@ -17,7 +17,7 @@ blueprint:
   input:
     grid_status:
       name: Grid connection status
-      description: "States: On Grid, Off Grid (Auto), Off Grid (Manual)."
+      description: "States: on_grid, off_grid_auto, off_grid_manual (Sigenergy-Local-Modbus 2.x), or On Grid, Off Grid (Auto), Off Grid (Manual) (1.x)."
       default: sensor.sigen_plant_grid_connection_status
       selector:
         entity:
@@ -57,7 +57,10 @@ trigger_variables:
 triggers:
   - trigger: state
     entity_id: !input grid_status
+    # both forms of the state: Sigenergy-Local-Modbus 2.x (off_grid_auto) and 1.x (Off Grid (Auto))
     to:
+      - off_grid_auto
+      - off_grid_manual
       - Off Grid (Auto)
       - Off Grid (Manual)
     for:
@@ -66,9 +69,13 @@ triggers:
   - trigger: state
     entity_id: !input grid_status
     from:
+      - off_grid_auto
+      - off_grid_manual
       - Off Grid (Auto)
       - Off Grid (Manual)
-    to: On Grid
+    to:
+      - on_grid
+      - On Grid
     id: restored
 
 conditions:
@@ -110,7 +117,7 @@ actions:
           - action: "notify.{{ state_attr(settings, 'alertNotifyTarget') | trim }}"
             data:
               title: >-
-                {{ '🔌 Power outage' if states(status_e) == 'Off Grid (Auto)' else '🔌 Switched to off-grid' }}
+                {{ '🔌 Power outage' if states(status_e) in ['off_grid_auto', 'Off Grid (Auto)'] else '🔌 Switched to off-grid' }}
               message: "{{ left }}"
               data:
                 tag: battman_offgrid

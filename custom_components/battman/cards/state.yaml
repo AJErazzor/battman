@@ -40,9 +40,11 @@ custom_fields:
       const SC = null;   // sandpit mocks inject scenarios here; null = live
       const gs = states['sensor.sigen_plant_grid_connection_status'];
       const num = (id) => parseFloat(states[id]?.state);
+      // Sigenergy-Local-Modbus 1.x states are "Off Grid (Auto)", 2.x are off_grid_auto: read both the same way
+      const gridState = (s) => String(s ?? '').toLowerCase().replace(/[ ]/g, '_').replace(/[()]/g, '');
       const S = SC ? SC : {status: gs?.state, soc: num('sensor.sigen_plant_battery_state_of_charge'), cap: num('sensor.sigen_plant_rated_energy_capacity'),
         load: num('sensor.sigen_plant_consumed_power'), pv: num('sensor.sigen_plant_pv_power'), offMin: gs ? (Date.now() - Date.parse(gs.last_changed)) / 60000 : NaN};
-      const auto = S.status === 'Off Grid (Auto)', manual = S.status === 'Off Grid (Manual)';
+      const auto = gridState(S.status) === 'off_grid_auto', manual = gridState(S.status) === 'off_grid_manual';
       if (!auto && !manual) return '';
       const mix = (col, pct) => `color-mix(in srgb,${col} ${pct}%,transparent)`;
       const ok = (v) => isFinite(v);

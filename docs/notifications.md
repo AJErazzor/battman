@@ -17,8 +17,8 @@ The Amber alerts carry **Charge** buttons (5 and 10 minutes; the negative-price 
 starts the override timer for that long.
 
 The **off-grid alert** is a time-sensitive push (it gets through iPhone Focus modes). It uses
-`sensor.sigen_plant_grid_connection_status`: **Off Grid (Auto)** is titled *Power outage*,
-**Off Grid (Manual)** *Switched to off-grid*. The message says the battery level and roughly how
+`sensor.sigen_plant_grid_connection_status`: **Off Grid (Auto)** (`off_grid_auto` in Sigenergy-Local-Modbus 2.x)
+is titled *Power outage*, **Off Grid (Manual)** (`off_grid_manual`) *Switched to off-grid*. The message says the battery level and roughly how
 long it will last: rated capacity × SOC ÷ the house's current load.
 
 ## The automations
