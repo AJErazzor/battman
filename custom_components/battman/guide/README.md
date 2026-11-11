@@ -17,6 +17,7 @@ This guide is written from Battman's own code, so it describes what your install
 
 **Using Battman**
 
+- [Power](intermediate/power.md): every card on the Power view, what it shows and what you can press.
 - [Settings](intermediate/settings.md): every section of the Settings view and what each setting does.
 
 **Troubleshooting**
@@ -36,6 +37,7 @@ The **Show help** switch is on the Battman dashboard's **Settings** view, under 
 - **Turning it off** takes the Help view off the Battman dashboard at `/battman`. Nothing else on the dashboard changes.
 - **Turning it on** adds the Help view back as the last tab, if the dashboard hasn't got one. Nothing else on the dashboard changes.
 - **While it's off**, **Create dashboard** makes the dashboard without the Help view.
+- **The Help buttons** on the **Settings** card and at the top right of the **Power** view show only while it's on. Press one, then a **?** on a card or section to see what it does.
 
 When Battman changes the dashboard, Home Assistant shows "Your dashboard was updated. Refresh to see changes?" in any browser that has it open: press **Refresh** to see the Help tab come or go.
 

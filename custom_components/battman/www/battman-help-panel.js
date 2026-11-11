@@ -70,6 +70,7 @@ const PANEL_CSS = `
 .bh-body .callout.note, .bh-body .callout.tip { border-left-color: var(--battman-sky, var(--primary-color)); }
 .bh-body .callout-title { font-weight: 700; margin: 2px 0; }
 .bh-body .table { overflow-x: auto; }
+.bh-body .gimg { display: block; max-width: 100%; height: auto; margin: 8px 0 12px; border-radius: 8px; border: 1px solid var(--battman-border-neutral, var(--divider-color)); }
 .bh-body table { border-collapse: collapse; font-size: 13px; }
 .bh-body th, .bh-body td { border: 1px solid var(--battman-border-neutral, var(--divider-color)); padding: 4px 8px; text-align: left; }
 .bh-body .code { position: relative; }
@@ -80,7 +81,9 @@ const PANEL_CSS = `
 .bh-chip { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 16px; cursor: pointer; min-height: 32px; text-align: left;
   border: 0; background: var(--battman-surface-card, rgba(127, 127, 127, 0.15)); color: inherit; }
 .bh-all { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; margin-top: 4px;
-  background: var(--battman-sky, var(--primary-color)); color: var(--card-background-color, #fff); font-weight: 700; text-decoration: none; }
+  border: 1px solid var(--battman-border-neutral, var(--divider-color)); background: transparent; color: inherit; font-weight: 600; text-decoration: none; }
+.bh-all:hover { background: rgba(127, 127, 127, 0.12); }
+.bh-all:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
 `;
 
 // Open (or move) the panel in a card's shadow root for a summary id. from = the tag pressed.

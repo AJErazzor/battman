@@ -17,6 +17,7 @@
 // in colour; once placed it has no theme: and takes its view's theme, as any card.
 
 import { battmanDefine } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
 
 const PARAMS = new URL(import.meta.url).searchParams;
 const START_IDS = (PARAMS.get("cards") || "").split(",").filter(Boolean);
@@ -126,6 +127,12 @@ class BattmanCard extends HTMLElement {
       this._themeObj = null;
     }
     if (this._hass) this.hass = this._hass;
+    // the "?" help on the Power view (battman-help-layer.js); the card is drawn by the card inside it
+    if (!this._inPicker && !this._unhelp) this._unhelp = helpRegister(this.constructor.cardId, () => this._inner || this.firstElementChild);
+  }
+
+  disconnectedCallback() {
+    if (this._unhelp) { this._unhelp(); this._unhelp = null; }
   }
 
   // The theme to draw in: the card's theme:, or PREVIEW_THEME in the card picker, or none (the view's).

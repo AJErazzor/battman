@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 (async () => {
   const [www, dir] = process.argv.slice(2);
-  for (const f of ["battman-cards.js", "battman-countdown.js", "battman-card-base.js"]) fs.copyFileSync(path.join(www, f), path.join(dir, f));
+  for (const f of ["battman-cards.js", "battman-countdown.js", "battman-card-base.js", "battman-help-layer.js"]) fs.copyFileSync(path.join(www, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html><html><body>
 <script>window.loadCardHelpers = async () => ({ createCardElement: () => document.createElement("div") });</script>
 <script type="module" src="battman-countdown.js"></script>
