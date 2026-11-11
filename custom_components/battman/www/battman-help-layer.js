@@ -1,4 +1,4 @@
-// "?" help on the Power, Curvy and Pricy views. (The Settings card has its own, in battman-settings.js.)
+// "?" help on the Power, Curvy, Pricy, Finances, Log and Theme views. (The Settings card has its own, in battman-settings.js.)
 //
 // Cards, or parts of a card, register here while they're on a page: helpRegister("power.house", () => element).
 // The id is a summary block's id; its first part names the guide page (PAGES). While anything is registered, and
@@ -8,7 +8,7 @@
 // page, not inside the cards, because many cards are drawn by other cards that can't hold them. The layer follows
 // each part's position, and takes the theme variables from the cards, so it looks like the view.
 
-const PAGES = { power: "intermediate/power", curvy: "intermediate/curvy", pricy: "intermediate/pricy" };
+const PAGES = { power: "intermediate/power", curvy: "intermediate/curvy", pricy: "intermediate/pricy", finances: "intermediate/finances", log: "intermediate/log", theme: "intermediate/theme" };
 const pageOf = (id) => PAGES[String(id).split(".")[0]];
 // the parts that have help: a summary block on their page (tests/test_guide.py keeps this in step with the pages).
 // Anything else that registers (a Battman card on another view) is ignored, so no Help button shows there.
@@ -17,6 +17,11 @@ const SECTIONS = {
     "gauges", "nemmix"],
   curvy: ["edit", "options", "readouts", "chart", "hours", "buttons", "editing"],
   pricy: ["edit", "options", "readouts", "chart", "preferred", "second", "buttons", "editing"],
+  // a part of a busy card is <card>.<part>, and gets a small "?"
+  finances: ["costchart", "costchart.ranges", "costchart.totals", "costchart.chart", "costcompare", "billing", "billing.buttons",
+    "solar", "solar.financials", "solar.roi"],
+  log: ["controls", "log", "mode", "price", "power", "grid", "soc", "solar"],
+  theme: ["themes", "palette", "surfaces", "harmonic", "font", "fx", "preview", "yaml"],
 };
 const HAS_HELP = new Set(Object.entries(SECTIONS).flatMap(([page, ids]) => ids.map((i) => `${page}.${i}`)));
 const PARAMETERS = "sensor.battman_parameters";
@@ -86,7 +91,7 @@ function tell(text, bad) {
 function copyTheme() {
   for (const { measure } of cards.values()) {
     const el = measure();
-    if (!el || !el.isConnected) continue;
+    if (!(el instanceof Element) || !el.isConnected) continue;
     const cs = getComputedStyle(el);
     for (const v of VARS) {
       const val = cs.getPropertyValue(v);
@@ -115,12 +120,12 @@ function place() {
   if (!on || !layer) return;
   const top = headerHeight() + 4;
   const seen = new Set();
-  for (const [token, { id, measure }] of cards) {
+  for (const [token, { id, measure, inset }] of cards) {
     const sid = id;
     if (!help.summaries[sid]) continue;
     let tag = layer.root.querySelector(`.bh-tag[data-token="${token.n}"]`);
     if (!tag) {
-      layer.frame.insertAdjacentHTML("beforeend", help.mod.tagHtml(sid, sid.split(".").slice(1).join(" ")));
+      layer.frame.insertAdjacentHTML("beforeend", help.mod.tagHtml(sid, sid.split(".").slice(1).join(" "), sid.split(".").length > 2));
       tag = layer.frame.lastElementChild;
       tag.dataset.token = token.n;
       help.mod.retag(layer.root, tag);       // a panel that's open for this card keeps its tag
@@ -132,7 +137,7 @@ function place() {
     tag.style.visibility = visible ? "" : "hidden";
     if (visible) {
       tag.style.top = Math.max(r.top + 8, top) + "px";       // stays in view while the card's top scrolls under the header
-      tag.style.left = r.right - 8 - tag.offsetWidth + "px";
+      tag.style.left = r.right - inset - tag.offsetWidth + "px";
     }
   }
   layer.root.querySelectorAll(".bh-tag").forEach((t) => { if (!seen.has(t)) t.remove(); });
@@ -189,11 +194,12 @@ function onKey(e) {
 
 // A card calls this when it's added to the page (once for each part with help) and calls the function it returns
 // when it's taken off. id is the summary's id ("power.house", "curvy.chart"); measure() gives the element whose box
-// the "?" sits on (a card drawn by another card has no box of its own, so it names the one inside it).
-export function helpRegister(id, measure) {
+// the "?" sits on (a card drawn by another card has no box of its own, so it names the one inside it). inset: how far
+// in from the box's right edge the "?" sits (more where the part has its own control in that corner).
+export function helpRegister(id, measure, { inset = 8 } = {}) {
   if (!HAS_HELP.has(id)) return () => {};
   const token = { n: String(Math.random()).slice(2) };
-  cards.set(token, { id, measure });
+  cards.set(token, { id, measure, inset });
   if (cards.size === 1) {
     document.addEventListener("keydown", onKey);
     timer = setInterval(syncButton, 1000);
@@ -207,4 +213,64 @@ export function helpRegister(id, measure) {
     if (on) setHelp(false);
     if (layer) layer.btn.hidden = true;
   };
+}
+
+// ── Battman's YAML cards (drawn by the wrapper in battman-cards.js, mostly through button-card) ──
+
+// a YAML card's id in the help, where it isn't the card's own id without hyphens
+const YAML_IDS = { "solar-system": "solar" };
+
+// The parts of a YAML card that have their own "?": found by the text they show, inside the cards that draw them.
+// [part, first text, last text]: the "?" sits on the box from the first to the last.
+const YAML_PARTS = {
+  billing: [["buttons", "Bank New Income", "Correct Totals"]],
+  solar: [["financials", "Financials"], ["roi", "ROI Timeline"]],
+};
+
+// the element under root (through shadow roots) that shows exactly this text
+function findText(root, text) {
+  const want = text.toLowerCase();
+  const walk = (node) => {
+    for (const el of node.children || []) {
+      if (el.textContent.trim().toLowerCase() === want && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want)) return el;
+      if (el.shadowRoot) { const f = walk(el.shadowRoot); if (f) return f; }
+      const f = walk(el);
+      if (f) return f;
+    }
+    return null;
+  };
+  if (root.shadowRoot) { const f = walk(root.shadowRoot); if (f) return f; }
+  return walk(root);
+}
+
+// the box from one found element to another, as the layer measures it
+function spanOf(a, b) {
+  return {
+    get isConnected() { return a.isConnected && b.isConnected; },
+    getBoundingClientRect() {
+      const r = a.getBoundingClientRect(), s = b.getBoundingClientRect();
+      return { top: Math.min(r.top, s.top), left: Math.min(r.left, s.left), right: Math.max(r.right, s.right), bottom: Math.max(r.bottom, s.bottom),
+        width: Math.max(r.right, s.right) - Math.min(r.left, s.left), height: Math.max(r.bottom, s.bottom) - Math.min(r.top, s.top) };
+    },
+  };
+}
+
+// The wrapper calls this for every YAML card: the card's own "?" (on whichever view's page has it) and its parts'.
+// inner() gives the card that draws it. Returns the function that takes them all off.
+export function helpRegisterCard(cardId, inner) {
+  const key = YAML_IDS[cardId] || String(cardId).replace(/-/g, "");
+  const page = Object.keys(SECTIONS).find((p) => HAS_HELP.has(`${p}.${key}`));
+  if (!page) return () => {};
+  const offs = [helpRegister(`${page}.${key}`, inner)];
+  for (const [part, first, last] of YAML_PARTS[key] || []) {
+    let found = null;
+    offs.push(helpRegister(`${page}.${key}.${part}`, () => {
+      if (found && found.isConnected) return found;
+      const el = inner();
+      const a = el && findText(el, first), b = last ? el && findText(el, last) : a;
+      found = a && b ? (a === b ? a : spanOf(a, b)) : null;
+      return found;
+    }));
+  }
+  return () => offs.forEach((off) => off());
 }

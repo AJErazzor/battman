@@ -13,7 +13,7 @@ const { chromium } = require("playwright");
 const ROOT = process.argv[2];
 const OUT = process.argv[3];
 const WWW = path.join(ROOT, "www");
-const GUIDE = JSON.parse(process.env.GUIDE_JSON);     // {index, pages: {id: markdown}} from the Python side
+const GUIDE = JSON.parse(fs.readFileSync(process.env.GUIDE_FILE, "utf8"));     // {index, pages: {id: markdown}} from the Python side
 
 const PAGE = `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

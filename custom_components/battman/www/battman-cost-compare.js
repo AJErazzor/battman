@@ -2,13 +2,26 @@
 // running net cost ($) day by day from the bill day, with how far ahead or behind you are today.
 // From the cost totals' long-term statistics (battman-cost-data.js). Refreshes every minute.
 
-import { BattmanCardBase, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
+import { BattmanCardBase, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars, inCardPicker } from "./battman-card-base.js";
 import { costData, midnight, money } from "./battman-cost-data.js";
 
 const NEEDS = ["buy_total", "sell_total", "network_fee_total", "parameters"];
 const THEME_VARS = ["--battman-green", "--battman-amber", "--battman-red"];
 
 class BattmanCostCompareCard extends BattmanCardBase {
+  // the "?" help on the Finances view (battman-help-layer.js)
+  connectedCallback() {
+    super.connectedCallback();
+    if (this._unhelp || inCardPicker(this)) return;
+    this._unhelp = [["costcompare", "ha-card"]].map(([id, q]) => helpRegister("finances." + id, () => this.shadowRoot && this.shadowRoot.querySelector(q)));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._unhelp) { this._unhelp.forEach((off) => off()); this._unhelp = null; }
+  }
+
   static cardName = "Battman Cost compare";
   static preview = "cost-compare.webp";
   static gridOptions = { columns: "full", rows: 8 };

@@ -28,6 +28,15 @@ tracks:
       - slug: pricy
         title: Pricy
         summary: The price curve editor, the prices Battman sells and buys at, hour by hour.
+      - slug: finances
+        title: Finances
+        summary: Every card on the Finances view, from the daily cost chart to the system's payback.
+      - slug: log
+        title: Log
+        summary: Each engine run, the mode timeline and the price, power, grid, SOC and solar charts over one window.
+      - slug: theme
+        title: Theme
+        summary: Theme Studio, for editing a Battman theme's colours, font and button effects with a live preview, then saving it to Home Assistant or making it active.
       - slug: settings
         title: Settings
         summary: Every section of the Settings view, and what each setting does.

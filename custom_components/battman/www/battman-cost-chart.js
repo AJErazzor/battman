@@ -3,7 +3,8 @@
 // today's sell and buy, this and last bill, and lifetime figures on top. From the cost totals'
 // long-term statistics (battman-cost-data.js). The range you pick is kept per device.
 
-import { BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
+import { BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars, inCardPicker } from "./battman-card-base.js";
 import { costData, fromDateStr, midnight, money, num, toDateStr } from "./battman-cost-data.js";
 
 const NEEDS = ["buy_total", "sell_total", "network_fee_total", "parameters"];
@@ -31,6 +32,18 @@ function roundRectPath(ctx, x, y, w, h, r) {
 }
 
 class BattmanCostChartCard extends BattmanCardBase {
+  // the "?" help on the Finances view (battman-help-layer.js)
+  connectedCallback() {
+    super.connectedCallback();
+    if (this._unhelp || inCardPicker(this)) return;
+    this._unhelp = [["costchart", "ha-card"], ["costchart.ranges", ".controls"], ["costchart.totals", "#stats"], ["costchart.chart", ".chartWrap"]].map(([id, q]) => helpRegister("finances." + id, () => this.shadowRoot && this.shadowRoot.querySelector(q)));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._unhelp) { this._unhelp.forEach((off) => off()); this._unhelp = null; }
+  }
+
   static cardName = "Battman Cost chart";
   static preview = "cost-chart.webp";
   static gridOptions = { columns: "full", rows: 9 };

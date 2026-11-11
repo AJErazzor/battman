@@ -50,6 +50,13 @@ def _pages() -> dict[str, str]:
     return {pid: guide.page_file(pid).read_text(encoding="utf-8") for pid in guide.page_ids(_index())}
 
 
+def _guide_file(tmp_path) -> str:
+    """Every page, as a JSON file for the browser checks (too big for an environment variable)."""
+    f = tmp_path / "guide.json"
+    f.write_text(json.dumps({"pages": _pages()}))
+    return str(f)
+
+
 def _render_all() -> dict:
     """Every page through www/battman-guide-md.js (marked plus Battman's rules), in Node."""
     script = f"""
@@ -176,9 +183,9 @@ def test_device_page_quotes_the_messages() -> None:
 
 
 def test_no_known_problem_notes_in_the_guide() -> None:
-    """Known problems are GitHub issues, not notes in the guide."""
+    """Known problems are GitHub issues, not notes (or links to issues) in the guide."""
     hits = [f"{pid}: {line[:80]}" for pid, text in _pages().items() for line in text.splitlines()
-            if re.search(r"known (problem|issue)", line, re.I)]
+            if re.search(r"known (problem|issue)|/issues/\d", line, re.I)]
     assert not hits, hits
 
 
@@ -226,17 +233,18 @@ def test_marked_is_the_published_build() -> None:
 @pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
                     reason="needs Chromium, Node and Playwright")
 def test_guide_in_a_browser(tmp_path) -> None:
-    guide_json = json.dumps({"index": _index(), "pages": _pages()})
+    guide_file = tmp_path / "guide-index.json"            # a file: too big for an environment variable
+    guide_file.write_text(json.dumps({"index": _index(), "pages": _pages()}))
     r = subprocess.run(["node", str(Path(__file__).parent / "js/guide_check.mjs"), str(ROOT), str(tmp_path)],
                        capture_output=True, text=True, timeout=180,
-                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_JSON": guide_json})
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_FILE": str(guide_file)})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
     assert out["errors"] == [], out["errors"]
     assert out["before"] == ["battman-guide.js"]                           # only the stub, until the card is shown
     assert {"battman-guide-view.js", "battman-guide-md.js", "vendor/marked.esm.js"} <= set(out["after"])
     assert out["home"]["h1"].startswith("Battman help") and out["home"]["current"] == "Battman help"
-    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Curvy", "Pricy", "Settings", "Battman's Repairs"]
+    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Curvy", "Pricy", "Finances", "Log", "Theme", "Settings", "Battman's Repairs"]
     assert out["home"]["scripts"] == 0
     assert "Active: On" in out["status"] and "Mode: Self Consume" in out["status"] and "3 min ago" in out["status"]
     assert "Curtail: Off" in out["status"] and "Repairs: 1 open" in out["status"]     # ignored and other domains left out
@@ -639,7 +647,7 @@ def test_help_panel_in_a_browser(tmp_path) -> None:
     r = subprocess.run(["node", str(Path(__file__).parent / "js/help_panel_check.mjs"), str(ROOT)],
                        capture_output=True, text=True, timeout=180,
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "OUT_DIR": str(tmp_path),
-                            "GUIDE_JSON": json.dumps({"pages": _pages()}), "HELP_PAGE": "intermediate/settings",
+                            "GUIDE_FILE": _guide_file(tmp_path), "HELP_PAGE": "intermediate/settings",
                             "HELP_IDS": json.dumps([section, group])})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
@@ -698,7 +706,7 @@ def test_power_page_has_a_summary_for_every_card_on_the_view() -> None:
 
 def test_power_cards_register_for_help_under_their_own_ids() -> None:
     """The cards that draw others (the wrapper) register under the card's id; House and Overrides by name."""
-    assert 'helpRegister("power." + this.constructor.cardId,' in (WWW / "battman-cards.js").read_text()
+    assert "helpRegisterCard(this.constructor.cardId," in (WWW / "battman-cards.js").read_text()
     assert 'helpRegister("power.house",' in (WWW / "battman-house.js").read_text()
     assert 'helpRegister("power.overrides",' in (WWW / "battman-overrides.js").read_text()
     cards = {p.stem for p in (ROOT / "cards").glob("*.yaml")}
@@ -706,7 +714,8 @@ def test_power_cards_register_for_help_under_their_own_ids() -> None:
     # the layer: nothing of the guide or the panel up front; the panel only when help is turned on
     assert re.findall(r'^import .* from "([^"]+)";', LAYER_JS, re.M) == []
     assert 'import("./battman-help-panel.js")' in LAYER_JS
-    assert 'PAGES = { power: "intermediate/power", curvy: "intermediate/curvy", pricy: "intermediate/pricy" }' in LAYER_JS
+    pages = dict(re.findall(r'(\w+): "(intermediate/\w+)"', re.search(r"const PAGES = \{([^}]*)\}", LAYER_JS).group(1)))
+    assert pages == {v: f"intermediate/{v}" for v in ("power", "curvy", "pricy", "finances", "log", "theme")}
     assert "st.attributes.showHelp === false" in LAYER_JS
 
 
@@ -755,7 +764,7 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
     cards = [i.split(".")[1] for i in re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)]
     r = subprocess.run(["node", str(Path(__file__).parent / "js/help_layer_check.mjs"), str(ROOT)],
                        capture_output=True, text=True, timeout=180,
-                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_JSON": json.dumps({"pages": _pages()}),
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_FILE": _guide_file(tmp_path),
                             "HELP_CARDS": json.dumps([f"power.{c}" for c in cards[:2]])})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
@@ -789,16 +798,24 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
 
 def _layer_sections() -> dict[str, list[str]]:
     block = re.search(r"const SECTIONS = \{(.*?)\n\};", LAYER_JS, re.S).group(1)
-    return {m[0]: re.findall(r'"([a-z0-9]+)"', m[1]) for m in re.findall(r"(\w+): \[([^\]]*)\]", block)}
+    return {m[0]: re.findall(r'"([a-z0-9.]+)"', m[1]) for m in re.findall(r"(\w+): \[([^\]]*)\]", block)}
 
 
 def test_help_layer_knows_every_summary_and_the_editors_register_them() -> None:
     """The layer's list of parts with help is exactly the summaries on the Power, Curvy and Pricy pages, in order."""
     sections = _layer_sections()
-    assert set(sections) == {"power", "curvy", "pricy"}
+    assert set(sections) == {"power", "curvy", "pricy", "finances", "log", "theme"}
     for name, ids in sections.items():
         page = _pages()[f"intermediate/{name}"]
-        assert [i.split(".")[1] for i in re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)] == ids, name
+        assert [i.split(".", 1)[1] for i in re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)] == ids, name
+    # every part is registered by the card that draws it
+    sources = {"finances": ["battman-cost-chart.js", "battman-cost-compare.js", "battman-help-layer.js"], "log": ["battman-log.js"],
+               "theme": ["battman-theme-studio.js"]}
+    for name, files in sources.items():
+        js = "\n".join((WWW / f).read_text() for f in files)
+        for i in sections[name]:
+            card, _, part = i.partition(".")
+            assert f'"{card}"' in js or f'"{name}." + id' in js or card in ("billing", "solar"), (name, i)
     for name in ("curvy", "pricy"):
         js = (WWW / f"battman-{name}.js").read_text()
         registered = re.findall(r'\["([a-z0-9]+)", "[^"]+"\]', js.split("connectedCallback()", 1)[1].split("disconnectedCallback", 1)[0])

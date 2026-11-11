@@ -5,10 +5,29 @@
 // come from the view's Battman theme (no fallbacks). Google Fonts are loaded into the page only
 // for the font browser and themes that use a custom font.
 
-import { BattmanCardBase, FILES, battmanDefine, battmanPicker, missingThemeVars } from "./battman-card-base.js";
+import { BattmanCardBase, FILES, battmanDefine, battmanPicker, inCardPicker, missingThemeVars } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
 import { OVERRIDES, rowHtml } from "./battman-overrides-core.js";
 
 class BattmanThemeStudioCard extends BattmanCardBase {
+  // the "?" help on this view (battman-help-layer.js): the theme picker with its buttons, then each panel in turn
+  connectedCallback() {
+    super.connectedCallback();
+    if (this._unhelp || inCardPicker(this)) return;
+    const root = () => this.shadowRoot;
+    const parts = [["themes", () => root() && root().querySelector(".toolbar")]];
+    ["palette", "surfaces", "harmonic", "font", "fx", "preview", "yaml"].forEach((id, i) =>
+      parts.push([id, () => root() && root().querySelectorAll(".panel")[i]]));
+    // the folding panels have their arrow at the right: keep the "?" clear of it
+    const folds = new Set(["harmonic", "fx", "yaml"]);
+    this._unhelp = parts.map(([id, find]) => helpRegister("theme." + id, find, { inset: folds.has(id) ? 40 : 8 }));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._unhelp) { this._unhelp.forEach((off) => off()); this._unhelp = null; }
+  }
+
   static cardName = "Battman Theme studio";
   static preview = "theme-studio.webp";
   static css = `
