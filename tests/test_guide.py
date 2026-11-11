@@ -229,7 +229,7 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert out["before"] == ["battman-guide.js"]                           # only the stub, until the card is shown
     assert {"battman-guide-view.js", "battman-guide-md.js", "vendor/marked.esm.js"} <= set(out["after"])
     assert out["home"]["h1"].startswith("Battman help") and out["home"]["current"] == "Battman help"
-    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Settings", "Battman's Repairs"]
+    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Settings", "Battman's Repairs"]
     assert out["home"]["scripts"] == 0
     assert "Active: On" in out["status"] and "Mode: Self Consume" in out["status"] and "3 min ago" in out["status"]
     assert "Curtail: Off" in out["status"] and "Repairs: 1 open" in out["status"]     # ignored and other domains left out
@@ -734,7 +734,7 @@ process.stdout.write(JSON.stringify([renderPage({json.dumps(md)}, "intermediate/
                                             text=True, check=True).stdout)
     assert re.search(r'<img class="gimg" src="[^"]+/guide-images/power-house\.png" alt="The House card" loading="lazy">', power["html"])
     assert power["html"].count("<img") == 1 and power["html"].count('class="imgalt"') == 5
-    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None]
+    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None, None]
     assert [i["name"] for i in home["images"]][-1] == "a.png"                 # the home page sits one folder up
 
 
@@ -758,7 +758,7 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
         assert o["pressed"] == "true"
         shown = [t for t in o["tags"] if t["vis"] != "hidden"]
         assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # the card with no summary gets none
-        assert all(t["display"] == "inline-flex" for t in o["tags"])
+        assert all(t["display"] == "flex" for t in o["tags"])                     # shown in help mode (fixed, so flex)
         boxes = {b["i"]: b for b in o["cardBoxes"]}
         a = next(t for t in shown if t["top"] == boxes["a"]["top"] + 8)
         assert a["right"] == boxes["a"]["right"] - 8                             # top right of its card, 8px in

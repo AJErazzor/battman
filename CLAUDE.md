@@ -17,6 +17,7 @@ When a change alters what someone sees or does, update the guide in the same cha
 | Which views a new dashboard has (`views/*.yaml`) | `guide/start/device-page.md` (the list of views) |
 | The Show help setting or how the Help view is added and removed (`help_setting.py`, `dashboard.py`) | `guide/README.md` (Showing or hiding the guide) |
 | The Settings card (`www/battman-settings.js`): a section, a setting, its label, limits or default, or what it does | `guide/intermediate/settings.md` (the "?" on each section opens its summary block) |
+| A card on the Power view (`views/05-power.yaml`, `cards/*.yaml`, `www/battman-house.js`, `www/battman-overrides*.js`): what it shows, its labels, what a press does | `guide/intermediate/power.md` (the "?" on each card opens its summary block `power.<card>`), and retake the card's screenshot in `www/guide-images/` if its look changed |
 
 Rules for the guide:
 
@@ -24,6 +25,8 @@ Rules for the guide:
 - Describe Battman as it is now. No history, no "used to", no names of earlier systems.
 - A page's address (`?page=<track>/<slug>`) and its section headings are what links point at. Don't rename
   them; if you have to, fix every link to them.
+- Pictures are screenshots in `www/guide-images/`, linked relative to the page (`../../www/guide-images/power-house.png`),
+  with alt text that says what they show. Every file there is used by a page.
 - Link between pages with relative `.md` links (`../help/repairs.md#local-cards`), as GitHub does.
 - Known problems are stated plainly where they matter, not hidden.
 - A "?" on a card opens a summary block on a guide page: `<!-- guide:summary id="settings.buy" -->` … `<!-- /guide:summary -->`,
