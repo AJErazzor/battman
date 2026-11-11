@@ -80,6 +80,7 @@ const openPopups = () => deepAll(document, (el) => el.localName === "dialog" && 
 const anyPopups = () => deepAll(document, (el) => !(tour && within(el, tour.host)) && ((el.localName === "dialog" && el.open)
   || (el.matches(".modal, [role=dialog], [aria-modal=true]") && el.localName !== "dialog" && shown(el))));
 function popupWith(text) {
+  if (text === "*") return anyPopups().pop() || null;       // whichever popup is open (the one the step before opened)
   const want = String(text || "").toLowerCase();
   // its words, not its <style>: a Battman popup carries its CSS inside it
   const words = (d) => [...d.querySelectorAll("*")].filter((e) => e.localName !== "style").map((e) => e.childNodes.length ? [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(" ") : "").join(" ").toLowerCase();

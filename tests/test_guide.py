@@ -875,7 +875,9 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
             u = s.get("until", "press")
             for one in u.split("|"):
                 assert one in {"press", "popup", "closed", "open", "next"} or re.fullmatch(r"state:[a-z_]+\.[a-z0-9_]+=[^|]+", one), (anchor, u)
-            if s.get("popup"):                                    # in a popup: the popup really shows that text
+            if s.get("popup") == "*":                             # whichever popup the step before opened
+                src = ALL_SOURCE
+            elif s.get("popup"):                                  # in a popup: the popup really shows that text
                 src = ALL_SOURCE
                 # (a question's title can be built from the mode's name: "Sell" + "?")
                 assert s["popup"].rstrip("?").lower() in src.replace("&amp;", "&").lower(), (anchor, s["popup"], "no popup shows this")

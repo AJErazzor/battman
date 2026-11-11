@@ -255,7 +255,7 @@ Do this when a bill closes, so the running totals start again for the next one.
 2. Press **Bank New Income**. It adds **New Income** to **Banked Income** and says "✓ New income banked".
    <!-- guide:show view="finances" card="battman-billing" target="Bank New Income" until="press" say="Press Bank New Income" -->
 3. Then press **Reset New Income**. It sets **Buy**, **Sell** and **Days** back to 0 and says "✓ New income reset". **New Income** is now $0.00, and **Banked Income** has grown by what it was.
-   <!-- guide:show view="finances" card="battman-billing" target="Reset New Income" until="state:sensor.battman_buy_total=0" say="Press Reset New Income" -->
+   <!-- guide:show view="finances" card="battman-billing" target="Reset New Income" until="press" say="Press Reset New Income" -->
 
 > [!TIP]
 > Bank first: **Bank New Income** works from the **Buy** and **Sell** totals as they are. Resetting first leaves that income out of **Banked Income** and **Lifetime**, and banking twice before you reset adds it twice. Neither button asks first.
@@ -389,7 +389,7 @@ More: [Showing or hiding the guide](../README.md#showing-or-hiding-the-guide)
 2. On the **Battery mode** card, tap the information button.
    <!-- guide:show view="power" card="battman-batterymode" target="icon:mdi:information-outline" until="popup" say="Tap the information button" -->
 3. The **Engine log** shows the engine's account of its last run. Press **✕** to close it.
-   <!-- guide:show view="power" popup="Engine log" target="✕" until="closed" say="Read it, then press ✕" -->
+   <!-- guide:show view="power" popup="*" target="✕" until="closed" say="Read it, then press ✕" -->
 4. For earlier runs, open the **Log** view and tap **Log** to open the list.
    <!-- guide:show view="log" card="battman-log" target="Log" until="open" say="Tap Log to open it" -->
 5. Tick **Changes Only** to see just the runs where the mode changed. Each entry's **Mode** shows the change, such as "Self Consume → Charge".
