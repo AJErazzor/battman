@@ -6,6 +6,8 @@ Most of these cards read Sigenergy and Amber sensors by name (`sensor.sigen_plan
 
 While **Show help** is on (see [Showing or hiding the guide](../README.md#showing-or-hiding-the-guide)), a **Help** button at the top right of the view puts a "?" on each card. The "?" opens that card's summary from this page.
 
+In the dashboard editor, the cards drawn from Battman's card files (every card here except **House** and **Overrides**) say "There's nothing to set here.", apart from NEM mix's [card options](#nemmix-options). Each has **Convert to plain YAML**: it asks "Convert this copy to plain YAML? It will stop updating with Battman.", then replaces that copy with the card's full YAML, your entities filled in. The copy no longer updates with Battman releases.
+
 | Card | What it is for |
 |---|---|
 | [House](#house) | The house picture with live prices, solar, home, grid and battery numbers on it. |
@@ -46,6 +48,27 @@ Tap a number to open its sensor's details. Tapping **GRID** opens the Energy das
 ### Using your own sensors
 
 In the dashboard editor, every item has its own fold-out: **Show**, **Entity**, **Text**, and where they apply **After the value (e.g. W)** and **Picture (e.g. /local/house.png)**. **Solar power** and **Solar today** also take a second sensor ("Add this sensor too (e.g. a third-party inverter; same unit)") that is added to the first.
+
+| Fold-out | Settings besides **Show** | Starts with |
+|---|---|---|
+| **House picture**, **Battery picture**, **Gateway picture** | **Picture (e.g. /local/house.png)** | Battman's pictures |
+| **Outside temperature** | **Entity** (a `weather` or `sensor` entity) | none |
+| **PV string (top)**, **PV string (middle)**, **PV string (bottom)** | **Text**, **Entity** | **PV2**, **PV1**, **PV3** |
+| **Solar power** | **Text**, **Entity**, **Add this sensor too (e.g. a third-party inverter; same unit)** | **SOLAR** |
+| **Solar today** | **Entity**, **Add this sensor too (e.g. a third-party inverter; same unit)** | |
+| **Price countdown** | **Text** | **LEFT** |
+| **Sell price (feed-in)**, **Buy price** | **Text**, **Entity** | **FIT**, **BUY** |
+| **Home power** | **Text**, **Entity** | **HOME** |
+| **Home today** | **Entity** | |
+| **Device 1**, **Device 2**, **Device 3** | **Text**, **Entity**, **After the value (e.g. W)** | no entity, W |
+| **Battery temperature** | **Entity** | none |
+| **Battery charge** | **Text**, **Entity**, **Battery capacity (kWh)** | **SOC** |
+| **Battery charging / discharging** | **Entity**, **Battery charge (%)**, **Battery capacity (kWh)** | |
+| **Grid power** | **Text**, **Grid import power**, **Grid export power** | **GRID** |
+| **Grid import / export today** | **Grid import power**, **Grid export power**, **Grid import today**, **Grid export today** | |
+| **Flow lines** | **Solar power**, **Solar power: add this sensor too**, **Home power**, **Battery power**, **Grid import power**, **Grid export power** | |
+
+Every entity starts as a Sigenergy or Amber sensor, except those marked none and the added sensors, which start empty. Only what differs from these goes into the card's YAML.
 
 An item whose sensor doesn't exist isn't drawn, and nothing says so. If a number is missing, check its sensor in the editor.
 
@@ -167,7 +190,7 @@ Five overrides (Sell Override, Sell Solar, Buy Override, Buy Anytime and Drain B
 | **Buy Anytime** (purple) | The level to charge up to at any time, ignoring the curve. | The highest buy price it will pay. |
 | **Drain Battery** (red) | The level to drain down to with solar off, then the override clears. 100% means no draining. | Drain only while the price is below this. |
 
-An override with only a SOC still follows the curve's prices, and one with only a price still follows the curve's SOC. With both, both must be met and the curves are ignored. Spike selling beats every override ([Spike selling](settings.md#spike)).
+For **Sell Override** and **Buy Override**, one with only a SOC still follows the curve's prices, and one with only a price still follows the curve's SOC; with both, both must be met and the curves are ignored. **Buy Anytime** needs both: a price above 0 and the battery below its SOC. **Drain Battery** needs a price; its SOC is optional (without one, it drains down to the Buy curve's level for the hour; see [Curvy](curvy.md)). Spike selling beats every override ([Spike selling](settings.md#spike)).
 
 ### The strip and the rows
 
@@ -231,7 +254,7 @@ A price Battman doesn't have shows "—" on a grey tile.
 | Orange | | 0c to below 5c |
 | Dark red | above 25c | below 0c |
 
-The [House](#house) card colours its prices the same way. The prices come from `sensor.amber_5min_current_general_price` and `sensor.amber_5min_current_feed_in_price`, and the periods from the two `sensor.amber_billing_interval_forecasts_…` sensors. If a forecast is empty the card says "No SELL forecast from" or "No BUY forecast from" and the sensor.
+The [House](#house) card colours its prices the same way. The prices come from `sensor.amber_5min_current_general_price` and `sensor.amber_5min_current_feed_in_price`, and the periods from the two `sensor.amber_billing_interval_forecasts_…` sensors. If a forecast is empty the card says "No SELL forecast from" or "No BUY forecast from" and the sensor. Tapping the card does nothing.
 
 <a id="limits"></a>
 ## Limits
@@ -266,7 +289,7 @@ The **Time** column is the start of each interval in Home Assistant's time zone,
 
 The colours use the same bands as the [price grid](#amber5minpricegrid), judged on the price shown. A Sell of exactly 0c is dark red here but orange on the grid and the [House](#house) card. The header stays put while the rows scroll.
 
-The table has a row for each interval in `sensor.amber_billing_interval_forecasts_feed_in_price`, with the buy price matched from `sensor.amber_billing_interval_forecasts_general_price` by interval. Without forecasts it says "Missing Amber forecast data" and names both sensors. If Home Assistant has no time zone set, it says so and points to **Settings → System → General**.
+The table has a row for each interval in `sensor.amber_billing_interval_forecasts_feed_in_price`, with the buy price matched from `sensor.amber_billing_interval_forecasts_general_price` by interval. Without forecasts it says "Missing Amber forecast data" and names both sensors. If Home Assistant has no time zone set, it says so and points to **Settings → System → General**. Tapping the card does nothing.
 
 <a id="gauges"></a>
 ## Gauges
@@ -294,17 +317,61 @@ A value Battman doesn't have shows as "—". The gauges are drawn by the `modern
 ## NEM mix
 
 <!-- guide:summary id="power.nemmix" -->
-Two pie charts of your region's electricity from the National Electricity Market: where it's generated and where it goes, in MW. The figures come from the OpenNEM integration, which Battman finds by itself. Without it the card is empty and says so.
+Two pie charts (or stacked bars) of your region's electricity from the National Electricity Market: where it's generated and where it goes, in MW. The figures come from the OpenNEM integration, which Battman finds by itself. Without it the card is empty and says so.
 <!-- /guide:summary -->
 
 ![The NEM mix card: two pie charts, SA Generation Mix and SA Demand Mix, each with coloured slices and a legend.](../../www/guide-images/power-nemmix.png)
 
 ### Reading it
 
-**SA Generation Mix** has **Wind**, **Solar (S)** (rooftop), **Solar (L)** (utility), **Imports**, **Battery**, **Gas** (all four gas types together) and **Distillate**. **SA Demand Mix** has **Consumers**, **Solar (S)**, **Exports** and **Battery Charging**. Slices are sorted largest first, and a slice under 4% has no label.
+**SA Generation Mix** has **Wind**, **Solar (S)** (rooftop), **Solar (L)** (utility), **Imports**, **Battery**, **Gas** (all four gas types together) and **Distillate**. **SA Demand Mix** has **Consumers**, **Solar (S)**, **Exports** and **Battery Charging**. Slices are sorted largest first, and a slice under 4% has no label and isn't in the legend. The middle of each pie shows the total in MW. The legend gives each slice's name and %.
+
+<a id="nemmix-options"></a>
+### Card options
+
+In the dashboard editor:
+
+| Option | Choices | Starts on |
+|---|---|---|
+| **Show** | **Generation and demand**, **Generation only** (just SA Generation Mix) or **Demand only** (just SA Demand Mix) | **Generation and demand** |
+| **Chart** | **Pies**, or **Bars**: each mix as one stacked bar, largest block first, with the total in MW above it | **Pies** |
+
+In **Bars**, a block of 4% or more shows its % inside it when the % fits, and the legend under the bar names every block, small ones too. A choice left on its starting value stays out of the card's YAML; in YAML they are `show: generation` or `show: demand`, and `style: bar`.
+
+### Pointing and pressing
+
+- **Pointing** at a slice or block shows its name, MW and %, and highlights it in the legend. Pointing at a legend row highlights its slice.
+- **Pressing** a slice, block or legend row opens that sensor's details. **Gas** opens the first of its four sensors.
+- While the mouse is over a chart, or for 10 seconds after you touch it, the chart stops updating so it holds still while you read it. A ⏸ at its top right means newer figures are waiting.
 
 ### When it's empty
 
 - **OpenNEM isn't installed:** "NEM mix needs the OpenNEM integration: install it from HACS and add it for your region (Settings → Repairs has the steps)." See [Battman's NEM mix card needs OpenNEM](../help/repairs.md#opennem-missing).
 - **Several regions:** Battman can't tell which to read until you pick one. See [Pick your OpenNEM region](../help/repairs.md#opennem-choose).
 - **A figure is missing:** a line above the pies reads "NEM mix: no value from" and names the sensors, with the reason when there is one.
+
+<a id="heading-picture"></a>
+## Heading picture
+
+The picture at the top of the view is a `custom:battman-image` card: the Battman strip on screens 768 px wide or more, the wordmark on narrower ones. The heading on the [Finances](finances.md) view is one too. Its editor shows a preview, then the options, then where your own images go: `config/battman/images/` (png, jpg, webp or gif). Reopen the editor to see new ones.
+
+<a id="heading-picture-options"></a>
+### Card options
+
+| Option | What it does | Starts on |
+|---|---|---|
+| **Image** | The picture, from Battman's images and yours. Yours say "(yours)", or "(yours, replaces Battman's)" when they have the same name as one of Battman's. | |
+| **Fit** | **Contain (whole image)**, **Cover (fill, crop edges)**, **Stretch (fill, reshape)**, **Actual size** or **Shrink only (if too big)**. | **Contain (whole image)** |
+| **Position** | Where the image sits in the card: **Centre**, **Top**, **Bottom**, **Left**, **Right**, **Top left**, **Top right**, **Bottom left** or **Bottom right**. | **Centre** |
+| **Height** | **Auto (image's shape)**, **Fill (sections view)**, or **Fixed (px)** with **Height (px)** from 20 to 2000. | **Auto (image's shape)** |
+| **Background** | **Card background**, **None (transparent)**, or **Colour** with **Colour (e.g. #1e1e2e or var(--battman-blue))**. | **Card background** |
+| **Padding (px)** | Space around the image, 0 to 200. | 0 |
+| **Image corner rounding (px)** | 0 to 200. | 0 |
+| **Card border and shadow** | The card's frame. | on |
+| **Mirror left to right** | Flips the image. | off |
+| **Description (for screen readers)** | The image's alt text. | the image's name |
+| **Theme (battman, a theme name, or empty)** | A theme for this card alone. **battman** is the [Dashboard theme](settings.md#dashboard); empty takes the view's theme. | empty |
+| **On narrow screens (under 768 px, e.g. phones)** | A fold-out with **Image**, **Fit**, **Position**, **Background**, the colour, **Card border and shadow**, **Mirror left to right**, both px settings and **Description (for screen readers)**, used on narrow screens. An empty field keeps the value above. | all empty |
+| **In dark mode** | The same fold-out, used while Home Assistant is in dark mode. On a narrow screen in dark mode, **On narrow screens** wins. | all empty |
+
+A setting the card can't use, such as an image that doesn't exist, shows as a problem on the card. Settings left on their starting values stay out of the card's YAML.

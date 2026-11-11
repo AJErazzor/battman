@@ -126,6 +126,8 @@ The curve you're editing for the period shown, as SOC % across the hours of the 
 
 Pointing at an hour shows it in the [hour details](#readouts) and highlights its box. Pressing it scrolls to the box and puts the cursor in it. Pointing at an hour box shades its column on the chart.
 
+The legend above the chart names the lines shown. Tap a name to hide that line, and tap it again to show it.
+
 <a id="hours"></a>
 ## Hour values
 

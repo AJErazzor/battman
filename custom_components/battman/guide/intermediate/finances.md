@@ -1,6 +1,8 @@
 # Finances
 
-The **Finances** view on the Battman dashboard is about money: what each day cost or earned, how this bill cycle compares with the last, your running totals, and how far the system is towards paying for itself. Its badges at the top show the battery level (**SOC**) and Amber's current buy (**Buy**) and feed-in (**FIT**) prices. Its cards sit one under the other, in the order below.
+The **Finances** view on the Battman dashboard is about money: what each day cost or earned, how this bill cycle compares with the last, your running totals, and how far the system is towards paying for itself. Its badges at the top show the battery level (**SOC**) and Amber's current buy (**Buy**) and feed-in (**FIT**) prices. Its cards sit one under the other, in the order below. The picture at the top of the view is a heading picture, with the options under [Heading picture](power.md#heading-picture) on the Power page.
+
+None of the cards has options in the dashboard editor. **Billing** and **Solar System** are drawn from Battman's card files, and their editor has **Convert to plain YAML**, as described on the [Power](power.md) page.
 
 Amounts are in dollars. A net figure is sales less buying less the daily network charge (see [Billing](settings.md#billing) in Settings), green when it's $0 or more and red when it's below.
 
@@ -93,7 +95,7 @@ This bill cycle's running net against the last cycle's, from day 1 of each. The 
 | **Last cycle** | The dashed amber line. |
 | Dashed upright line | Today's day of the cycle. |
 
-The bottom axis is the "Day of cycle". Touch or hover to see both cycles' nets for that day, and how far ahead or behind. The card redraws every minute.
+The bottom axis is the "Day of cycle". Touch or hover to see both cycles' nets for that day, and how far ahead or behind. Tap **Last cycle** or **This cycle** in the legend under the chart to hide or show that line. The card redraws every minute, which shows both lines again.
 
 <a id="billing"></a>
 ## Billing
