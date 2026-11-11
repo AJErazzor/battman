@@ -12,7 +12,10 @@
 // - Headings get GitHub's ids (so the same #anchors work on GitHub) and a copy-link button. A heading with its
 //   own anchor just before it (<a id="packages-not-loaded"></a>) copies that anchor, which never changes.
 // - GitHub's callouts (> [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]) are drawn as callouts.
-// - Code blocks get a Copy button. Images aren't drawn yet (their alt text is shown).
+// - Code blocks get a Copy button.
+// - Images are screenshots kept in www/guide-images/ and linked as GitHub shows them, relative to the page
+//   (../../www/guide-images/power-house.png). Here they're served next to this file. Any other image is
+//   shown as its alt text.
 //
 // No DOM here, so tests run it under Node.
 
@@ -59,6 +62,20 @@ export function resolveLink(href, fromPage) {
   }
   const page = pageFromFile(parts.join("/"));
   return page ? { kind: "page", page, anchor } : { kind: "none" };
+}
+
+// The name of a guide image (www/guide-images/<name>) a page's image link points at, or null. The link is
+// relative to the page's own file, as on GitHub, so from guide/intermediate/power.md it's ../../www/guide-images/x.png.
+export function resolveImage(src, fromPage) {
+  const h = String(src || "").trim();
+  if (/^[a-z]+:/i.test(h) || h.startsWith("//") || h.startsWith("/")) return null;
+  const parts = ["guide", ...pageFile(fromPage).split("/").slice(0, -1)];
+  for (const seg of h.split("/")) {
+    if (seg === "..") { if (!parts.length) return null; parts.pop(); }
+    else if (seg !== "." && seg !== "") parts.push(seg);
+  }
+  const m = /^www\/guide-images\/([a-z0-9][a-z0-9-]*\.(?:png|webp|jpg|svg))$/.exec(parts.join("/"));
+  return m ? m[1] : null;
 }
 
 // A Help view address (relative to the view itself, so it works on whatever dashboard holds it).
@@ -109,11 +126,12 @@ function cleanHtml(raw, ids, onAnchor) {
 const ALERTS = { NOTE: "Note", TIP: "Tip", IMPORTANT: "Important", WARNING: "Warning", CAUTION: "Caution" };
 
 // One page: {html, title, headings: [{depth, text, id}], ids: [every anchor], links: [{href, ...resolved}],
-// directives: [{name, args}]}.
+// images: [{src, name, alt}] (name is null when the link isn't a guide image), directives: [{name, args}]}.
 export function renderPage(markdown, page) {
   const headings = [];
   const ids = new Set();
   const links = [];
+  const images = [];
   const directives = [];
   const counts = new Map();
   const unique = (base) => {
@@ -151,8 +169,12 @@ export function renderPage(markdown, page) {
         if (r.kind === "external") return `<a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"${t}>${inner}</a>`;
         return `<span class="deadlink">${inner}</span>`;
       },
-      image({ text }) {
-        return `<span class="imgalt">${esc(text)}</span>`;
+      image({ href, text }) {
+        const name = resolveImage(href, page);
+        images.push({ src: href, name, alt: text });
+        if (!name) return `<span class="imgalt">${esc(text)}</span>`;
+        const url = new URL(`./guide-images/${name}`, import.meta.url).href;
+        return `<img class="gimg" src="${esc(url)}" alt="${esc(text)}" loading="lazy">`;
       },
       paragraph({ tokens }) {
         const inner = this.parser.parseInline(tokens);
@@ -190,7 +212,7 @@ export function renderPage(markdown, page) {
   });
   const html = marked.parse(String(markdown));
   const h1 = headings.find((h) => h.depth === 1);
-  return { html, title: h1 ? h1.text : "", headings, ids: [...ids], links, directives };
+  return { html, title: h1 ? h1.text : "", headings, ids: [...ids], links, images, directives };
 }
 
 // ── a page's outline: its headings and summary blocks (for the "?" help panels on Battman's cards) ──

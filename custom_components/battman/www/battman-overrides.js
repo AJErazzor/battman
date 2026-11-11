@@ -13,6 +13,7 @@
 // Sigen and Amber named directly. Anything missing is said on the card, never made up.
 
 import { AMBER as AMBER_ENT, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, esc, inCardPicker } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
 import { OVERRIDES, colours, isFalse, isOn, isTrue, money, num, pad2, rowHtml, stripHtml } from "./battman-overrides-core.js";
 
 // Battman's own names are replaced by the entity map's when the card starts (run); the rest are named directly.
@@ -885,6 +886,17 @@ class BattmanOverrides extends BattmanCardBase {
   static cardName = "Battman Overrides";
   static css = CSS;
   static html = `<div class="stack"><div id="strip"></div><div id="rows" class="stack"></div><div id="timer"></div></div>`;
+
+  // the "?" help on the Power view (battman-help-layer.js)
+  connectedCallback() {
+    super.connectedCallback();
+    if (!this._unhelp && !inCardPicker(this)) this._unhelp = helpRegister("overrides", () => this);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._unhelp) { this._unhelp(); this._unhelp = null; }
+  }
 
   // HA's Add card list: the card itself, drawn from sample settings (no picture file to ship)
   _build() {

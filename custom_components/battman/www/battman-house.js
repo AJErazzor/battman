@@ -24,6 +24,7 @@
 // at: [top %, left %, width %] on the card.
 
 import { battmanDefine, esc } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
 const HOUSE_ITEMS = [
   { key: "house", title: "House picture", image: "/battmanfiles/images/house.webp", at: [1.1, 0, 100] },
   { key: "battery_unit", title: "Battery picture", image: "/battmanfiles/images/house-battery.webp", at: [1.1, -3.8, 100] },
@@ -154,6 +155,15 @@ class BattmanHouseCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+  }
+
+  // the "?" help on the Power view (battman-help-layer.js)
+  connectedCallback() {
+    if (!this._unhelp) this._unhelp = helpRegister("house", () => this);
+  }
+
+  disconnectedCallback() {
+    if (this._unhelp) { this._unhelp(); this._unhelp = null; }
   }
 
   setConfig(config) {

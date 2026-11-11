@@ -659,3 +659,119 @@ def test_help_panel_in_a_browser(tmp_path) -> None:
     d, p = out["desktop"]["summary"], out["phone"]["summary"]
     assert d["width"] == 400 and d["left"] == 800 and d["top"] == 56              # a side panel on the right, under HA's toolbar
     assert p["left"] == 0 and p["width"] == 390 and p["top"] > 56 and p["bottom"] == 800   # a bottom sheet
+
+
+# ── the Power view's "?" help (www/battman-help-layer.js) ────────────────────────────────────
+
+POWER_VIEW = (ROOT / "views/05-power.yaml").read_text()
+LAYER_JS = (WWW / "battman-help-layer.js").read_text()
+IMAGES = WWW / "guide-images"
+
+
+def _power_page() -> str:
+    return _pages()["intermediate/power"]
+
+
+def _power_cards() -> set[str]:
+    """The Battman cards the Power view holds (the picture cards have no help)."""
+    return set(re.findall(r"type: custom:battman-([a-z0-9]+)", POWER_VIEW)) - {"image"}
+
+
+def test_power_page_has_a_summary_for_every_card_on_the_view() -> None:
+    page = _power_page()
+    ids = re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)
+    assert len(ids) == len(set(ids)) and all(re.fullmatch(r"power\.[a-z0-9]+", i) for i in ids), ids
+    assert {i.split(".")[1] for i in ids} == _power_cards()
+    for card in _power_cards():
+        assert re.search(rf'<a id="{card}"></a>\n## .+\n\n<!-- guide:summary id="power.{card}" -->', page), card
+    # the cards on the page are in the order they sit on the view
+    order = [c for c in re.findall(r"type: custom:battman-([a-z0-9]+)", POWER_VIEW) if c != "image"]
+    assert [i.split(".")[1] for i in ids] == order
+
+
+def test_power_cards_register_for_help_under_their_own_ids() -> None:
+    """The cards that draw others (the wrapper) register under the card's id; House and Overrides by name."""
+    assert 'helpRegister(this.constructor.cardId,' in (WWW / "battman-cards.js").read_text()
+    assert 'helpRegister("house",' in (WWW / "battman-house.js").read_text()
+    assert 'helpRegister("overrides",' in (WWW / "battman-overrides.js").read_text()
+    cards = {p.stem for p in (ROOT / "cards").glob("*.yaml")}
+    assert _power_cards() - {"house", "overrides"} <= cards
+    # the layer: nothing of the guide or the panel up front; the panel only when help is turned on
+    assert re.findall(r'^import .* from "([^"]+)";', LAYER_JS, re.M) == []
+    assert 'import("./battman-help-panel.js")' in LAYER_JS and 'PAGE = "intermediate/power"' in LAYER_JS
+    assert "st.attributes.showHelp === false" in LAYER_JS
+
+
+def test_guide_images_are_all_used_and_all_there() -> None:
+    from custom_components.battman import guide
+
+    used: set[str] = set()
+    for pid, text in _pages().items():
+        for alt, src in re.findall(r"!\[([^\]]*)\]\(([^)]+)\)", text):
+            assert alt.strip() and len(alt) > 15, (pid, "alt text says what the picture shows", src)
+            parts = ["guide", *Path(guide.page_file(pid).relative_to(GUIDE)).parts[:-1]]
+            for seg in src.split("/"):
+                parts.pop() if seg == ".." else parts.append(seg)
+            rel = "/".join(parts)
+            assert re.fullmatch(r"www/guide-images/[a-z0-9][a-z0-9-]*\.(png|webp|jpg|svg)", rel), (pid, src)
+            assert (ROOT / rel).is_file(), (pid, src)
+            used.add(rel.rsplit("/", 1)[1])
+    files = {p.name for p in IMAGES.glob("*")} if IMAGES.is_dir() else set()
+    assert files == used, {"unused": files - used, "missing": used - files}
+    assert all((IMAGES / f).stat().st_size < 400_000 for f in files)          # they ship with every update
+
+
+@NEEDS_NODE
+def test_markdown_images() -> None:
+    md = ("# T\n\n![The House card](../../www/guide-images/power-house.png)\n\n![Elsewhere](https://example.org/x.png)\n\n"
+          "![Up and out](../../www/guide-images/../../x.png)\n\n![Other folder](../../www/other/x.png)\n\n"
+          "![Absolute](/local/x.png)\n\n![Home page](../www/guide-images/a.png)\n")
+    script = f"""
+const {{ renderPage }} = await import({json.dumps(str(WWW / "battman-guide-md.js"))});
+process.stdout.write(JSON.stringify([renderPage({json.dumps(md)}, "intermediate/power"), renderPage({json.dumps(md)}, "home")]));
+"""
+    power, home = json.loads(subprocess.run(["node", "--input-type=module", "-"], input=script, capture_output=True,
+                                            text=True, check=True).stdout)
+    assert re.search(r'<img class="gimg" src="[^"]+/guide-images/power-house\.png" alt="The House card" loading="lazy">', power["html"])
+    assert power["html"].count("<img") == 1 and power["html"].count('class="imgalt"') == 5
+    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None]
+    assert [i["name"] for i in home["images"]][-1] == "a.png"                 # the home page sits one folder up
+
+
+@pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
+                    reason="needs Chromium, Node and Playwright")
+def test_power_help_layer_in_a_browser(tmp_path) -> None:
+    page = _power_page()
+    cards = [i.split(".")[1] for i in re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)]
+    r = subprocess.run(["node", str(Path(__file__).parent / "js/help_layer_check.mjs"), str(ROOT)],
+                       capture_output=True, text=True, timeout=180,
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_JSON": json.dumps({"pages": _pages()}),
+                            "HELP_CARDS": json.dumps(cards[:2])})
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out["errors"] == [], out["errors"]
+    for name in ("desktop", "phone"):
+        o = out[name]
+        assert o["button"]["hidden"] is False and o["button"]["pressed"] == "false" and o["tagsBefore"] == 0
+        assert o["button"]["right"] == 16 and o["button"]["top"] == 68            # floating, top right, under HA's toolbar
+        assert o["button"]["theme"] == "#123456"                                  # the layer wears the cards' theme
+        assert o["pressed"] == "true"
+        shown = [t for t in o["tags"] if t["vis"] != "hidden"]
+        assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # the card with no summary gets none
+        assert all(t["display"] == "inline-flex" for t in o["tags"])
+        boxes = {b["i"]: b for b in o["cardBoxes"]}
+        a = next(t for t in shown if t["top"] == boxes["a"]["top"] + 8)
+        assert a["right"] == boxes["a"]["right"] - 8                             # top right of its card, 8px in
+        tall = [t for t in o["scrolled"] if t["vis"] != "hidden"]
+        assert tall and all(t["top"] >= 60 for t in tall)                         # stays in view under the header
+        p = o["panel"]
+        assert p["pressed"] == 1 and p["title"]
+        assert p["allBg"] == "rgba(0, 0, 0, 0)" and p["allBorder"] == "1px"      # Browse all help: outlined, not a solid fill
+        assert o["fetches"] == 1                                                  # the Power page is read once
+        assert o["afterEsc1"] == {"panel": False, "pressed": "true"}              # Escape closes the panel, then help
+        assert o["afterEsc2"] == {"tags": 0, "pressed": "false"}
+        assert o["showHelpOff"] == {"hidden": True, "tags": 0, "pressed": "false"}
+        assert o["showHelpOn"] is False and o["theme"] == "#abcdef"
+        assert o["gone"] == {"hidden": True, "tags": 0, "panel": False}
+    d, ph = out["desktop"]["panel"], out["phone"]["panel"]
+    assert d["width"] == 400 and d["left"] == 800 and ph["left"] == 0 and ph["width"] == 390
