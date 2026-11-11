@@ -387,7 +387,7 @@ More: [Showing or hiding the guide](../README.md#showing-or-hiding-the-guide)
 1. Open the **Power** view. The pill at the bottom of the **State** card names the side that's acting ("Selling" or "Buying") and why, such as "Sell Override 25c >40%". A mode set by hand shows as "Manual mode change · " and the button's name.
    <!-- guide:show view="power" card="battman-state" until="next" say="Read the reason on the State card" -->
 2. On the **Battery mode** card, tap the information button.
-   <!-- guide:show view="power" card="battman-batterymode" until="popup" say="Tap the information button" -->
+   <!-- guide:show view="power" card="battman-batterymode" target="icon:mdi:information-outline" until="popup" say="Tap the information button" -->
 3. The **Engine log** shows the engine's account of its last run. Press **✕** to close it.
    <!-- guide:show view="power" popup="Engine log" target="✕" until="closed" say="Read it, then press ✕" -->
 4. For earlier runs, open the **Log** view and tap **Log** to open the list.

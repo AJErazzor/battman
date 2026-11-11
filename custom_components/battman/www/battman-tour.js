@@ -74,15 +74,27 @@ const within = (el, scope) => { for (let n = el; n; n = up(n)) if (n === scope) 
 const boxOf = (el) => (el && getComputedStyle(el).display === "contents" && el.firstElementChild ? el.firstElementChild : el);
 const rectOf = (el) => el.getBoundingClientRect();
 const shown = (el) => { const r = rectOf(el); return r.width > 0 && r.height > 0; };
-// the open modal popups (Battman's, Home Assistant's), last opened last
+// the open modal popups (Battman's, Home Assistant's), last opened last: these sit in the browser's top layer
 const openPopups = () => deepAll(document, (el) => el.localName === "dialog" && el.open && el.matches(":modal"));
+// every open popup, also a card's own window (Curvy's Manage Presets is a .modal inside the card), not the walkthrough's
+const anyPopups = () => deepAll(document, (el) => !(tour && within(el, tour.host)) && ((el.localName === "dialog" && el.open)
+  || (el.matches(".modal, [role=dialog], [aria-modal=true]") && el.localName !== "dialog" && shown(el))));
 function popupWith(text) {
   const want = String(text || "").toLowerCase();
-  return openPopups().reverse().find((d) => d.textContent.toLowerCase().includes(want)) || null;
+  // its words, not its <style>: a Battman popup carries its CSS inside it
+  const words = (d) => [...d.querySelectorAll("*")].filter((e) => e.localName !== "style").map((e) => e.childNodes.length ? [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(" ") : "").join(" ").toLowerCase();
+  return anyPopups().reverse().find((d) => words(d).includes(want)) || null;
 }
 // the element showing exactly this text, inside scope (through shadow roots), preferring one that's on screen:
 // the same label can be in several panels of a popup, and only the open panel's is visible
 function findShown(scope, text) {
+  // an icon-only button: target="icon:mdi:information-outline"
+  if (/^icon:/.test(text)) {
+    const icon = text.slice(5);
+    const hits = deepAll(scope.shadowRoot || scope, (el) => (el.getAttribute && el.getAttribute("icon") === icon) || el.icon === icon);
+    if (scope.shadowRoot) hits.push(...deepAll(scope, (el) => (el.getAttribute && el.getAttribute("icon") === icon) || el.icon === icon));
+    return hits.find(shown) || hits[0] || null;
+  }
   const want = String(text).trim().toLowerCase();
   const hits = deepAll(scope.shadowRoot || scope, (el) => el.textContent.trim().toLowerCase() === want
     && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want));
@@ -101,10 +113,17 @@ function onTop(el) {
 
 // the whole control around a piece of text: the nearest thing that can be pressed, inside scope
 function controlAround(el, scope) {
+  const pointer = (n) => n && n.nodeType === 1 && n !== scope && within(n, scope) && getComputedStyle(n).cursor === "pointer";
   for (let n = el; n && n !== scope; n = up(n)) {
     if (n.nodeType !== 1) continue;
-    if (n.matches(PRESSABLE) || n.hasAttribute("data-a") || n.hasAttribute("tabindex")) return n;
-    if (getComputedStyle(n).cursor === "pointer" && shown(n)) return n;
+    if (n.matches(PRESSABLE) || n.hasAttribute("data-a")) return n;
+    // the hand cursor is inherited, so a label inside a button has it too: take the outermost element that has it,
+    // which is the one that sets it (the whole button, the whole row)
+    if (pointer(n) && shown(n)) {
+      let top = n;
+      for (let m = up(n); pointer(m); m = up(m)) if (shown(m)) top = m;
+      return top;
+    }
   }
   return el;
 }
@@ -173,7 +192,8 @@ function go(i, dir = 1) {
   t.extra = null;
   t.landed = false;
   t.lensEl = null;
-  t.popupsAtStart = openPopups().length;
+  t.pressed = false;
+  t.popupsAtStart = anyPopups().length;
   t.popupSince = 0;
   if (!t.step.popup) navigate(`/${t.dash}/${t.step.view}`);
   draw("finding");
@@ -208,15 +228,16 @@ function done(s, at) {
 function stateIs(cond) {
   const m = /^state:([^=]+)=(.*)$/.exec(String(cond || ""));
   const h = hass();
-  return !!(m && h && h.states[m[1]] && String(h.states[m[1]].state) === m[2]);
+  return !!(m && h && h.states[m[1]] && same(h.states[m[1]].state, m[2]));
 }
+const same = (a, b) => String(a) === String(b) || (a !== "" && b !== "" && isFinite(a) && isFinite(b) && Number(a) === Number(b));
 function doneOne(s, at, u) {
-  if (u === "popup") return openPopups().length > tour.popupsAtStart;
+  if (u === "popup") return anyPopups().length > tour.popupsAtStart;
   if (u === "closed") return !!tour.landed && !popupWith(s.popup);
   if (u.startsWith("state:")) {
     const [e, v] = u.slice(6).split("=");
     const h = hass();
-    return !!(h && h.states[e] && String(h.states[e].state) === v);
+    return !!(h && h.states[e] && same(h.states[e].state, v));
   }
   if (u === "open") return !!(at && at.lens && shown(at.lens));
   return false;    // press: the click handler; next: the button
@@ -262,7 +283,7 @@ function tick() {
 
 function land(el, card, folding) {
   const t = tour;
-  if (t.lensEl && t.onPress) t.lensEl.removeEventListener("click", t.onPress, true);
+  if (t.lensEl && t.onPress) { t.lensEl.removeEventListener("click", t.onPress, true); t.lensEl.removeEventListener("pointerup", t.onPress, true); }
   t.lensEl = el;
   t.card = card;
   t.landed = true;
@@ -270,9 +291,12 @@ function land(el, card, folding) {
   const u = String(t.step.until || "press");
   const step = t.step;
   t.onPress = folding ? null : () => {
-    if (tour && tour.step === step && u.split("|").includes("press")) setTimeout(() => { if (tour && tour.step === step) { tour.ended = "press"; go(tour.i + 1); } }, 150);
+    if (tour && tour.step === step && !tour.pressed && u.split("|").includes("press")) {
+      tour.pressed = true;
+      setTimeout(() => { if (tour && tour.step === step) { tour.ended = "press"; go(tour.i + 1); } }, 150);
+    }
   };
-  if (t.onPress) el.addEventListener("click", t.onPress, true);
+  if (t.onPress) { el.addEventListener("click", t.onPress, true); el.addEventListener("pointerup", t.onPress, true); }
   if (!folding) el.scrollIntoView({ block: t.step.popup ? "nearest" : "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const ring = t.root.querySelector(".ring");
   ring.hidden = false;
