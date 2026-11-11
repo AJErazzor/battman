@@ -101,7 +101,7 @@ These have no shades. The theme's `battman-border-neutral-soft`, `mode` and Home
 Makes twelve new base colours from one **Seed colour** and a scheme, shown in a strip. Nothing changes until you press **Apply to 12 hues**, which puts them in the Palette slots and makes their shades again.
 <!-- /guide:summary -->
 
-![The Harmonic palette generator panel: a seed colour swatch and hex box, the five scheme buttons, a strip of twelve colours and the Apply to 12 hues button.](../../www/guide-images/theme-harmonic.png "wide")
+![The Harmonic palette generator panel: a seed colour swatch and hex box, the six scheme buttons, a strip of twelve colours and the Apply to 12 hues button.](../../www/guide-images/theme-harmonic.png "wide")
 
 ### Schemes
 
@@ -109,10 +109,11 @@ The twelve slots, in Palette order, get hues spread evenly across an arc of the 
 
 | Scheme | Arc |
 |---|---|
+| **Monochrome** | 0° (every slot takes the seed's hue) |
 | **Analogous** | 90° |
-| **Complementary** | 180° |
 | **Triadic** | 240° |
 | **Tetradic** | 270° |
+| **Complementary** | 180° |
 | **Rainbow** | 330° |
 
 Only the seed's hue is used. Each slot keeps its own saturation and lightness, so dark slots stay dark and light ones stay light.

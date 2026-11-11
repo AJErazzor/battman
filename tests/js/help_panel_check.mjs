@@ -107,6 +107,7 @@ try {
     await page.waitForFunction(() => document.getElementById("host").shadowRoot.querySelector(".bh-panel"));
     await page.locator("#host .bh-all").click();
     r.browse = await page.evaluate(() => ({nav: window.__nav, at: location.pathname + location.search + location.hash,
+      from: JSON.parse(sessionStorage.getItem('battman.helpFrom') || 'null'),
       panel: !!document.getElementById("host").shadowRoot.querySelector(".bh-panel")}));
     r.fetches = await page.evaluate(() => window.__calls.length);
     r.overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

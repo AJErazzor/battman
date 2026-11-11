@@ -17,6 +17,7 @@ When a change alters what someone sees or does, update the guide in the same cha
 | Which views a new dashboard has (`views/*.yaml`) | `guide/start/device-page.md` (the list of views) |
 | The Show help setting or how the Help view is added and removed (`help_setting.py`, `dashboard.py`) | `guide/README.md` (Showing or hiding the guide) |
 | The Settings card (`www/battman-settings.js`): a section, a setting, its label, limits or default, or what it does | `guide/intermediate/settings.md` (the "?" on each section opens its summary block) |
+| A label, button or message a task in `guide/howto/tasks.md` names (its steps, and the `guide:show` markers' `text`) | `guide/howto/tasks.md`: the steps, and each `guide:show` so Show me still finds it (the tests check the text is in the card) |
 | A card on the Power view (`views/05-power.yaml`, `cards/*.yaml`, `www/battman-house.js`, `www/battman-overrides*.js`): what it shows, its labels, what a press does | `guide/intermediate/power.md` (the "?" on each card opens its summary block `power.<card>`), and retake the card's screenshot in `www/guide-images/` if its look changed |
 
 Rules for the guide:
