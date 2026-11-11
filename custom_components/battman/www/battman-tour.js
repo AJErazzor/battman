@@ -138,12 +138,13 @@ function controlAround(el, scope) {
   // a setting's name (Settings' rows: the name, then its box): the whole row, name and box
   return fieldAround(el, scope) || el;
 }
-// the nearest box (up to three levels up) that holds exactly one field: a label and its box, a setting's row
+// the nearest box (up to three levels up, no taller than a row) that holds exactly one field: a label and its box, a setting's row
 const FIELD = "input:not([type=hidden]), select, textarea";
 function fieldAround(el, scope) {
   let n = up(el);
   for (let k = 0; n && n !== scope && k < 3; k++, n = up(n)) {
     if (n.nodeType !== 1) continue;
+    if (rectOf(n).height > 140) return null;          // a whole block, not one field's row
     const f = [...n.querySelectorAll(FIELD)].filter(shown);
     if (f.length === 1) return n;
     if (f.length > 1) return null;
