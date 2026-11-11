@@ -93,7 +93,7 @@ A mode set by hand shows on the [State](#state) card as "Manual mode change · "
 What the engine would do right now. The **SELL** and **BUY** tiles show the price and battery level each side needs, and glow while that side is acting. The pill at the top says which curve is in use; the pill at the bottom says what the engine is doing and why. Tap the card for the next hours.
 <!-- /guide:summary -->
 
-![The State card: a pill at the top reading Normal Curve, Chill, two tiles side by side for SELL and BUY each with a price, an arrow and a battery level, and a pill at the bottom naming the reason the engine is selling or buying.](../../www/guide-images/power-state.png)
+![The State card: a pill at the top reading Normal Curve, Chill, two tiles side by side for SELL and BUY, each marked Override, with a price, an arrow and a battery level.](../../www/guide-images/power-state.png)
 
 ### The tiles
 
@@ -157,7 +157,7 @@ If `sensor.battman_sell_total`, `sensor.battman_buy_total` or `sensor.battman_pa
 Five overrides (Sell Override, Sell Solar, Buy Override, Buy Anytime and Drain Battery), each with a battery level (SOC) and a price. A strip shows what's set, a row appears for each override that is set or pinned, and a timer says how long they last. Tap the strip for the control centre, a row to edit it, the timer to change it.
 <!-- /guide:summary -->
 
-![The Overrides card: a strip labelled OVERRIDES, one coloured row per active override showing its SOC, price and the battery level it is heading for, and a timer bar with a countdown below.](../../www/guide-images/power-overrides.png)
+![The Overrides card: a strip labelled OVERRIDES, then five coloured rows (Sell Override, Sell Solar, Buy Override, Buy Anytime and Drain Battery), each showing its SOC, price, money and the battery level it is heading for.](../../www/guide-images/power-overrides.png)
 
 | Override | SOC is | Price is |
 |---|---|---|
