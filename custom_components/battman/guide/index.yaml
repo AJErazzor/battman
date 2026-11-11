@@ -8,6 +8,13 @@ home:
   title: Battman help
   summary: What's in the guide and how to find your way round it.
 tracks:
+  - id: howto
+    title: How do I…?
+    summary: Pick what you want to do; each task gives the steps, and Show me walks you through it.
+    pages:
+      - slug: tasks
+        title: How do I…?
+        summary: The everyday tasks, step by step, with Show me on your own dashboard.
   - id: start
     title: Getting started
     summary: Finding your way round Battman.

@@ -11,6 +11,10 @@ This guide is written from Battman's own code, so it describes what your install
 
 ## In this guide
 
+**How do I…?**
+
+- [How do I…?](howto/tasks.md): the everyday tasks, step by step. In the Help view, **Show me** walks you through each one on your own dashboard.
+
 **Getting started**
 
 - [The Battman device page](start/device-page.md): the two buttons on the Battman device (**Create dashboard** and **Create automations**), what each one does, and what it never does.

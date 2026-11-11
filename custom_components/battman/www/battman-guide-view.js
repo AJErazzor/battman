@@ -13,6 +13,7 @@
 
 import { battmanMap, esc, problemHtml } from "./battman-card-base.js";
 import { pageHref, renderPage } from "./battman-guide-md.js";
+import { decorateHowto } from "./battman-guide-howto.js";
 
 const NEEDS = ["enable", "mode", "run", "no_export"];
 
@@ -32,6 +33,10 @@ ha-card { overflow: hidden; color: var(--g-text); background: var(--g-card);
 .top .ver { font-size: 12px; color: var(--g-muted); }
 .top .spacer { flex: 1; }
 button.toc-btn { display: none; }
+button.back-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px; cursor: pointer; min-height: 34px;
+  border: 1px solid var(--g-border); background: var(--g-card); color: var(--g-text); }
+button.back-btn[hidden] { display: none; }
+button.back-btn:focus-visible { outline: 2px solid var(--g-link, var(--primary-color)); outline-offset: 2px; }
 button { font: inherit; }
 .status { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 10px 20px; font-size: 13px; color: var(--g-muted);
   background: var(--g-raised); border-bottom: 1px solid var(--g-border); }
@@ -106,6 +111,7 @@ const HTML = `
     <div class="top">
       <button class="toc-btn" type="button" aria-expanded="false" aria-controls="toc">Contents</button>
       <p class="name">Battman help</p><span class="ver"></span><span class="spacer"></span>
+      <button class="back-btn" type="button" hidden></button>
     </div>
     <div class="status" role="status" aria-label="Battman now"></div>
     <div class="body">
@@ -234,6 +240,14 @@ export function mount(card) {
     shown = page;
     article.innerHTML = out.html;
     fillDirectives();
+    if (out.directives.some((d) => d.name === "task")) {
+      decorateHowto(root, article, {
+        go: (view) => goHa(`/${dashboard()}/${view}`),
+        showMe: (t) => import("./battman-tour.js").then((m) => m.startTour(t)),
+        openAnchor: anchor,
+      });
+    }
+    drawBack();
     drawToc();
     frame.classList.remove("open");
     $(".toc-btn").setAttribute("aria-expanded", "false");
@@ -243,6 +257,29 @@ export function mount(card) {
       main.focus({ preventScroll: true });
     }
     moved = true;
+  }
+
+  // ── the way back ──────────────────────────────────────────────────────────────────────────
+  // Browse all help (a "?" panel on another view) remembers where it came from: offer the way back for half an hour.
+  const dashboard = () => window.location.pathname.split("/")[1] || "battman";
+  function goHa(path) {
+    window.history.pushState(null, "", path);
+    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+  }
+  function backTarget() {
+    try {
+      const f = JSON.parse(sessionStorage.getItem("battman.helpFrom") || "null");
+      if (f && f.path && !f.path.startsWith(viewPath) && Date.now() - f.at < 30 * 60 * 1000) return f.path;
+    } catch (e) { /* no storage */ }
+    return null;
+  }
+  function drawBack() {
+    const b = $(".back-btn"), to = backTarget();
+    b.hidden = !to;
+    if (!to) return;
+    const name = (to.split("?")[0].split("/")[2] || "dashboard");
+    b.textContent = `← Back to ${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+    b.dataset.to = to;
   }
 
   // ── live parts ────────────────────────────────────────────────────────────────────────────
@@ -320,6 +357,11 @@ export function mount(card) {
   root.addEventListener("click", (ev) => {
     const a = ev.target.closest("a, button");
     if (!a || ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    if (a.matches("button.back-btn")) {
+      try { sessionStorage.removeItem("battman.helpFrom"); } catch (e) { /* no storage */ }
+      goHa(a.dataset.to);
+      return;
+    }
     if (a.matches("button.toc-btn")) {
       const open = frame.classList.toggle("open");
       a.setAttribute("aria-expanded", String(open));

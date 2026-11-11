@@ -105,7 +105,7 @@ def test_pages_render_and_every_link_lands() -> None:
         assert [h["depth"] for h in page["headings"]].count(1) == 1, pid
         assert "<script" not in page["html"].lower() and "javascript:" not in page["html"].lower(), pid
         assert 'class="deadlink"' not in page["html"], (pid, [l for l in page["links"] if l["kind"] == "none"])
-        assert {d["name"] for d in page["directives"]} <= {"repairs", "summary"}, pid
+        assert {d["name"] for d in page["directives"]} <= {"repairs", "summary", "howto", "task", "show"}, pid
         for link in page["links"]:
             assert link["kind"] in ("page", "ha", "external"), (pid, link)
             if link["kind"] == "page":
@@ -821,3 +821,76 @@ def test_help_layer_knows_every_summary_and_the_editors_register_them() -> None:
         registered = re.findall(r'\["([a-z0-9]+)", "[^"]+"\]', js.split("connectedCallback()", 1)[1].split("disconnectedCallback", 1)[0])
         assert registered == sections[name], name
         assert f'helpRegister("{name}." + id,' in js
+
+
+# ── "How do I…?" (guide/howto/tasks.md, www/battman-guide-howto.js, www/battman-tour.js) ──────────
+
+VIEWS = {"power", "curvy", "pricy", "finances", "settings", "log", "theme"}
+# the card a Show me step names -> the files its visible text comes from
+CARD_SOURCES = {
+    "battman-house": ["www/battman-house.js"], "battman-overrides": ["www/battman-overrides.js", "www/battman-overrides-core.js"],
+    "battman-curvy": ["www/battman-curvy.js", "www/battman-curve-editor.js"], "battman-pricy": ["www/battman-pricy.js", "www/battman-curve-editor.js"],
+    "battman-cost-chart": ["www/battman-cost-chart.js"], "battman-cost-compare": ["www/battman-cost-compare.js"],
+    "battman-settings": ["www/battman-settings.js"], "battman-log": ["www/battman-log.js", "www/battman-enginelog.js"],
+    "battman-theme-studio": ["www/battman-theme-studio.js"],
+}
+
+
+def _card_source(card: str) -> str:
+    files = CARD_SOURCES.get(card) or [f"cards/{card.removeprefix('battman-')}.yaml"]
+    return "\n".join((ROOT / f).read_text() for f in files if (ROOT / f).is_file())
+
+
+def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
+    """Every task has its marker, steps and at least one Show me stop, and every stop names a view, a card on it and
+    text the card really shows."""
+    page = _pages()["howto/tasks"]
+    assert "<!-- guide:howto -->" in page
+    tasks = re.findall(r'<a id="([a-z0-9-]+)"></a>\n### (.+)\n<!-- guide:task ([^>]*)-->\n(.*?)(?=\n<a id="|\n## |\Z)', page, re.S)
+    assert len(tasks) >= 18, len(tasks)
+    assert len({t[0] for t in tasks}) == len(tasks)
+    assert page.count("<!-- guide:task ") == len(tasks)
+    with_show = []
+    for anchor, title, args, body in tasks:
+        a = dict(re.findall(r'(\w+)="([^"]*)"', args))
+        assert a.get("where") and a.get("icon"), anchor
+        for img in a.get("uses", "").split():
+            assert (WWW / "guide-images" / img).is_file(), (anchor, img)
+        steps = re.findall(r"^\d+\. ", body, re.M)
+        assert 2 <= len(steps) <= 8, (anchor, len(steps))
+        shows = re.findall(r"^   <!-- guide:show ([^>]*)-->$", body, re.M)
+        with_show.append(bool(shows))
+        for sh in shows:
+            s = dict(re.findall(r'(\w+)="([^"]*)"', sh))
+            assert s.get("view") in VIEWS, (anchor, s)
+            assert s.get("card", "").startswith("battman-"), (anchor, s)
+            src = _card_source(s["card"])
+            assert src, (anchor, s["card"], "no source for this card")
+            view = (ROOT / "views").glob(f"*-{s['view']}.yaml")
+            assert any(f"custom:{s['card']}" in v.read_text() for v in view), (anchor, s, "card isn't on that view")
+            if s.get("text"):
+                assert s["text"].lower() in src.lower(), (anchor, s["text"], "the card doesn't show this text")
+            assert len(s.get("say", "")) <= 40, (anchor, s.get("say"))
+    assert sum(with_show) >= len(tasks) - 2          # Show me on all but a task or two with nothing on a view to point at
+
+
+@pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
+                    reason="needs Chromium, Node and Playwright")
+def test_show_me_tour_in_a_browser(tmp_path) -> None:
+    r = subprocess.run(["node", str(Path(__file__).parent / "js/tour_check.mjs"), str(ROOT)], capture_output=True, text=True, timeout=120,
+                       env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME})
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out["errors"] == [], out["errors"]
+    for name in ("desktop", "phone"):
+        o = out[name]
+        s1 = o["step1"]
+        assert s1["meta"].startswith("Step 1 of 3") and s1["say"] == "The mode card" and "Open the Power view" in s1["body"]
+        assert s1["ring"] is False and s1["hole"] == o["card"]                    # whole card: the hole, no ring
+        s2 = o["step2"]
+        assert s2["say"] == "Tap Curtail" and s2["ring"] is True and s2["ringBox"] == o["button"]   # rings the text's element
+        assert s2["bubbleTop"] >= s2["ringBottom"] or s2["bubbleBottom"] <= s2["ringTop"]          # beside it, not over it
+        assert 0 <= s2["bubbleLeft"] and s2["bubbleRight"] <= o["vw"]
+        assert o["pressed"] == 1                                                  # the real control works under the tour
+        assert o["back"] == "The mode card" and o["step3"]["next"] == "Done"
+        assert o["afterEsc"] is False and o["afterDone"] is False

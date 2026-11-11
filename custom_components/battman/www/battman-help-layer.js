@@ -228,7 +228,7 @@ const YAML_PARTS = {
 };
 
 // the element under root (through shadow roots) that shows exactly this text
-function findText(root, text) {
+export function findText(root, text) {
   const want = text.toLowerCase();
   const walk = (node) => {
     for (const el of node.children || []) {

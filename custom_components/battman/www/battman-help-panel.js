@@ -164,6 +164,10 @@ export function retag(root, tag) {
 
 function go(root, url) {
   closePanel(root);
+  // going to the Help view: remember where from, so the Help view can offer the way back
+  if (url.startsWith(helpView())) {
+    try { sessionStorage.setItem("battman.helpFrom", JSON.stringify({ path: window.location.pathname + window.location.search, at: Date.now() })); } catch (e) { /* no storage */ }
+  }
   window.history.pushState(null, "", url);
   window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
 }
