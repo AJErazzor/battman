@@ -47,9 +47,9 @@ More: [The mode buttons](../intermediate/power.md#batterymode) · [Confirmations
 While **Active** is on, Battman does this itself: each engine run turns **Curtail** on while feed-in is negative and off when it isn't. To stop exports straight away:
 
 1. On the **Power** view's **Battery mode** card, tap **Curtail**.
-   <!-- guide:show view="power" card="battman-batterymode" target="Curtail" until="popup" say="Tap Curtail" -->
+   <!-- guide:show view="power" card="battman-batterymode" target="Curtail" until="popup" skipif="state:input_boolean.battman_no_export=on" say="Tap Curtail" -->
 2. It asks "Turn Curtail?" and says "This will stop any exports." Press **Turn on**.
-   <!-- guide:show view="power" popup="Turn Curtail?" target="Turn on" until="state:input_boolean.battman_no_export=on" say="Press Turn on" -->
+   <!-- guide:show view="power" popup="Turn Curtail?" target="Turn on" until="state:input_boolean.battman_no_export=on" skipif="state:input_boolean.battman_no_export=on" say="Press Turn on" -->
 3. Check it: the **Limits** card's **Grid Export Limit** drops to 0. If something raises it while Curtail is on, Battman puts it back to 0.
    <!-- guide:show view="power" card="battman-limits" target="Grid Export Limit" until="next" say="Grid Export Limit goes to 0" -->
 
@@ -133,15 +133,15 @@ More: [Overrides](../intermediate/power.md#overrides) · [Limits](../intermediat
 While **Active** is on, the engine sets the mode and **Curtail** each time it runs, so a mode you pick by hand lasts only until then. Turn Active off to keep it.
 
 1. On the **Power** view's **Battery mode** card, tap **Active**.
-   <!-- guide:show view="power" card="battman-batterymode" target="Active" until="popup" say="Tap Active" -->
+   <!-- guide:show view="power" card="battman-batterymode" target="Active" until="popup" skipif="state:input_boolean.battman_enable=off" say="Tap Active" -->
 2. It asks "Turn Active?" and says "Battman will stop controlling the battery." Press **Turn off**.
-   <!-- guide:show view="power" popup="Turn Active?" target="Turn off" until="state:input_boolean.battman_enable=off" say="Press Turn off" -->
+   <!-- guide:show view="power" popup="Turn Active?" target="Turn off" until="state:input_boolean.battman_enable=off" skipif="state:input_boolean.battman_enable=off" say="Press Turn off" -->
 3. Tap the mode you want, such as **Sell**, **Buy** or **Self Consume**, and use **Curtail** as you need. They stay as you set them: the engine and the watchdog don't run, and overrides don't clear.
    <!-- guide:show view="power" card="battman-batterymode" until="next" say="Pick a mode" -->
 4. When you want Battman to run the battery again, tap **Active**.
-   <!-- guide:show view="power" card="battman-batterymode" target="Active" until="popup" say="Tap Active" -->
+   <!-- guide:show view="power" card="battman-batterymode" target="Active" until="popup" skipif="state:input_boolean.battman_enable=on" say="Tap Active" -->
 5. It says "Battman will control the battery again." Press **Turn on**.
-   <!-- guide:show view="power" popup="Turn Active?" target="Turn on" until="state:input_boolean.battman_enable=on" say="Press Turn on" -->
+   <!-- guide:show view="power" popup="Turn Active?" target="Turn on" until="state:input_boolean.battman_enable=on" skipif="state:input_boolean.battman_enable=on" say="Press Turn on" -->
 6. On the **Settings** view, press **Run engine** so the engine picks the mode straight away. Otherwise it runs when the price or a setting next changes.
    <!-- guide:show view="settings" card="battman-settings" target="Run engine" until="press" say="Press Run engine" -->
 

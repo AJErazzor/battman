@@ -886,6 +886,9 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
                 assert src, (anchor, s["card"], "no source for this card")
                 view = (ROOT / "views").glob(f"*-{s['view']}.yaml")
                 assert any(f"custom:{s['card']}" in v.read_text() for v in view), (anchor, s, "card isn't on that view")
+            if s.get("skipif"):
+                assert re.fullmatch(r"state:[a-z_]+\.[a-z0-9_]+=\S+", s["skipif"]), (anchor, s["skipif"])
+                assert s["skipif"][6:].split("=")[0].split(".", 1)[1] in ALL_SOURCE + PACKAGES_SOURCE, (anchor, s["skipif"])
             for one in u.split("|"):
                 if one.startswith("state:"):
                     assert one[6:].split("=")[0].split(".", 1)[1] in ALL_SOURCE + PACKAGES_SOURCE, (anchor, one, "no such entity")

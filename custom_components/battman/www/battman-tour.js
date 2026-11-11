@@ -88,7 +88,15 @@ function findShown(scope, text) {
     && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want));
   if (scope.shadowRoot) hits.push(...deepAll(scope, (el) => el.textContent.trim().toLowerCase() === want
     && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want)));
-  return hits.find(shown) || hits[0] || findText(scope, text);
+  return hits.find((h) => shown(h) && onTop(h)) || hits.find(shown) || hits[0] || findText(scope, text);
+}
+// is el what's actually on screen at its middle (not under another panel, not clipped away)?
+function onTop(el) {
+  const r = rectOf(el), x = r.left + r.width / 2, y = r.top + r.height / 2;
+  if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return false;
+  let n = document.elementFromPoint(x, y);
+  for (let k = 0; n && n.shadowRoot && k < 30; k++) { const m = n.shadowRoot.elementFromPoint(x, y); if (!m || m === n) break; n = m; }
+  return !!n && (n === el || within(n, el) || within(el, n) && n.textContent.trim() === el.textContent.trim());
 }
 
 // the whole control around a piece of text: the nearest thing that can be pressed, inside scope
@@ -152,9 +160,12 @@ export function stopTour() {
   tour = null;
 }
 
-function go(i) {
+function go(i, dir = 1) {
   const t = tour;
+  // a step whose outcome is already true ("skipif": Curtail is already on) is passed over
+  while (i >= 0 && i < t.steps.length && t.steps[i].skipif && stateIs(t.steps[i].skipif)) i += dir;
   if (i >= t.steps.length) return stopTour();
+  if (i < 0) i = 0;
   t.i = Math.max(0, i);
   t.step = t.steps[t.i];
   t.cameBy = t.ended || "";        // how the step before ended ("popup", "press", "state:…"; "" after Back or Next)
@@ -194,6 +205,11 @@ function done(s, at) {
   for (const u of String(s.until || "press").split("|")) if (doneOne(s, at, u)) return u;
   return "";
 }
+function stateIs(cond) {
+  const m = /^state:([^=]+)=(.*)$/.exec(String(cond || ""));
+  const h = hass();
+  return !!(m && h && h.states[m[1]] && String(h.states[m[1]].state) === m[2]);
+}
 function doneOne(s, at, u) {
   if (u === "popup") return openPopups().length > tour.popupsAtStart;
   if (u === "closed") return !!tour.landed && !popupWith(s.popup);
@@ -220,7 +236,7 @@ function tick() {
     if (!t.popupSince) t.popupSince = Date.now();
     if (Date.now() - t.popupSince > 1200) {
       if (t.cameBy && t.cameBy !== "popup" && t.cameBy !== "next") return go(t.i + 1);
-      for (let k = t.i - 1; k >= 0; k--) if (String(t.steps[k].until || "").split("|").includes("popup")) return go(k);
+      for (let k = t.i - 1; k >= 0; k--) if (String(t.steps[k].until || "").split("|").includes("popup")) return go(k, -1);
     }
   } else t.popupSince = 0;
   // the stage lives in the open popup, or the page can't be pressed through to it
@@ -257,7 +273,7 @@ function land(el, card, folding) {
     if (tour && tour.step === step && u.split("|").includes("press")) setTimeout(() => { if (tour && tour.step === step) { tour.ended = "press"; go(tour.i + 1); } }, 150);
   };
   if (t.onPress) el.addEventListener("click", t.onPress, true);
-  if (!t.step.popup && !folding) el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  if (!folding) el.scrollIntoView({ block: t.step.popup ? "nearest" : "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const ring = t.root.querySelector(".ring");
   ring.hidden = false;
   ring.classList.remove("glow");
@@ -348,7 +364,7 @@ function onOwnClick(e) {
   e.stopPropagation();
   const a = b.dataset.act;
   if (a === "next") { tour.ended = "next"; go(tour.i + 1); }
-  else if (a === "back") { tour.ended = ""; go(tour.i - 1); }
+  else if (a === "back") { tour.ended = ""; go(tour.i - 1, -1); }
   else if (a === "stop") stopTour();
   else if (a === "resume") { tour.paused = false; tour.last = null; draw(tour.lensEl ? "found" : "finding"); }
 }

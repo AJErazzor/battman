@@ -64,7 +64,7 @@ const plainText = (el) => {
 export function stepsOf(body) {
   return [...body.querySelectorAll('.directive[data-directive="show"]')].map((d) => {
     const a = argsOf(d), li = d.closest("li");
-    return { view: a.view || "", card: a.card || "", popup: a.popup || "", target: a.target || "", until: a.until || "",
+    return { view: a.view || "", card: a.card || "", popup: a.popup || "", target: a.target || "", until: a.until || "", skipif: a.skipif || "",
       say: a.say || "", body: li ? plainText(li) : "" };
   }).filter((s) => s.view && (s.card || s.popup));
 }
