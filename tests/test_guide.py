@@ -698,14 +698,15 @@ def test_power_page_has_a_summary_for_every_card_on_the_view() -> None:
 
 def test_power_cards_register_for_help_under_their_own_ids() -> None:
     """The cards that draw others (the wrapper) register under the card's id; House and Overrides by name."""
-    assert 'helpRegister(this.constructor.cardId,' in (WWW / "battman-cards.js").read_text()
-    assert 'helpRegister("house",' in (WWW / "battman-house.js").read_text()
-    assert 'helpRegister("overrides",' in (WWW / "battman-overrides.js").read_text()
+    assert 'helpRegister("power." + this.constructor.cardId,' in (WWW / "battman-cards.js").read_text()
+    assert 'helpRegister("power.house",' in (WWW / "battman-house.js").read_text()
+    assert 'helpRegister("power.overrides",' in (WWW / "battman-overrides.js").read_text()
     cards = {p.stem for p in (ROOT / "cards").glob("*.yaml")}
     assert _power_cards() - {"house", "overrides"} <= cards
     # the layer: nothing of the guide or the panel up front; the panel only when help is turned on
     assert re.findall(r'^import .* from "([^"]+)";', LAYER_JS, re.M) == []
-    assert 'import("./battman-help-panel.js")' in LAYER_JS and 'PAGE = "intermediate/power"' in LAYER_JS
+    assert 'import("./battman-help-panel.js")' in LAYER_JS
+    assert 'PAGES = { power: "intermediate/power", curvy: "intermediate/curvy", pricy: "intermediate/pricy" }' in LAYER_JS
     assert "st.attributes.showHelp === false" in LAYER_JS
 
 
@@ -755,7 +756,7 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
     r = subprocess.run(["node", str(Path(__file__).parent / "js/help_layer_check.mjs"), str(ROOT)],
                        capture_output=True, text=True, timeout=180,
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_JSON": json.dumps({"pages": _pages()}),
-                            "HELP_CARDS": json.dumps(cards[:2])})
+                            "HELP_CARDS": json.dumps([f"power.{c}" for c in cards[:2]])})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
     assert out["errors"] == [], out["errors"]
@@ -766,7 +767,7 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
         assert o["button"]["theme"] == "#123456"                                  # the layer wears the cards' theme
         assert o["pressed"] == "true"
         shown = [t for t in o["tags"] if t["vis"] != "hidden"]
-        assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # the card with no summary gets none
+        assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # a part with no help gets none
         assert all(t["display"] == "flex" for t in o["tags"])                     # shown in help mode (fixed, so flex)
         boxes = {b["i"]: b for b in o["cardBoxes"]}
         a = next(t for t in shown if t["top"] == boxes["a"]["top"] + 8)
@@ -784,3 +785,22 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
         assert o["gone"] == {"hidden": True, "tags": 0, "panel": False}
     d, ph = out["desktop"]["panel"], out["phone"]["panel"]
     assert d["width"] == 400 and d["left"] == 800 and ph["left"] == 0 and ph["width"] == 390
+
+
+def _layer_sections() -> dict[str, list[str]]:
+    block = re.search(r"const SECTIONS = \{(.*?)\n\};", LAYER_JS, re.S).group(1)
+    return {m[0]: re.findall(r'"([a-z0-9]+)"', m[1]) for m in re.findall(r"(\w+): \[([^\]]*)\]", block)}
+
+
+def test_help_layer_knows_every_summary_and_the_editors_register_them() -> None:
+    """The layer's list of parts with help is exactly the summaries on the Power, Curvy and Pricy pages, in order."""
+    sections = _layer_sections()
+    assert set(sections) == {"power", "curvy", "pricy"}
+    for name, ids in sections.items():
+        page = _pages()[f"intermediate/{name}"]
+        assert [i.split(".")[1] for i in re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)] == ids, name
+    for name in ("curvy", "pricy"):
+        js = (WWW / f"battman-{name}.js").read_text()
+        registered = re.findall(r'\["([a-z0-9]+)", "[^"]+"\]', js.split("connectedCallback()", 1)[1].split("disconnectedCallback", 1)[0])
+        assert registered == sections[name], name
+        assert f'helpRegister("{name}." + id,' in js

@@ -159,7 +159,7 @@ class BattmanHouseCard extends HTMLElement {
 
   // the "?" help on the Power view (battman-help-layer.js)
   connectedCallback() {
-    if (!this._unhelp) this._unhelp = helpRegister("house", () => this);
+    if (!this._unhelp) this._unhelp = helpRegister("power.house", () => this);
   }
 
   disconnectedCallback() {

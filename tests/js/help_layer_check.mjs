@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const WWW = path.join(process.argv[2], "www");
 const GUIDE = JSON.parse(process.env.GUIDE_JSON);          // {pages: {id: markdown}}
-const CARDS = JSON.parse(process.env.HELP_CARDS);          // [card id with a summary, another, ...]
+const CARDS = JSON.parse(process.env.HELP_CARDS);          // [summary id ("power.house"), another, ...]
 
 const HTML = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>body{margin:0;font-family:sans-serif;--primary-text-color:#111;--card-background-color:#fff;--divider-color:#ddd;--primary-color:#03a9f4;--header-height:56px}
@@ -36,7 +36,7 @@ window.__off = {};
 const byId = (i) => document.getElementById(i);
 window.__off.a = helpRegister(${JSON.stringify(CARDS[0])}, () => byId("a"));
 window.__off.b = helpRegister(${JSON.stringify(CARDS[1])}, () => byId("b"));
-window.__off.c = helpRegister("no-such-card", () => byId("c"));
+window.__off.c = helpRegister("power.no-such-card", () => byId("c"));
 window.__off.tall = helpRegister(${JSON.stringify(CARDS[0])}, () => byId("tall"));
 window.__ready = true;
 </script></body></html>`;

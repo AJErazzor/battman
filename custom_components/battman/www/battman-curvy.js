@@ -13,7 +13,8 @@
 // missing is shown on the card, never made up. The chart uses Chart.js, shipped with Battman.
 // ---------------------------------------------------------------------------------------------
 
-import { AMBER, BATTMAN_SENSORS, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
+import { AMBER, BATTMAN_SENSORS, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, inCardPicker, cssVar, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
 import { NOT_SAVED, debugBox, hourLabel, presetMenus, pressFeedback, sameData, savedIn, showNote as noteIn, wireHandlers } from "./battman-curve-editor.js";
 
 const CSS = `
@@ -1782,6 +1783,19 @@ class BattmanCurvyCard extends BattmanCardBase {
 
   getCardSize() {
     return 12;
+  }
+
+  // the "?" help on this view (battman-help-layer.js): one for each part of the editor
+  connectedCallback() {
+    super.connectedCallback();
+    if (this._unhelp || inCardPicker(this)) return;
+    const find = (q) => this.shadowRoot && this.shadowRoot.querySelector(q);
+    this._unhelp = [["edit", ".mode-toggle"], ["options", ".chart-controls"], ["readouts", "#hour-details-panel"], ["chart", ".chart-container"], ["hours", "#controls"], ["buttons", ".actions"], ["editing", ".info-box"]].map(([id, q]) => helpRegister("curvy." + id, () => find(q)));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._unhelp) { this._unhelp.forEach((off) => off()); this._unhelp = null; }
   }
 
   run(root) {

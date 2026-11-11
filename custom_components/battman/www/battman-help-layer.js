@@ -1,13 +1,24 @@
-// "?" help on the Power view's cards. (The Settings card has its own, in battman-settings.js.)
+// "?" help on the Power, Curvy and Pricy views. (The Settings card has its own, in battman-settings.js.)
 //
-// Cards register themselves here while they're on a page: helpRegister(host, "house"). While at least one is,
-// and Settings -> Dashboard options -> Show help is on, a floating Help button sits at the top right of the page.
-// Pressing it loads the panel (battman-help-panel.js) and the guide's Power page once, and puts a "?" on the
-// top right of every card that page has a summary block for ("power.<card>"). The tags and the panel live in one
-// layer on the page, not inside the cards, because many cards are drawn by other cards that can't hold them. The
-// layer follows each card's position, and takes the theme variables from the cards, so it looks like the view.
+// Cards, or parts of a card, register here while they're on a page: helpRegister("power.house", () => element).
+// The id is a summary block's id; its first part names the guide page (PAGES). While anything is registered, and
+// Settings -> Dashboard options -> Show help is on, a floating Help button sits at the top right of the page.
+// Pressing it loads the panel (battman-help-panel.js) and the guide pages it needs, once each, and puts a "?" on
+// the top right of every registered part whose summary exists. The tags and the panel live in one layer on the
+// page, not inside the cards, because many cards are drawn by other cards that can't hold them. The layer follows
+// each part's position, and takes the theme variables from the cards, so it looks like the view.
 
-const PAGE = "intermediate/power";
+const PAGES = { power: "intermediate/power", curvy: "intermediate/curvy", pricy: "intermediate/pricy" };
+const pageOf = (id) => PAGES[String(id).split(".")[0]];
+// the parts that have help: a summary block on their page (tests/test_guide.py keeps this in step with the pages).
+// Anything else that registers (a Battman card on another view) is ignored, so no Help button shows there.
+const SECTIONS = {
+  power: ["house", "batterymode", "state", "profitloss", "overrides", "amber5minpricegrid", "limits", "amber24hourforecasttable",
+    "gauges", "nemmix"],
+  curvy: ["edit", "options", "readouts", "chart", "hours", "buttons", "editing"],
+  pricy: ["edit", "options", "readouts", "chart", "preferred", "second", "buttons", "editing"],
+};
+const HAS_HELP = new Set(Object.entries(SECTIONS).flatMap(([page, ids]) => ids.map((i) => `${page}.${i}`)));
 const PARAMETERS = "sensor.battman_parameters";
 // the theme variables the button, the tags and the panel use (copied from a card, which is inside the view's theme)
 const VARS = ["--battman-sky", "--battman-sky-soft-bg", "--battman-text-bright", "--battman-text-muted", "--battman-border-neutral",
@@ -16,7 +27,8 @@ const VARS = ["--battman-sky", "--battman-sky-soft-bg", "--battman-text-bright",
 
 const cards = new Map();       // registration token -> {id, measure}
 let layer = null;              // {host, root}
-let help = null;               // {mod, summaries} once loaded
+let help = null;               // {mod, summaries} once the panel has loaded; summaries grow as pages load
+const pagesLoaded = new Set();
 let loading = null;
 let on = false;
 let timer = 0;
@@ -58,7 +70,7 @@ function ensureLayer() {
   root.querySelector(".helpbtn").addEventListener("click", () => setHelp(!on));
   root.addEventListener("click", (e) => {
     const t = e.target.closest && e.target.closest(".bh-tag");
-    if (t && help) help.mod.openPanel(root, hassNow(), { page: PAGE, id: t.dataset.help, from: t });
+    if (t && help) help.mod.openPanel(root, hassNow(), { page: pageOf(t.dataset.help), id: t.dataset.help, from: t });
   });
   layer = { host, root, frame: root.querySelector(".frame"), btn: root.querySelector(".helpbtn"), msg: root.querySelector(".msg") };
   return layer;
@@ -104,11 +116,11 @@ function place() {
   const top = headerHeight() + 4;
   const seen = new Set();
   for (const [token, { id, measure }] of cards) {
-    const sid = "power." + id;
+    const sid = id;
     if (!help.summaries[sid]) continue;
     let tag = layer.root.querySelector(`.bh-tag[data-token="${token.n}"]`);
     if (!tag) {
-      layer.frame.insertAdjacentHTML("beforeend", help.mod.tagHtml(sid, id));
+      layer.frame.insertAdjacentHTML("beforeend", help.mod.tagHtml(sid, sid.split(".").slice(1).join(" ")));
       tag = layer.frame.lastElementChild;
       tag.dataset.token = token.n;
       help.mod.retag(layer.root, tag);       // a panel that's open for this card keeps its tag
@@ -129,16 +141,22 @@ function place() {
 
 async function setHelp(want) {
   ensureLayer();
-  if (want && !help) {
+  const need = [...new Set([...cards.values()].map((c) => pageOf(c.id)).filter(Boolean))].filter((p) => !pagesLoaded.has(p));
+  if (want && (!help || need.length)) {
     if (loading) return loading;
     tell("Loading help…");
     loading = (async () => {
-      const mod = await import("./battman-help-panel.js");
-      const page = await mod.loadPage(hassNow(), PAGE);
-      const st = document.createElement("style");
-      st.textContent = mod.TAG_CSS;
-      layer.root.appendChild(st);
-      help = { mod, summaries: page.summaries };
+      if (!help) {
+        const mod = await import("./battman-help-panel.js");
+        const st = document.createElement("style");
+        st.textContent = mod.TAG_CSS;
+        layer.root.appendChild(st);
+        help = { mod, summaries: {} };
+      }
+      for (const page of need) {
+        Object.assign(help.summaries, (await help.mod.loadPage(hassNow(), page)).summaries);
+        pagesLoaded.add(page);
+      }
     })();
     try {
       await loading;
@@ -169,9 +187,11 @@ function onKey(e) {
   else setHelp(false);
 }
 
-// A card calls this when it's added to the page and calls the function it returns when it's taken off.
-// measure() gives the element whose box the "?" sits on (a card drawn by another card has none of its own).
+// A card calls this when it's added to the page (once for each part with help) and calls the function it returns
+// when it's taken off. id is the summary's id ("power.house", "curvy.chart"); measure() gives the element whose box
+// the "?" sits on (a card drawn by another card has no box of its own, so it names the one inside it).
 export function helpRegister(id, measure) {
+  if (!HAS_HELP.has(id)) return () => {};
   const token = { n: String(Math.random()).slice(2) };
   cards.set(token, { id, measure });
   if (cards.size === 1) {
