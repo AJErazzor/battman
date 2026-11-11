@@ -236,7 +236,7 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert out["before"] == ["battman-guide.js"]                           # only the stub, until the card is shown
     assert {"battman-guide-view.js", "battman-guide-md.js", "vendor/marked.esm.js"} <= set(out["after"])
     assert out["home"]["h1"].startswith("Battman help") and out["home"]["current"] == "Battman help"
-    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Settings", "Battman's Repairs"]
+    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Curvy", "Pricy", "Settings", "Battman's Repairs"]
     assert out["home"]["scripts"] == 0
     assert "Active: On" in out["status"] and "Mode: Self Consume" in out["status"] and "3 min ago" in out["status"]
     assert "Curtail: Off" in out["status"] and "Repairs: 1 open" in out["status"]     # ignored and other domains left out
