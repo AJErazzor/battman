@@ -4,10 +4,10 @@ The **Settings** view on the Battman dashboard holds every Battman setting, in s
 
 Each change is saved as you make it. The card refuses a value Battman won't accept before sending it, then checks that the setting changed and tells you if it didn't. Only a Home Assistant administrator can save a setting.
 
-- **What you see next to a control:** "Saving…", then "✓ Saved", or "Not saved:" and the reason. If the setting hasn't changed after 5 seconds it says so ("Not saved: … didn't change."). Someone who isn't an administrator gets "Not saved: Unauthorized". The **Live Activity** switch and **Run engine now** work for anyone.
+- **What you see next to a control:** "Saving…", then "✓ Saved", or "Not saved:" and the reason. If the setting hasn't changed after 5 seconds it says so ("Not saved: … didn't change."). Someone who isn't an administrator gets "Not saved: Unauthorized". The **Live Activity** switch and **Run engine** work for anyone.
 - **What it refuses:** "Enter a number", "Must be at least …", "Must be at most …". Settings that take whole numbers drop anything after the decimal point (2.7 becomes 2). "Not set yet" under a setting means Battman has no value for it yet.
 - **When a change takes effect:** while Battman is Active, a change to most settings runs the engine straight away. Buy rules, Sell rules, Sell price protection and Power provider are kept elsewhere, so they apply at the engine's next run, normally within a few minutes when Amber's price next updates.
-- **Run engine now**, at the top, runs the engine once, straight away, even while Active is off. It says "✓ Ran" once the engine has run, or "Didn't run: the engine's run sensor didn't change" after 15 seconds.
+- **Run engine**, at the top, runs the engine once, straight away, even while Active is off. It says "✓ Ran" once the engine has run, or "Didn't run: the engine's run sensor didn't change" after 15 seconds.
 - **Collapse all** and **Show all** fold or open every section; a section's title folds just that one. Drag a section by its dotted grip to move it. This device remembers the order and what's folded; to begin with every section is open except **Reset defaults**.
 
 SOC means the battery's state of charge, as a %. Prices are in c/kWh (cents per kWh) unless a setting says otherwise. Where this page says "points", it means points of SOC: 10 points below a 50% curve is 40%.

@@ -14,12 +14,13 @@
 import { battmanMap, esc, problemHtml } from "./battman-card-base.js";
 import { pageHref, renderPage } from "./battman-guide-md.js";
 import { decorateHowto } from "./battman-guide-howto.js";
+import { headerBottom } from "./battman-help-layer.js";
 
 const NEEDS = ["enable", "mode", "run", "no_export"];
 
 const CSS = `
 :host { display: block; container-type: inline-size; }
-ha-card { overflow: hidden; color: var(--g-text); background: var(--g-card);
+ha-card { overflow: clip; color: var(--g-text); background: var(--g-card);
   --g-text: var(--battman-text-bright, var(--primary-text-color));
   --g-muted: var(--battman-text-muted, var(--secondary-text-color));
   --g-card: var(--battman-surface-card, var(--ha-card-background, var(--card-background-color)));
@@ -44,7 +45,15 @@ button { font: inherit; }
 .status .bad b { color: var(--battman-red, var(--error-color)); }
 .status a { color: var(--g-link); }
 .body { display: grid; grid-template-columns: 250px minmax(0, 1fr); }
-nav.toc { padding: 16px 12px 24px 20px; border-right: 1px solid var(--g-border); font-size: 14px; }
+nav.toc { padding: 16px 12px 24px 20px; border-right: 1px solid var(--g-border); font-size: 14px;
+  /* stays in view while the page scrolls, and scrolls on its own (--g-top: where HA's header ends) */
+  position: sticky; top: var(--g-top, 56px); align-self: start; max-height: calc(100vh - var(--g-top, 56px)); overflow-y: auto;
+  overscroll-behavior: contain; }
+button.totop { position: fixed; right: 18px; bottom: 18px; z-index: 4; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px;
+  border-radius: 8px; cursor: pointer; min-height: 36px; border: 1px solid var(--g-border); background: var(--g-raised); color: var(--g-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
+button.totop[hidden] { display: none; }
+button.totop:focus-visible { outline: 2px solid var(--g-link); outline-offset: 2px; }
 nav.toc h2 { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--g-muted); margin: 16px 0 6px; font-weight: 600; }
 nav.toc h2:first-child { margin-top: 0; }
 nav.toc ul { list-style: none; margin: 0; padding: 0; }
@@ -93,7 +102,10 @@ article kbd { border: 1px solid var(--g-border); border-bottom-width: 2px; borde
 .problem { padding: 16px 0; }
 @container (max-width: 760px) {
   .body { grid-template-columns: minmax(0, 1fr); }
-  nav.toc { display: none; border-right: 0; border-bottom: 1px solid var(--g-border); padding: 12px 16px; }
+  nav.toc { display: none; border-right: 0; border-bottom: 1px solid var(--g-border); padding: 12px 16px;
+    position: static; max-height: none; overflow: visible; }
+  /* the top bar (Contents, Close) stays under HA's header */
+  .top { position: sticky; top: var(--g-top, 56px); z-index: 3; background: var(--g-card); }
   .open nav.toc { display: block; }
   button.toc-btn { display: inline-block; border: 1px solid var(--g-border); background: var(--g-card); color: var(--g-text);
     border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 13px; }
@@ -118,6 +130,7 @@ const HTML = `
       <nav class="toc" id="toc" aria-label="Guide contents"></nav>
       <main tabindex="-1"><article></article></main>
     </div>
+    <button class="totop" type="button" hidden>Back to top</button>
   </div>
 </ha-card>`;
 
@@ -259,26 +272,30 @@ export function mount(card) {
     moved = true;
   }
 
-  // ── the way back ──────────────────────────────────────────────────────────────────────────
-  // Browse all help (a "?" panel on another view) remembers where it came from: offer the way back for half an hour.
+  // ── Close ─────────────────────────────────────────────────────────────────────────────────
+  // Close goes back to the view you were on: the one a "?" panel's Browse all help came from (for half an hour),
+  // else the last Battman view a card was on (battman-card-base.js notes it), else Power.
   const dashboard = () => window.location.pathname.split("/")[1] || "battman";
   function goHa(path) {
     window.history.pushState(null, "", path);
     window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
   }
-  function backTarget() {
+  function closeTarget() {
+    const home = `/${dashboard()}/`;
     try {
       const f = JSON.parse(sessionStorage.getItem("battman.helpFrom") || "null");
-      if (f && f.path && !f.path.startsWith(viewPath) && Date.now() - f.at < 30 * 60 * 1000) return f.path;
+      if (f && f.path && f.path.startsWith(home) && !f.path.startsWith(viewPath) && Date.now() - f.at < 30 * 60 * 1000) return { to: f.path, from: true };
+      const last = sessionStorage.getItem("battman.lastView");
+      if (last && last.startsWith(home) && !last.startsWith(viewPath)) return { to: last, from: false };
     } catch (e) { /* no storage */ }
-    return null;
+    return { to: `${home}power`, from: false };
   }
   function drawBack() {
-    const b = $(".back-btn"), to = backTarget();
-    b.hidden = !to;
-    if (!to) return;
-    const name = (to.split("?")[0].split("/")[2] || "dashboard");
-    b.textContent = `← Back to ${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+    const b = $(".back-btn"), { to, from } = closeTarget();
+    const name = to.split("?")[0].split("/")[2] || "Power";
+    b.hidden = false;
+    b.textContent = from ? `Close · back to ${name.charAt(0).toUpperCase()}${name.slice(1)}` : "Close";
+    b.title = `Back to ${name.charAt(0).toUpperCase()}${name.slice(1)}`;
     b.dataset.to = to;
   }
 
@@ -362,6 +379,11 @@ export function mount(card) {
       goHa(a.dataset.to);
       return;
     }
+    if (a.matches("button.totop")) {
+      window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      main.focus({ preventScroll: true });
+      return;
+    }
     if (a.matches("button.toc-btn")) {
       const open = frame.classList.toggle("open");
       a.setAttribute("aria-expanded", String(open));
@@ -397,10 +419,18 @@ export function mount(card) {
 
   // listening only while the card is on the page: a card that's been removed holds on to nothing
   const onLocation = () => show();
+  // where HA's header ends (the sticky contents and the phone's top bar sit under it), and Back to top once well down
+  const onScroll = () => {
+    card.style.setProperty("--g-top", `${Math.round(headerBottom())}px`);
+    $(".totop").hidden = (window.scrollY || document.documentElement.scrollTop || 0) < 900;
+  };
   function listen(on) {
     const f = on ? "addEventListener" : "removeEventListener";
     window[f]("location-changed", onLocation);
     window[f]("popstate", onLocation);
+    window[f]("scroll", onScroll, { passive: true });
+    window[f]("resize", onScroll);
+    if (on) onScroll();
     clearInterval(timer);
     timer = on ? setInterval(loadRepairs, 30000) : null;
   }

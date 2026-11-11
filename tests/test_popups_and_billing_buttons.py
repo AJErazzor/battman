@@ -101,7 +101,7 @@ def test_billing_buttons_and_settings_run_button() -> None:
     billing = (ROOT / "cards/billing.yaml").read_text()
     assert billing.count("onpointerup=") == 3          # Bank New Income, Reset New Income, Correct Totals
     settings = (ROOT / "www/battman-settings.js").read_text()
-    assert 'data-runengine="1">Run engine now</button>' in settings and "if ('runengine' in t.dataset) return runEngine(t);" in settings
+    assert 'data-runengine="1">Run engine</button>' in settings and "if ('runengine' in t.dataset) return runEngine(t);" in settings
     assert "'run', 'control_script'" in settings and "Didn't run" in settings and "✓ Ran" in settings
 
 

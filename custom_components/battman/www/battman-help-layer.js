@@ -26,7 +26,7 @@ const SECTIONS = {
 const HAS_HELP = new Set(Object.entries(SECTIONS).flatMap(([page, ids]) => ids.map((i) => `${page}.${i}`)));
 const PARAMETERS = "sensor.battman_parameters";
 // the theme variables the button, the tags and the panel use (copied from a card, which is inside the view's theme)
-const VARS = ["--battman-sky", "--battman-sky-soft-bg", "--battman-text-bright", "--battman-text-muted", "--battman-border-neutral",
+const VARS = ["--battman-blue", "--battman-blue-soft-bg", "--battman-blue-border-strong", "--battman-green-soft-bg", "--battman-sky", "--battman-sky-soft-bg", "--battman-text-bright", "--battman-text-muted", "--battman-border-neutral",
   "--battman-surface-popup", "--battman-surface-card", "--battman-amber", "--primary-text-color", "--primary-color", "--divider-color",
   "--card-background-color", "--primary-font-family"];
 
@@ -44,19 +44,41 @@ const shown = () => {
   const st = hassNow() && hassNow().states[PARAMETERS];
   return !(st && st.attributes && st.attributes.showHelp === false);     // on until it's turned off, and while it can't be read
 };
-const headerHeight = () => parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-height"), 10) || 56;
+// Where Home Assistant's own header (the toolbar and its view tabs) ends. Measured, not taken from --header-height:
+// the phone app adds room for the status bar or notch above it, so the header is taller there.
+let headerEl = null;
+export function headerBottom() {
+  if (!headerEl || !headerEl.isConnected) {
+    headerEl = null;
+    const deep = (root) => {
+      for (const el of root.querySelectorAll("*")) {
+        if (el.localName === "hui-root") return el;
+        if (el.shadowRoot) { const f = deep(el.shadowRoot); if (f) return f; }
+      }
+      return null;
+    };
+    const hr = deep(document);
+    const r = hr && hr.shadowRoot;
+    headerEl = r && (r.querySelector(".header") || r.querySelector("app-header") || r.querySelector(".toolbar"));
+  }
+  const b = headerEl ? headerEl.getBoundingClientRect().bottom : 0;
+  return b > 0 ? b : parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-height"), 10) || 56;
+}
+const headerHeight = headerBottom;
 
 const CSS = `
 :host { all: initial; }
 .helpbtn { position: fixed; right: 16px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; font: 14px/1 var(--primary-font-family, sans-serif);
   padding: 6px 12px; min-height: 34px; border-radius: 8px; cursor: pointer; color: var(--battman-text-bright, var(--primary-text-color));
-  border: 1px solid var(--battman-border-neutral, var(--divider-color)); background: var(--battman-surface-popup, var(--card-background-color));
+  border: 1px solid var(--battman-border-neutral, var(--divider-color));
+  background: var(--battman-green-soft-bg, var(--battman-surface-popup, var(--card-background-color)));
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
 .helpbtn[hidden] { display: none; }
 .helpbtn .qtag { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 17px; border-radius: 5px;
   border: 1px solid currentColor; font-weight: 800; font-size: 11px; line-height: 1; }
-.helpbtn[aria-pressed="true"] { background: var(--battman-sky, var(--primary-color)); color: var(--card-background-color);
-  border-color: var(--battman-sky, var(--primary-color)); }
+/* on: Self Consume's on look (Battman's "this is on"); off: the Settings bar's subtle green */
+.helpbtn[aria-pressed="true"] { background: var(--battman-blue-soft-bg, rgba(127, 127, 127, 0.14)); color: var(--battman-blue, var(--primary-color)); border-color: var(--battman-blue-border-strong, var(--battman-blue, var(--primary-color))); }
+.helpbtn:focus:not(:focus-visible) { outline: none; }
 .helpbtn:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
 .msg { position: fixed; right: 16px; z-index: 6; font: 12px/1.3 var(--primary-font-family, sans-serif); color: var(--battman-text-muted, var(--secondary-text-color)); }
 .msg.bad { color: var(--error-color, #db4437); }

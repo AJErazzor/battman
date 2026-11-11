@@ -8,7 +8,7 @@ Pick what you want to do. Each task gives the steps and the cards you'll use. In
 
 <a id="sell-now"></a>
 ### Sell to the grid right now
-<!-- guide:task where="Power · Battery mode" icon="💰" uses="power-batterymode.png power-state.png" -->
+<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-state.png" -->
 
 For when you want the battery exporting now, whatever the curves say.
 
@@ -27,7 +27,7 @@ More: [The mode buttons](../intermediate/power.md#batterymode) · [Confirmations
 
 <a id="buy-now"></a>
 ### Charge the battery from the grid right now
-<!-- guide:task where="Power · Battery mode" icon="🔌" uses="power-batterymode.png" -->
+<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png" -->
 
 1. Open the **Power** view.
    <!-- guide:show view="power" card="battman-batterymode" say="The Battery mode card" -->
@@ -43,7 +43,7 @@ More: [The mode buttons](../intermediate/power.md#batterymode) · [Confirmations
 
 <a id="stop-exports-negative-feed-in"></a>
 ### Stop exporting while feed-in is negative
-<!-- guide:task where="Power · Battery mode" icon="🚫" uses="power-batterymode.png power-limits.png" -->
+<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-limits.png" -->
 
 While **Active** is on, Battman does this itself: each engine run turns **Curtail** on while feed-in is negative and off when it isn't. To stop exports straight away:
 
@@ -62,7 +62,7 @@ More: [Active, Curtail and the engine log](../intermediate/power.md#batterymode)
 
 <a id="sell-when-price-high"></a>
 ### Sell only when the price is high enough
-<!-- guide:task where="Power · Overrides" icon="📈" uses="power-overrides.png power-state.png" -->
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png power-state.png" -->
 
 A Sell Override sells while the feed-in price is at or above your price and the battery is above your level, in place of the curves.
 
@@ -82,7 +82,7 @@ More: [Overrides](../intermediate/power.md#overrides)
 
 <a id="buy-when-cheap"></a>
 ### Buy when power is cheap
-<!-- guide:task where="Power · Overrides" icon="🛒" uses="power-overrides.png" -->
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png" -->
 
 **Buy Override** takes the place of the curves: it charges while the buy price is at or below its price and the battery is at or below its level, even in the 5–9pm peak. **Buy Anytime** adds to the curves: it charges to its level while the buy price is at or below its price, but not in the 5–9pm peak or while a Buy Override is set, and it needs both a level and a price.
 
@@ -102,7 +102,7 @@ More: [Overrides](../intermediate/power.md#overrides) · [State](../intermediate
 
 <a id="drain-to-level"></a>
 ### Drain the battery down to a level
-<!-- guide:task where="Power · Overrides" icon="🔻" uses="power-overrides.png power-batterymode.png" -->
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png power-batterymode.png" -->
 
 The **Drain Battery** override runs the house off the battery with solar off, while the buy price is below its price and the battery is above its level. At the level it clears, unless the override timer is running or **No Reset** is on. The **Drain** button on the Battery mode card does the same straight away, with no level: it doesn't stop by itself.
 
@@ -121,7 +121,7 @@ More: [Overrides](../intermediate/power.md#overrides) · [Limits](../intermediat
 
 <a id="take-over-battery"></a>
 ### Take over the battery for a while
-<!-- guide:task where="Power · Battery mode" icon="✋" uses="power-batterymode.png settings-watchdog.png" -->
+<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png settings-watchdog.png" -->
 
 While **Active** is on, the engine sets the mode and **Curtail** each time it runs, so a mode you pick by hand lasts only until then. Turn Active off to keep it.
 
@@ -131,11 +131,11 @@ While **Active** is on, the engine sets the mode and **Curtail** each time it ru
    <!-- guide:show view="power" card="battman-batterymode" text="Active" say="Tap Active" -->
 3. Tap the mode you want, such as **Sell**, **Buy** or **Self Consume**, and use **Curtail** as you need. They stay as you set them: the engine and the watchdog don't run, and overrides don't clear.
 4. When you want Battman to run the battery again, tap **Active**. It says "Battman will control the battery again." Press **Turn on**.
-5. On the **Settings** view, press **Run engine now** so the engine picks the mode straight away. Otherwise it runs when the price or a setting next changes.
-   <!-- guide:show view="settings" card="battman-settings" text="Run engine now" say="Press Run engine now" -->
+5. On the **Settings** view, press **Run engine** so the engine picks the mode straight away. Otherwise it runs when the price or a setting next changes.
+   <!-- guide:show view="settings" card="battman-settings" text="Run engine" say="Press Run engine" -->
 
 > [!NOTE]
-> If the engine last ran longer ago than the **Script not run limit**, the watchdog sets Self Consume and turns Curtail on within a minute of Active going on, until the engine runs. **Run engine now** also runs the engine while Active is off, and sets the mode.
+> If the engine last ran longer ago than the **Script not run limit**, the watchdog sets Self Consume and turns Curtail on within a minute of Active going on, until the engine runs. **Run engine** also runs the engine while Active is off, and sets the mode.
 
 More: [Active, Curtail and the engine log](../intermediate/power.md#batterymode) · [Watchdog](../intermediate/settings.md#watchdog)
 
@@ -143,7 +143,7 @@ More: [Active, Curtail and the engine log](../intermediate/power.md#batterymode)
 
 <a id="keep-charge-for-evening"></a>
 ### Keep more charge for the evening
-<!-- guide:task where="Curvy · Sell curve" icon="🌙" uses="curvy-edit.png curvy-hours.png" -->
+<!-- guide:task where="Curvy · Sell curve" uses="curvy-edit.png curvy-hours.png" -->
 
 Battman sells only while the battery is above the **Sell** curve, so a higher curve in the afternoon and evening keeps more in the battery.
 
@@ -165,7 +165,7 @@ More: [Curvy: the four curves](../intermediate/curvy.md#the-four-curves), [Needy
 
 <a id="change-sell-or-buy-price"></a>
 ### Change the price Battman sells or buys at
-<!-- guide:task where="Pricy · Preferred and second prices" icon="💲" uses="pricy-preferred.png pricy-second.png" -->
+<!-- guide:task where="Pricy · Preferred and second prices" uses="pricy-preferred.png pricy-second.png" -->
 
 Battman sells while the feed-in price is at or above **Preferred Sell**, and charges from the grid while the buy price is at or below **Preferred Buy**.
 
@@ -186,7 +186,7 @@ More: [Preferred Sell or Preferred Buy](../intermediate/pricy.md#preferred), [Lo
 
 <a id="copy-curves-to-other-months"></a>
 ### Copy a month's curves to other months
-<!-- guide:task where="Curvy · Buttons" icon="📋" uses="curvy-buttons.png curvy-edit.png" -->
+<!-- guide:task where="Curvy · Buttons" uses="curvy-buttons.png curvy-edit.png" -->
 
 Use **Copy Period** and **Paste Period** to copy one month to the months you choose.
 
@@ -206,7 +206,7 @@ More: [Month or season](../intermediate/curvy.md#month-or-season), [Curvy button
 
 <a id="save-and-reuse-a-curve"></a>
 ### Save curves and reuse them later
-<!-- guide:task where="Curvy · Presets" icon="💾" uses="curvy-buttons.png curvy-editing.png" -->
+<!-- guide:task where="Curvy · Presets" uses="curvy-buttons.png curvy-editing.png" -->
 
 A preset holds all four curves of one period. Curvy has ten.
 
@@ -230,7 +230,7 @@ More: [Presets](../intermediate/curvy.md#presets), [Auto curve switcher](../inte
 
 <a id="bank-income"></a>
 ### Bank my income when a new bill starts
-<!-- guide:task where="Finances · Billing" icon="🏦" uses="finances-billing.png finances-billing-buttons.png" -->
+<!-- guide:task where="Finances · Billing" uses="finances-billing.png finances-billing-buttons.png" -->
 
 Do this when a bill closes, so the running totals start again for the next one.
 
@@ -251,7 +251,7 @@ More: [Billing buttons](../intermediate/finances.md#billing-buttons)
 
 <a id="fix-totals"></a>
 ### Fix totals that look wrong
-<!-- guide:task where="Finances · Billing" icon="🧮" uses="finances-billing-buttons.png" -->
+<!-- guide:task where="Finances · Billing" uses="finances-billing-buttons.png" -->
 
 1. Open the **Finances** view.
    <!-- guide:show view="finances" card="battman-billing" say="The Billing card" -->
@@ -268,7 +268,7 @@ More: [Correct totals](../intermediate/finances.md#correct-totals)
 
 <a id="set-network-charge-and-bill-day"></a>
 ### Set my network charge and bill day
-<!-- guide:task where="Settings · Billing" icon="🧾" uses="settings-billing.png finances-billing.png" -->
+<!-- guide:task where="Settings · Billing" uses="settings-billing.png finances-billing.png" -->
 
 Set these to match your retailer's bill.
 
@@ -288,7 +288,7 @@ More: [Billing settings](../intermediate/settings.md#billing), [Bill day of mont
 
 <a id="see-payback"></a>
 ### See whether the system has paid for itself
-<!-- guide:task where="Finances · Solar System" icon="☀️" uses="finances-solar.png settings-system.png" -->
+<!-- guide:task where="Finances · Solar System" uses="finances-solar.png settings-system.png" -->
 
 1. Open the **Finances** view.
    <!-- guide:show view="finances" card="battman-solar-system" say="The Solar System card" -->
@@ -310,7 +310,7 @@ More: [Solar System](../intermediate/finances.md#solar), [System & financials](.
 
 <a id="change-dashboard-theme"></a>
 ### Change the dashboard's theme
-<!-- guide:task where="Settings · Dashboard options" icon="🎨" uses="settings-dashboard.png theme-themes.png" -->
+<!-- guide:task where="Settings · Dashboard options" uses="settings-dashboard.png theme-themes.png" -->
 
 Put one of the installed Battman themes on every view of the dashboard.
 
@@ -327,7 +327,7 @@ More: [Dashboard theme](../intermediate/settings.md#dashboard-theme), [Themes](.
 
 <a id="make-own-theme"></a>
 ### Make my own theme
-<!-- guide:task where="Theme · Theme Studio" icon="🖌️" uses="theme-palette.png theme-harmonic.png" -->
+<!-- guide:task where="Theme · Theme Studio" uses="theme-palette.png theme-harmonic.png" -->
 
 1. Open the **Theme** view and pick the theme to start from in the picker at the top.
    <!-- guide:show view="theme" card="battman-theme-studio" say="Theme Studio" -->
@@ -347,7 +347,7 @@ More: [Themes](../intermediate/theme.md#themes), [Palette](../intermediate/theme
 
 <a id="turn-help-off-on"></a>
 ### Turn the help off or back on
-<!-- guide:task where="Settings · Dashboard options" icon="❔" uses="settings-dashboard.png" -->
+<!-- guide:task where="Settings · Dashboard options" uses="settings-dashboard.png" -->
 
 1. Open the **Settings** view. Open **Dashboard options** if it's folded.
    <!-- guide:show view="settings" card="battman-settings" text="Dashboard options" say="Dashboard options" -->
@@ -365,7 +365,7 @@ More: [Showing or hiding the guide](../README.md#showing-or-hiding-the-guide)
 
 <a id="why-this-mode"></a>
 ### See why Battman picked a mode
-<!-- guide:task where="Power · State" icon="🔍" uses="power-state.png log-log.png" -->
+<!-- guide:task where="Power · State" uses="power-state.png log-log.png" -->
 
 1. Open the **Power** view. The pill at the bottom of the **State** card names the side that's acting ("Selling" or "Buying") and why, such as "Sell Override 25c >40%". A mode set by hand shows as "Manual mode change · " and the button's name.
    <!-- guide:show view="power" card="battman-state" say="The reason is on the State card" -->
@@ -380,7 +380,7 @@ More: [State](../intermediate/power.md#state), [Battery mode](../intermediate/po
 
 <a id="what-repair-means"></a>
 ### Find out what a Repair means
-<!-- guide:task where="Help · Repairs" icon="🛠️" -->
+<!-- guide:task where="Help · Repairs" -->
 
 1. In Home Assistant, go to **Settings → Repairs** to see Battman's Repairs by title.
 2. On the **Help** view, the **Repairs** item on the status line says how many are open. Tap "what they mean".

@@ -195,6 +195,8 @@ export class BattmanCardBase extends HTMLElement {
   }
 
   connectedCallback() {
+    // the view this card is on, for the Help view's Close (battman-guide-view.js)
+    try { if (!/\/help(\/|$|\?)/.test(window.location.pathname)) sessionStorage.setItem("battman.lastView", window.location.pathname); } catch (e) { /* no storage */ }
     if (!this._built) return this._build();
     if (this._run && this._run.resume) this._run.resume();
   }
