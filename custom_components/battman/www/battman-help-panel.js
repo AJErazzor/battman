@@ -36,9 +36,10 @@ export const TAG_CSS = `
 .bh-tag { display: none; flex: none; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0;
   border-radius: 6px; border: 1px solid var(--battman-sky, var(--primary-color)); color: var(--battman-sky, var(--primary-color));
   background: var(--battman-sky-soft-bg, rgba(127, 127, 127, 0.12)); font: 800 13px/1 var(--primary-font-family, sans-serif); cursor: pointer; }
-.bh-tag.small { width: 24px; height: 20px; border-radius: 5px; border-style: dashed; background: transparent; font-size: 11px; }
-.bh-tag[aria-expanded="true"] { background: var(--battman-text-bright, var(--primary-text-color)); color: var(--card-background-color);
-  border-color: var(--battman-text-bright, var(--primary-text-color)); }
+.bh-tag.small { width: 24px; height: 20px; border-radius: 5px; font-size: 11px; }
+/* open: the same outline, tinted deeper (never a solid fill) */
+.bh-tag[aria-expanded="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); }
+.bh-tag:focus:not(:focus-visible) { outline: none; }
 .helpmode .bh-tag { display: inline-flex; }
 .bh-tag:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
 `;

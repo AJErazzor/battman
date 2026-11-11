@@ -156,8 +156,9 @@ class BattmanSettingsCard extends BattmanCardBase {
   button.helpbtn[hidden] { display: none; }
   button.helpbtn .qtag { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 17px;
     border-radius: 5px; border: 1px solid currentColor; font-weight: 800; font-size: 11px; line-height: 1; }
-  button.helpbtn[aria-pressed="true"] { background: var(--battman-sky, var(--primary-color)); color: var(--card-background-color);
-    border-color: var(--battman-sky, var(--primary-color)); }
+  button.helpbtn[aria-pressed="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); }
+  button.helpbtn:focus:not(:focus-visible) { outline: none; }
+  button.helpbtn:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
   .helpmode .gright .bh-tag { margin-right: 4px; }
   .subdiv { display: flex; align-items: center; gap: 8px; }
   .subdiv .bh-tag { margin-left: auto; }

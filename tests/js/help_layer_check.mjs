@@ -78,6 +78,7 @@ try {
     await page.waitForFunction(() => document.getElementById("battman-help-layer").shadowRoot.querySelectorAll(".bh-tag").length > 0);
     await page.waitForTimeout(150);
     r.pressed = await q(`return root.querySelector(".helpbtn").getAttribute("aria-pressed");`);
+    r.pressedLook = await q(`const cs = getComputedStyle(root.querySelector(".helpbtn")); return {bg: cs.backgroundColor, border: cs.borderTopStyle};`);
     r.tags = await tagInfo();
     r.cardBoxes = await page.evaluate(() => ["a", "b", "c", "tall"].map((i) => { const r = document.getElementById(i).getBoundingClientRect(); return {i, right: Math.round(r.right), top: Math.round(r.top)}; }));
     // a card that fills the screen: the tag stays in view under the header

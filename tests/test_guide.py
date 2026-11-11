@@ -776,6 +776,9 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
         assert o["button"]["right"] == 16 and o["button"]["top"] == 68            # floating, top right, under HA's toolbar
         assert o["button"]["theme"] == "#123456"                                  # the layer wears the cards' theme
         assert o["pressed"] == "true"
+        bg = o["pressedLook"]["bg"]                                               # on: a tint, never a solid fill
+        assert bg.startswith(("rgba(", "color(")) and not bg.endswith(", 1)"), bg
+        assert o["pressedLook"]["border"] == "solid"
         shown = [t for t in o["tags"] if t["vis"] != "hidden"]
         assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # a part with no help gets none
         assert all(t["display"] == "flex" for t in o["tags"])                     # shown in help mode (fixed, so flex)
@@ -854,7 +857,7 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
     with_show = []
     for anchor, title, args, body in tasks:
         a = dict(re.findall(r'(\w+)="([^"]*)"', args))
-        assert a.get("where") and a.get("icon"), anchor
+        assert a.get("where") and "icon" not in a, anchor          # no icons: text only
         for img in a.get("uses", "").split():
             assert (WWW / "guide-images" / img).is_file(), (anchor, img)
         steps = re.findall(r"^\d+\. ", body, re.M)
@@ -896,3 +899,24 @@ def test_show_me_tour_in_a_browser(tmp_path) -> None:
         assert o["pressed"] == 1                                                  # the real control works under the tour
         assert o["back"] == "The mode card" and o["step3"]["next"] == "Done"
         assert o["afterEsc"] is False and o["afterDone"] is False
+
+
+def test_help_controls_are_outlined_never_solid_or_dashed() -> None:
+    """Help buttons and tags: an outline with a tint when on; no solid fills, no dashed or dotted outlines."""
+    panel = (WWW / "battman-help-panel.js").read_text()
+    tags = panel[panel.index(".bh-tag {"):panel.index(".helpmode .bh-tag")]
+    assert "dashed" not in tags and "dotted" not in tags
+    for f in ("battman-help-layer.js", "battman-settings.js", "battman-help-panel.js", "battman-guide-howto.js"):
+        css = (WWW / f).read_text()
+        for rule in re.findall(r'(?:helpbtn\[aria-pressed="true"\]|bh-tag\[aria-expanded="true"\]|button\.showme|aria-pressed="true"\]) \{([^}]*)\}', css):
+            assert "color-mix" in rule and "var(--card-background-color)" not in rule.split("color:")[0], (f, rule)
+
+
+def test_help_view_has_close_and_back_to_top_and_sticky_contents() -> None:
+    view = (WWW / "battman-guide-view.js").read_text()
+    assert '<button class="back-btn"' in view and "b.hidden = false;" in view and '"Close"' in view
+    assert '<button class="totop" type="button" hidden>Back to top</button>' in view
+    assert "position: sticky; top: var(--g-top, 56px)" in view and "ha-card { overflow: clip;" in view
+    assert "battman.lastView" in (WWW / "battman-card-base.js").read_text()
+    howto = (WWW / "battman-guide-howto.js").read_text()
+    assert not re.search(r"[\U0001F300-\U0001FAFF]|▶ Show me|🔍", howto)        # no icons

@@ -2,7 +2,7 @@
 //
 // The page is plain Markdown that GitHub shows as headings and numbered steps. Two hidden markers make it
 // interactive here:
-//   <!-- guide:task where="Power · Battery mode" icon="⛔" uses="power-batterymode.png power-limits.png" -->
+//   <!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-limits.png" -->
 //     straight under a task's ### heading: the task becomes a card that opens and closes, with the pictures
 //     of the cards it uses, Show me and Open <view> buttons.
 //   <!-- guide:show view="power" card="battman-batterymode" text="Curtail" say="Tap Curtail" -->
@@ -21,8 +21,7 @@ export const HOWTO_CSS = `
 .howto-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
 .howto-chips button { font: inherit; font-size: 13px; padding: 6px 13px; border-radius: 16px; cursor: pointer; min-height: 32px;
   background: var(--g-card); color: var(--g-text); border: 1px solid var(--g-border); }
-.howto-chips button[aria-pressed="true"] { background: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color));
-  color: var(--card-background-color); font-weight: 600; }
+.howto-chips button[aria-pressed="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); font-weight: 600; }
 article h2.howto-group { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--g-muted); border: 0; margin: 22px 0 6px; padding: 0; }
 article h2.howto-group .hlink { display: none; }
 .howto-none { color: var(--g-muted); padding: 10px 2px; }
@@ -31,12 +30,11 @@ article h2.howto-group .hlink { display: none; }
 .task > .task-q { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; background: transparent; color: var(--g-text);
   font: inherit; font-weight: 600; text-align: left; cursor: pointer; border-radius: 12px; }
 .task > .task-q:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: -2px; }
-.task-ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; flex: none; background: var(--g-raised); }
 .task-t { flex: 1; min-width: 0; }
 .task-where { font-weight: 400; font-size: 12px; color: var(--g-muted); white-space: nowrap; }
 .task-chev { color: var(--g-muted); font-size: 12px; transition: transform .15s; }
 .task.open .task-chev { transform: rotate(90deg); }
-.task-b { display: none; padding: 0 18px 16px 56px; }
+.task-b { display: none; padding: 0 18px 16px 18px; }
 .task.open .task-b { display: block; }
 .task-uses { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--g-muted); margin: 0 0 10px; }
 .task-uses img { height: 48px; width: auto; border-radius: 6px; border: 1px solid var(--g-border); }
@@ -48,7 +46,7 @@ article h2.howto-group .hlink { display: none; }
 .task-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
 .task-acts button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 9px; cursor: pointer; min-height: 38px;
   border: 1px solid var(--g-border); background: transparent; color: var(--g-text); }
-.task-acts button.showme { background: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); color: var(--card-background-color); }
+.task-acts button.showme { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); }
 @media (max-width: 600px) { .task-b { padding-left: 16px; } .task-where { display: none; } }
 `;
 
@@ -91,7 +89,7 @@ export function decorateHowto(root, article, { go, showMe, openAnchor }) {
     sec.id = id;
     sec.dataset.group = group ? group.id : "";
     const title = [...h.childNodes].filter((n) => !(n.nodeType === 1 && n.matches(".hlink"))).map((n) => n.textContent).join("").trim();
-    sec.innerHTML = `<button class="task-q" type="button" aria-expanded="false"><span class="task-ic" aria-hidden="true">${esc(a.icon || "•")}</span>`
+    sec.innerHTML = `<button class="task-q" type="button" aria-expanded="false">`
       + `<span class="task-t">${esc(title)}</span><span class="task-where">${esc(a.where || "")}</span><span class="task-chev" aria-hidden="true">▶</span></button>`
       + `<div class="task-b"></div>`;
     const body = sec.querySelector(".task-b");
@@ -108,7 +106,7 @@ export function decorateHowto(root, article, { go, showMe, openAnchor }) {
     const steps = stepsOf(body);
     const acts = document.createElement("div");
     acts.className = "task-acts";
-    if (steps.length) acts.innerHTML = `<button class="showme" type="button">▶ Show me</button>`
+    if (steps.length) acts.innerHTML = `<button class="showme" type="button">Show me</button>`
       + `<button class="openview" type="button">Open ${esc(VIEW_NAMES[steps[0].view] || steps[0].view)}</button>`;
     body.appendChild(acts);
     h.replaceWith(sec);
@@ -126,7 +124,7 @@ export function decorateHowto(root, article, { go, showMe, openAnchor }) {
   // the filter box and the topic chips, where the page's guide:howto marker is (or after the intro)
   const at = article.querySelector('.directive[data-directive="howto"]');
   const find = document.createElement("div");
-  find.innerHTML = `<label class="howto-find"><span aria-hidden="true">🔍</span><input type="search" placeholder="Type what you want to do, e.g. &quot;stop exporting&quot;"`
+  find.innerHTML = `<label class="howto-find"><input type="search" placeholder="Type what you want to do, e.g. &quot;stop exporting&quot;"`
     + ` aria-label="Find a task"><span class="k" aria-hidden="true">/</span></label>`
     + `<div class="howto-chips" role="group" aria-label="Topics"><button type="button" data-topic="" aria-pressed="true">All</button>`
     + groups.map((g) => `<button type="button" data-topic="${esc(g.id)}" aria-pressed="false">${esc(g.textContent.replace(/#$/, "").trim())}</button>`).join("")

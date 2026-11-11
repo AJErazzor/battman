@@ -44,7 +44,27 @@ const shown = () => {
   const st = hassNow() && hassNow().states[PARAMETERS];
   return !(st && st.attributes && st.attributes.showHelp === false);     // on until it's turned off, and while it can't be read
 };
-const headerHeight = () => parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-height"), 10) || 56;
+// Where Home Assistant's own header (the toolbar and its view tabs) ends. Measured, not taken from --header-height:
+// the phone app adds room for the status bar or notch above it, so the header is taller there.
+let headerEl = null;
+export function headerBottom() {
+  if (!headerEl || !headerEl.isConnected) {
+    headerEl = null;
+    const deep = (root) => {
+      for (const el of root.querySelectorAll("*")) {
+        if (el.localName === "hui-root") return el;
+        if (el.shadowRoot) { const f = deep(el.shadowRoot); if (f) return f; }
+      }
+      return null;
+    };
+    const hr = deep(document);
+    const r = hr && hr.shadowRoot;
+    headerEl = r && (r.querySelector(".header") || r.querySelector("app-header") || r.querySelector(".toolbar"));
+  }
+  const b = headerEl ? headerEl.getBoundingClientRect().bottom : 0;
+  return b > 0 ? b : parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-height"), 10) || 56;
+}
+const headerHeight = headerBottom;
 
 const CSS = `
 :host { all: initial; }
@@ -55,8 +75,9 @@ const CSS = `
 .helpbtn[hidden] { display: none; }
 .helpbtn .qtag { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 17px; border-radius: 5px;
   border: 1px solid currentColor; font-weight: 800; font-size: 11px; line-height: 1; }
-.helpbtn[aria-pressed="true"] { background: var(--battman-sky, var(--primary-color)); color: var(--card-background-color);
-  border-color: var(--battman-sky, var(--primary-color)); }
+/* on: an accent outline with a tint, like the tags (never a solid fill) */
+.helpbtn[aria-pressed="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); }
+.helpbtn:focus:not(:focus-visible) { outline: none; }
 .helpbtn:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
 .msg { position: fixed; right: 16px; z-index: 6; font: 12px/1.3 var(--primary-font-family, sans-serif); color: var(--battman-text-muted, var(--secondary-text-color)); }
 .msg.bad { color: var(--error-color, #db4437); }
