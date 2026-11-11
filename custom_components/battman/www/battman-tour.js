@@ -1,139 +1,270 @@
 // Battman's "Show me": walks through a "How do I…?" task on the person's own dashboard.
 //
-// startTour({title, steps}) where each step is {view, card, text, say, body} (battman-guide-howto.js reads them from
-// the page). For each step it goes to the view on this dashboard, finds the card (the custom element named `card`)
-// and, with `text`, the element inside it that shows that text, then dims the page around the card, rings the
-// target and shows a bubble: "Step n of m", the step's title and words, Back and Next. Nothing blocks the page: the
-// person can press the real control while the bubble points at it. Escape, Done, or leaving the dashboard ends it.
-// It lives on document.body, so it keeps going while Home Assistant switches views.
+// startTour({title, steps}); each step is {view, card, popup, target, until, say, body} (battman-guide-howto.js reads
+// them from the page's guide:show markers; the format is in the guide's CLAUDE.md row and tests/test_guide.py).
+//
+// How it looks: the page is frosted (blurred and tinted in the theme's colours) except a rounded "lens" cut around the
+// whole control to press (padded 8px, its corners one step rounder than the control's). A thin ring in the theme's accent
+// sits on the lens; it glows once when it lands and, while the control is the thing to press, breathes outwards. The
+// step's words sit on the frost beside the lens (level with its top, or flush with its left above or below it; on a
+// phone, docked at the top or bottom, away from it). The lens glides from stop to stop; with reduced motion it jumps.
+//
+// How it behaves: it never presses anything. A step ends when the real thing happens: the person presses the ringed
+// control, a popup opens or closes, or a Home Assistant entity reaches a state. It follows the person into Battman's
+// popups (a modal <dialog> makes the rest of the page inert, so the walkthrough moves inside the open one). If a step's
+// popup isn't open, it goes back to the step that opens it. A target in a folded section gets a step to open the section
+// first. A click anywhere else pauses it ("Back to the walkthrough" / "Stop"); Escape or Stop ends it.
 
-import { findText } from "./battman-help-layer.js";
+import { findText, headerBottom } from "./battman-help-layer.js";
 
 const VARS = ["--battman-sky", "--battman-text-bright", "--battman-text-muted", "--battman-border-neutral", "--battman-surface-popup",
-  "--primary-text-color", "--secondary-text-color", "--primary-color", "--divider-color", "--card-background-color", "--primary-font-family"];
+  "--battman-surface-card", "--battman-blue", "--battman-blue-soft-bg", "--battman-blue-border-strong", "--primary-text-color",
+  "--secondary-text-color", "--primary-color", "--divider-color", "--card-background-color", "--primary-font-family"];
+const PAD = 8;
+const PRESSABLE = "button, a[href], [role=button], [role=switch], [role=checkbox], [role=tab], select, input, textarea, label, summary, ha-switch, ha-select, ha-checkbox";
 
 const CSS = `
 :host { all: initial; }
-.hole { position: fixed; z-index: 8; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 200vmax rgba(5, 5, 12, 0.62);
-  outline: 2px solid color-mix(in srgb, var(--battman-sky, var(--primary-color)) 45%, transparent); outline-offset: 0; transition: all .2s; }
-.hole.none { left: 50%; top: 50%; width: 0; height: 0; outline: 0; }
-.ring { position: fixed; z-index: 9; box-sizing: border-box; border-radius: 10px; pointer-events: none; border: 3px solid var(--battman-sky, var(--primary-color));
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--battman-sky, var(--primary-color)) 30%, transparent); transition: all .2s; }
-.ring[hidden] { display: none; }
-.bubble { position: fixed; z-index: 10; box-sizing: border-box; width: min(360px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: 14px;
-  background: var(--battman-surface-popup, var(--card-background-color, #1e1e2e)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
-  border: 2px solid var(--battman-sky, var(--primary-color)); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  font: 14px/1.45 var(--primary-font-family, system-ui, sans-serif); }
-.bubble:focus { outline: none; }
-.meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--battman-text-muted, var(--secondary-text-color, #aaa)); }
-.dots { margin-left: auto; display: flex; gap: 5px; }
-.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--battman-border-neutral, var(--divider-color, #555)); }
-.dots i.on { background: var(--battman-sky, var(--primary-color)); }
-.say { font-weight: 700; font-size: 16px; margin: 6px 0 4px; }
+.frost { position: fixed; z-index: 2147483000; pointer-events: none; -webkit-backdrop-filter: blur(var(--frost-blur, 5px)); backdrop-filter: blur(var(--frost-blur, 5px));
+  background: color-mix(in srgb, var(--battman-surface-card, var(--card-background-color, #111)) 46%, transparent); }
+.ring { position: fixed; z-index: 2147483001; box-sizing: border-box; pointer-events: none; border: 1.5px solid var(--battman-sky, var(--primary-color, #4af)); }
+.ring.glow { animation: bt-glow .9s cubic-bezier(.2,.8,.2,1) both; }
+.ring.beckon::after { content: ""; position: absolute; inset: -1.5px; border-radius: inherit; animation: bt-beckon 1.8s cubic-bezier(.2,.8,.2,1) infinite; }
+@keyframes bt-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--battman-sky, #4af) 60%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
+@keyframes bt-beckon { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--battman-sky, #4af) 45%, transparent); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
+.glide .frost, .glide .ring { transition: top .52s cubic-bezier(.2,.8,.2,1), left .52s cubic-bezier(.2,.8,.2,1), width .52s cubic-bezier(.2,.8,.2,1),
+  height .52s cubic-bezier(.2,.8,.2,1), border-radius .52s; }
+.words { position: fixed; z-index: 2147483002; box-sizing: border-box; width: min(340px, calc(100vw - 32px)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
+  font: 14px/1.45 var(--primary-font-family, system-ui, sans-serif); text-shadow: 0 1px 2px color-mix(in srgb, var(--battman-surface-card, #000) 70%, transparent);
+  opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; }
+.words.in { opacity: 1; transform: none; }
+.meta { font-size: 12px; color: var(--battman-text-muted, var(--secondary-text-color, #aaa)); letter-spacing: .02em; }
+.say { font-weight: 700; font-size: 18px; line-height: 1.3; margin: 4px 0 4px; }
 .body { margin: 0 0 12px; }
-.miss { margin: 0 0 12px; color: var(--battman-text-muted, var(--secondary-text-color, #aaa)); font-size: 13px; }
-.acts { display: flex; align-items: center; gap: 10px; }
-.acts .sp { flex: 1; font-size: 12px; color: var(--battman-text-muted, var(--secondary-text-color, #aaa)); }
-button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 8px; cursor: pointer; min-height: 34px;
-  border: 1px solid var(--battman-border-neutral, var(--divider-color, #555)); background: transparent; color: inherit; }
-button.next { background: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color));
-  color: var(--card-background-color, #111); font-weight: 700; }
+.note { margin: 0 0 12px; font-size: 13px; color: var(--battman-text-muted, var(--secondary-text-color, #aaa)); }
+.nav { display: flex; align-items: center; gap: 8px; }
+.nav .sp { flex: 1; }
+button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 8px; cursor: pointer; min-height: 34px; text-shadow: none;
+  border: 1px solid var(--battman-border-neutral, var(--divider-color, #555)); color: inherit;
+  background: color-mix(in srgb, var(--battman-surface-popup, var(--card-background-color, #222)) 85%, transparent); }
+button[disabled] { opacity: .45; cursor: default; }
+button.fwd { background: var(--battman-blue-soft-bg, rgba(127,127,127,.15)); color: var(--battman-blue, var(--primary-color)); border-color: var(--battman-blue-border-strong, var(--battman-blue, var(--primary-color))); font-weight: 600; }
+button:focus:not(:focus-visible) { outline: none; }
 button:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
-.pointer { position: absolute; width: 14px; height: 14px; background: inherit; border: inherit; transform: rotate(45deg); }
+.pill { position: fixed; z-index: 2147483002; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center;
+  padding: 8px 10px 8px 16px; border-radius: 12px; font: 14px var(--primary-font-family, system-ui, sans-serif);
+  background: var(--battman-surface-popup, var(--card-background-color, #222)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
+  border: 1px solid var(--battman-border-neutral, var(--divider-color, #555)); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .glide .frost, .glide .ring, .words { transition: none; } .ring.glow, .ring.beckon::after { animation: none; } }
 `;
 
-let tour = null;    // the one running: {host, root, steps, i, title, dash, target, card, frame, expected}
+let tour = null;
 
-const deepFind = (root, test) => {
+// ── finding things, through shadow roots ─────────────────────────────────────────────────────────
+function deepAll(root, test, out = []) {
   for (const el of root.querySelectorAll("*")) {
-    if (test(el)) return el;
-    if (el.shadowRoot) { const f = deepFind(el.shadowRoot, test); if (f) return f; }
+    if (test(el)) out.push(el);
+    if (el.shadowRoot) deepAll(el.shadowRoot, test, out);
+  }
+  return out;
+}
+const up = (el) => el.parentElement || (el.getRootNode && el.getRootNode().host) || null;
+const within = (el, scope) => { for (let n = el; n; n = up(n)) if (n === scope) return true; return false; };
+const boxOf = (el) => (el && getComputedStyle(el).display === "contents" && el.firstElementChild ? el.firstElementChild : el);
+const rectOf = (el) => el.getBoundingClientRect();
+const shown = (el) => { const r = rectOf(el); return r.width > 0 && r.height > 0; };
+// the open modal popups (Battman's, Home Assistant's), last opened last
+const openPopups = () => deepAll(document, (el) => el.localName === "dialog" && el.open && el.matches(":modal"));
+function popupWith(text) {
+  const want = String(text || "").toLowerCase();
+  return openPopups().reverse().find((d) => d.textContent.toLowerCase().includes(want)) || null;
+}
+// the element showing exactly this text, inside scope (through shadow roots), preferring one that's on screen:
+// the same label can be in several panels of a popup, and only the open panel's is visible
+function findShown(scope, text) {
+  const want = String(text).trim().toLowerCase();
+  const hits = deepAll(scope.shadowRoot || scope, (el) => el.textContent.trim().toLowerCase() === want
+    && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want));
+  if (scope.shadowRoot) hits.push(...deepAll(scope, (el) => el.textContent.trim().toLowerCase() === want
+    && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want)));
+  return hits.find(shown) || hits[0] || findText(scope, text);
+}
+
+// the whole control around a piece of text: the nearest thing that can be pressed, inside scope
+function controlAround(el, scope) {
+  for (let n = el; n && n !== scope; n = up(n)) {
+    if (n.nodeType !== 1) continue;
+    if (n.matches(PRESSABLE) || n.hasAttribute("data-a") || n.hasAttribute("tabindex")) return n;
+    if (getComputedStyle(n).cursor === "pointer" && shown(n)) return n;
+  }
+  return el;
+}
+// a folded box around el (Settings sections, Log's sections, <details>): [the box, its header to press]
+function foldAround(el, scope) {
+  for (let n = up(el); n && n !== scope; n = up(n)) {
+    if (n.nodeType !== 1) continue;
+    if (n.localName === "details" && !n.open) return [n, n.querySelector("summary") || n];
+    if (n.classList && n.classList.contains("folded")) return [n, n.querySelector(".head, .hd, header, summary, [data-fold]") || n.firstElementChild || n];
   }
   return null;
-};
-// the card's own box: a card drawn by another card (display: contents) has none, so take the one inside
-const boxOf = (el) => (el && getComputedStyle(el).display === "contents" && el.firstElementChild ? el.firstElementChild : el);
-const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+}
 
+// ── running ─────────────────────────────────────────────────────────────────────────────────────
 function navigate(path) {
   if (window.location.pathname === path) return;
   window.history.pushState(null, "", path);
   window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
 }
+const hass = () => { const h = document.querySelector("home-assistant"); return h && h.hass; };
 
 export function startTour({ title, steps }) {
   stopTour();
   if (!steps || !steps.length) return;
-  const dash = window.location.pathname.split("/")[1] || "battman";
   const host = document.createElement("div");
   host.id = "battman-tour";
   const root = host.attachShadow({ mode: "open" });
-  root.innerHTML = `<style>${CSS}</style><div class="hole none"></div><div class="ring" hidden></div>`
-    + `<div class="bubble" role="dialog" aria-live="polite" tabindex="-1"></div>`;
+  root.innerHTML = `<style>${CSS}</style><div class="stage">`
+    + `<div class="frost f1"></div><div class="frost f2"></div><div class="frost f3"></div><div class="frost f4"></div>`
+    + `<div class="ring" hidden></div><div class="words" role="dialog" aria-live="polite" tabindex="-1"></div></div>`
+    + `<div class="pill" hidden><span>Walkthrough paused</span><button data-act="resume" class="fwd">Back to the walkthrough</button><button data-act="stop">Stop</button></div>`;
   document.body.appendChild(host);
-  tour = { host, root, steps, i: 0, title, dash, target: null, card: null, frame: 0, expected: "" };
-  root.addEventListener("click", onClick);
+  tour = { host, root, title, steps, i: -1, dash: window.location.pathname.split("/")[1] || "battman", paused: false, frame: 0, poll: 0,
+    step: null, lens: null, scope: null, card: null, popupsAtStart: 0, popupSince: 0, landed: false, last: null, extra: null };
+  root.addEventListener("click", onOwnClick);
+  document.addEventListener("click", onPageClick, true);
   document.addEventListener("keydown", onKey, true);
   window.addEventListener("location-changed", onLocation);
   go(0);
+  tour.poll = setInterval(tick, 200);
+  tour.frame = requestAnimationFrame(place);
 }
 
 export function stopTour() {
   if (!tour) return;
+  clearInterval(tour.poll);
   cancelAnimationFrame(tour.frame);
+  document.removeEventListener("click", onPageClick, true);
   document.removeEventListener("keydown", onKey, true);
   window.removeEventListener("location-changed", onLocation);
+  if (tour.lensEl && tour.onPress) tour.lensEl.removeEventListener("click", tour.onPress, true);
   tour.host.remove();
   tour = null;
 }
 
-function onClick(e) {
-  const b = e.target.closest && e.target.closest("button");
-  if (!b || !tour) return;
-  if (b.dataset.act === "next") (tour.i < tour.steps.length - 1 ? go(tour.i + 1) : stopTour());
-  else if (b.dataset.act === "back") go(Math.max(0, tour.i - 1));
-  else if (b.dataset.act === "stop") stopTour();
-}
-
-function onKey(e) {
-  if (!tour) return;
-  if (e.key === "Escape") { e.stopPropagation(); stopTour(); }
-}
-
-// leaving the dashboard, or going to a view the walkthrough didn't ask for, ends it
-function onLocation() {
-  if (!tour) return;
-  const p = window.location.pathname;
-  if (p !== tour.expected && !p.startsWith(`/${tour.dash}/`)) stopTour();
-}
-
-async function go(i) {
+function go(i) {
   const t = tour;
-  t.i = i;
-  const s = t.steps[i];
-  t.expected = `/${t.dash}/${s.view}`;
-  t.target = t.card = null;
-  draw(s, "finding");
-  navigate(t.expected);
-  // wait for the view to draw the card (and the text in it)
-  const until = Date.now() + 12000;
-  while (tour === t && t.i === i && Date.now() < until) {
-    const card = deepFind(document, (el) => el.localName === s.card);
-    const box = card && boxOf(card);
-    const target = box && (s.text ? findText(box, s.text) : box);
-    if (box && target && visible(box) && visible(target)) {
-      t.card = box;
-      t.target = target;
-      copyTheme(box);
-      target.scrollIntoView({ block: "center", behavior: "smooth" });
-      draw(s, "found");
-      cancelAnimationFrame(t.frame);
-      t.frame = requestAnimationFrame(place);
-      return;
-    }
-    await new Promise((r) => setTimeout(r, 200));
+  if (i >= t.steps.length) return stopTour();
+  t.i = Math.max(0, i);
+  t.step = t.steps[t.i];
+  t.cameBy = t.ended || "";        // how the step before ended ("popup", "press", "state:…"; "" after Back or Next)
+  t.ended = "";
+  t.extra = null;
+  t.landed = false;
+  t.lensEl = null;
+  t.popupsAtStart = openPopups().length;
+  t.popupSince = 0;
+  if (!t.step.popup) navigate(`/${t.dash}/${t.step.view}`);
+  draw("finding");
+}
+
+// what the current step points at now: {lens, scope, card} or null
+function locate(s) {
+  let scope = null, card = null;
+  if (s.popup) {
+    scope = popupWith(s.popup);
+  } else {
+    if (window.location.pathname !== `/${tour.dash}/${s.view}`) return null;
+    const c = deepAll(document, (el) => el.localName === s.card)[0];
+    card = c && boxOf(c);
+    scope = card;
   }
-  if (tour === t && t.i === i) draw(s, "missing");
+  if (!scope) return null;
+  let lens = scope;
+  if (s.target) {
+    const txt = findShown(scope, s.target);
+    if (!txt) return { scope, card, lens: null };
+    lens = controlAround(txt, scope);
+  }
+  return { scope, card: card || scope, lens };
+}
+
+// has the step happened? until may list alternatives ("popup|state:input_select.battman_mode=Sell"); returns which, or ""
+function done(s, at) {
+  for (const u of String(s.until || "press").split("|")) if (doneOne(s, at, u)) return u;
+  return "";
+}
+function doneOne(s, at, u) {
+  if (u === "popup") return openPopups().length > tour.popupsAtStart;
+  if (u === "closed") return !!tour.landed && !popupWith(s.popup);
+  if (u.startsWith("state:")) {
+    const [e, v] = u.slice(6).split("=");
+    const h = hass();
+    return !!(h && h.states[e] && String(h.states[e].state) === v);
+  }
+  if (u === "open") return !!(at && at.lens && shown(at.lens));
+  return false;    // press: the click handler; next: the button
+}
+
+// every 200ms: is the step done, has its popup gone, is its target folded away, where should the stage live
+function tick() {
+  const t = tour;
+  if (!t) return;
+  const s = t.step;
+  const at = locate(s);
+  const why = t.landed && done(s, at);
+  if (why) { t.ended = why; return go(t.i + 1); }
+  // its popup isn't open: if the step before ended without opening one (the question only comes sometimes), this
+  // step is skipped; otherwise the person closed it, so back to the step that opens it
+  if (s.popup && !(at && at.scope)) {
+    if (!t.popupSince) t.popupSince = Date.now();
+    if (Date.now() - t.popupSince > 1200) {
+      if (t.cameBy && t.cameBy !== "popup" && t.cameBy !== "next") return go(t.i + 1);
+      for (let k = t.i - 1; k >= 0; k--) if (String(t.steps[k].until || "").split("|").includes("popup")) return go(k);
+    }
+  } else t.popupSince = 0;
+  // the stage lives in the open popup, or the page can't be pressed through to it
+  const top = openPopups().pop() || document.body;
+  if (t.host.parentNode !== top) top.appendChild(t.host);
+  if (!at || !at.lens) { if (t.landed || !t.extra) draw("finding"); return; }
+  // folded away: a step of its own, to open it first
+  if (!shown(at.lens)) {
+    const f = foldAround(at.lens, at.scope);
+    if (f && (!t.extra || t.extra.box !== f[0])) {
+      t.extra = { box: f[0], head: controlAround(f[1], at.scope) };
+      land(t.extra.head, at.card, true);
+      draw("fold");
+    }
+    return;
+  }
+  if (t.extra) t.extra = null;
+  if (t.lensEl !== at.lens) {
+    land(at.lens, at.card, false);
+    draw("found");
+  }
+}
+
+function land(el, card, folding) {
+  const t = tour;
+  if (t.lensEl && t.onPress) t.lensEl.removeEventListener("click", t.onPress, true);
+  t.lensEl = el;
+  t.card = card;
+  t.landed = true;
+  copyTheme(card || el);
+  const u = String(t.step.until || "press");
+  const step = t.step;
+  t.onPress = folding ? null : () => {
+    if (tour && tour.step === step && u.split("|").includes("press")) setTimeout(() => { if (tour && tour.step === step) { tour.ended = "press"; go(tour.i + 1); } }, 150);
+  };
+  if (t.onPress) el.addEventListener("click", t.onPress, true);
+  if (!t.step.popup && !folding) el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  const ring = t.root.querySelector(".ring");
+  ring.hidden = false;
+  ring.classList.remove("glow");
+  void ring.offsetWidth;
+  ring.classList.add("glow");
+  ring.classList.toggle("beckon", folding || /press|popup|closed|state:/.test(u));
+  t.root.querySelector(".stage").classList.add("glide");
 }
 
 function copyTheme(el) {
@@ -141,46 +272,107 @@ function copyTheme(el) {
   for (const v of VARS) { const val = cs.getPropertyValue(v); if (val) tour.host.style.setProperty(v, val); }
 }
 
-function draw(s, state) {
-  const { root, steps, i, title } = tour;
-  const b = root.querySelector(".bubble");
-  const last = i === steps.length - 1;
-  b.setAttribute("aria-label", `Step ${i + 1} of ${steps.length}: ${s.say || title}`);
-  b.innerHTML = `<div class="meta"><span>Step ${i + 1} of ${steps.length} · ${esc(title)}</span>`
-    + `<span class="dots">${steps.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</span></div>`
-    + `<div class="say">${esc(s.say || "")}</div><p class="body">${esc(s.body)}</p>`
-    + (state === "missing" ? `<p class="miss">This isn't on the screen. It may be in a folded section, or the card may not be on this view. Open it, or press Next.</p>` : "")
-    + (state === "finding" ? `<p class="miss">Finding it…</p>` : "")
-    + `<div class="acts"><button data-act="back" ${i ? "" : "disabled"}>Back</button><span class="sp">Esc to stop</span>`
-    + `<button class="next" data-act="next">${last ? "Done" : "Next"}</button></div>`;
-  if (state !== "found") {
-    root.querySelector(".hole").className = state === "missing" ? "hole none" : "hole none";
-    root.querySelector(".ring").hidden = true;
-    Object.assign(b.style, { left: "50%", top: "50%", transform: "translate(-50%, -50%)" });
+const esc = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function draw(state) {
+  const t = tour;
+  const s = t.step, n = t.steps.length, last = t.i === n - 1;
+  const w = t.root.querySelector(".words");
+  const say = state === "fold" ? `Open ${t.extra && t.extra.head ? t.extra.head.textContent.replace(/\s+/g, " ").trim().split(" ").slice(0, 4).join(" ") : "this section"}` : s.say;
+  const body = state === "fold" ? "It's folded. Tap its heading to open it." : s.body;
+  const fwd = String(s.until || "").split("|").includes("next") && state !== "fold";
+  const key = `${t.i}|${state}`;
+  if (t.last === key) return;
+  t.last = key;
+  w.classList.remove("in");
+  w.innerHTML = `<div class="meta">Step ${t.i + 1} of ${n} · ${esc(t.title)}</div><div class="say">${esc(say)}</div><p class="body">${esc(body)}</p>`
+    + (state === "finding" ? `<p class="note">Finding it… If it doesn't show, it may not be on this screen.</p>` : "")
+    + `<div class="nav"><button data-act="back" ${t.i ? "" : "disabled"}>Back</button><span class="sp"></span>`
+    + `<button data-act="stop">${last ? "Done" : "Stop"}</button>${fwd ? `<button data-act="next" class="fwd">${last ? "Done" : "Next"}</button>` : ""}</div>`;
+  if (state === "finding") {
+    t.root.querySelector(".ring").hidden = true;
+    t.lensEl = null;
   }
-  b.focus({ preventScroll: true });
+  setTimeout(() => { if (tour === t) w.classList.add("in"); }, state === "finding" ? 0 : 320);
 }
 
-// keep the hole, the ring and the bubble on the target while the page scrolls or redraws
+// every frame: the frost around the lens, the ring on it, the words beside it
 function place() {
   const t = tour;
-  if (!t || !t.target) return;
-  const { root, card, target } = t;
-  if (!card.isConnected || !target.isConnected) { go(t.i); return; }
-  const c = card.getBoundingClientRect(), r = target.getBoundingClientRect();
-  const hole = root.querySelector(".hole"), ring = root.querySelector(".ring"), b = root.querySelector(".bubble");
-  hole.className = "hole";
-  Object.assign(hole.style, { left: `${c.left - 6}px`, top: `${c.top - 6}px`, width: `${c.width + 12}px`, height: `${c.height + 12}px` });
-  ring.hidden = target === card;
-  if (!ring.hidden) Object.assign(ring.style, { left: `${r.left - 6}px`, top: `${r.top - 6}px`, width: `${r.width + 12}px`, height: `${r.height + 12}px` });
-  // the bubble: under the target if it fits, else above it, else at the bottom of the screen
-  const bw = b.offsetWidth, bh = b.offsetHeight, vw = window.innerWidth, vh = window.innerHeight, gap = 16;
-  let top = r.bottom + gap;
-  if (top + bh > vh - 8) top = r.top - gap - bh;
-  if (top < 64) top = Math.max(64, vh - bh - 12);
-  const left = Math.min(Math.max(12, r.left + r.width / 2 - bw / 2), vw - bw - 12);
-  Object.assign(b.style, { left: `${left}px`, top: `${top}px`, transform: "none" });
+  if (!t) return;
   t.frame = requestAnimationFrame(place);
+  const R = t.root;
+  const stage = R.querySelector(".stage"), w = R.querySelector(".words");
+  stage.hidden = t.paused;
+  R.querySelector(".pill").hidden = !t.paused;
+  if (t.paused) return;
+  const vw = window.innerWidth, vh = window.innerHeight, phone = vw < 600;
+  t.host.style.setProperty("--frost-blur", phone ? "8px" : "5px");
+  let L;
+  if (t.lensEl && t.lensEl.isConnected && shown(t.lensEl)) {
+    const r = rectOf(t.lensEl);
+    const radius = parseFloat(getComputedStyle(t.lensEl).borderTopLeftRadius) || 8;
+    L = { x: r.left - PAD, y: r.top - PAD, w: r.width + PAD * 2, h: r.height + PAD * 2, r: radius + 4 };
+  } else {
+    L = { x: vw / 2, y: vh / 2, w: 0, h: 0, r: 0 };
+  }
+  const set = (el, x, y, ww, hh) => Object.assign(el.style, { left: `${x}px`, top: `${y}px`, width: `${Math.max(0, ww)}px`, height: `${Math.max(0, hh)}px` });
+  const [f1, f2, f3, f4] = R.querySelectorAll(".frost");
+  set(f1, 0, 0, vw, L.y);                                  // above
+  set(f2, 0, L.y + L.h, vw, vh - L.y - L.h);               // below
+  set(f3, 0, L.y, L.x, L.h);                               // left
+  set(f4, L.x + L.w, L.y, vw - L.x - L.w, L.h);            // right
+  const ring = R.querySelector(".ring");
+  set(ring, L.x, L.y, L.w, L.h);
+  ring.style.borderRadius = `${L.r}px`;
+  // the words: beside the lens, level with its top; else below or above it, flush with its left; on a phone, docked away from it
+  const ww = w.offsetWidth, wh = w.offsetHeight, gap = 20, topMin = Math.max(12, headerBottom() + 12);
+  let x, y;
+  if (!L.w) { x = (vw - ww) / 2; y = (vh - wh) / 2; }
+  else if (phone) {
+    x = (vw - ww) / 2;
+    y = L.y + L.h / 2 > vh / 2 ? topMin : vh - wh - 16;
+  } else if (vw - (L.x + L.w) - gap >= ww + 16) { x = L.x + L.w + gap; y = L.y; }
+  else if (L.x - gap >= ww + 16) { x = L.x - gap - ww; y = L.y; }
+  else if (vh - (L.y + L.h) - gap >= wh + 16) { x = L.x; y = L.y + L.h + gap; }
+  else { x = L.x; y = L.y - gap - wh; }
+  x = Math.min(Math.max(16, x), vw - ww - 16);
+  y = Math.min(Math.max(topMin, y), vh - wh - 16);
+  Object.assign(w.style, { left: `${x}px`, top: `${y}px` });
 }
 
-const esc = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+// ── the person ──────────────────────────────────────────────────────────────────────────────────
+function onOwnClick(e) {
+  const b = e.target.closest && e.target.closest("button");
+  if (!b || !tour) return;
+  e.stopPropagation();
+  const a = b.dataset.act;
+  if (a === "next") { tour.ended = "next"; go(tour.i + 1); }
+  else if (a === "back") { tour.ended = ""; go(tour.i - 1); }
+  else if (a === "stop") stopTour();
+  else if (a === "resume") { tour.paused = false; tour.last = null; draw(tour.lensEl ? "found" : "finding"); }
+}
+
+// a click on the page: on the ringed control (or inside the step's popup) carries on; anywhere else pauses
+function onPageClick(e) {
+  const t = tour;
+  if (!t || t.paused) return;
+  const path = e.composedPath ? e.composedPath() : [];
+  if (path.includes(t.host)) return;
+  if (t.lensEl && path.includes(t.lensEl)) return;
+  const s = t.step;
+  if (s.popup && path.some((n) => n.localName === "dialog" && n.open)) return;
+  if (t.extra && t.lensEl && path.includes(t.lensEl)) return;
+  t.paused = true;
+}
+
+function onKey(e) {
+  if (!tour || e.key !== "Escape") return;
+  if (!openPopups().length) e.stopPropagation();
+  stopTour();
+}
+
+function onLocation() {
+  if (!tour) return;
+  if (!window.location.pathname.startsWith(`/${tour.dash}/`)) stopTour();
+}

@@ -5,9 +5,10 @@
 //   <!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-limits.png" -->
 //     straight under a task's ### heading: the task becomes a card that opens and closes, with the pictures
 //     of the cards it uses, Show me and Open <view> buttons.
-//   <!-- guide:show view="power" card="battman-batterymode" text="Curtail" say="Tap Curtail" -->
-//     inside a numbered step: a stop on the Show me walkthrough (battman-tour.js), which goes to that view,
-//     finds the card (and the text in it) and points at it with the step's own words.
+//   <!-- guide:show view="power" card="battman-batterymode" target="Curtail" until="popup" say="Tap Curtail" -->
+//     inside a numbered step: a stop on the Show me walkthrough (battman-tour.js), which goes to that view, finds
+//     the card or the open popup (popup="<text it shows>") and the control showing `target`, rings it with the
+//     step's own words, and moves on when `until` happens (press, popup, closed, state:<entity>=<state>, open, next).
 // A <!-- guide:howto --> marker near the top is where the filter box and the topic chips go; the topics are
 // the page's ## headings.
 
@@ -63,8 +64,9 @@ const plainText = (el) => {
 export function stepsOf(body) {
   return [...body.querySelectorAll('.directive[data-directive="show"]')].map((d) => {
     const a = argsOf(d), li = d.closest("li");
-    return { view: a.view || "", card: a.card || "", text: a.text || "", say: a.say || "", body: li ? plainText(li) : "" };
-  }).filter((s) => s.view && s.card);
+    return { view: a.view || "", card: a.card || "", popup: a.popup || "", target: a.target || "", until: a.until || "",
+      say: a.say || "", body: li ? plainText(li) : "" };
+  }).filter((s) => s.view && (s.card || s.popup));
 }
 
 // Turn the rendered page into task cards with a filter. go(view) opens a dashboard view; showMe(tour) starts a walkthrough.
