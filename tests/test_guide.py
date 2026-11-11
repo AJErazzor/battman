@@ -175,6 +175,13 @@ def test_device_page_quotes_the_messages() -> None:
         assert f'"{a["alias"]}"' in page or (len(short) == 2 and f'"– {short[1]}"' in page), a["alias"]
 
 
+def test_no_known_problem_notes_in_the_guide() -> None:
+    """Known problems are GitHub issues, not notes in the guide."""
+    hits = [f"{pid}: {line[:80]}" for pid, text in _pages().items() for line in text.splitlines()
+            if re.search(r"known (problem|issue)", line, re.I)]
+    assert not hits, hits
+
+
 def test_no_old_words_in_the_guide() -> None:
     files = [*GUIDE.rglob("*"), WWW / "battman-guide.js", WWW / "battman-guide-view.js", WWW / "battman-guide-md.js",
              ROOT / "guide.py", ROOT / "views/40-help.yaml"]
@@ -229,7 +236,7 @@ def test_guide_in_a_browser(tmp_path) -> None:
     assert out["before"] == ["battman-guide.js"]                           # only the stub, until the card is shown
     assert {"battman-guide-view.js", "battman-guide-md.js", "vendor/marked.esm.js"} <= set(out["after"])
     assert out["home"]["h1"].startswith("Battman help") and out["home"]["current"] == "Battman help"
-    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Settings", "Battman's Repairs"]
+    assert out["home"]["toc"] == ["Battman help", "The Battman device page", "Power", "Curvy", "Pricy", "Settings", "Battman's Repairs"]
     assert out["home"]["scripts"] == 0
     assert "Active: On" in out["status"] and "Mode: Self Consume" in out["status"] and "3 min ago" in out["status"]
     assert "Curtail: Off" in out["status"] and "Repairs: 1 open" in out["status"]     # ignored and other domains left out
@@ -691,14 +698,15 @@ def test_power_page_has_a_summary_for_every_card_on_the_view() -> None:
 
 def test_power_cards_register_for_help_under_their_own_ids() -> None:
     """The cards that draw others (the wrapper) register under the card's id; House and Overrides by name."""
-    assert 'helpRegister(this.constructor.cardId,' in (WWW / "battman-cards.js").read_text()
-    assert 'helpRegister("house",' in (WWW / "battman-house.js").read_text()
-    assert 'helpRegister("overrides",' in (WWW / "battman-overrides.js").read_text()
+    assert 'helpRegister("power." + this.constructor.cardId,' in (WWW / "battman-cards.js").read_text()
+    assert 'helpRegister("power.house",' in (WWW / "battman-house.js").read_text()
+    assert 'helpRegister("power.overrides",' in (WWW / "battman-overrides.js").read_text()
     cards = {p.stem for p in (ROOT / "cards").glob("*.yaml")}
     assert _power_cards() - {"house", "overrides"} <= cards
     # the layer: nothing of the guide or the panel up front; the panel only when help is turned on
     assert re.findall(r'^import .* from "([^"]+)";', LAYER_JS, re.M) == []
-    assert 'import("./battman-help-panel.js")' in LAYER_JS and 'PAGE = "intermediate/power"' in LAYER_JS
+    assert 'import("./battman-help-panel.js")' in LAYER_JS
+    assert 'PAGES = { power: "intermediate/power", curvy: "intermediate/curvy", pricy: "intermediate/pricy" }' in LAYER_JS
     assert "st.attributes.showHelp === false" in LAYER_JS
 
 
@@ -707,7 +715,7 @@ def test_guide_images_are_all_used_and_all_there() -> None:
 
     used: set[str] = set()
     for pid, text in _pages().items():
-        for alt, src in re.findall(r"!\[([^\]]*)\]\(([^)]+)\)", text):
+        for alt, src in re.findall(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)', text):
             assert alt.strip() and len(alt) > 15, (pid, "alt text says what the picture shows", src)
             parts = ["guide", *Path(guide.page_file(pid).relative_to(GUIDE)).parts[:-1]]
             for seg in src.split("/"):
@@ -725,7 +733,8 @@ def test_guide_images_are_all_used_and_all_there() -> None:
 def test_markdown_images() -> None:
     md = ("# T\n\n![The House card](../../www/guide-images/power-house.png)\n\n![Elsewhere](https://example.org/x.png)\n\n"
           "![Up and out](../../www/guide-images/../../x.png)\n\n![Other folder](../../www/other/x.png)\n\n"
-          "![Absolute](/local/x.png)\n\n![Home page](../www/guide-images/a.png)\n")
+          "![Absolute](/local/x.png)\n\n![Home page](../www/guide-images/a.png)\n\n"
+          '![A wide card](../../www/guide-images/power-house.png "wide")\n')
     script = f"""
 const {{ renderPage }} = await import({json.dumps(str(WWW / "battman-guide-md.js"))});
 process.stdout.write(JSON.stringify([renderPage({json.dumps(md)}, "intermediate/power"), renderPage({json.dumps(md)}, "home")]));
@@ -733,9 +742,10 @@ process.stdout.write(JSON.stringify([renderPage({json.dumps(md)}, "intermediate/
     power, home = json.loads(subprocess.run(["node", "--input-type=module", "-"], input=script, capture_output=True,
                                             text=True, check=True).stdout)
     assert re.search(r'<img class="gimg" src="[^"]+/guide-images/power-house\.png" alt="The House card" loading="lazy">', power["html"])
-    assert power["html"].count("<img") == 1 and power["html"].count('class="imgalt"') == 5
-    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None, None]
-    assert [i["name"] for i in home["images"]][-1] == "a.png"                 # the home page sits one folder up
+    assert power["html"].count("<img") == 2 and power["html"].count('class="imgalt"') == 5
+    assert '<img class="gimg wide"' in power["html"] and power["html"].count('class="gimg"') == 1
+    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None, None, "power-house.png"]
+    assert [i["name"] for i in home["images"]][-2] == "a.png"                 # the home page sits one folder up
 
 
 @pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
@@ -746,7 +756,7 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
     r = subprocess.run(["node", str(Path(__file__).parent / "js/help_layer_check.mjs"), str(ROOT)],
                        capture_output=True, text=True, timeout=180,
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME, "GUIDE_JSON": json.dumps({"pages": _pages()}),
-                            "HELP_CARDS": json.dumps(cards[:2])})
+                            "HELP_CARDS": json.dumps([f"power.{c}" for c in cards[:2]])})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
     assert out["errors"] == [], out["errors"]
@@ -757,7 +767,7 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
         assert o["button"]["theme"] == "#123456"                                  # the layer wears the cards' theme
         assert o["pressed"] == "true"
         shown = [t for t in o["tags"] if t["vis"] != "hidden"]
-        assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # the card with no summary gets none
+        assert {t["id"] for t in o["tags"]} == {f"power.{c}" for c in cards[:2]}   # a part with no help gets none
         assert all(t["display"] == "flex" for t in o["tags"])                     # shown in help mode (fixed, so flex)
         boxes = {b["i"]: b for b in o["cardBoxes"]}
         a = next(t for t in shown if t["top"] == boxes["a"]["top"] + 8)
@@ -775,3 +785,22 @@ def test_power_help_layer_in_a_browser(tmp_path) -> None:
         assert o["gone"] == {"hidden": True, "tags": 0, "panel": False}
     d, ph = out["desktop"]["panel"], out["phone"]["panel"]
     assert d["width"] == 400 and d["left"] == 800 and ph["left"] == 0 and ph["width"] == 390
+
+
+def _layer_sections() -> dict[str, list[str]]:
+    block = re.search(r"const SECTIONS = \{(.*?)\n\};", LAYER_JS, re.S).group(1)
+    return {m[0]: re.findall(r'"([a-z0-9]+)"', m[1]) for m in re.findall(r"(\w+): \[([^\]]*)\]", block)}
+
+
+def test_help_layer_knows_every_summary_and_the_editors_register_them() -> None:
+    """The layer's list of parts with help is exactly the summaries on the Power, Curvy and Pricy pages, in order."""
+    sections = _layer_sections()
+    assert set(sections) == {"power", "curvy", "pricy"}
+    for name, ids in sections.items():
+        page = _pages()[f"intermediate/{name}"]
+        assert [i.split(".")[1] for i in re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)] == ids, name
+    for name in ("curvy", "pricy"):
+        js = (WWW / f"battman-{name}.js").read_text()
+        registered = re.findall(r'\["([a-z0-9]+)", "[^"]+"\]', js.split("connectedCallback()", 1)[1].split("disconnectedCallback", 1)[0])
+        assert registered == sections[name], name
+        assert f'helpRegister("{name}." + id,' in js

@@ -128,7 +128,7 @@ class BattmanCard extends HTMLElement {
     }
     if (this._hass) this.hass = this._hass;
     // the "?" help on the Power view (battman-help-layer.js); the card is drawn by the card inside it
-    if (!this._inPicker && !this._unhelp) this._unhelp = helpRegister(this.constructor.cardId, () => this._inner || this.firstElementChild);
+    if (!this._inPicker && !this._unhelp) this._unhelp = helpRegister("power." + this.constructor.cardId, () => this._inner || this.firstElementChild);
   }
 
   disconnectedCallback() {

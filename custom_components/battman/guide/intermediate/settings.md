@@ -19,6 +19,13 @@ SOC means the battery's state of charge, as a %. Prices are in c/kWh (cents per 
 How readily the battery charges from the grid when the buy price is positive. Battman charges while the battery is below your buy SOC curve for the hour (set on Curvy) and the price is at or below its buy price. That price starts at the hour's preferred buy price (set on Pricy), and these two offsets say how far below the curve the battery must be before Battman will pay more, up to the hour's high buy price.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Buy section of the Settings card: Prorate price SOC offset, High price SOC offset.](../../www/guide-images/settings-buy.png)
+
+</details>
+
 The card's note: "How hard the battery charges when grid prices are positive. Higher offsets mean more cautious charging." At a positive price, Battman doesn't buy in the evening peak (5 pm until 9 pm) unless a Buy override on the Overrides card says so.
 
 For example, with the buy curve at 50% this hour and the offsets at 1 and 10: above 49% Battman pays only the preferred price; from 49% down to 40% the price it will pay rises steadily towards the high price; at 40% or below it pays up to the high price.
@@ -46,6 +53,13 @@ For example, with the buy curve at 50% this hour and the offsets at 1 and 10: ab
 <!-- guide:summary id="settings.buyRules" -->
 Hour-by-hour rules that look at Amber's price forecast before Battman charges. With an hour's rule on, Battman finds the cheapest average price in the hours ahead and waits for it, instead of charging now at a dearer price. Nothing here applies until **Buy rules enabled** is on and that hour's rule is **Active**.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Buy rules section of the Settings card: Buy rules enabled, Hour, Active, Look ahead, Grouping, Round to and more.](../../www/guide-images/settings-buy-rules.png)
+
+</details>
 
 The card's note: "Fine-grained control over the buy price target each hour. Pick an hour and set its rule, or apply a cascade." Before any rule has been saved the card says "sensor.battman_buy_rules has no rules yet (Battman sets them up the first time it saves a rule)." and shows only the master switch.
 
@@ -104,6 +118,13 @@ On the **⚡ Cascade** tab: "From the start hour, each hour is switched on with 
 Battman keeps two versions of each SOC and price curve: the normal ones and the "high" ones for needy times (both set on Curvy and Pricy). It uses the high curves while the house is using a lot of power, or, between 10 am and 4 pm, when the cautious solar forecast won't fill the battery today. These two settings say what "a lot" and "won't fill" mean.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Needy curve triggers section of the Settings card: PV to full battery gap, House power above.](../../www/guide-images/settings-needy.png)
+
+</details>
+
 The card's note: "Switches to a more aggressive charging curve when the house uses a lot, or solar won't fill the battery before sunset." The engine's log says "(On High Curve!)" while it's using them. **↻ Reset** puts both back to the values under [Reset defaults](#defaults).
 
 ### PV to full battery gap
@@ -127,6 +148,13 @@ The card's note: "Switches to a more aggressive charging curve when the house us
 <!-- guide:summary id="settings.autoCurve" -->
 Picks one of your SOC curve presets (saved on Curvy) for the day, from how much solar today is likely to bring: what's been made so far plus the Solcast forecast still to come. It writes the preset into this month's SOC curve, and puts the month's own curve back at the reset hour. It's off until you switch it on, and it never changes the price curves.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Auto curve switcher section of the Settings card: Auto curve switcher, Check at, Also check every, Reset at, Forecast used, Rules, first match wins and more.](../../www/guide-images/settings-auto-curve.png)
+
+</details>
 
 The card's note: "Picks a curve preset from today's projected solar: made so far plus the forecast still to come. At the reset hour the month's own curve goes back." If the card says "Not available yet: Battman is still loading its new settings. Reload the template entities, then come back.", do as it says.
 
@@ -195,6 +223,13 @@ The preset lists show the presets that have curves saved on Curvy. One marked "(
 A safety net that runs every minute while Battman is Active. If the engine hasn't run for longer than the limit, it sets the battery to Self Consume and stops exports until the engine runs again. It also clears overrides once a day, at the time you set. While Active is off, the watchdog does nothing at all.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Watchdog section of the Settings card: Script not run limit, Script disabled limit, Reset overrides at.](../../www/guide-images/settings-watchdog.png)
+
+</details>
+
 The card's note: "Keeps an eye on the engine. If its script stops running or stays disabled, Battman alerts and recovers it." **↻ Reset** puts both limits back to the values under [Reset defaults](#defaults).
 
 ### Script not run limit
@@ -224,6 +259,13 @@ The card's note: "Keeps an eye on the engine. If its script stops running or sta
 Two figures from your electricity bill that Battman uses in its money totals: the daily supply charge and the day your billing period starts. The daily charge also counts in today's profit, which decides how readily the engine sells below its preferred price.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Billing section of the Settings card: Daily network charge, Bill day of month.](../../www/guide-images/settings-billing.png)
+
+</details>
+
 The card's note: "For your net electricity costs. Set these to match your retailer's bill." **↻ Reset** puts both back to the values under [Reset defaults](#defaults).
 
 ### Daily network charge
@@ -244,6 +286,13 @@ In a month that hasn't got that day (the 31st in April, say), the new period doe
 <!-- guide:summary id="settings.system" -->
 Facts about your solar and battery purchase, for the Solar System card on the Finances view: what it cost, when it was switched on, any rebates, and what your bills were before solar. The card uses them to show how far the system is towards paying for itself and how long is left.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The System & financials section of the Settings card: Install cost, Install date, Other income, Other expenses, Pre-solar quarterly bills, Q1 · Jul – Sep and more.](../../www/guide-images/settings-system.png)
+
+</details>
 
 The card's note: "Install details, income, expenses and pre-solar bills, for payback and lifetime savings (the Solar System card)." The Solar System card shows the system cost, bill savings, rebates and income, what's still to pay (**Remaining**), and the years installed and to go.
 
@@ -302,6 +351,13 @@ April to June's bill (91 days).
 How readily the battery sells to the grid below its preferred price. Battman sells while the battery is above your sell SOC curve for the hour (set on Curvy) and the feed-in price is at or above its sell price, which starts at the hour's preferred sell price (set on Pricy). While today's earnings haven't yet covered today's costs, these offsets let it accept less when the battery is well above the curve, down to the hour's low sell price.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Sell section of the Settings card: Prorate price SOC offset, Low price SOC offset.](../../www/guide-images/settings-sell.png)
+
+</details>
+
 The card's note: "When and how much the battery exports. SOC offsets stop it running too low." Normal selling stops while the feed-in price is negative (a Drain override on the Overrides card goes by the buy price instead, so it can still run then), and normal selling never goes below the [Sell price protection](#protection) floor. **↻ Reset** puts both offsets back to the values under [Reset defaults](#defaults).
 
 "Today's costs" are today's buying plus the [daily network charge](#billing). Once today's sales cover them, Battman sticks to the preferred price.
@@ -326,6 +382,13 @@ For example, with the sell curve at 20% this hour and the offsets at 30 and 50: 
 <!-- guide:summary id="settings.sellRules" -->
 Hour-by-hour rules that look at Amber's feed-in forecast before Battman sells. With an hour's rule on, Battman finds the best average feed-in price in the hours ahead and holds out for it, rather than selling now for less. Nothing here applies until **Sell rules enabled** is on and that hour's rule is **Active**.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Sell rules section of the Settings card: Sell rules enabled, Hour, Active, Allow last chance to sell low, Look ahead, Grouping and more.](../../www/guide-images/settings-sell-rules.png)
+
+</details>
 
 The card's note: "Fine-grained control over the sell price target each hour. Pick an hour and set its rule, or apply a cascade." Before any rule has been saved the card says "sensor.battman_sell_rules has no rules yet (Battman sets them up the first time it saves a rule)." and shows only the master switch.
 
@@ -388,6 +451,13 @@ On the **⚡ Cascade** tab: "From the start hour, each hour is switched on with 
 When the feed-in price jumps, Battman can sell the battery further down than your sell curve allows. Each tier is a price and a battery level: while the feed-in price is above the tier's price, Battman sells as long as the battery is above that level. Spike selling doesn't wait for today's totals or the sell price protection.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Spike selling section of the Settings card: Spike sell price, Sell above SOC.](../../www/guide-images/settings-spike.png)
+
+</details>
+
 The card's note: "When prices spike the battery can export at a profit. Two tiers let it sell harder at higher prices." Battman checks its normal selling first, then Tier 1, then Tier 2, so give Tier 1 the higher price. **↻ Reset** puts all four back to the values under [Reset defaults](#defaults).
 
 ### Spike sell price (Tier 1)
@@ -412,6 +482,13 @@ In %. 15% to start with. Whole numbers from 0 to 100. During a Tier 2 spike, Bat
 <!-- guide:summary id="settings.protection" -->
 Stops Battman selling for less than you've been paying for grid power. Once your grid import since the reset hour and its average price are both above the thresholds here, Battman won't sell below that average plus your margin. It's off until **And average buy above** is more than 0.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Sell price protection section of the Settings card: When import above, And average buy above, Minimum sell is average buy plus, Allow last chance to sell lower, Reset hour.](../../www/guide-images/settings-protection.png)
+
+</details>
 
 The card's note: "Stops selling below a margin over what you've been paying, once today's grid import and average buy price are both above these thresholds."
 
@@ -449,6 +526,13 @@ These settings are kept with Battman's buy total (`sensor.battman_buy_total`), n
 Meant for choosing where Battman's buy and sell prices come from: Amber's live prices, or a retailer's fixed hourly tariff entered here. At present the choice changes nothing: the engine and Battman's money totals always use Amber's prices.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Power provider section of the Settings card: Provider, Hour, Normal price, Bonus price, Bonus limit.](../../www/guide-images/settings-provider.png)
+
+</details>
+
 The card's note: "Your electricity retailer and its hourly rates. Retail uses these rates instead of live Amber prices."
 
 > [!WARNING]
@@ -480,6 +564,13 @@ The card's note: "Your electricity retailer and its hourly rates. Retail uses th
 <!-- guide:summary id="settings.notifications" -->
 Alerts sent to one phone through the Home Assistant Companion app: cheap and negative buy prices, the battery Live Activity on an iPhone's lock screen, feed-in spikes and power cuts. Choose the phone under **Notify target** first; every alert is off until you switch it on.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Notifications section of the Settings card: Notify target, Cheap price, Cheap-price alert, Below, Negative price, Negative-price alert and more.](../../www/guide-images/settings-notifications.png)
+
+</details>
 
 The card's note: "Every alert goes to one phone, and each is off until you switch it on." The alerts are automations Battman writes for you; if one is missing, **Create automations** puts it back (see [Create automations](../start/device-page.md#create-automations)). If the card says "Battman setting not found:" and "Is Battman set up (and its packages loaded)?", see [Battman's package files aren't loaded](../help/repairs.md#packages-not-loaded).
 
@@ -589,6 +680,13 @@ The push is "🔌 Power outage" (or "🔌 Switched to off-grid" when it was done
 How the Battman dashboard looks and behaves: a simpler set of mode buttons, the override timer, the colour theme and the Help view. Under **Confirmations**, when the mode buttons ask before they act.
 <!-- /guide:summary -->
 
+<details>
+<summary>Show picture</summary>
+
+![The Dashboard options section of the Settings card: Simple battery mode, Always show override timer, Dashboard theme, Show help, Confirmations, Warn when a mode goes against the price and more.](../../www/guide-images/settings-dashboard.png)
+
+</details>
+
 The card's note: "How the dashboard shows battery controls, and its theme."
 
 ### Simple battery mode
@@ -633,6 +731,13 @@ When the mode buttons on the Battery mode card ask before acting. The question n
 <!-- guide:summary id="settings.defaults" -->
 The values each section's **↻ Reset** button puts back, for Buy, Sell, Spike selling, Needy curve triggers, Watchdog and Billing. Change them and press **Save defaults** to make your own values the ones Reset restores. Nothing here changes a setting until you press a Reset button.
 <!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Reset defaults section of the Settings card: Buy: prorate price SOC offset, Buy: high price SOC offset, Sell: prorate price SOC offset, Sell: low price SOC offset, Spike tier 1 price, Spike tier 1 above SOC and more.](../../www/guide-images/settings-defaults.png)
+
+</details>
 
 The card's note: "The values each ↻ Reset button puts back." This section starts folded. **Save defaults** checks every box first (a value it won't take gets its message at that row), then saves them all. A section's **↻ Reset** says "No defaults saved for this section (see Reset defaults)" if it has none.
 

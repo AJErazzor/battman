@@ -186,9 +186,6 @@ Each row shows the override's name, **SOC**, **PRICE**, and a dollar figure (**E
 
 An override that isn't locked clears itself when its timer finishes or is cancelled, when its SOC target is met while no timer is running, and at the daily reset ([Reset overrides at](settings.md#watchdog)). **No Reset** stops that. A Sell Override at 100% is never cleared by the watchdog.
 
-> [!NOTE]
-> **Known problem.** The strip says **OVERRIDES · NO SELL** for a Drain Battery set to 100% as well, although that stops draining, not selling.
-
 ### The timer
 
 The timer bar shows while the timer is running and an override is set or pinned, or all the time with **Always show override timer** on ([Dashboard options](settings.md#always-show-override-timer)).
@@ -218,7 +215,7 @@ The strip counts down "to make" or "to spend" beside **SELL TARGET** or **BUY BU
 Amber's current SELL price above its current BUY price, each with a countdown to the next 5-minute price and the next eight periods after it. Prices are in c/kWh and coloured by band; an arrow on each period says whether it's up or down on the one before.
 <!-- /guide:summary -->
 
-![The Amber 5-minute price grid: a wide SELL tile and a wide BUY tile each showing the time, the price and a countdown, with two rows of four smaller coloured period tiles under each, every one with a time, a price and an arrow.](../../www/guide-images/power-amber5minpricegrid.png)
+![The Amber 5-minute price grid: a wide SELL tile and a wide BUY tile each showing the time, the price and a countdown, with two rows of four smaller coloured period tiles under each, every one with a time, a price and an arrow.](../../www/guide-images/power-amber5minpricegrid.png "wide")
 
 ### Reading it
 
@@ -235,9 +232,6 @@ A price Battman doesn't have shows "—" on a grey tile.
 | Dark red | above 25c | below 0c |
 
 The [House](#house) card colours its prices the same way. The prices come from `sensor.amber_5min_current_general_price` and `sensor.amber_5min_current_feed_in_price`, and the periods from the two `sensor.amber_billing_interval_forecasts_…` sensors. If a forecast is empty the card says "No SELL forecast from" or "No BUY forecast from" and the sensor.
-
-> [!NOTE]
-> **Known problem.** The times on this card follow this device's time zone. The [forecast table](#amber24hourforecasttable) uses Home Assistant's. They match only when both are in the same zone.
 
 <a id="limits"></a>
 ## Limits
@@ -257,9 +251,6 @@ Each tile shows the limit as a whole number with its unit, or "—" when the sen
 - **Curtail** (the [Battery mode](#batterymode) card) sets **Grid Export Limit** to 0, and puts it back to 0 if you raise it while Curtail is on. Turning Curtail off sets it to 18.2 kW.
 - **A mode change** sets **Max Charge Limit** and **PV Max Limit**. **Sell Solar** and **House Party** cut **Max Charge Limit** to 0.1 kW and put **PV Max Limit** at 20 kW. **Drain** puts **PV Max Limit** at 0. Every other mode puts **Max Charge Limit** back to the plant's rated charging power and **PV Max Limit** at 20 kW.
 
-> [!NOTE]
-> **Known problem.** Curtail off always sets **Grid Export Limit** to 18.2 kW, a fixed value, not the limit you had before.
-
 <a id="amber24hourforecasttable"></a>
 ## Amber 24-hour forecast table
 
@@ -267,7 +258,7 @@ Each tile shows the limit as a whole number with its unit, or "—" when the sen
 Every interval of Amber's forecast in one scrolling table: its start time, the Sell price, Amber Advanced's predicted Sell (SS), the Buy price and Amber Advanced's predicted Buy (SS). Each price is coloured by band, and the first row, the current interval, has a blue marker.
 <!-- /guide:summary -->
 
-![The Amber forecast table: a scrolling table with the columns Time, Sell, SS, Buy and SS, one row per forecast interval, each price on a coloured background, and a blue bar at the left of the first row.](../../www/guide-images/power-amber24hourforecasttable.png)
+![The Amber forecast table: a scrolling table with the columns Time, Sell, SS, Buy and SS, one row per forecast interval, each price on a coloured background, and a blue bar at the left of the first row.](../../www/guide-images/power-amber24hourforecasttable.png "wide")
 
 ### Reading it
 
@@ -299,9 +290,6 @@ Four half gauges: battery level (SOC), battery power, grid power and home power,
 
 A value Battman doesn't have shows as "—". The gauges are drawn by the `modern-circular-gauge` card, a separate card that Battman needs installed.
 
-> [!NOTE]
-> **Known problem.** The battery gauge is labelled "In Battery Out" from left to right, with dark red on the left and green on the right. The [House](#house) card reads the same sensor the other way: a positive reading is "Chg" (charging) and a negative one is "Dischg". The two disagree about which way the battery is moving. Compare both with what the battery is actually doing.
-
 <a id="nemmix"></a>
 ## NEM mix
 
@@ -314,9 +302,6 @@ Two pie charts of your region's electricity from the National Electricity Market
 ### Reading it
 
 **SA Generation Mix** has **Wind**, **Solar (S)** (rooftop), **Solar (L)** (utility), **Imports**, **Battery**, **Gas** (all four gas types together) and **Distillate**. **SA Demand Mix** has **Consumers**, **Solar (S)**, **Exports** and **Battery Charging**. Slices are sorted largest first, and a slice under 4% has no label.
-
-> [!NOTE]
-> **Known problem.** The pie titles always say "SA", whichever region OpenNEM gives Battman.
 
 ### When it's empty
 

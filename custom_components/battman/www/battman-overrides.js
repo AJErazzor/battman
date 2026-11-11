@@ -890,7 +890,7 @@ class BattmanOverrides extends BattmanCardBase {
   // the "?" help on the Power view (battman-help-layer.js)
   connectedCallback() {
     super.connectedCallback();
-    if (!this._unhelp && !inCardPicker(this)) this._unhelp = helpRegister("overrides", () => this);
+    if (!this._unhelp && !inCardPicker(this)) this._unhelp = helpRegister("power.overrides", () => this);
   }
 
   disconnectedCallback() {
