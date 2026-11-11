@@ -64,7 +64,8 @@ article pre { background: var(--g-raised); border: 1px solid var(--g-border); bo
 article pre code { background: none; padding: 0; font-size: 13px; line-height: 1.5; }
 .copy { position: absolute; top: 6px; right: 6px; font-size: 12px; padding: 3px 9px; border-radius: 6px; cursor: pointer;
   border: 1px solid var(--g-border); background: var(--g-card); color: var(--g-text); }
-.gimg { display: block; max-width: 100%; height: auto; margin: 12px 0; border-radius: 10px; border: 1px solid var(--g-border); }
+.gimg { display: block; width: 100%; max-width: 420px; height: auto; margin: 12px 0; border-radius: 10px; border: 1px solid var(--g-border); }
+.gimg.wide { max-width: 680px; }
 .table { overflow-x: auto; margin: 12px 0; }
 article table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
 article th, article td { border: 1px solid var(--g-border); padding: 6px 10px; text-align: left; vertical-align: top; }

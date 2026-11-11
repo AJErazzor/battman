@@ -175,6 +175,13 @@ def test_device_page_quotes_the_messages() -> None:
         assert f'"{a["alias"]}"' in page or (len(short) == 2 and f'"– {short[1]}"' in page), a["alias"]
 
 
+def test_no_known_problem_notes_in_the_guide() -> None:
+    """Known problems are GitHub issues, not notes in the guide."""
+    hits = [f"{pid}: {line[:80]}" for pid, text in _pages().items() for line in text.splitlines()
+            if re.search(r"known (problem|issue)", line, re.I)]
+    assert not hits, hits
+
+
 def test_no_old_words_in_the_guide() -> None:
     files = [*GUIDE.rglob("*"), WWW / "battman-guide.js", WWW / "battman-guide-view.js", WWW / "battman-guide-md.js",
              ROOT / "guide.py", ROOT / "views/40-help.yaml"]
@@ -707,7 +714,7 @@ def test_guide_images_are_all_used_and_all_there() -> None:
 
     used: set[str] = set()
     for pid, text in _pages().items():
-        for alt, src in re.findall(r"!\[([^\]]*)\]\(([^)]+)\)", text):
+        for alt, src in re.findall(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)', text):
             assert alt.strip() and len(alt) > 15, (pid, "alt text says what the picture shows", src)
             parts = ["guide", *Path(guide.page_file(pid).relative_to(GUIDE)).parts[:-1]]
             for seg in src.split("/"):
@@ -725,7 +732,8 @@ def test_guide_images_are_all_used_and_all_there() -> None:
 def test_markdown_images() -> None:
     md = ("# T\n\n![The House card](../../www/guide-images/power-house.png)\n\n![Elsewhere](https://example.org/x.png)\n\n"
           "![Up and out](../../www/guide-images/../../x.png)\n\n![Other folder](../../www/other/x.png)\n\n"
-          "![Absolute](/local/x.png)\n\n![Home page](../www/guide-images/a.png)\n")
+          "![Absolute](/local/x.png)\n\n![Home page](../www/guide-images/a.png)\n\n"
+          '![A wide card](../../www/guide-images/power-house.png "wide")\n')
     script = f"""
 const {{ renderPage }} = await import({json.dumps(str(WWW / "battman-guide-md.js"))});
 process.stdout.write(JSON.stringify([renderPage({json.dumps(md)}, "intermediate/power"), renderPage({json.dumps(md)}, "home")]));
@@ -733,9 +741,10 @@ process.stdout.write(JSON.stringify([renderPage({json.dumps(md)}, "intermediate/
     power, home = json.loads(subprocess.run(["node", "--input-type=module", "-"], input=script, capture_output=True,
                                             text=True, check=True).stdout)
     assert re.search(r'<img class="gimg" src="[^"]+/guide-images/power-house\.png" alt="The House card" loading="lazy">', power["html"])
-    assert power["html"].count("<img") == 1 and power["html"].count('class="imgalt"') == 5
-    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None, None]
-    assert [i["name"] for i in home["images"]][-1] == "a.png"                 # the home page sits one folder up
+    assert power["html"].count("<img") == 2 and power["html"].count('class="imgalt"') == 5
+    assert '<img class="gimg wide"' in power["html"] and power["html"].count('class="gimg"') == 1
+    assert [i["name"] for i in power["images"]] == ["power-house.png", None, None, None, None, None, "power-house.png"]
+    assert [i["name"] for i in home["images"]][-2] == "a.png"                 # the home page sits one folder up
 
 
 @pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),

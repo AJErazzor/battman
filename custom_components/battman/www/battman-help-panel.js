@@ -70,7 +70,8 @@ const PANEL_CSS = `
 .bh-body .callout.note, .bh-body .callout.tip { border-left-color: var(--battman-sky, var(--primary-color)); }
 .bh-body .callout-title { font-weight: 700; margin: 2px 0; }
 .bh-body .table { overflow-x: auto; }
-.bh-body .gimg { display: block; max-width: 100%; height: auto; margin: 8px 0 12px; border-radius: 8px; border: 1px solid var(--battman-border-neutral, var(--divider-color)); }
+.bh-body .gimg { display: block; width: 100%; max-width: 320px; height: auto; margin: 8px 0 12px; border-radius: 8px; border: 1px solid var(--battman-border-neutral, var(--divider-color)); }
+.bh-body .gimg.wide { max-width: 100%; }
 .bh-body table { border-collapse: collapse; font-size: 13px; }
 .bh-body th, .bh-body td { border: 1px solid var(--battman-border-neutral, var(--divider-color)); padding: 4px 8px; text-align: left; }
 .bh-body .code { position: relative; }

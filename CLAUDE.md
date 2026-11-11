@@ -26,9 +26,10 @@ Rules for the guide:
 - A page's address (`?page=<track>/<slug>`) and its section headings are what links point at. Don't rename
   them; if you have to, fix every link to them.
 - Pictures are screenshots in `www/guide-images/`, linked relative to the page (`../../www/guide-images/power-house.png`),
-  with alt text that says what they show. Every file there is used by a page.
+  with alt text that says what they show. Every file there is used by a page. They're taken at twice the size they're
+  shown; a picture of a wide card has the title "wide" (`![…](…/power-x.png "wide")`).
 - Link between pages with relative `.md` links (`../help/repairs.md#local-cards`), as GitHub does.
-- Known problems are stated plainly where they matter, not hidden.
+- Describe what Battman does, not its bugs: a known problem is a GitHub issue, not a note in the guide.
 - A "?" on a card opens a summary block on a guide page: `<!-- guide:summary id="settings.buy" -->` … `<!-- /guide:summary -->`,
   straight under the section's heading. Keep the ids; the card looks them up.
 - `tests/test_guide.py` checks the contents, every link and section, that every Repair is covered under its

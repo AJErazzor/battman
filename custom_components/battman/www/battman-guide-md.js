@@ -14,8 +14,8 @@
 // - GitHub's callouts (> [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]) are drawn as callouts.
 // - Code blocks get a Copy button.
 // - Images are screenshots kept in www/guide-images/ and linked as GitHub shows them, relative to the page
-//   (../../www/guide-images/power-house.png). Here they're served next to this file. Any other image is
-//   shown as its alt text.
+//   (../../www/guide-images/power-house.png). Here they're served next to this file, drawn about as big as the card
+//   is on a dashboard (wider for a "wide" title). Any other image is shown as its alt text.
 //
 // No DOM here, so tests run it under Node.
 
@@ -169,12 +169,12 @@ export function renderPage(markdown, page) {
         if (r.kind === "external") return `<a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"${t}>${inner}</a>`;
         return `<span class="deadlink">${inner}</span>`;
       },
-      image({ href, text }) {
+      image({ href, title, text }) {
         const name = resolveImage(href, page);
         images.push({ src: href, name, alt: text });
         if (!name) return `<span class="imgalt">${esc(text)}</span>`;
         const url = new URL(`./guide-images/${name}`, import.meta.url).href;
-        return `<img class="gimg" src="${esc(url)}" alt="${esc(text)}" loading="lazy">`;
+        return `<img class="gimg${title === "wide" ? " wide" : ""}" src="${esc(url)}" alt="${esc(text)}" loading="lazy">`;
       },
       paragraph({ tokens }) {
         const inner = this.parser.parseInline(tokens);
