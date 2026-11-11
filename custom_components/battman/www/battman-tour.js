@@ -13,7 +13,8 @@
 // control, a popup opens or closes, or a Home Assistant entity reaches a state. It follows the person into Battman's
 // popups (a modal <dialog> makes the rest of the page inert, so the walkthrough moves inside the open one). If a step's
 // popup isn't open, it goes back to the step that opens it. A target in a folded section gets a step to open the section
-// first. A click anywhere else pauses it ("Back to the walkthrough" / "Stop"); Escape or Stop ends it.
+// first. A click anywhere else pauses it ("Back to the walkthrough" / "Stop"); Escape or Stop ends it. When the last step
+// happens it stays, says "That's it." and waits for Done (a click elsewhere ends it too).
 
 import { findText, headerBottom } from "./battman-help-layer.js";
 
@@ -117,6 +118,11 @@ function controlAround(el, scope) {
   const pointer = (n) => n && n.nodeType === 1 && n !== scope && within(n, scope) && getComputedStyle(n).cursor === "pointer";
   for (let n = el; n && n !== scope; n = up(n)) {
     if (n.nodeType !== 1) continue;
+    // a field's label beside its box (not around it): the whole field, label and box
+    if (n.localName === "label" && !n.querySelector("input, select, textarea")) {
+      const p = n.parentElement;
+      if (p && p !== scope && p.querySelectorAll("input, select, textarea").length === 1) return p;
+    }
     if (n.matches(PRESSABLE) || n.hasAttribute("data-a")) return n;
     // the hand cursor is inherited, so a label inside a button has it too: take the outermost element that has it,
     // which is the one that sets it (the whole button, the whole row)
@@ -195,10 +201,20 @@ function go(i, dir = 1) {
   t.landed = false;
   t.lensEl = null;
   t.pressed = false;
+  t.finished = false;
   t.popupsAtStart = anyPopups().length;
   t.popupSince = 0;
   if (!t.step.popup) navigate(`/${t.dash}/${t.step.view}`);
   draw("finding");
+}
+
+// the step happened: on to the next, or, on the last step, stay on it to show it's done (the person presses Done)
+function next() {
+  const t = tour;
+  if (t.i < t.steps.length - 1) return go(t.i + 1);
+  t.finished = true;
+  t.root.querySelector(".ring").classList.remove("beckon");
+  draw("done");
 }
 
 // what the current step points at now: {lens, scope, card} or null
@@ -254,7 +270,13 @@ function tick() {
   const s = t.step;
   const at = locate(s);
   const why = t.landed && done(s, at);
-  if (why) { t.ended = why; return go(t.i + 1); }
+  if (t.finished) {                // the last step is done: it stays to say so, in the popup still open or the page
+    const top = openPopups().pop() || document.body;
+    if (t.host.parentNode !== top) top.appendChild(t.host);
+    if (t.lensEl && !t.lensEl.isConnected) t.root.querySelector(".ring").hidden = true;
+    return;
+  }
+  if (why) { t.ended = why; return next(); }
   // its popup isn't open: if the step before ended without opening one (the question only comes sometimes), this
   // step is skipped; otherwise the person closed it, so back to the step that opens it
   if (s.popup && !(at && at.scope)) {
@@ -267,6 +289,7 @@ function tick() {
   // the stage lives in the open popup, or the page can't be pressed through to it
   const top = openPopups().pop() || document.body;
   if (t.host.parentNode !== top) top.appendChild(t.host);
+  t.host.dataset.at = !at ? "no-scope" : !at.lens ? "no-target" : shown(at.lens) ? "shown" : "hidden";   // what it sees (for checks)
   if (!at || !at.lens) { if (t.landed || !t.extra) draw("finding"); return; }
   // folded away: a step of its own, to open it first
   if (!shown(at.lens)) {
@@ -297,7 +320,7 @@ function land(el, card, folding) {
   t.onPress = folding ? null : () => {
     if (tour && tour.step === step && !tour.pressed && u.split("|").includes("press")) {
       tour.pressed = true;
-      setTimeout(() => { if (tour && tour.step === step) { tour.ended = "press"; go(tour.i + 1); } }, 150);
+      setTimeout(() => { if (tour && tour.step === step) { tour.ended = "press"; next(); } }, 150);
     }
   };
   if (t.onPress) { el.addEventListener("click", t.onPress, true); el.addEventListener("pointerup", t.onPress, true); }
@@ -324,15 +347,16 @@ function draw(state) {
   const w = t.root.querySelector(".words");
   const say = state === "fold" ? `Open ${t.extra && t.extra.head ? t.extra.head.textContent.replace(/\s+/g, " ").trim().split(" ").slice(0, 4).join(" ") : "this section"}` : s.say;
   const body = state === "fold" ? "It's folded. Tap its heading to open it." : s.body;
-  const fwd = String(s.until || "").split("|").includes("next") && state !== "fold";
+  const fwd = (String(s.until || "").split("|").includes("next") || state === "done") && state !== "fold";
   const key = `${t.i}|${state}`;
   if (t.last === key) return;
   t.last = key;
   w.classList.remove("in");
   w.innerHTML = `<div class="meta">Step ${t.i + 1} of ${n} · ${esc(t.title)}</div><div class="say">${esc(say)}</div><p class="body">${esc(body)}</p>`
     + (state === "finding" ? `<p class="note">Finding it… If it doesn't show, it may not be on this screen.</p>` : "")
+    + (state === "done" ? `<p class="note done">That's it.</p>` : "")
     + `<div class="nav"><button data-act="back" ${t.i ? "" : "disabled"}>Back</button><span class="sp"></span>`
-    + `<button data-act="stop">${last ? "Done" : "Stop"}</button>${fwd ? `<button data-act="next" class="fwd">${last ? "Done" : "Next"}</button>` : ""}</div>`;
+    + (last && fwd ? "" : `<button data-act="stop">Stop</button>`) + (fwd ? `<button data-act="next" class="fwd">${last ? "Done" : "Next"}</button>` : "") + `</div>`;
   if (state === "finding") {
     t.root.querySelector(".ring").hidden = true;
     t.lensEl = null;
@@ -362,6 +386,9 @@ function place() {
   }
   const set = (el, x, y, ww, hh) => Object.assign(el.style, { left: `${x}px`, top: `${y}px`, width: `${Math.max(0, ww)}px`, height: `${Math.max(0, hh)}px` });
   const [f1, f2, f3, f4] = R.querySelectorAll(".frost");
+  // done, and what it pointed at has gone (the popup closed): no frost, so the outcome shows
+  const clear = t.finished && !L.w;
+  for (const f of [f1, f2, f3, f4]) f.hidden = clear;
   set(f1, 0, 0, vw, L.y);                                  // above
   set(f2, 0, L.y + L.h, vw, vh - L.y - L.h);               // below
   set(f3, 0, L.y, L.x, L.h);                               // left
@@ -404,6 +431,7 @@ function onPageClick(e) {
   if (!t || t.paused || !e.isTrusted) return;
   const path = e.composedPath ? e.composedPath() : [];
   if (path.includes(t.host)) return;
+  if (t.finished) return stopTour();     // done: a click anywhere else just ends it
   if (t.lensEl && path.includes(t.lensEl)) return;
   const s = t.step;
   if (s.popup && path.some((n) => n.localName === "dialog" && n.open)) return;

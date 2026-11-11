@@ -1,6 +1,6 @@
 # How do I…?
 
-Pick what you want to do. Each task gives the steps and the cards you'll use. In the Help view, **Show me** walks you through it on your own dashboard: it opens the view, points at what to press, and says what happens.
+Pick what you want to do. Each task gives the steps and the cards you'll use. In the Help view, **Show me** walks you through it on your own dashboard: it opens the view, rings each thing to press, and moves on when you press it, into popups too. It never presses anything for you. Tap somewhere else to pause it, and **Back to the walkthrough** to carry on; **Stop** or Esc ends it.
 
 <!-- guide:howto -->
 

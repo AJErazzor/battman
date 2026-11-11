@@ -926,9 +926,11 @@ def test_show_me_tour_in_a_browser(tmp_path) -> None:
         assert o["paused"] and o["resumed"]["say"] == "Tap Curtail" and not o["resumed"]["paused"]   # click off pauses
         assert o["s3"]["say"] == "Press Turn on" and o["s3"]["inDialog"] and o["s3"]["ring"] == pad(o["on"])   # into the popup
         assert o["s4fold"]["say"] == "Open Billing" and o["s4fold"]["ring"] == pad(o["head"])   # folded: open it first
-        assert o["s4"]["say"] == "Tap the charge" and o["s4"]["ring"] == pad(o["fee"])
+        assert o["s4"]["say"] == "Tap the charge" and o["s4"]["ring"] == pad(o["fee"]) and o["s4"]["buttons"] == ["Back", "Stop"]
+        assert o["s4done"]["done"] and o["s4done"]["ring"] == pad(o["fee"]) and not o["s4done"]["beckon"]   # done: it stays
+        assert o["s4done"]["buttons"] == ["Back", "Done"]                         # one Done, no Stop
         assert o["back"]["say"] == "Tap Curtail"                                  # Back to a popup step that isn't open: its opener
-        assert o["afterEsc"] is False and o["clicks"] == ["curtail", "on"]        # it never pressed anything itself
+        assert o["afterEsc"] is False and o["clicks"] == ["curtail", "on", "fee"]   # only the person's presses
         w, ring = o["s2"]["words"], o["s2"]["ring"]
         assert w[2] <= o["vw"] - 12 and (w[0] >= ring[2] or w[2] <= ring[0] or w[1] >= ring[3] or w[3] <= ring[1])  # beside it, not over it
 

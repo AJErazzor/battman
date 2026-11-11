@@ -2,7 +2,8 @@
 // (whose label is inside a span: the ring must take the whole button), a button that opens a modal "Turn Curtail?"
 // popup (a native <dialog>, like Battman's), and a folded ("collapsed") section holding a setting. The walkthrough:
 //   1. the whole card (until next)        2. Curtail (until popup: pressing it opens the popup)
-//   3. Turn on, inside the popup (until closed)    4. the folded setting (Show me asks to open the section first, until press)
+//   3. Turn on, inside the popup (until closed)    4. the folded setting (Show me asks to open the section first, until press;
+//      the last step: once pressed it stays, says "That's it." and waits for Done)
 // The check also clicks off (pauses), resumes, goes Back, and presses Escape. Desktop and phone. Prints one JSON line.
 //
 // node tour_check.mjs <custom_components/battman>
@@ -85,7 +86,7 @@ try {
     const look = () => page.evaluate(`(() => { const t = ${T}; if (!t) return null; const r = t.shadowRoot; const q = (s) => r.querySelector(s);
       const box = (e) => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
       return { meta: q('.meta').textContent, say: q('.say').textContent, ring: q('.ring').hidden ? null : box(q('.ring')), beckon: q('.ring').classList.contains('beckon'),
-        words: box(q('.words')), inDialog: !!t.closest('dialog'), paused: !q('.pill').hidden, next: !!q('button[data-act=next]'),
+        words: box(q('.words')), done: !!q('.note.done'), buttons: [...r.querySelectorAll('.nav button')].map((b) => b.textContent), inDialog: !!t.closest('dialog'), paused: !q('.pill').hidden, next: !!q('button[data-act=next]'),
         frost: getComputedStyle(q('.frost')).backdropFilter || getComputedStyle(q('.frost')).webkitBackdropFilter }; })()`);
     const el = (sel) => page.evaluate((s) => { const r = document.querySelector("battman-fakecard").shadowRoot; const e = r.querySelector(s) || document.querySelector(s); const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; }, sel);
     const centre = (b) => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
@@ -119,6 +120,10 @@ try {
     await settle(900);
     o.fee = await el("#fee");
     o.s4 = await look();
+    // the person presses it: the last step stays, says it's done, and waits for Done
+    await page.mouse.click(...centre(o.fee));
+    await settle(900);
+    o.s4done = await look();
     // Back goes to the step before
     await page.evaluate(`${T}.shadowRoot.querySelector('button[data-act=back]').click()`);
     await settle(1800);
