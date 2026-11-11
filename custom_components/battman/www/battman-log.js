@@ -24,7 +24,8 @@
 
 import { centsText, logValuesAt, modeLengthText, nearestLogLine, percentText } from "./battman-mode-history-data.js";
 import { describe, group, money, split } from "./battman-forecast-core.js";
-import { AMBER, BATTMAN_SENSORS, BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, esc, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { AMBER, BATTMAN_SENSORS, BattmanCardBase, FILES, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, esc, inCardPicker, loadChartJs, missingEntities, missingThemeVars } from "./battman-card-base.js";
+import { helpRegister } from "./battman-help-layer.js";
 
 const LOG_EVENT = "battman_engine_log";
 
@@ -1481,6 +1482,19 @@ class BattmanLogCard extends BattmanCardBase {
 
   getCardSize() {
     return 12;
+  }
+
+  // the "?" help on this view (battman-help-layer.js): one for each section, clear of its drag handle
+  connectedCallback() {
+    super.connectedCallback();
+    if (this._unhelp || inCardPicker(this)) return;
+    this._unhelp = ["controls", "log", "mode", "price", "power", "grid", "soc", "solar"].map((id) =>
+      helpRegister("log." + id, () => this.shadowRoot && this.shadowRoot.querySelector(`[data-block="${id}"]`), { inset: 40 }));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._unhelp) { this._unhelp.forEach((off) => off()); this._unhelp = null; }
   }
 
   run(root) {

@@ -12,7 +12,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const WWW = path.join(process.argv[2], "www");
-const GUIDE = JSON.parse(process.env.GUIDE_JSON);          // {pages: {id: markdown}}
+const GUIDE = JSON.parse(fs.readFileSync(process.env.GUIDE_FILE, "utf8"));          // {pages: {id: markdown}}
 const CARDS = JSON.parse(process.env.HELP_CARDS);          // [summary id ("power.house"), another, ...]
 
 const HTML = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

@@ -11,7 +11,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const WWW = path.join(process.argv[2], "www");
-const GUIDE = JSON.parse(process.env.GUIDE_JSON);          // {pages: {id: markdown}}
+const GUIDE = JSON.parse(fs.readFileSync(process.env.GUIDE_FILE, "utf8"));          // {pages: {id: markdown}}
 const PAGE_ID = process.env.HELP_PAGE;                       // the guide page the tags point at
 const IDS = JSON.parse(process.env.HELP_IDS);                // [section summary id, sub-group summary id]
 
