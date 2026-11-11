@@ -133,7 +133,8 @@ function foldAround(el, scope) {
   for (let n = up(el); n && n !== scope; n = up(n)) {
     if (n.nodeType !== 1) continue;
     if (n.localName === "details" && !n.open) return [n, n.querySelector("summary") || n];
-    if (n.classList && n.classList.contains("folded")) return [n, n.querySelector(".head, .hd, header, summary, [data-fold]") || n.firstElementChild || n];
+    if (n.classList && (n.classList.contains("folded") || n.classList.contains("collapsed")))
+      return [n, n.querySelector(".head, .hd, .title, header, summary, [data-fold]") || n.firstElementChild || n];
   }
   return null;
 }
@@ -207,7 +208,8 @@ function locate(s) {
     scope = popupWith(s.popup);
   } else {
     if (window.location.pathname !== `/${tour.dash}/${s.view}`) return null;
-    const c = deepAll(document, (el) => el.localName === s.card)[0];
+    const cs = deepAll(document, (el) => el.localName === s.card);
+    const c = cs.find(shown) || cs[0];
     card = c && boxOf(c);
     scope = card;
   }
@@ -240,7 +242,8 @@ function doneOne(s, at, u) {
     const h = hass();
     return !!(h && h.states[e] && same(h.states[e].state, v));
   }
-  if (u === "open") return !!(at && at.lens && shown(at.lens));
+  // the section the target heads (or sits in) is open: nothing folded around it
+  if (u === "open") return !!(at && at.lens && shown(at.lens) && !foldAround(at.lens, at.scope));
   return false;    // press: the click handler; next: the button
 }
 
@@ -397,7 +400,8 @@ function onOwnClick(e) {
 // a click on the page: on the ringed control (or inside the step's popup) carries on; anywhere else pauses
 function onPageClick(e) {
   const t = tour;
-  if (!t || t.paused) return;
+  // only the person's own clicks: a card's code clicking something itself (the haptic switch) isn't clicking off
+  if (!t || t.paused || !e.isTrusted) return;
   const path = e.composedPath ? e.composedPath() : [];
   if (path.includes(t.host)) return;
   if (t.lensEl && path.includes(t.lensEl)) return;

@@ -1,6 +1,6 @@
 // "Show me" (www/battman-tour.js) in a real browser, on a stand-in dashboard view. The stand-in card has a mode button
 // (whose label is inside a span: the ring must take the whole button), a button that opens a modal "Turn Curtail?"
-// popup (a native <dialog>, like Battman's), and a folded section holding a setting. The walkthrough:
+// popup (a native <dialog>, like Battman's), and a folded ("collapsed") section holding a setting. The walkthrough:
 //   1. the whole card (until next)        2. Curtail (until popup: pressing it opens the popup)
 //   3. Turn on, inside the popup (until closed)    4. the folded setting (Show me asks to open the section first, until press)
 // The check also clicks off (pauses), resumes, goes Back, and presses Escape. Desktop and phone. Prints one JSON line.
@@ -23,9 +23,9 @@ customElements.define("battman-fakecard", class extends HTMLElement {
   connectedCallback() {
     const r = this.attachShadow({ mode: "open" });
     r.innerHTML = '<style>:host{display:block;margin:0 auto;width:320px;padding:12px;border:1px solid #888;--battman-sky:#123456}'
-      + 'button{margin:4px;padding:10px 16px;border-radius:8px}.sec.folded .body{display:none}.head{cursor:pointer;padding:6px;border:1px solid #ccc}</style>'
-      + '<button id="mode"><span>Self Consume</span></button><button id="c"><span>Curtail</span></button>'
-      + '<div class="sec folded"><div class="head" id="head">Billing</div><div class="body"><button id="fee">Daily network charge</button></div></div>';
+      + 'button{margin:4px;padding:10px 16px;border-radius:8px}.sec.collapsed .body{display:none}.title{cursor:pointer;padding:6px;border:1px solid #ccc}</style>'
+      + '<input type="checkbox" id="haptic" hidden><button id="mode"><span>Self Consume</span></button><button id="c"><span>Curtail</span></button>'
+      + '<div class="sec collapsed"><div class="title" id="head">Billing</div><div class="body"><button id="fee">Daily network charge</button></div></div>';
     window.__clicks = [];
     r.getElementById("c").addEventListener("click", () => {
       window.__clicks.push("curtail");
@@ -36,7 +36,8 @@ customElements.define("battman-fakecard", class extends HTMLElement {
       d.querySelector("#on").addEventListener("click", () => { window.__clicks.push("on"); d.close(); d.remove(); });
       d.querySelector("#cancel").addEventListener("click", () => { d.close(); d.remove(); });
     });
-    r.getElementById("head").addEventListener("click", () => r.querySelector(".sec").classList.remove("folded"));
+    // like the Log card: opening the section also clicks a hidden switch (haptic feedback), which isn't the person clicking off
+    r.getElementById("head").addEventListener("click", () => { r.getElementById("haptic").click(); r.querySelector(".sec").classList.remove("collapsed"); });
     r.getElementById("fee").addEventListener("click", () => window.__clicks.push("fee"));
   }
 });
