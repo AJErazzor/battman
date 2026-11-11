@@ -343,7 +343,7 @@ More: [Dashboard theme](../intermediate/settings.md#dashboard-theme), [Themes](.
 <!-- guide:task where="Theme · Theme Studio" uses="theme-palette.png theme-harmonic.png" -->
 
 1. Open the **Theme** view and pick the theme to start from in the picker at the top.
-   <!-- guide:show view="theme" card="battman-theme-studio" until="next" say="Pick a theme to start from" -->
+   <!-- guide:show view="theme" card="battman-theme-studio" target="id:themeSel" until="next" say="Pick a theme to start from" -->
 2. Under **Palette**, tap a slot's swatch or type a colour in its hex box. Its shades are made again from it.
    <!-- guide:show view="theme" card="battman-theme-studio" target="red" until="press" say="Change a Palette colour" -->
 3. Or, under **Harmonic palette generator**, pick a **Seed colour**.

@@ -902,6 +902,9 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
             if s.get("text", "").startswith("icon:"):                     # an icon-only control: the icon is named in the card
                 assert s["text"][5:] in src, (anchor, s["text"])
                 s["text"] = ""
+            if s.get("text", "").startswith("id:"):                       # a control with no text of its own (a picker): its id
+                assert f'id="{s["text"][3:]}"' in src, (anchor, s["text"])
+                s["text"] = ""
             if s.get("text") and not s.get("popup") and not re.fullmatch(r"(1[0-2]|[1-9])(am|pm)|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec", s["text"]):
                 assert s["text"].lower() in src.replace("&amp;", "&").lower(), (anchor, s["text"], "the card doesn't show this text")
             assert len(s.get("say", "")) <= 40, (anchor, s.get("say"))

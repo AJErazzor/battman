@@ -97,6 +97,12 @@ function findShown(scope, text) {
     if (scope.shadowRoot) hits.push(...deepAll(scope, (el) => (el.getAttribute && el.getAttribute("icon") === icon) || el.icon === icon));
     return hits.find(shown) || hits[0] || null;
   }
+  // a control with no text of its own (the Theme view's theme picker): target="id:themeSel"
+  if (/^id:/.test(text)) {
+    const id = text.slice(3);
+    const hits = deepAll(scope.shadowRoot || scope, (el) => el.id === id);
+    return hits.find(shown) || hits[0] || null;
+  }
   const want = String(text).trim().toLowerCase();
   const hits = deepAll(scope.shadowRoot || scope, (el) => el.textContent.trim().toLowerCase() === want
     && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want));
@@ -119,10 +125,7 @@ function controlAround(el, scope) {
   for (let n = el; n && n !== scope; n = up(n)) {
     if (n.nodeType !== 1) continue;
     // a field's label beside its box (not around it): the whole field, label and box
-    if (n.localName === "label" && !n.querySelector("input, select, textarea")) {
-      const p = n.parentElement;
-      if (p && p !== scope && p.querySelectorAll("input, select, textarea").length === 1) return p;
-    }
+    if (n.localName === "label" && !n.querySelector(FIELD)) { const f = fieldAround(n, scope); if (f) return f; }
     if (n.matches(PRESSABLE) || n.hasAttribute("data-a")) return n;
     // the hand cursor is inherited, so a label inside a button has it too: take the outermost element that has it,
     // which is the one that sets it (the whole button, the whole row)
@@ -132,7 +135,20 @@ function controlAround(el, scope) {
       return top;
     }
   }
-  return el;
+  // a setting's name (Settings' rows: the name, then its box): the whole row, name and box
+  return fieldAround(el, scope) || el;
+}
+// the nearest box (up to three levels up) that holds exactly one field: a label and its box, a setting's row
+const FIELD = "input:not([type=hidden]), select, textarea";
+function fieldAround(el, scope) {
+  let n = up(el);
+  for (let k = 0; n && n !== scope && k < 3; k++, n = up(n)) {
+    if (n.nodeType !== 1) continue;
+    const f = [...n.querySelectorAll(FIELD)].filter(shown);
+    if (f.length === 1) return n;
+    if (f.length > 1) return null;
+  }
+  return null;
 }
 // a folded box around el (Settings sections, Log's sections, <details>): [the box, its header to press]
 function foldAround(el, scope) {
@@ -273,7 +289,8 @@ function tick() {
   if (t.finished) {                // the last step is done: it stays to say so, in the popup still open or the page
     const top = openPopups().pop() || document.body;
     if (t.host.parentNode !== top) top.appendChild(t.host);
-    if (t.lensEl && !t.lensEl.isConnected) t.root.querySelector(".ring").hidden = true;
+    // what it pointed at has gone (the popup closed): the card the popup came from, where the outcome shows
+    if (!(t.lensEl && t.lensEl.isConnected && shown(t.lensEl)) && t.homeCard && t.homeCard.isConnected) t.lensEl = t.homeCard;
     return;
   }
   if (why) { t.ended = why; return next(); }
@@ -291,6 +308,7 @@ function tick() {
   if (t.host.parentNode !== top) top.appendChild(t.host);
   t.host.dataset.at = !at ? "no-scope" : !at.lens ? "no-target" : shown(at.lens) ? "shown" : "hidden";   // what it sees (for checks)
   if (!at || !at.lens) { if (t.landed || !t.extra) draw("finding"); return; }
+  if (!s.popup && at.card) t.homeCard = at.card;     // the card on the page the walkthrough is working with
   // folded away: a step of its own, to open it first
   if (!shown(at.lens)) {
     const f = foldAround(at.lens, at.scope);
@@ -312,6 +330,7 @@ function land(el, card, folding) {
   const t = tour;
   if (t.lensEl && t.onPress) { t.lensEl.removeEventListener("click", t.onPress, true); t.lensEl.removeEventListener("pointerup", t.onPress, true); }
   t.lensEl = el;
+  t.host.dataset.lens = (el.textContent || el.localName).replace(/\s+/g, " ").trim().slice(0, 40);   // what it rings (for checks)
   t.card = card;
   t.landed = true;
   copyTheme(card || el);
@@ -381,14 +400,15 @@ function place() {
     const r = rectOf(t.lensEl);
     const radius = parseFloat(getComputedStyle(t.lensEl).borderTopLeftRadius) || 8;
     L = { x: r.left - PAD, y: r.top - PAD, w: r.width + PAD * 2, h: r.height + PAD * 2, r: radius + 4 };
+    // keep the ring on screen: a control at the edge gets its padding on the inside
+    const x2 = Math.min(vw - 2, L.x + L.w);
+    L.x = Math.max(2, L.x);
+    L.w = Math.max(0, x2 - L.x);
   } else {
     L = { x: vw / 2, y: vh / 2, w: 0, h: 0, r: 0 };
   }
   const set = (el, x, y, ww, hh) => Object.assign(el.style, { left: `${x}px`, top: `${y}px`, width: `${Math.max(0, ww)}px`, height: `${Math.max(0, hh)}px` });
   const [f1, f2, f3, f4] = R.querySelectorAll(".frost");
-  // done, and what it pointed at has gone (the popup closed): no frost, so the outcome shows
-  const clear = t.finished && !L.w;
-  for (const f of [f1, f2, f3, f4]) f.hidden = clear;
   set(f1, 0, 0, vw, L.y);                                  // above
   set(f2, 0, L.y + L.h, vw, vh - L.y - L.h);               // below
   set(f3, 0, L.y, L.x, L.h);                               // left
