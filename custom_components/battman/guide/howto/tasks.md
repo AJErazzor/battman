@@ -131,11 +131,11 @@ While **Active** is on, the engine sets the mode and **Curtail** each time it ru
    <!-- guide:show view="power" card="battman-batterymode" text="Active" say="Tap Active" -->
 3. Tap the mode you want, such as **Sell**, **Buy** or **Self Consume**, and use **Curtail** as you need. They stay as you set them: the engine and the watchdog don't run, and overrides don't clear.
 4. When you want Battman to run the battery again, tap **Active**. It says "Battman will control the battery again." Press **Turn on**.
-5. On the **Settings** view, press **Run engine now** so the engine picks the mode straight away. Otherwise it runs when the price or a setting next changes.
-   <!-- guide:show view="settings" card="battman-settings" text="Run engine now" say="Press Run engine now" -->
+5. On the **Settings** view, press **Run engine** so the engine picks the mode straight away. Otherwise it runs when the price or a setting next changes.
+   <!-- guide:show view="settings" card="battman-settings" text="Run engine" say="Press Run engine" -->
 
 > [!NOTE]
-> If the engine last ran longer ago than the **Script not run limit**, the watchdog sets Self Consume and turns Curtail on within a minute of Active going on, until the engine runs. **Run engine now** also runs the engine while Active is off, and sets the mode.
+> If the engine last ran longer ago than the **Script not run limit**, the watchdog sets Self Consume and turns Curtail on within a minute of Active going on, until the engine runs. **Run engine** also runs the engine while Active is off, and sets the mode.
 
 More: [Active, Curtail and the engine log](../intermediate/power.md#batterymode) · [Watchdog](../intermediate/settings.md#watchdog)
 

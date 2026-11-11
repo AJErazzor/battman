@@ -86,6 +86,8 @@ class BattmanSettingsCard extends BattmanCardBase {
   button.rst { background: var(--battman-green-soft-bg); border: 1px solid var(--battman-border-neutral); border-radius: 8px;
                color: var(--battman-text-muted); font-size: 12px; padding: 4px 10px; cursor: pointer; flex: none; }
   button.rst:hover { border-color: var(--battman-green); color: var(--battman-green); }
+  /* a narrow phone: a little less padding, so Run engine, Help, Collapse all and Show all stay on one row */
+  @media (max-width: 400px) { button.rst { padding: 4px 7px; } }
   .hpick { display: flex; align-items: center; gap: 4px; flex: none; }
   .hbtn { width: 40px; height: 40px; background: var(--battman-surface-popup); border: 1px solid var(--battman-border-neutral);
           border-radius: 8px; color: var(--battman-text-muted); font-size: 18px; cursor: pointer; }
@@ -156,7 +158,8 @@ class BattmanSettingsCard extends BattmanCardBase {
   button.helpbtn[hidden] { display: none; }
   button.helpbtn .qtag { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 17px;
     border-radius: 5px; border: 1px solid currentColor; font-weight: 800; font-size: 11px; line-height: 1; }
-  button.helpbtn[aria-pressed="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); }
+  /* on: Self Consume's on look (Battman's "this is on"); off it stays the bar's subtle green */
+  button.helpbtn[aria-pressed="true"] { background: var(--battman-blue-soft-bg, rgba(127, 127, 127, 0.14)); color: var(--battman-blue, var(--primary-color)); border-color: var(--battman-blue-border-strong, var(--battman-blue, var(--primary-color))); }
   button.helpbtn:focus:not(:focus-visible) { outline: none; }
   button.helpbtn:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
   .helpmode .gright .bh-tag { margin-right: 4px; }
@@ -166,7 +169,7 @@ class BattmanSettingsCard extends BattmanCardBase {
 `;
   static html = `<ha-card><div class="frame"><div class="page">
 <h2 class="hdr"><img src="${FILES}/images/battman-wrench.webp" alt="Battman" class="who"><img src="${FILES}/images/settings-line.webp" alt="Settings" class="word">${VERSION ? `<span class="ver">Battman v${VERSION}</span>` : ''}</h2>
-<div class="bar"><span class="barl"><button class="rst" data-runengine="1">Run engine now</button><span class="runmsg" id="runmsg"></span></span><span class="barr"><span class="runmsg" id="helpmsg" role="status"></span><button class="rst helpbtn" data-helpmode aria-pressed="false" hidden><span class="qtag" aria-hidden="true">?</span>Help</button><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></span></div>
+<div class="bar"><span class="barl"><button class="rst" data-runengine="1">Run engine</button><span class="runmsg" id="runmsg"></span></span><span class="barr"><span class="runmsg" id="helpmsg" role="status"></span><button class="rst helpbtn" data-helpmode aria-pressed="false" hidden><span class="qtag" aria-hidden="true">?</span>Help</button><button class="rst" data-foldall="1">Collapse all</button><button class="rst" data-foldall="0">Show all</button></span></div>
 <div class="cols" id="cols"><div class="col" data-col="0"></div><div class="col" data-col="1"></div></div>
 </div></div></ha-card>`;
 

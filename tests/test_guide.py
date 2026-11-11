@@ -902,14 +902,16 @@ def test_show_me_tour_in_a_browser(tmp_path) -> None:
 
 
 def test_help_controls_are_outlined_never_solid_or_dashed() -> None:
-    """Help buttons and tags: an outline with a tint when on; no solid fills, no dashed or dotted outlines."""
+    """Help buttons and tags: an outline with a tint when on (the Help buttons use Self Consume's on look); no solid
+    fills, no dashed or dotted outlines."""
     panel = (WWW / "battman-help-panel.js").read_text()
     tags = panel[panel.index(".bh-tag {"):panel.index(".helpmode .bh-tag")]
     assert "dashed" not in tags and "dotted" not in tags
     for f in ("battman-help-layer.js", "battman-settings.js", "battman-help-panel.js", "battman-guide-howto.js"):
         css = (WWW / f).read_text()
         for rule in re.findall(r'(?:helpbtn\[aria-pressed="true"\]|bh-tag\[aria-expanded="true"\]|button\.showme|aria-pressed="true"\]) \{([^}]*)\}', css):
-            assert "color-mix" in rule and "var(--card-background-color)" not in rule.split("color:")[0], (f, rule)
+            # a tint: the accent mixed thin, or Self Consume's on look (blue soft background, strong blue border)
+            assert ("color-mix" in rule or "--battman-blue-soft-bg" in rule) and "var(--card-background-color)" not in rule.split("color:")[0], (f, rule)
 
 
 def test_help_view_has_close_and_back_to_top_and_sticky_contents() -> None:
