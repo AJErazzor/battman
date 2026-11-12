@@ -47,7 +47,7 @@ article h2.howto-group .hlink { display: none; }
 .task-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
 .task-acts button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 9px; cursor: pointer; min-height: 38px;
   border: 1px solid var(--g-border); background: transparent; color: var(--g-text); }
-.task-acts button.showme { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); }
+.task-acts button.showme { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 8%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 55%, transparent); }
 @media (max-width: 600px) { .task-b { padding-left: 16px; } .task-where { display: none; } }
 `;
 

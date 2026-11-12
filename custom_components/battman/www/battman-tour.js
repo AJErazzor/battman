@@ -504,6 +504,11 @@ function place() {
   } else for (const b of [cur.L, cur.C]) if (b && b.w > 0 && b.h > 0) holes.push(b);
   const clip = holes.length ? `path(evenodd, "M0 0H${vw}V${vh}H0Z ${holes.map(roundRect).join(" ")}")` : "none";
   const fade = (reach) => `radial-gradient(circle at ${r1(cur.F.x)}px ${r1(cur.F.y)}px, #000 0, #000 ${r1(cur.F.r)}px, transparent ${r1(cur.F.r + reach)}px)`;
+  // the blur layers take their holes from a mask, not clip-path: a clip-path switches the fade-out mask off (Chromium).
+  // The fade (or, on a phone, the whole screen), less the holes drawn as one picture.
+  const holeImg = holes.length
+    ? `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${vw}" height="${vh}"><path d="${holes.map(roundRect).join(" ")}"/></svg>`)}")`
+    : "";
   // (a style is written only when it changes: repainting the blur every frame would keep the page busy)
   const put = (el, prop, v) => { const k = `_${prop}`; if (el[k] !== v) { el[k] = v; el.style.setProperty(prop, v); } };
   R.querySelectorAll(".layer").forEach((el, i) => {
@@ -511,12 +516,18 @@ function place() {
     if (el.hidden === on) el.hidden = !on;
     if (!on) return;
     const blur = `blur(${phone ? PHONE_BLUR : BLURS[i]}px)`;
-    const mask = phone ? "none" : fade(REACH[i]);
+    const base = phone ? "linear-gradient(#000, #000)" : fade(REACH[i]);
+    const mask = holeImg ? `${base}, ${holeImg}` : base;
     put(el, "backdrop-filter", blur);
     put(el, "-webkit-backdrop-filter", blur);
     put(el, "mask-image", mask);
     put(el, "-webkit-mask-image", mask);
-    put(el, "clip-path", clip);
+    put(el, "mask-size", "100% 100%");
+    put(el, "-webkit-mask-size", "100% 100%");
+    put(el, "mask-repeat", "no-repeat");
+    put(el, "-webkit-mask-repeat", "no-repeat");
+    put(el, "mask-composite", "subtract, add");
+    put(el, "-webkit-mask-composite", "source-out, source-over");
   });
   const tint = R.querySelector(".tint");
   put(tint, "clip-path", clip);
