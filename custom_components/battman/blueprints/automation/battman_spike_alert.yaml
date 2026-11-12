@@ -1,0 +1,81 @@
+# Battman blueprint. [[map:...]] markers are filled from Battman's entity map.
+
+blueprint:
+  name: Battman Spike alert
+  author: Battman
+  description: >-
+    Sends a notification, with a sound, when the feed-in price goes above the limit you set.
+
+
+    It is independent of the Live Activity and of the car: the spike alert switch is the only thing
+    that turns it on, and it goes to the notify target. Battman creates this automation for you;
+    settings are on the Battman dashboard (Settings → Notifications). Installed and updated by the
+    Battman integration.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    feed_in_price:
+      name: Feed-in price ($/kWh)
+      default: sensor.amber_5min_current_feed_in_price
+      selector:
+        entity:
+          domain: sensor
+    buy_price:
+      name: Buy price ($/kWh)
+      default: sensor.amber_5min_current_general_price
+      selector:
+        entity:
+          domain: sensor
+    battery_soc:
+      name: Battery state of charge
+      default: sensor.sigen_plant_battery_state_of_charge
+      selector:
+        entity:
+          domain: sensor
+    settings:
+      name: Battman settings
+      description: The sensor holding Battman's settings (the alert ones among them).
+      default: [[map:parameters]]
+      selector:
+        entity:
+          domain: sensor
+
+mode: single
+
+trigger_variables:
+  feed_in_price: !input feed_in_price
+  settings: !input settings
+
+triggers:
+  # the alert is on and the feed-in price goes above its setting (liveActivitySpikeAlert, $/kWh);
+  # an unavailable price or a missing setting is no spike
+  - trigger: template
+    value_template: >-
+      {% set limit = state_attr(settings, 'liveActivitySpikeAlert') %}
+      {{ state_attr(settings, 'liveActivitySpikeAlertOn') | bool(false)
+         and has_value(feed_in_price) and limit is number and states(feed_in_price) | float > limit }}
+
+conditions:
+  - condition: template
+    value_template: "{{ state_attr(settings, 'liveActivitySpikeAlertOn') | bool(false) }}"
+  - condition: template
+    value_template: "{{ (state_attr(settings, 'alertNotifyTarget') or '') | trim | length > 0 }}"
+
+variables:
+  settings: !input settings
+  fit_e: !input feed_in_price
+  buy_e: !input buy_price
+  soc_e: !input battery_soc
+
+actions:
+  - action: "notify.{{ state_attr(settings, 'alertNotifyTarget') | trim }}"
+    data:
+      title: "⚡ Feed-in spike {{ (states(fit_e) | float(0) * 100) | round(1) }}c"
+      message: >-
+        {{ 'Battery ' ~ (states(soc_e) | float | round(0) | int) ~ '% · ' if states(soc_e) | is_number else '' }}Buy {{ (states(buy_e) | float(0) * 100) | round(1) }}c
+      data:
+        push:
+          sound: default
+          interruption-level: time-sensitive
+        tag: battman_spike

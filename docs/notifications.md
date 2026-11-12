@@ -8,8 +8,8 @@
 | Notify target | `alertNotifyTarget` | Off |
 | Cheap-price alert | `amberBuyAlert`; fires when the buy price is below `amberBuyAlertThreshold` (c/kWh) | off, 8 |
 | Negative-price alert | `amberNegativeBuyAlert` | off |
-| Live Activity | `liveActivity` (see [live-activity.md](live-activity.md)) | off |
-| Spike alert | `liveActivitySpikeAlertOn`, above `liveActivitySpikeAlert` ($/kWh) | off |
+| Live Activity | `liveActivityEnabled` is the master setting; `liveActivity` is whether it is showing (see [live-activity.md](live-activity.md)) | on, off |
+| Spike alert | `liveActivitySpikeAlertOn`, above `liveActivitySpikeAlert` ($/kWh); a plain push, independent of the Live Activity and the car | off, 0.30 |
 | Off-grid alert | `offGridAlert`, after `offGridAlertDelay` minutes (0–30) | off, 1 |
 | Grid-restored alert | `offGridRestoredAlert` | off |
 
@@ -27,7 +27,7 @@ Battman writes them to `automations.yaml` from its blueprints, once, on the firs
 that has them (so a release's new ones arrive by themselves, and one you delete stays deleted):
 
 `battman_amber_buy_alert`, `battman_amber_negative_alert`, `battman_amber_charge_action`,
-`battman_offgrid_alert`, and the three Live Activity ones with their script.
+`battman_offgrid_alert`, `battman_spike_alert`, and the three Live Activity ones with their script.
 
 They're yours to edit (Battman never overwrites one that exists). **Create automations** (a button on
 the Battman device, or the action `battman.create_automations`) makes any that are missing, engine

@@ -545,13 +545,14 @@ class BattmanSettingsCard extends BattmanCardBase {
         + '<div class="subdiv">Negative price</div>'
         + sw('amberNegativeBuyAlert', 'Negative-price alert', "Push when you're paid to import")
         + '<div class="subdiv">Live Activity</div>'
-        + row('Live Activity', "Your battery on the phone's lock screen", swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
+        + row('Live Activity', "Your battery on the phone's lock screen. Off: it never starts, even when the car turns on", swHtml('data-pswitch="liveActivityEnabled"', p.liveActivityEnabled !== false))
+        + row('Showing now', 'Switch it on or off by hand', swHtml('data-la-switch', h.states[LA.sw].state === 'on'))
         + row('Follow entity', followNow, followCtl, f && !fe ? '⚠ ' + esc(f) + ' not found' : '') + pickPanel
         + (f ? stateRow('liveActivityFollowOn', 'Show when it becomes', fs.tag)
            + stateRow('liveActivityFollowOff', 'Hide when it becomes', 'And stays that way for the time below')
            + row('Hide after', '', num('liveActivityFollowDelay', 'min')) : '')
         + '<div class="subdiv">Feed-in spike</div>'
-        + sw('liveActivitySpikeAlertOn', 'Spike alert', 'Sound on the Live Activity when feed-in spikes')
+        + sw('liveActivitySpikeAlertOn', 'Spike alert', 'Push with a sound when feed-in spikes (works without the Live Activity)')
         + row('Above', '', num('liveActivitySpikeAlert', '$/kWh'))
         + '<div class="subdiv">Off-grid</div>'
         + sw('offGridAlert', 'Off-grid alert', 'Time-sensitive push, with how long the battery will last')

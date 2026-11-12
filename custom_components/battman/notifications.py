@@ -69,6 +69,7 @@ AUTOMATIONS: list[dict[str, Any]] = [
         ("amber_negative_alert", "Amber – negative price alert"),
         ("amber_charge_action", "Amber – charge from the alert"),
         ("offgrid_alert", "Off-grid alert"),
+        ("spike_alert", "Spike alert"),
     )
 ]
 

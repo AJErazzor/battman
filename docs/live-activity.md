@@ -12,9 +12,11 @@ Nothing to build by hand. On first start Battman creates, from its own blueprint
 | Made by Battman | What it does |
 |---|---|
 | `script.battman_live_activity_push` | Sends or clears the Live Activity on the chosen phone |
-| `automation.battman_live_activity_on_off` | Push when the switch turns on, clear when off, restart every 7 h (iOS ends them after ~8 h), alert on a feed-in spike |
+| `automation.battman_live_activity_on_off` | Push when the switch turns on, clear when off, restart every 7 h (iOS ends them after ~8 h) |
 | `automation.battman_live_activity_updates` | Push when SOC / prices / mode change, at most every 2 min, plus a trailing push |
 | `automation.battman_live_activity_follow` | Flip the switch from another entity (e.g. a car's ignition), if you set one |
+
+The feed-in spike alert is not part of the Live Activity: it is its own automation (`battman_spike_alert`, see [notifications.md](notifications.md)) and works whether or not the Live Activity is showing.
 
 They read their settings from Battman's settings sensor (`sensor.battman_parameters`), like every
 other Battman setting. You set them on the Battman dashboard under **Settings → Notifications**. It goes to the shared notify target (see
@@ -22,12 +24,11 @@ other Battman setting. You set them on the Battman dashboard under **Settings �
 
 | Setting | Where | Default |
 |---|---|---|
-| On/off | `switch.battman_live_activity` (a template switch: its state is `liveActivity`) | off |
+| Enabled | `liveActivityEnabled`: off, and nothing can start it (car follow, switch, dashboard) and a running one is cleared | on |
+| Showing now | `switch.battman_live_activity` (a template switch: its state is `liveActivity`) | off |
 | Follow entity | `liveActivityFollow` (blank = don't follow; picked with Home Assistant's entity picker) | blank |
 | Show / hide states | `liveActivityFollowOn` / `liveActivityFollowOff` (chosen from the entity's own states, or ones it has reported lately) | `ON` / `OFF` |
 | Hide after | `liveActivityFollowDelay` (minutes, 0–60) | 2 |
-| Spike alert | `liveActivitySpikeAlertOn` | off |
-| Spike alert above | `liveActivitySpikeAlert` ($/kWh, 0–20) | 0.30 |
 
 Before v0.26.0 these were separate Battman
 entities; updating carries their values over. Before v0.34.0 the phone was its own setting

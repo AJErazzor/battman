@@ -162,7 +162,8 @@ async def test_end_to_end(hass: HomeAssistant, freezer) -> None:
     hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.15")
     await _settle(hass)
     spikes = [c for c in calls[n:] if c.get("title", "").startswith("⚡")]
-    assert spikes and spikes[0]["data"]["silent"] is False
+    assert len(spikes) == 1 and spikes[0]["title"] == "⚡ Feed-in spike 15.0c"   # a plain push, with a sound
+    assert spikes[0]["data"]["push"]["sound"] == "default" and "live_update" not in spikes[0]["data"]
 
     freezer.tick(timedelta(minutes=3))                          # let the updates automation's wait finish
     async_fire_time_changed(hass)
@@ -202,5 +203,54 @@ async def test_follow_settings(hass: HomeAssistant, freezer) -> None:
     await _settle(hass)
     assert hass.states.get(SW).state == "off"
     hass.states.async_set("sensor.ignition", "Driving")
+    await _settle(hass)
+    assert hass.states.get(SW).state == "on"
+
+
+async def test_spike_alert_is_independent_of_the_live_activity(hass: HomeAssistant) -> None:
+    """The spike alert needs only its own switch and a notify target: not the Live Activity switch, not the car."""
+    await _setup(hass)
+    await _states(hass)
+    calls = _phone(hass)
+    assert hass.states.get(SW).state == "off"
+    await _set(hass, liveActivitySpikeAlert=0.30)
+    hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.05")
+    await _set(hass, alertNotifyTarget="test_phone")                # the alert switch is still off: no push
+    hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.50")
+    await _settle(hass)
+    assert calls == []
+    hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.05")
+    await _set(hass, liveActivitySpikeAlertOn=True)
+    hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.50")
+    await _settle(hass)
+    assert [c["title"] for c in calls] == ["⚡ Feed-in spike 50.0c"]
+    assert hass.states.get(SW).state == "off"                       # and it didn't start the Live Activity
+    # no notify target (Off): the alert is silent and doesn't error
+    hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.05")
+    await _set(hass, alertNotifyTarget="")
+    hass.states.async_set("sensor.amber_5min_current_feed_in_price", "0.50")
+    await _settle(hass)
+    assert len(calls) == 1
+
+
+async def test_live_activity_enabled_is_the_master_setting(hass: HomeAssistant) -> None:
+    await _setup(hass)
+    assert _la(hass, "liveActivityEnabled") is True                 # on to begin with: an existing follow keeps working
+    await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
+    await _settle(hass)
+    assert hass.states.get(SW).state == "on"
+    await _set(hass, liveActivityEnabled=False)                     # off: a running one is cleared
+    assert hass.states.get(SW).state == "off"
+    await hass.services.async_call("switch", "turn_on", {"entity_id": SW}, blocking=True)
+    await _settle(hass)
+    assert hass.states.get(SW).state == "off"                       # and the switch can't start it
+    hass.states.async_set("sensor.ignition", "OFF")
+    await _set(hass, liveActivityFollow="sensor.ignition")
+    hass.states.async_set("sensor.ignition", "ON")                  # nor can the car
+    await _settle(hass)
+    assert hass.states.get(SW).state == "off"
+    await _set(hass, liveActivityEnabled=True)
+    hass.states.async_set("sensor.ignition", "OFF")
+    hass.states.async_set("sensor.ignition", "ON")
     await _settle(hass)
     assert hass.states.get(SW).state == "on"

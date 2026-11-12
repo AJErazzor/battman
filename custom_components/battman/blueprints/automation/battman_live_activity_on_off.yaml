@@ -4,7 +4,7 @@ blueprint:
   description: >-
     Shows the battery Live Activity while the switch is on and clears it when it's
     turned off. Restarts it every few hours while on (iOS ends a Live Activity after
-    about 8 hours), and pushes it with a sound when the feed-in price spikes.
+    about 8 hours). The feed-in spike alert is its own automation (Battman Spike alert).
 
 
     Uses the script made from the "Battman Live Activity – push" blueprint. Battman
@@ -38,26 +38,9 @@ blueprint:
           min: 1
           max: 8
           unit_of_measurement: h
-    feed_in_price:
-      name: Feed-in price ($/kWh)
-      default: sensor.amber_5min_current_feed_in_price
-      selector:
-        entity:
-          domain: sensor
-    settings:
-      name: Battman settings
-      description: The sensor holding Battman's settings (its Live Activity ones among them).
-      default: sensor.battman_parameters
-      selector:
-        entity:
-          domain: sensor
 
 mode: queued
 max: 10
-
-trigger_variables:
-  feed_in_price: !input feed_in_price
-  settings: !input settings
 
 triggers:
   - trigger: state
@@ -74,14 +57,6 @@ triggers:
     for:
       hours: !input keep_alive_hours
     id: keep_alive
-  # the spike alert is on and the feed-in price goes above its setting (liveActivitySpikeAlert, $/kWh);
-  # an unavailable price or a missing setting is no spike
-  - trigger: template
-    value_template: >-
-      {% set limit = state_attr(settings, 'liveActivitySpikeAlert') %}
-      {{ state_attr(settings, 'liveActivitySpikeAlertOn') | bool(false)
-         and has_value(feed_in_price) and limit is number and states(feed_in_price) | float > limit }}
-    id: spike
 
 actions:
   - choose:
@@ -117,16 +92,3 @@ actions:
           - action: homeassistant.turn_on
             target:
               entity_id: !input live_switch
-      - conditions:
-          - condition: trigger
-            id: spike
-          - condition: state
-            entity_id: !input live_switch
-            state: "on"
-        sequence:
-          - action: script.turn_on
-            target:
-              entity_id: !input push_script
-            data:
-              variables:
-                alert: true

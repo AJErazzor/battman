@@ -984,15 +984,36 @@ template:
           # to the shared notify target (alertNotifyTarget).
           ##################################################################
           liveActivity: >
-            {% if trigger is defined
+            {% set ev = trigger is defined
                and trigger.platform == 'event'
-               and trigger.event.data.action == 'SetAttribute'
-               and trigger.event.data.liveActivity is defined %}
+               and trigger.event.data.action == 'SetAttribute' %}
+            {% set enabled = (trigger.event.data.liveActivityEnabled | bool)
+                 if ev and trigger.event.data.liveActivityEnabled is defined
+                 else (this.attributes.liveActivityEnabled
+                       if this.attributes.liveActivityEnabled is defined else true) %}
+            {% if not enabled %}
+              false
+            {% elif ev and trigger.event.data.liveActivity is defined %}
               {{ trigger.event.data.liveActivity | bool }}
             {% else %}
               {{ this.attributes.liveActivity
                  if this.attributes.liveActivity is defined
                  else false }}
+            {% endif %}
+
+          # Live Activity enabled: the master setting. Off, the Live Activity never starts (the car
+          # follow, the switch and the dashboard all do nothing) and a running one is cleared.
+          # Default on, so a Live Activity that was already following the car keeps working.
+          liveActivityEnabled: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute'
+               and trigger.event.data.liveActivityEnabled is defined %}
+              {{ trigger.event.data.liveActivityEnabled | bool }}
+            {% else %}
+              {{ this.attributes.liveActivityEnabled
+                 if this.attributes.liveActivityEnabled is defined
+                 else true }}
             {% endif %}
 
           liveActivityFollow: >
