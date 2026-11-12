@@ -22,7 +22,7 @@ export const HOWTO_CSS = `
 .howto-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
 .howto-chips button { font: inherit; font-size: 13px; padding: 6px 13px; border-radius: 16px; cursor: pointer; min-height: 32px;
   background: var(--g-card); color: var(--g-text); border: 1px solid var(--g-border); }
-.howto-chips button[aria-pressed="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); font-weight: 600; }
+.howto-chips button[aria-pressed="true"] { background: var(--battman-blue-soft-bg, rgba(127, 127, 127, 0.14)); color: var(--battman-blue, var(--primary-color)); border-color: var(--battman-blue-border-strong, var(--battman-blue, var(--primary-color))); font-weight: 600; }
 article h2.howto-group { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--g-muted); border: 0; margin: 22px 0 6px; padding: 0; }
 article h2.howto-group .hlink { display: none; }
 .howto-none { color: var(--g-muted); padding: 10px 2px; }
@@ -47,7 +47,8 @@ article h2.howto-group .hlink { display: none; }
 .task-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
 .task-acts button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 9px; cursor: pointer; min-height: 38px;
   border: 1px solid var(--g-border); background: transparent; color: var(--g-text); }
-.task-acts button.showme { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 8%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 55%, transparent); }
+/* Show me looks like the Help button when it's on, and Self Consume */
+.task-acts button.showme { background: var(--battman-blue-soft-bg, rgba(127, 127, 127, 0.14)); color: var(--battman-blue, var(--primary-color)); border-color: var(--battman-blue-border-strong, var(--battman-blue, var(--primary-color))); }
 @media (max-width: 600px) { .task-b { padding-left: 16px; } .task-where { display: none; } }
 `;
 
