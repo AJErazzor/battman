@@ -840,6 +840,10 @@ CARD_SOURCES = {
 }
 
 
+ALL_SOURCE = "\n".join(p.read_text() for p in [*(ROOT / "www").glob("battman-*.js"), *(ROOT / "cards").glob("*.yaml")])
+PACKAGES_SOURCE = "\n".join(p.read_text() for p in [*(ROOT / "packages").glob("*.yaml"), *ROOT.glob("*.py")])
+
+
 def _card_source(card: str) -> str:
     files = CARD_SOURCES.get(card) or [f"cards/{card.removeprefix('battman-')}.yaml"]
     return "\n".join((ROOT / f).read_text() for f in files if (ROOT / f).is_file())
@@ -861,20 +865,49 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
         for img in a.get("uses", "").split():
             assert (WWW / "guide-images" / img).is_file(), (anchor, img)
         steps = re.findall(r"^\d+\. ", body, re.M)
-        assert 2 <= len(steps) <= 8, (anchor, len(steps))
+        assert 2 <= len(steps) <= 10, (anchor, len(steps))      # every press its own step, popups included
         shows = re.findall(r"^   <!-- guide:show ([^>]*)-->$", body, re.M)
         with_show.append(bool(shows))
         for sh in shows:
             s = dict(re.findall(r'(\w+)="([^"]*)"', sh))
             assert s.get("view") in VIEWS, (anchor, s)
-            assert s.get("card", "").startswith("battman-"), (anchor, s)
-            src = _card_source(s["card"])
-            assert src, (anchor, s["card"], "no source for this card")
-            view = (ROOT / "views").glob(f"*-{s['view']}.yaml")
-            assert any(f"custom:{s['card']}" in v.read_text() for v in view), (anchor, s, "card isn't on that view")
+            assert "text" not in s, (anchor, "v1 marker: use target")
+            u = s.get("until", "press")
+            for one in u.split("|"):
+                assert one in {"press", "popup", "closed", "open", "next"} or re.fullmatch(r"state:[a-z_]+\.[a-z0-9_]+=[^|]+", one), (anchor, u)
+            if s.get("popup") == "*":                             # whichever popup the step before opened
+                src = ALL_SOURCE
+            elif s.get("popup"):                                  # in a popup: the popup really shows that text
+                src = ALL_SOURCE
+                # (a question's title can be built from the mode's name: "Sell" + "?")
+                assert s["popup"].rstrip("?").lower() in src.replace("&amp;", "&").lower(), (anchor, s["popup"], "no popup shows this")
+                assert u != "popup" or True
+            else:
+                assert s.get("card", "").startswith("battman-"), (anchor, s)
+                src = _card_source(s["card"])
+                assert src, (anchor, s["card"], "no source for this card")
+                view = (ROOT / "views").glob(f"*-{s['view']}.yaml")
+                assert any(f"custom:{s['card']}" in v.read_text() for v in view), (anchor, s, "card isn't on that view")
+            if s.get("skipif"):
+                assert re.fullmatch(r"state:[a-z_]+\.[a-z0-9_]+=\S+", s["skipif"]), (anchor, s["skipif"])
+                assert s["skipif"][6:].split("=")[0].split(".", 1)[1] in ALL_SOURCE + PACKAGES_SOURCE, (anchor, s["skipif"])
+            for one in u.split("|"):
+                if one.startswith("state:"):
+                    assert one[6:].split("=")[0].split(".", 1)[1] in ALL_SOURCE + PACKAGES_SOURCE, (anchor, one, "no such entity")
+            s["text"] = s.get("target", "")
             # (the editors' hour and month labels are made by code, not written out in it)
-            if s.get("text") and not re.fullmatch(r"(1[0-2]|[1-9])(am|pm)|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec", s["text"]):
-                assert s["text"].lower() in src.replace("&amp;", "&").lower(), (anchor, s["text"], "the card doesn't show this text")
+            if s.get("popup"):
+                src = ALL_SOURCE
+            # (a popup's buttons can be built from names, "Sell" + " anyway": the real-HA walkthrough run checks those)
+            if s.get("text", "").startswith("icon:"):                     # an icon-only control: the icon is named in the card
+                assert s["text"][5:] in src, (anchor, s["text"])
+                s["text"] = ""
+            if s.get("text", "").startswith("id:"):                       # a control with no text of its own (a picker): its id
+                ident = s["text"][3:]                                     # literal, or one of a numbered set (id="tb${i}")
+                assert f'id="{ident}"' in src or f'id="{ident.rstrip("0123456789")}${{i}}"' in src, (anchor, s["text"])
+                s["text"] = ""
+            if s.get("text") and not s.get("popup") and not re.fullmatch(r"(1[0-2]|[1-9])(am|pm)|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec", s["text"]):
+                assert s["text"].lower() in src.replace("&amp;", "&").replace("\\'", "'").lower(), (anchor, s["text"], "the card doesn't show this text")
             assert len(s.get("say", "")) <= 40, (anchor, s.get("say"))
     assert sum(with_show) >= len(tasks) - 2          # Show me on all but a task or two with nothing on a view to point at
 
@@ -882,23 +915,30 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
 @pytest.mark.skipif(not (Path(CHROME).exists() and Path(NODE_PATH, "playwright").exists() and shutil.which("node")),
                     reason="needs Chromium, Node and Playwright")
 def test_show_me_tour_in_a_browser(tmp_path) -> None:
-    r = subprocess.run(["node", str(Path(__file__).parent / "js/tour_check.mjs"), str(ROOT)], capture_output=True, text=True, timeout=120,
+    r = subprocess.run(["node", str(Path(__file__).parent / "js/tour_check.mjs"), str(ROOT)], capture_output=True, text=True, timeout=150,
                        env={**os.environ, "NODE_PATH": NODE_PATH, "CHROME": CHROME})
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
     assert out["errors"] == [], out["errors"]
+    pad = lambda b: [b[0] - 8, b[1] - 8, b[2] + 8, b[3] + 8]                  # the lens pads its control by 8px
     for name in ("desktop", "phone"):
         o = out[name]
-        s1 = o["step1"]
-        assert s1["meta"].startswith("Step 1 of 3") and s1["say"] == "The mode card" and "Open the Power view" in s1["body"]
-        assert s1["ring"] is False and s1["hole"] == o["card"]                    # whole card: the hole, no ring
-        s2 = o["step2"]
-        assert s2["say"] == "Tap Curtail" and s2["ring"] is True and s2["ringBox"] == o["button"]   # rings the text's element
-        assert s2["bubbleTop"] >= s2["ringBottom"] or s2["bubbleBottom"] <= s2["ringTop"]          # beside it, not over it
-        assert 0 <= s2["bubbleLeft"] and s2["bubbleRight"] <= o["vw"]
-        assert o["pressed"] == 1                                                  # the real control works under the tour
-        assert o["back"] == "The mode card" and o["step3"]["next"] == "Done"
-        assert o["afterEsc"] is False and o["afterDone"] is False
+        assert o["s1"]["meta"] == "Step 1 of 4 · Stop exporting" and o["s1"]["ring"] == pad(o["card"]) and o["s1"]["next"]
+        assert not o["s1"]["beckon"] and o["s1"]["frost"].startswith("blur(")     # a look-only step: no beckon; the page is frosted
+        assert o["s2"]["say"] == "Tap Curtail" and o["s2"]["ring"] == pad(o["curtail"])    # the whole button, not its label
+        assert o["s2"]["beckon"] and not o["s2"]["next"]                          # the control is the way forward
+        assert o["paused"] and o["resumed"]["say"] == "Tap Curtail" and not o["resumed"]["paused"]   # click off pauses
+        assert o["s3"]["say"] == "Press Turn on" and o["s3"]["inDialog"] and o["s3"]["ring"] == pad(o["on"])   # into the popup
+        assert o["s4fold"]["say"] == "Open Billing" and o["s4fold"]["ring"] == pad(o["head"])   # folded: open it first
+        assert o["s4"]["say"] == "Tap the charge" and o["s4"]["ring"] == pad(o["fee"]) and o["s4"]["buttons"] == ["Back", "Stop"]
+        assert o["s4done"]["done"] and o["s4done"]["ring"] == pad(o["fee"]) and not o["s4done"]["beckon"]   # done: it stays
+        assert o["s4done"]["buttons"] == ["Back", "Done"]                         # one Done, no Stop
+        assert o["back"]["say"] == "Tap Curtail"                                  # Back to a popup step that isn't open: its opener
+        assert o["afterEsc"] is False and o["clicks"] == ["curtail", "on", "fee"]   # only the person's presses
+        w, ring = o["s2"]["words"], o["s2"]["ring"]
+        assert w[2] <= o["vw"] - 12 and (w[0] >= ring[2] or w[2] <= ring[0] or w[1] >= ring[3] or w[3] <= ring[1])  # beside it, not over it
+        c = o["card"]                                                              # the whole card is clear, the words beside it
+        assert "evenodd" in o["s2"]["clip"] and (w[0] >= c[2] or w[2] <= c[0] or w[1] >= c[3] or w[3] <= c[1])
 
 
 def test_help_controls_are_outlined_never_solid_or_dashed() -> None:

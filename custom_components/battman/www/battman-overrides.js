@@ -451,7 +451,7 @@ function openControl(anchor) {
     return out;
   };
   const timerBlock = (i, mt) =>
-    `<div style="border-top:1px solid var(--battman-border-neutral-soft);padding-top:10px;margin:${mt} 0 10px">`
+    `<div id="tb${i}" style="border-top:1px solid var(--battman-border-neutral-soft);padding-top:10px;margin:${mt} 0 10px">`
     + `<div style="${CHL}">Start for</div><div style="margin-bottom:9px">`
     + [["15m", 0.25], ["30m", 0.5], ["1h", 1], ["2h", 2]].map((e) => `<span data-a="dur" data-i="${i}" data-h="${e[1]}" style="${CC_CHS};border:1px solid var(--battman-blue-border);color:var(--battman-blue)">${e[0]}</span>`).join("")
     + `</div><div style="${CHL}">Run until</div><div style="margin-bottom:10px">`

@@ -233,7 +233,12 @@ class BattmanCard extends HTMLElement {
       if (!ok) missing.push(tag);
     }
     if (missing.length) {
-      return this._problem(`Card “${data.name}” needs ${missing.join(", ")}, which isn't installed (HACS → Frontend).`);
+      this._problem(`Card “${data.name}” needs ${missing.join(", ")}, which isn't installed (HACS → Frontend).`);
+      // it may only be slow to load (a phone, a busy Home Assistant): draw the card when it arrives
+      Promise.all(missing.map((tag) => customElements.whenDefined(tag))).then(() => {
+        if (this._state === "failed" && this._config) this._build();
+      });
+      return;
     }
     const made = cardConfig(id, data, this._config);
     if (made.problem) return this._problem(made.problem);
