@@ -591,14 +591,18 @@ The push is "💸 Negative Buy Price": "Buy …c — you're paid to import. Char
 ### Live Activity
 
 <!-- guide:summary id="settings.notifications.live-activity" -->
-The battery on an iPhone's lock screen as a Live Activity: the feed-in price, the buy price, today's net and the battery level, in the battery mode's colour. Switch it on here, or let it follow something, such as the car, so it shows only when you want it.
+The battery on an iPhone's lock screen as a Live Activity: the feed-in price, the buy price, today's net and the battery level, in the battery mode's colour. Turn it on here, then let it follow something, such as the car, so it shows only when you want it, or switch it on by hand.
 <!-- /guide:summary -->
 
 While it's on, the Live Activity updates when the battery level, the prices or the mode change, at most every 2 minutes, and restarts itself every 7 hours (iOS ends one after about 8). A value that's missing shows as "—". Its bar takes the mode's colour from the [Dashboard theme](#dashboard); with none chosen it's grey.
 
 #### Live Activity
 
-"Your battery on the phone's lock screen". This is `switch.battman_live_activity`. Off to begin with; turning it off clears the Live Activity.
+"Your battery on the phone's lock screen. Off: it never starts, even when the car turns on". The master setting for the Live Activity. On to begin with. Off, nothing can start it (not the car, not the switch below) and one that is showing is cleared. It does not affect the alerts, which have their own switches.
+
+#### Showing now
+
+"Switch it on or off by hand". This is `switch.battman_live_activity`: whether the Live Activity is showing at the moment. Turning it off clears the Live Activity. It follows the entity below when you've set one, and does nothing while **Live Activity** is off.
 
 #### Follow entity
 
@@ -620,12 +624,12 @@ How long the entity must stay in that state before the Live Activity goes, in mi
 ### Feed-in spike
 
 <!-- guide:summary id="settings.notifications.feed-in-spike" -->
-While the Live Activity is showing, an update with a sound when Amber's feed-in price goes above your level. Note that this level is in dollars, not cents.
+A push with a sound when Amber's feed-in price goes above your level. It doesn't need the Live Activity or the car. Note that this level is in dollars, not cents.
 <!-- /guide:summary -->
 
 #### Spike alert
 
-"Sound on the Live Activity when feed-in spikes". Off to begin with. It sounds once each time the price goes above the level, and only while the Live Activity is on.
+"Push with a sound when feed-in spikes (works without the Live Activity)". Off to begin with. It goes to the notify target once each time the price goes above the level, whether or not the Live Activity is showing. The push is "⚡ Feed-in spike" with the price, and "Battery …% · Buy …c".
 
 #### Above
 

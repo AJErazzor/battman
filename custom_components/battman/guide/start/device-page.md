@@ -52,7 +52,7 @@ Battman's engine and its notifications are automations and scripts that Battman 
 It covers:
 
 - **The engine**: the scripts "Battman engine", "Battman engine – inputs", "Battman engine – decide", "Battman engine – forecast" and "Battman apply scene", and the automations "Battman engine – main loop", "– watchdog", "– Sigen mode", "– curtail", "– SAPN override", "– override timer start", "– copy curves to next month", "– auto curve switcher" and "– armed scene (00:01)".
-- **Notifications**: "Battman Live Activity – push" (a script), "Battman Live Activity – on/off", "– updates" and "– follow", "Battman Amber – cheap price alert", "Battman Amber – negative price alert", "Battman Amber – charge from the alert" and "Battman Off-grid alert".
+- **Notifications**: "Battman Live Activity – push" (a script), "Battman Live Activity – on/off", "– updates" and "– follow", "Battman Amber – cheap price alert", "Battman Amber – negative price alert", "Battman Amber – charge from the alert", "Battman Off-grid alert" and "Battman Spike alert".
 
 Good to know:
 
