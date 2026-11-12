@@ -250,7 +250,8 @@ async def test_live_activity_enabled_is_the_master_setting(hass: HomeAssistant) 
     await _settle(hass)
     assert hass.states.get(SW).state == "off"
     await _set(hass, liveActivityEnabled=True)
-    hass.states.async_set("sensor.ignition", "OFF")
+    hass.states.async_set("sensor.ignition", "OFF")             # the car follows again from its next start
+    await _settle(hass)
     hass.states.async_set("sensor.ignition", "ON")
     await hass.async_block_till_done()
     assert hass.states.get(SW).state == "on"
