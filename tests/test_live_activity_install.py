@@ -180,7 +180,7 @@ async def test_follow_settings(hass: HomeAssistant, freezer) -> None:
     await _settle(hass)
     assert hass.states.get(SW).state == "off"
     hass.states.async_set("sensor.ignition", "ON")
-    await _settle(hass)
+    await hass.async_block_till_done()
     assert hass.states.get(SW).state == "on"
     hass.states.async_set("sensor.ignition", "OFF")
     await _settle(hass)
@@ -252,5 +252,5 @@ async def test_live_activity_enabled_is_the_master_setting(hass: HomeAssistant) 
     await _set(hass, liveActivityEnabled=True)
     hass.states.async_set("sensor.ignition", "OFF")
     hass.states.async_set("sensor.ignition", "ON")
-    await _settle(hass)
+    await hass.async_block_till_done()
     assert hass.states.get(SW).state == "on"
