@@ -17,15 +17,15 @@ class BattmanSettingsCard extends BattmanCardBase {
   /* the same panel look as Curvy and Pricy: one rounded card on the theme's background,
      each section an inner panel */
   :host { display: block; }
-  ha-card { background: var(--primary-background-color); overflow: hidden; container-type: inline-size; }
+  ha-card { background: var(--primary-background-color); overflow: hidden; container: card / inline-size; }
   .frame { color: var(--battman-text-bright); font-family: var(--primary-font-family, sans-serif);
            font-size: 15px; line-height: 1.5; padding: 8px; }
-  @container (min-width: 600px) { .frame { padding: 20px; } }
+  @container card (min-width: 600px) { .frame { padding: 20px; } }
   .page { max-width: 2200px; margin: 0 auto; background: var(--card-background-color);
           border-radius: var(--ha-card-border-radius, 14px); padding: 8px;
           box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06));
           border: 1px solid var(--divider-color); }
-  @container (min-width: 600px) { .page { padding: 28px; } }
+  @container card (min-width: 600px) { .page { padding: 28px; } }
   input, select, button { font-family: inherit; }
 
   .hdr { margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
@@ -34,8 +34,8 @@ class BattmanSettingsCard extends BattmanCardBase {
               text-transform: uppercase; color: var(--battman-text-muted); white-space: nowrap; }
   .hdr .word { width: 230px; max-width: 100%; min-width: 0; height: auto; flex: 0 1 auto; }
   .cols { display: flex; gap: 16px; align-items: flex-start; position: relative; }
-  .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; min-height: 60px; }
-  @container (max-width: 900px) { .cols { flex-direction: column; } .col { width: 100%; flex: none; } }
+  .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; min-height: 60px; container: col / inline-size; }
+  @container card (max-width: 900px) { .cols { flex-direction: column; } .col { width: 100%; flex: none; } }
 
   .sec { background: var(--secondary-background-color); border: 1px solid var(--divider-color);
          border-radius: calc(var(--ha-card-border-radius, 14px) - 2px); padding-bottom: 12px; overflow: hidden; }
@@ -125,11 +125,17 @@ class BattmanSettingsCard extends BattmanCardBase {
   .stk { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
   .stk .field { width: 150px; }
   .stk .field input { text-align: left; }
-  @container (max-width: 600px) {
+  @container card (max-width: 600px) {
     .row:has(> .ctls), .row:has(> .pickbtn) { flex-direction: column; align-items: stretch; gap: 8px; }
     .row > .ctls { justify-content: flex-start; }
     .row > .ctls > * { flex: 1 1 130px; width: auto; min-width: 0; }
     .row > .pickbtn { width: 100%; max-width: none; }
+  }
+  /* a row of several controls in a narrow column (Holiday's two dates and a preset): the controls go under the label */
+  @container col (max-width: 600px) {
+    .row:has(> .ctls) { flex-direction: column; align-items: stretch; gap: 8px; }
+    .row > .ctls { justify-content: flex-start; }
+    .row > .ctls > * { flex: 1 1 130px; width: auto; min-width: 0; }
   }
   .qdaily { font-size: 11px; color: var(--battman-text-muted); text-align: right; }
   .sw { position: relative; width: 46px; height: 26px; flex: none; cursor: pointer; }
