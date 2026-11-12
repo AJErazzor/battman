@@ -87,7 +87,7 @@ try {
       const box = (e) => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
       return { meta: q('.meta').textContent, say: q('.say').textContent, ring: q('.ring').hidden ? null : box(q('.ring')), beckon: q('.ring').classList.contains('beckon'),
         words: box(q('.words')), done: !!q('.note.done'), buttons: [...r.querySelectorAll('.nav button')].map((b) => b.textContent), inDialog: !!t.closest('dialog'), paused: !q('.pill').hidden, next: !!q('button[data-act=next]'),
-        frost: getComputedStyle(q('.frost')).backdropFilter || getComputedStyle(q('.frost')).webkitBackdropFilter }; })()`);
+        frost: getComputedStyle(q('.layer')).backdropFilter || getComputedStyle(q('.layer')).webkitBackdropFilter, clip: q('.tint').style.clipPath }; })()`);
     const el = (sel) => page.evaluate((s) => { const r = document.querySelector("battman-fakecard").shadowRoot; const e = r.querySelector(s) || document.querySelector(s); const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; }, sel);
     const centre = (b) => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
     const settle = (ms = 700) => page.waitForTimeout(ms);

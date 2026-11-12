@@ -903,10 +903,11 @@ def test_howto_tasks_are_complete_and_point_at_real_things() -> None:
                 assert s["text"][5:] in src, (anchor, s["text"])
                 s["text"] = ""
             if s.get("text", "").startswith("id:"):                       # a control with no text of its own (a picker): its id
-                assert f'id="{s["text"][3:]}"' in src, (anchor, s["text"])
+                ident = s["text"][3:]                                     # literal, or one of a numbered set (id="tb${i}")
+                assert f'id="{ident}"' in src or f'id="{ident.rstrip("0123456789")}${{i}}"' in src, (anchor, s["text"])
                 s["text"] = ""
             if s.get("text") and not s.get("popup") and not re.fullmatch(r"(1[0-2]|[1-9])(am|pm)|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec", s["text"]):
-                assert s["text"].lower() in src.replace("&amp;", "&").lower(), (anchor, s["text"], "the card doesn't show this text")
+                assert s["text"].lower() in src.replace("&amp;", "&").replace("\\'", "'").lower(), (anchor, s["text"], "the card doesn't show this text")
             assert len(s.get("say", "")) <= 40, (anchor, s.get("say"))
     assert sum(with_show) >= len(tasks) - 2          # Show me on all but a task or two with nothing on a view to point at
 
@@ -936,6 +937,8 @@ def test_show_me_tour_in_a_browser(tmp_path) -> None:
         assert o["afterEsc"] is False and o["clicks"] == ["curtail", "on", "fee"]   # only the person's presses
         w, ring = o["s2"]["words"], o["s2"]["ring"]
         assert w[2] <= o["vw"] - 12 and (w[0] >= ring[2] or w[2] <= ring[0] or w[1] >= ring[3] or w[3] <= ring[1])  # beside it, not over it
+        c = o["card"]                                                              # the whole card is clear, the words beside it
+        assert "evenodd" in o["s2"]["clip"] and (w[0] >= c[2] or w[2] <= c[0] or w[1] >= c[3] or w[3] <= c[1])
 
 
 def test_help_controls_are_outlined_never_solid_or_dashed() -> None:

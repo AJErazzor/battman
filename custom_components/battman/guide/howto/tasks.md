@@ -4,23 +4,27 @@ Pick what you want to do. Each task gives the steps and the cards you'll use. In
 
 <!-- guide:howto -->
 
-## Sell and buy
+## Battery mode buttons
+
+Each button on the **Power** view's **Battery mode** card puts the battery in a mode straight away. While **Active** is on, the engine picks the mode again each time it runs (when the price or a setting changes), so a mode you pick lasts until then. To make something last, use an [override](#sell-when-price-high) instead.
+
+**House Party** and **HOOOOVER** are for negative buy prices, and Battman switches to them itself: you don't need to press them.
 
 <a id="sell-now"></a>
 ### Sell to the grid right now
 <!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-state.png" -->
 
-For when you want the battery exporting now, whatever the curves say.
+Sell exports from the battery to the grid now, whatever the curves say.
 
 1. On the **Power** view's **Battery mode** card, tap **Sell**.
    <!-- guide:show view="power" card="battman-batterymode" target="Sell" until="press" say="Tap Sell" -->
-2. If feed-in is negative, it asks "Sell?" and says "Feed-in is -x.xc: you would pay to export. Sell anyway?" Press **Sell anyway** to go ahead.
-   <!-- guide:show view="power" popup="Sell?" target="Sell anyway" until="closed" say="Press Sell anyway" -->
-3. Check it: **Sell** lights green. While the engine wouldn't sell, the **State** card reads "Manual mode change · Sell".
+2. If feed-in is negative right now, selling would cost you money, so it asks "Sell?" first and says "Feed-in is -x.xc: you would pay to export. Sell anyway?". Press **Cancel** to leave it, or **Sell anyway** to sell regardless.
+   <!-- guide:show view="power" popup="Sell?" target="Sell anyway" until="closed" say="Cancel, or Sell anyway" -->
+3. Check it: **Sell** lights green. If the engine wouldn't have sold, the **State** card reads "Manual mode change · Sell".
    <!-- guide:show view="power" card="battman-batterymode" target="Sell" until="state:input_select.battman_mode=Discharge" say="Sell lights green" -->
 
 > [!TIP]
-> While **Active** is on, the engine sets the mode again each time it runs, so this lasts until its next run. To keep selling, see [Take over the battery for a while](#take-over-battery). While **Curtail** is on, the grid export limit is 0 and nothing reaches the grid.
+> While **Curtail** is on, the grid export limit is 0 and nothing reaches the grid. To sell only down to a level, or only above a price, use a [Sell Override](#sell-when-price-high).
 
 More: [The mode buttons](../intermediate/power.md#batterymode) · [Confirmations](../intermediate/settings.md#dashboard-confirmations)
 
@@ -28,127 +32,235 @@ More: [The mode buttons](../intermediate/power.md#batterymode) · [Confirmations
 ### Charge the battery from the grid right now
 <!-- guide:task where="Power · Battery mode" uses="power-batterymode.png" -->
 
+Buy charges the battery from the grid now.
+
 1. On the **Power** view's **Battery mode** card, tap **Buy**.
    <!-- guide:show view="power" card="battman-batterymode" target="Buy" until="press" say="Tap Buy" -->
-2. If the buy price is above your **Warn on Buy above** limit, it asks "Buy?" and says "Buy is x.xc, above your x.xc limit. Buy anyway?" Press **Buy anyway** to go ahead.
-   <!-- guide:show view="power" popup="Buy?" target="Buy anyway" until="closed" say="Press Buy anyway" -->
+2. If the buy price is above your **Warn on Buy above** limit, it asks "Buy?" first and says "Buy is x.xc, above your x.xc limit. Buy anyway?". Press **Cancel** to leave it, or **Buy anyway** to buy at that price.
+   <!-- guide:show view="power" popup="Buy?" target="Buy anyway" until="closed" say="Cancel, or Buy anyway" -->
 3. Check it: **Buy** lights yellow.
    <!-- guide:show view="power" card="battman-batterymode" target="Buy" until="state:input_select.battman_mode=Charge" say="Buy lights yellow" -->
 
 > [!TIP]
-> While **Active** is on, the engine sets the mode again at its next run. To charge to a level at a price you choose, use a [Buy Override](#buy-when-cheap) instead.
+> To charge to a level at a price you choose, use a [Buy Override](#buy-when-cheap) instead. When the buy price goes negative, Battman switches to **HOOOOVER** or **House Party** itself.
 
 More: [The mode buttons](../intermediate/power.md#batterymode) · [Confirmations](../intermediate/settings.md#dashboard-confirmations)
 
-<a id="stop-exports-negative-feed-in"></a>
-### Stop exporting while feed-in is negative
+<a id="sell-solar-now"></a>
+### Send the solar to the grid and hold the battery
 <!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-limits.png" -->
 
-While **Active** is on, Battman does this itself: each engine run turns **Curtail** on while feed-in is negative and off when it isn't. To stop exports straight away:
+Sell Solar holds the battery where it is and sends the solar to the grid: Battman cuts **Max Charge Limit** to 0.1 kW.
 
-1. On the **Power** view's **Battery mode** card, tap **Curtail**.
-   <!-- guide:show view="power" card="battman-batterymode" target="Curtail" until="popup" skipif="state:input_boolean.battman_no_export=on" say="Tap Curtail" -->
-2. It asks "Turn Curtail?" and says "This will stop any exports." Press **Turn on**.
-   <!-- guide:show view="power" popup="Turn Curtail?" target="Turn on" until="state:input_boolean.battman_no_export=on" skipif="state:input_boolean.battman_no_export=on" say="Press Turn on" -->
-3. Check it: the **Limits** card's **Grid Export Limit** drops to 0. If something raises it while Curtail is on, Battman puts it back to 0.
-   <!-- guide:show view="power" card="battman-limits" target="Grid Export Limit" until="next" say="Grid Export Limit goes to 0" -->
+1. On the **Power** view's **Battery mode** card, tap **Sell Solar**.
+   <!-- guide:show view="power" card="battman-batterymode" target="Sell Solar" until="press" say="Tap Sell Solar" -->
+2. If feed-in is negative right now, exporting would cost you money, so it asks "Sell Solar?" first and says "Feed-in is -x.xc: you would pay to export. Sell Solar anyway?". Press **Cancel**, or **Sell Solar anyway**.
+   <!-- guide:show view="power" popup="Sell Solar?" target="Sell Solar anyway" until="closed" say="Cancel, or Sell Solar anyway" -->
+3. Check it: **Sell Solar** lights orange, and the **Limits** card's **Max Charge Limit** drops to 0.1.
+   <!-- guide:show view="power" card="battman-batterymode" target="Sell Solar" until="state:input_select.battman_mode=Float" say="Sell Solar lights orange" -->
+
+More: [The mode buttons](../intermediate/power.md#batterymode) · [Limits](../intermediate/power.md#limits)
+
+<a id="drain-now"></a>
+### Run the house off the battery right now
+<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png power-limits.png" -->
+
+Drain runs the house off the battery with the solar off: Battman sets **PV Max Limit** to 0. It doesn't ask first and doesn't stop by itself.
+
+1. On the **Power** view's **Battery mode** card, tap **Drain**.
+   <!-- guide:show view="power" card="battman-batterymode" target="Drain" until="press" say="Tap Drain" -->
+2. Check it: **Drain** lights red, and the **Limits** card's **PV Max Limit** drops to 0.
+   <!-- guide:show view="power" card="battman-batterymode" target="Drain" until="state:input_select.battman_mode=Drain" say="Drain lights red" -->
 
 > [!TIP]
-> To export again, tap **Curtail** and press **Turn off**: **Grid Export Limit** goes back to 18.2. While feed-in is negative, it first warns "Feed-in is -x.xc. Turning off means you pay to export." While Active is on, the engine's next run sets Curtail to match the price again.
+> To drain down to a level and then stop, use the [Drain Battery override](#drain-to-level).
 
-More: [Active, Curtail and the engine log](../intermediate/power.md#batterymode) · [Limits](../intermediate/power.md#limits)
+More: [The mode buttons](../intermediate/power.md#batterymode) · [Limits](../intermediate/power.md#limits)
+
+<a id="self-consume-now"></a>
+### Go back to using the battery for the house
+<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png" -->
+
+Self Consume is the everyday mode: solar and the battery run the house, and the battery doesn't sell to or buy from the grid.
+
+1. On the **Power** view's **Battery mode** card, tap **Self Consume**. It doesn't ask first.
+   <!-- guide:show view="power" card="battman-batterymode" target="Self Consume" until="press" say="Tap Self Consume" -->
+2. Check it: **Self Consume** lights blue.
+   <!-- guide:show view="power" card="battman-batterymode" target="Self Consume" until="state:input_select.battman_mode=Self Consume" say="Self Consume lights blue" -->
+
+More: [The mode buttons](../intermediate/power.md#batterymode)
+
+## Overrides
+
+An override takes the place of the curves for a while: a battery level (**SOC %**) and a price you choose. You set them in the control centre, which opens from the **OVERRIDES** strip on the **Power** view. Overrides act only while **Active** is on.
 
 <a id="sell-when-price-high"></a>
 ### Sell only when the price is high enough
 <!-- guide:task where="Power · Overrides" uses="power-overrides.png power-state.png" -->
 
-A Sell Override sells while the feed-in price is at or above your price and the battery is above your level, in place of the curves.
+A **Sell Override** sells while the feed-in price is at or above its price and the battery is above its level, in place of the Sell curve.
 
 1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip to open the control centre.
    <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
 2. Tap **Sell Override** to open its panel.
    <!-- guide:show view="power" popup="Overrides" target="Sell Override" until="press" say="Open Sell Override" -->
-3. Set **SOC %** to the level to sell down to and **PRICE ¢** to the lowest feed-in price to sell at.
-   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Set SOC % and PRICE ¢" -->
-4. To limit how long it lasts, tap a time under **Start for** or **Run until**. To keep it past its level and the daily reset, tap the box under **No Reset** so it reads ON.
-5. Press **Set**.
+3. In **SOC %**, type the level to sell down to. 100 means no selling.
+   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Type the level to sell down to" -->
+4. In **PRICE ¢**, type the lowest feed-in price to sell at. Leave one of the two empty and the curve's value is used for it.
+   <!-- guide:show view="power" popup="Overrides" target="PRICE ¢" until="next" say="Type the lowest price" -->
+5. To limit how long it lasts, tap a time under **Start for** or **Run until**, or type **Timer h** or **Until**. Leave them and it lasts until it reaches its level or the daily reset.
+   <!-- guide:show view="power" popup="Overrides" target="id:tb0" until="next" say="Choose how long, or leave it" -->
+6. If it should stay past its level and the daily reset, tap the box under **No Reset** so it reads ON. Otherwise leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:r0" until="next" say="No Reset, if it should stay" -->
+7. Press **Set**.
    <!-- guide:show view="power" popup="Overrides" target="Set" until="closed" say="Press Set" -->
-6. Check it: the **Sell Override** row shows **SOC**, **PRICE**, an **EARN** estimate and the move, such as "80% → 40%" with the kWh to sell, or "target met". The **State** card's SELL tile shows **Override**.
-   <!-- guide:show view="power" card="battman-state" until="next" say="SELL shows Override" -->
+8. Check it: the **Sell Override** row shows **SOC**, **PRICE**, an **EARN** estimate and the move, such as "80% → 40%", and the **State** card's SELL tile shows **Override**. To clear it, double-tap the row, or open its panel and press **Clear**.
+   <!-- guide:show view="power" card="battman-overrides" target="Sell Override" until="next" say="Check the row" -->
 
-> [!TIP]
-> Fill in only **SOC %** and the curve's price still applies; only **PRICE ¢** and the curve's level still applies. **SOC %** at 100 stops selling: the row reads "NO SELLING" and the strip "OVERRIDES · NO SELL". Overrides act only while **Active** is on. To clear one, double-tap its row.
+More: [Overrides](../intermediate/power.md#overrides) · [State](../intermediate/power.md#state)
+
+<a id="sell-solar-when-price-high"></a>
+### Sell solar only when the price is high enough
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png power-state.png" -->
+
+A **Sell Solar** override sends the solar to the grid while the feed-in price is at or above its price and the battery is above its level, in place of the curve.
+
+1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip.
+   <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
+2. Tap **Sell Solar** to open its panel.
+   <!-- guide:show view="power" popup="Overrides" target="Sell Solar" until="press" say="Open Sell Solar" -->
+3. In **SOC %**, type the level above which solar is sold.
+   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Type the battery level" -->
+4. In **PRICE ¢**, type the lowest feed-in price to sell solar at.
+   <!-- guide:show view="power" popup="Overrides" target="PRICE ¢" until="next" say="Type the lowest price" -->
+5. To limit how long it lasts, tap a time under **Start for** or **Run until**. Or leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:tb1" until="next" say="Choose how long, or leave it" -->
+6. If it should stay past the daily reset, tap the box under **No Reset** so it reads ON. Otherwise leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:r1" until="next" say="No Reset, if it should stay" -->
+7. Press **Set**.
+   <!-- guide:show view="power" popup="Overrides" target="Set" until="closed" say="Press Set" -->
+8. Check it: the **Sell Solar** row shows its **SOC** and **PRICE**, and the **State** card's SELL tile shows **Solar**. To clear it, double-tap the row.
+   <!-- guide:show view="power" card="battman-overrides" target="Sell Solar" until="next" say="Check the row" -->
 
 More: [Overrides](../intermediate/power.md#overrides)
 
 <a id="buy-when-cheap"></a>
 ### Buy when power is cheap
-<!-- guide:task where="Power · Overrides" uses="power-overrides.png" -->
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png power-state.png" -->
 
-**Buy Override** takes the place of the curves: it charges while the buy price is at or below its price and the battery is at or below its level, even in the 5–9pm peak. **Buy Anytime** adds to the curves: it charges to its level while the buy price is at or below its price, but not in the 5–9pm peak or while a Buy Override is set, and it needs both a level and a price.
+A **Buy Override** charges while the buy price is at or below its price and the battery is below its level, in place of the Buy curve, even in the 5–9pm peak.
 
-1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip to open the control centre.
+1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip.
    <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
-2. Tap **Buy Override** to open its panel. For Buy Anytime, tap **Buy Anytime** instead.
+2. Tap **Buy Override** to open its panel.
    <!-- guide:show view="power" popup="Overrides" target="Buy Override" until="press" say="Open Buy Override" -->
-3. Set **SOC %** to the level to charge up to and **PRICE ¢** to the highest buy price to pay.
-   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Set SOC % and PRICE ¢" -->
-4. For Buy Anytime, tap a finish time under **Start for** or **Run until**, then press **Calculate cheapest price**: it fills **PRICE ¢** with the lowest price that still reaches the level by then.
-5. Press **Set**.
+3. In **SOC %**, type the level to charge up to.
+   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Type the level to charge to" -->
+4. In **PRICE ¢**, type the highest buy price to pay. It can be negative: then it charges whenever the price is at or below it, whatever the battery level.
+   <!-- guide:show view="power" popup="Overrides" target="PRICE ¢" until="next" say="Type the highest price" -->
+5. To limit how long it lasts, tap a time under **Start for** or **Run until**. Or leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:tb2" until="next" say="Choose how long, or leave it" -->
+6. If it should stay past its level and the daily reset, tap the box under **No Reset** so it reads ON. Otherwise leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:r2" until="next" say="No Reset, if it should stay" -->
+7. Press **Set**.
    <!-- guide:show view="power" popup="Overrides" target="Set" until="closed" say="Press Set" -->
-6. Check it: the row shows a **COST** estimate and the move, such as "42% → 80%" with the kWh to buy. The **State** card's BUY tile shows **Override** or **Anytime**.
-   <!-- guide:show view="power" card="battman-state" until="next" say="BUY shows Override or Anytime" -->
-
-> [!TIP]
-> A Buy Override with a negative **PRICE ¢** charges whenever the buy price is at or below it, whatever the battery level.
+8. Check it: the **Buy Override** row shows a **COST** estimate and the move, such as "42% → 80%", and the **State** card's BUY tile shows **Override**. To clear it, double-tap the row.
+   <!-- guide:show view="power" card="battman-overrides" target="Buy Override" until="next" say="Check the row" -->
 
 More: [Overrides](../intermediate/power.md#overrides) · [State](../intermediate/power.md#state)
+
+<a id="buy-anytime"></a>
+### Charge to a level at the cheapest price by a time
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png" -->
+
+**Buy Anytime** adds to the curves: it charges to its level while the buy price is at or below its price, at any time except the 5–9pm peak or while a Buy Override is set. It needs both a level and a price.
+
+1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip.
+   <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
+2. Tap **Buy Anytime** to open its panel.
+   <!-- guide:show view="power" popup="Overrides" target="Buy Anytime" until="press" say="Open Buy Anytime" -->
+3. In **SOC %**, type the level to charge up to. Under it, the panel shows what that would cost.
+   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Type the level to charge to" -->
+4. Pick when it must be done by: a time under **Start for** or **Run until**, or **Timer h** or **Until**.
+   <!-- guide:show view="power" popup="Overrides" target="id:tb3" until="next" say="Choose when it's done by" -->
+5. Press **Calculate cheapest price**. It fills **PRICE ¢** with the lowest price that still reaches the level by then. Or type your own price.
+   <!-- guide:show view="power" popup="Overrides" target="Calculate cheapest price" until="next" say="Calculate cheapest price" -->
+6. If it should stay past the daily reset, tap the box under **No Reset** so it reads ON. Otherwise leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:r3" until="next" say="No Reset, if it should stay" -->
+7. Press **Set**.
+   <!-- guide:show view="power" popup="Overrides" target="Set" until="closed" say="Press Set" -->
+8. Check it: the **Buy Anytime** row shows its move, and the **State** card's BUY tile shows **Anytime** while it's driving. To clear it, double-tap the row.
+   <!-- guide:show view="power" card="battman-overrides" target="Buy Anytime" until="next" say="Check the row" -->
+
+More: [Overrides](../intermediate/power.md#overrides)
 
 <a id="drain-to-level"></a>
 ### Drain the battery down to a level
 <!-- guide:task where="Power · Overrides" uses="power-overrides.png power-batterymode.png" -->
 
-The **Drain Battery** override runs the house off the battery with solar off, while the buy price is below its price and the battery is above its level. At the level it clears, unless the override timer is running or **No Reset** is on. The **Drain** button on the Battery mode card does the same straight away, with no level: it doesn't stop by itself.
+The **Drain Battery** override runs the house off the battery with the solar off, while the buy price is below its price and the battery is above its level. At the level it clears, unless the timer is running or **No Reset** is on.
 
-1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip to open the control centre.
+1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip.
    <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
 2. Tap **Drain Battery** to open its panel.
    <!-- guide:show view="power" popup="Overrides" target="Drain Battery" until="press" say="Open Drain Battery" -->
-3. Set **SOC %** to the level to drain down to and **PRICE ¢** to the buy price it may drain below. It needs a price.
-   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Set SOC % and PRICE ¢" -->
-4. Press **Set**.
+3. In **SOC %**, type the level to drain down to. 100 means no draining.
+   <!-- guide:show view="power" popup="Overrides" target="SOC %" until="next" say="Type the level to drain to" -->
+4. In **PRICE ¢**, type the buy price to drain below. Drain Battery needs a price.
+   <!-- guide:show view="power" popup="Overrides" target="PRICE ¢" until="next" say="Type the price to drain below" -->
+5. **Drain instead of House Party** (**Plughole**): tap it to keep draining when the buy price goes negative, instead of Battman switching to House Party. Otherwise leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:ph4" until="next" say="Plughole, if you want it" -->
+6. To limit how long it lasts, tap a time under **Start for** or **Run until**. Or leave it.
+   <!-- guide:show view="power" popup="Overrides" target="id:tb4" until="next" say="Choose how long, or leave it" -->
+7. Press **Set**.
    <!-- guide:show view="power" popup="Overrides" target="Set" until="closed" say="Press Set" -->
-5. Check it: the **Drain Battery** row shows the move, such as "60% → 30%" with the kWh. While it drains, **Drain** is lit on the **Battery mode** card and the **Limits** card's **PV Max Limit** is 0.
-   <!-- guide:show view="power" card="battman-limits" target="PV Max Limit" until="next" say="PV Max Limit goes to 0" -->
-
-> [!TIP]
-> To drain now with no level, tap **Drain** on the **Battery mode** card. It doesn't ask first. While **Active** is on, the engine sets the mode again at its next run.
+8. Check it: the **Drain Battery** row shows the move, such as "60% → 30%". While it drains, **Drain** is lit on the **Battery mode** card and **PV Max Limit** is 0. To clear it, double-tap the row.
+   <!-- guide:show view="power" card="battman-overrides" target="Drain Battery" until="next" say="Check the row" -->
 
 More: [Overrides](../intermediate/power.md#overrides) · [Limits](../intermediate/power.md#limits)
 
-<a id="take-over-battery"></a>
-### Take over the battery for a while
-<!-- guide:task where="Power · Battery mode" uses="power-batterymode.png settings-watchdog.png" -->
+<a id="net-target"></a>
+### Make a set amount today, or break even
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png" -->
 
-While **Active** is on, the engine sets the mode and **Curtail** each time it runs, so a mode you pick by hand lasts only until then. Turn Active off to keep it.
+The **Net Target** is a goal for today's money: what you've sold, less what you've bought, less the daily network charge. **Sell** sets an amount to make, **Buy** a budget to spend, and **Break even** means sold covers bought. When it's reached, Battman clears that side's overrides.
 
-1. On the **Power** view's **Battery mode** card, tap **Active**.
-   <!-- guide:show view="power" card="battman-batterymode" target="Active" until="popup" skipif="state:input_boolean.battman_enable=off" say="Tap Active" -->
-2. It asks "Turn Active?" and says "Battman will stop controlling the battery." Press **Turn off**.
-   <!-- guide:show view="power" popup="Turn Active?" target="Turn off" until="state:input_boolean.battman_enable=off" skipif="state:input_boolean.battman_enable=off" say="Press Turn off" -->
-3. Tap the mode you want, such as **Sell**, **Buy** or **Self Consume**, and use **Curtail** as you need. They stay as you set them: the engine and the watchdog don't run, and overrides don't clear.
-   <!-- guide:show view="power" card="battman-batterymode" until="next" say="Pick a mode" -->
-4. When you want Battman to run the battery again, tap **Active**.
-   <!-- guide:show view="power" card="battman-batterymode" target="Active" until="popup" skipif="state:input_boolean.battman_enable=on" say="Tap Active" -->
-5. It says "Battman will control the battery again." Press **Turn on**.
-   <!-- guide:show view="power" popup="Turn Active?" target="Turn on" until="state:input_boolean.battman_enable=on" skipif="state:input_boolean.battman_enable=on" say="Press Turn on" -->
-6. On the **Settings** view, press **Run engine** so the engine picks the mode straight away. Otherwise it runs when the price or a setting next changes.
-   <!-- guide:show view="settings" card="battman-settings" target="Run engine" until="press" say="Press Run engine" -->
+1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip.
+   <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
+2. Tap **Net Target** to open its panel.
+   <!-- guide:show view="power" popup="Overrides" target="Net Target" until="press" say="Open Net Target" -->
+3. Tap **Sell** for an amount to make, or **Buy** for a budget.
+   <!-- guide:show view="power" popup="Overrides" target="Sell" until="next" say="Pick Sell or Buy" -->
+4. Set the amount with **−** and **+** (5¢ a tap; hold to go faster), or tap **Break even**. Under it, "Net today" shows where today stands and what's left "to make" or "to spend".
+   <!-- guide:show view="power" popup="Overrides" target="id:ntv" until="next" say="Set the amount" -->
+5. To limit how long it lasts, tap a time under **Start for** or **Run until**. Or leave it: it ends at midnight.
+   <!-- guide:show view="power" popup="Overrides" target="id:tb99" until="next" say="Choose how long, or leave it" -->
+6. Press **Set**. Setting one side clears the other.
+   <!-- guide:show view="power" popup="Overrides" target="Set" until="closed" say="Press Set" -->
+7. Check it: the strip shows **SELL TARGET** or **BUY BUDGET**, or **BREAK EVEN**, counting down what's left. When it's reached it reads **TARGET MET** or **BUDGET REACHED**.
+   <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="next" say="Check the strip" -->
 
-> [!NOTE]
-> If the engine last ran longer ago than the **Script not run limit**, the watchdog sets Self Consume and turns Curtail on within a minute of Active going on, until the engine runs. **Run engine** also runs the engine while Active is off, and sets the mode.
+More: [Net Target](../intermediate/power.md#net-target)
 
-More: [Active, Curtail and the engine log](../intermediate/power.md#batterymode) · [Watchdog](../intermediate/settings.md#watchdog)
+<a id="presets-and-scenes"></a>
+### Save overrides as a preset or scene, and use it again
+<!-- guide:task where="Power · Overrides" uses="power-overrides.png" -->
+
+A **preset** is one override saved under a name; a **scene** is two or more overrides, or overrides and a Net Target, saved together. Set the overrides you want first.
+
+1. On the **Power** view's **Overrides** card, tap the **OVERRIDES** strip.
+   <!-- guide:show view="power" card="battman-overrides" target="OVERRIDES" until="popup" say="Tap the OVERRIDES strip" -->
+2. Press **＋ Save current**. It lists what it will save under **Will save**, and says whether that makes a chip (one override) or a Scene.
+   <!-- guide:show view="power" popup="Overrides" target="＋ Save current" until="press" say="Press Save current" -->
+3. Type a **Name**, such as "Evening dump". A **Timer h** or **Until** here is saved with it.
+   <!-- guide:show view="power" popup="Overrides" target="Name" until="next" say="Type a name" -->
+4. Press **Save preset**.
+   <!-- guide:show view="power" popup="Overrides" target="Save preset" until="press" say="Press Save preset" -->
+5. To use it again: a preset is a chip at the top of its override's panel, and a scene is a chip under **Scenes**. Tap the chip and it's set straight away; a scene replaces every override and the Net Target.
+   <!-- guide:show view="power" popup="Overrides" until="next" say="Tap a chip to use it" -->
+6. A scene with a Net Target has a moon (**00:01**). Tap it to arm the scene: it's applied at 00:01 tonight. **Manage** puts a **×** on each chip to delete it.
+
+More: [Presets and scenes](../intermediate/power.md#presets-and-scenes)
 
 ## Plan the day
 
@@ -176,24 +288,42 @@ More: [Curvy: the four curves](../intermediate/curvy.md#the-four-curves), [Needy
 
 <a id="change-sell-or-buy-price"></a>
 ### Change the price Battman sells or buys at
-<!-- guide:task where="Pricy · Preferred and second prices" uses="pricy-preferred.png pricy-second.png" -->
+<!-- guide:task where="Pricy · Preferred and second prices" uses="pricy-edit.png pricy-preferred.png pricy-second.png" -->
 
-Battman sells while the feed-in price is at or above **Preferred Sell**, and charges from the grid while the buy price is at or below **Preferred Buy**.
+Each hour, Battman checks two things on the curve in use: the battery level, set on **Curvy**, and the price, set on **Pricy**. It **sells** while the battery is above that hour's **Sell** curve *and* the feed-in price is at or above **Preferred Sell**. It **buys** from the grid while the battery is below that hour's **Buy** curve *and* the buy price is at or below **Preferred Buy**. Curvy is how much charge to keep; Pricy is what price makes it worth it.
 
-1. Open the **Pricy** view. It opens on this month. Tap **Sell**, or **Buy** for buy prices.
+Every curve has a normal and a **High Consumption** version, on both views. Battman uses the High Consumption ones while the house's average use over the last 30 minutes is above **House power above**, or, between 10 am and 4 pm, when the cautious solar forecast won't fill the battery (**PV to full battery gap**). The engine log says "(On High Curve!)" while it does.
+
+1. Open the **Pricy** view. It opens on this month and on the curve for now: **Sell** from 5 pm to 10 pm, **Buy** otherwise. **Currently Editing** says which. The editor opens on High Consumption by the **Battman high consumption** helper, not by the engine's setting, so the engine log is the place to check which one the engine is using.
+   <!-- guide:show view="pricy" card="battman-pricy" target="id:edit-info" until="next" say="See which curve this is" -->
+2. Tap the curve to change: **Sell** or **Buy**, or a **High Consumption** one.
    <!-- guide:show view="pricy" card="battman-pricy" target="Sell" until="press" say="Tap Sell or Buy" -->
-2. In the left box, **Preferred Sell** or **Preferred Buy**, change an hour's price, in ¢/kWh.
+3. In the left box, **Preferred Sell** or **Preferred Buy**, change an hour's price, in ¢/kWh. The chart above shows the change, with today's Amber prices over it.
    <!-- guide:show view="pricy" card="battman-pricy" target="5pm" until="next" say="Change an hour's price" -->
-3. To give every hour one price instead, type it in that box's "value in ¢" box and press **Set All**.
+4. To give every hour one price instead, type it in that box's "value in ¢" box and press **Set All**.
    <!-- guide:show view="pricy" card="battman-pricy" target="Set All" until="press" say="Or press Set All" -->
-4. Set **Low Sell** or **High Buy**, in the right box, the same way. While **Linked to Preferred Sell** (or **Linked to Preferred Buy**) is ticked, it follows the preferred price in every hour where the two were the same.
-5. Press **Save**. It says "💾 Saved!".
+5. The right box is the second price: **Low Sell**, the least Battman takes when the battery is well above the Sell curve and today's sales haven't yet covered today's costs, or **High Buy**, the most it pays when the battery is well below the Buy curve. While **Linked to Preferred Sell** (or **Buy**) is ticked, it follows the preferred price wherever the two were the same.
+6. Press **Save**. It says "💾 Saved!".
    <!-- guide:show view="pricy" card="battman-pricy" target="Save" until="press" say="Press Save" -->
 
 > [!TIP]
-> Prices are whole cents and can be negative. The **Sell High Consumption** and **Buy High Consumption** tabs hold the prices Battman uses at needy times.
+> Prices are whole cents and can be negative. A change goes to the month shown; [copy it to other months](#copy-curves-to-other-months) the same way as Curvy's.
 
-More: [Preferred Sell or Preferred Buy](../intermediate/pricy.md#preferred), [Low Sell or High Buy](../intermediate/pricy.md#second)
+More: [Preferred Sell or Preferred Buy](../intermediate/pricy.md#preferred) · [Low Sell or High Buy](../intermediate/pricy.md#second) · [Needy curve triggers](../intermediate/settings.md#needy)
+
+<a id="cheapest-hours"></a>
+### Find the cheapest or dearest times today
+<!-- guide:task where="Power · Amber price cards" uses="power-amber5minpricegrid.png power-amber24hourforecasttable.png" -->
+
+1. On the **Power** view, the **Amber 5-minute price grid** shows the SELL price now above the BUY price now, each with a countdown to the next price and the next eight periods under it. Purple is best for you: a buy price below 0c, or a sell price of 25c and above. Dark red is worst.
+   <!-- guide:show view="power" card="battman-amber5minpricegrid" until="next" say="Read the prices now" -->
+2. The **Amber 24-hour forecast table** has every interval ahead: **Time**, **Sell**, **Buy**, and Amber Advanced's predicted price for each (**SS**). Scroll it to find the best times; the colours are the same.
+   <!-- guide:show view="power" card="battman-amber24hourforecasttable" until="next" say="Scroll the forecast" -->
+
+> [!TIP]
+> To act on a cheap stretch, use a [Buy Override](#buy-when-cheap) or [Buy Anytime](#buy-anytime); for a dear one, a [Sell Override](#sell-when-price-high).
+
+More: [Amber 5-minute price grid](../intermediate/power.md#amber5minpricegrid) · [Amber 24-hour forecast table](../intermediate/power.md#amber24hourforecasttable)
 
 <a id="copy-curves-to-other-months"></a>
 ### Copy a month's curves to other months
@@ -242,83 +372,44 @@ A preset holds all four curves of one period. Curvy has ten.
 
 More: [Presets](../intermediate/curvy.md#presets), [Auto curve switcher](../intermediate/settings.md#auto-curve)
 
+<a id="holiday-curve"></a>
+### Use a different curve while I'm away
+<!-- guide:task where="Curvy · Presets, Settings · Auto curve switcher" uses="curvy-buttons.png settings-auto-curve.png" -->
+
+Save the curves for while you're away as a preset, then give the **Auto curve switcher** your holiday dates: it uses the preset on those days, and the month's own curve again after.
+
+1. On the **Curvy** view, shape the curves for while you're away: say, a lower **Buy** curve, since the house uses less. Don't press **Save**: that would change the month's own curve. If **Auto-save** is ticked, untick it first.
+   <!-- guide:show view="curvy" card="battman-curvy" target="5pm" until="next" say="Shape the holiday curves" -->
+2. Press **Save Preset ▼**.
+   <!-- guide:show view="curvy" card="battman-curvy" target="Save Preset ▼" until="press" say="Press Save Preset" -->
+3. Pick a preset in the list. It asks "Save current curves for … to …?". Press **OK**. It says "Saved to" and the preset's name.
+4. On the **Settings** view, under **Auto curve switcher**, turn **Auto curve switcher** on.
+   <!-- guide:show view="settings" card="battman-settings" target="Master switch. Off puts the month's own curve back" until="press" say="Turn the switcher on" -->
+5. In the **Holiday** row, set the first and last day (both count) and pick the preset you saved.
+   <!-- guide:show view="settings" card="battman-settings" target="Between these dates. Leave blank to skip" until="next" say="Set the dates and preset" -->
+
+> [!TIP]
+> It checks on the hour, so the preset takes over at the next check on the first day. While the switcher is on, the **State** card shows an **Auto** pill. Its other rules pick presets by the day's solar forecast; leave them blank if you only want the holiday.
+
+More: [Auto curve switcher](../intermediate/settings.md#auto-curve) · [Presets](../intermediate/curvy.md#presets)
+
 ## Money
 
-<a id="bank-income"></a>
-### Bank my income when a new bill starts
-<!-- guide:task where="Finances · Billing" uses="finances-billing.png finances-billing-buttons.png" -->
+<a id="this-bill"></a>
+### See what I've made or spent this bill
+<!-- guide:task where="Finances · Cost chart, Cost compare" uses="finances-costchart.png finances-costchart-totals.png" -->
 
-Do this when a bill closes, so the running totals start again for the next one.
-
-1. Open the **Finances** view. On the **Billing** card, check **New Income**: **Sell** less **Buy** less **Days** times **Network Fee**.
-   <!-- guide:show view="finances" card="battman-billing" target="New Income" until="next" say="Check New Income" -->
-2. Press **Bank New Income**. It adds **New Income** to **Banked Income** and says "✓ New income banked".
-   <!-- guide:show view="finances" card="battman-billing" target="Bank New Income" until="press" say="Press Bank New Income" -->
-3. Then press **Reset New Income**. It sets **Buy**, **Sell** and **Days** back to 0 and says "✓ New income reset". **New Income** is now $0.00, and **Banked Income** has grown by what it was.
-   <!-- guide:show view="finances" card="battman-billing" target="Reset New Income" until="press" say="Press Reset New Income" -->
+1. On the **Finances** view's **Cost chart**, tap **This cycle**. Each bar is a day's cost and sales, with its net above it.
+   <!-- guide:show view="finances" card="battman-cost-chart" target="This cycle" until="press" say="Tap This cycle" -->
+2. The strip above the bars: **This Bill** is this bill cycle's net so far, **Last Bill** the whole of the last one, and **Lifetime** everything. **Today Sell** and **Today Buy** are today's kWh at their average price.
+   <!-- guide:show view="finances" card="battman-cost-chart" target="This Bill" until="next" say="Read This Bill" -->
+3. The **Cost compare** card puts this cycle's running net against the last cycle's, day by day.
+   <!-- guide:show view="finances" card="battman-cost-compare" until="next" say="Compare with last cycle" -->
 
 > [!TIP]
-> Bank first: **Bank New Income** works from the **Buy** and **Sell** totals as they are. Resetting first leaves that income out of **Banked Income** and **Lifetime**, and banking twice before you reset adds it twice. Neither button asks first.
+> A net figure is sales less buying less the daily network charge: green at $0 or more, red below. The bill cycle starts on **Bill day of month** in Settings.
 
-More: [Billing buttons](../intermediate/finances.md#billing-buttons)
-
-<a id="fix-totals"></a>
-### Fix totals that look wrong
-<!-- guide:task where="Finances · Billing" uses="finances-billing-buttons.png" -->
-
-1. Open the **Finances** view. On the **Billing** card, press **Correct Totals**. The **Correct totals** popup opens.
-   <!-- guide:show view="finances" card="battman-billing" target="Correct Totals" until="popup" say="Press Correct Totals" -->
-2. In the box for the period, **Today**, **Yesterday**, **This Month** or **Billing Period**, type the right amounts in **Sell $** and **Buy $**.
-   <!-- guide:show view="finances" popup="Correct totals" target="Sell $" until="next" say="Type the right totals" -->
-3. Press **Apply** in that box.
-   <!-- guide:show view="finances" popup="Correct totals" target="Apply" until="press" say="Press Apply" -->
-4. It asks "Set Today:" (or the period's name) with each total's old and new amount, and says "This overwrites the running totals." Press **OK**.
-5. It says "✓ Today updated" (or the period's name) under the box. Press **✕** to close the popup.
-   <!-- guide:show view="finances" popup="Correct totals" target="✕" until="closed" say="Close the popup" -->
-
-> [!TIP]
-> **Reset** in a box puts back the totals as they are now, and changes nothing. Correct Totals sets these four periods only: the **Buy** and **Sell** rows on the Billing card, counted since the last **Reset New Income**, stay as they are.
-
-More: [Correct totals](../intermediate/finances.md#correct-totals)
-
-<a id="set-network-charge-and-bill-day"></a>
-### Set my network charge and bill day
-<!-- guide:task where="Settings · Billing" uses="settings-billing.png finances-billing.png" -->
-
-Set these to match your retailer's bill.
-
-1. Open the **Settings** view, and the **Billing** section if it's folded.
-2. Type your retailer's daily supply charge in **Daily network charge**, in $ from 0 to 5, then press Enter or leave the box. It says "✓ Saved".
-   <!-- guide:show view="settings" card="battman-settings" target="Daily network charge" until="next" say="Set your daily supply charge" -->
-3. Type the day your billing period starts in **Bill day of month**, from 1 to 31, then press Enter or leave the box. It says "✓ Saved".
-   <!-- guide:show view="settings" card="battman-settings" target="Bill day of month" until="next" say="Set the day your bill starts" -->
-
-> [!TIP]
-> The **Network Fee** box on the Finances view's **Billing** card is the same setting as **Daily network charge**; changing it there says "✓ Network fee saved". A bill day from 1 to 28 starts a period on that day every month. Only a Home Assistant administrator can save a setting.
-
-More: [Billing settings](../intermediate/settings.md#billing), [Bill day of month](../intermediate/settings.md#bill-day-of-month)
-
-<a id="see-payback"></a>
-### See whether the system has paid for itself
-<!-- guide:task where="Finances · Solar System" uses="finances-solar.png settings-system.png" -->
-
-1. Open the **Finances** view. On the **Solar System** card, under **Financials**, read **🧾 Remaining**: the system cost less bill savings, rebates and energy income. At $0 or below, the system has paid for itself.
-   <!-- guide:show view="finances" card="battman-solar-system" target="🧾 Remaining" until="next" say="Read what's left to pay" -->
-2. Under **ROI Timeline**, **⏳ Remaining** is the years still to go, and **🏁 Total ROI** is those plus the years installed.
-   <!-- guide:show view="finances" card="battman-solar-system" target="⏳ Remaining" until="next" say="Read the years to go" -->
-3. To set the figures it works from, open the **Settings** view and the **System & financials** section. Fill in **Install cost** and **Install date**.
-   <!-- guide:show view="settings" card="battman-settings" target="Install cost" until="next" say="Set the install cost and date" -->
-4. Fill in **Other income**: rebates, credits and incentives.
-   <!-- guide:show view="settings" card="battman-settings" target="Other income" until="next" say="Set your other income" -->
-5. Fill in the four **Pre-solar quarterly bills**, from **Q1 · Jul – Sep** to **Q4 · Apr – Jun**.
-   <!-- guide:show view="settings" card="battman-settings" target="Q1 · Jul – Sep" until="next" say="Set the pre-solar bills" -->
-6. Fill in **Bill inflation**, the yearly rise in electricity prices.
-   <!-- guide:show view="settings" card="battman-settings" target="Bill inflation" until="next" say="Set the bill inflation" -->
-
-> [!TIP]
-> **Banked Energy Income** and **Current Energy Income** are **Banked Income** and **New Income** on the **Billing** card.
-
-More: [Solar System](../intermediate/finances.md#solar), [System & financials](../intermediate/settings.md#system)
+More: [Cost chart](../intermediate/finances.md#costchart) · [Cost compare](../intermediate/finances.md#costcompare)
 
 ## Look and feel
 
@@ -363,39 +454,45 @@ More: [Dashboard theme](../intermediate/settings.md#dashboard-theme), [Themes](.
 
 More: [Themes](../intermediate/theme.md#themes), [Palette](../intermediate/theme.md#palette), [Harmonic palette generator](../intermediate/theme.md#harmonic)
 
-<a id="turn-help-off-on"></a>
-### Turn the help off or back on
-<!-- guide:task where="Settings · Dashboard options" uses="settings-dashboard.png" -->
+## Check on Battman
 
-1. Open the **Settings** view.
-2. Under **Dashboard options**, turn **Show help** off or on.
-   <!-- guide:show view="settings" card="battman-settings" target="Show help" until="press" say="Turn Show help off or on" -->
-3. Off takes the **Help** view off the dashboard and hides the **Help** buttons. On adds the **Help** view back as the last tab and shows the buttons again.
-4. When Home Assistant asks "Your dashboard was updated. Refresh to see changes?", press **Refresh**.
+<a id="next-hours"></a>
+### See what Battman will do over the next few hours
+<!-- guide:task where="Power · State" uses="power-state.png" -->
 
-> [!TIP]
-> No Help tab while **Show help** is on? Turn it off and on again.
+1. On the **Power** view, tap the **State** card. **Next hours** opens.
+   <!-- guide:show view="power" card="battman-state" until="popup" say="Tap the State card" -->
+2. Each stretch says what the engine would do, from now on: "Sell … kWh", "Buy … kWh", "Drain … kWh", "Hold the battery at …%" or "Do nothing". Each gives its times ("Now" for the one under way), the battery level, what it earns (green, "+$") or costs (yellow, "−$"), why, and the house and solar power.
+   <!-- guide:show view="power" popup="*" until="next" say="Read the next hours" -->
+3. To try other conditions, open **What-if**.
+   <!-- guide:show view="power" popup="*" target="What-if" until="open" say="Open What-if" -->
+4. Change **Battery level**, **Solar**, **House load**, **Buy price shift** or **Sell price shift**, and the stretches change with them. None of it is sent to the battery; **Reset to live** puts them back.
+   <!-- guide:show view="power" popup="*" target="Reset to live" until="next" say="Try a what-if" -->
+5. Press **✕** to close it.
+   <!-- guide:show view="power" popup="*" target="✕" until="closed" say="Press ✕" -->
 
-More: [Showing or hiding the guide](../README.md#showing-or-hiding-the-guide)
+More: [The next hours](../intermediate/power.md#the-next-hours) · [Forecast entries](../intermediate/log.md#forecast-entries)
 
-## Something's not right
+<a id="what-battman-did"></a>
+### Find out what Battman did and why
+<!-- guide:task where="Power · State, Log" uses="power-state.png log-log.png" -->
 
-<a id="why-this-mode"></a>
-### See why Battman picked a mode
-<!-- guide:task where="Power · State" uses="power-state.png log-log.png" -->
-
-1. Open the **Power** view. The pill at the bottom of the **State** card names the side that's acting ("Selling" or "Buying") and why, such as "Sell Override 25c >40%". A mode set by hand shows as "Manual mode change · " and the button's name.
+1. On the **Power** view, the pill at the bottom of the **State** card names the side that's acting ("Selling" or "Buying") and why, such as "Sell Override 25c >40%". A mode set by hand shows as "Manual mode change · " and the button's name.
    <!-- guide:show view="power" card="battman-state" until="next" say="Read the reason on the State card" -->
 2. On the **Battery mode** card, tap the information button.
    <!-- guide:show view="power" card="battman-batterymode" target="icon:mdi:information-outline" until="popup" say="Tap the information button" -->
-3. The **Engine log** shows the engine's account of its last run. Press **✕** to close it.
+3. The **Engine log** is the engine's account of its last run. Press **✕** to close it.
    <!-- guide:show view="power" popup="*" target="✕" until="closed" say="Read it, then press ✕" -->
-4. For earlier runs, open the **Log** view and tap **Log** to open the list.
+4. For earlier runs, open the **Log** view. Under **Filter Log**, pick how far back to look, such as **24h**.
+   <!-- guide:show view="log" card="battman-log" target="24h" until="press" say="Pick how far back" -->
+5. Tap **Log** to open the list of runs.
    <!-- guide:show view="log" card="battman-log" target="Log" until="open" say="Tap Log to open it" -->
-5. Tick **Changes Only** to see just the runs where the mode changed. Each entry's **Mode** shows the change, such as "Self Consume → Charge".
+6. Tick **Changes Only** to see just the runs where the mode changed. Each entry's **Mode** shows the change, such as "Self Consume → Charge", with the prices and battery level that led to it. Untick a mode to hide its runs.
    <!-- guide:show view="log" card="battman-log" target="Changes Only" until="press" say="Tick Changes Only" -->
 
-More: [State](../intermediate/power.md#state), [Battery mode](../intermediate/power.md#batterymode), [Log](../intermediate/log.md#log)
+More: [State](../intermediate/power.md#state) · [Filter Log](../intermediate/log.md#controls) · [Log](../intermediate/log.md#log)
+
+## Something's not right
 
 <a id="what-repair-means"></a>
 ### Find out what a Repair means

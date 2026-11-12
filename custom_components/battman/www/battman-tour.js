@@ -3,11 +3,13 @@
 // startTour({title, steps}); each step is {view, card, popup, target, until, say, body} (battman-guide-howto.js reads
 // them from the page's guide:show markers; the format is in the guide's CLAUDE.md row and tests/test_guide.py).
 //
-// How it looks: the page is frosted (blurred and tinted in the theme's colours) except a rounded "lens" cut around the
-// whole control to press (padded 8px, its corners one step rounder than the control's). A thin ring in the theme's accent
-// sits on the lens; it glows once when it lands and, while the control is the thing to press, breathes outwards. The
-// step's words sit on the frost beside the lens (level with its top, or flush with its left above or below it; on a
-// phone, docked at the top or bottom, away from it). The lens glides from stop to stop; with reduced motion it jumps.
+// How it looks: the page is frosted (blurred and tinted in the theme's colours), most strongly behind the step's words and
+// fading out from them (on a phone, one even layer). Clear of the frost are a rounded "lens" around the whole control to
+// press (padded 8px, its corners one step rounder than the control's) and the card it's on, or as much of the card as
+// leaves room for the words beside it, so you see what the control changes. A thin ring in the theme's accent sits on the
+// lens; it glows once when it lands and, while the control is the thing to press, breathes outwards. The words sit beside
+// the clear part (level with the control's top, or flush with its left above or below it; on a phone, docked at the top
+// or bottom, away from it). Everything glides from stop to stop; with reduced motion it jumps.
 //
 // How it behaves: it never presses anything. A step ends when the real thing happens: the person presses the ringed
 // control, a popup opens or closes, or a Home Assistant entity reaches a state. It follows the person into Battman's
@@ -26,15 +28,12 @@ const PRESSABLE = "button, a[href], [role=button], [role=switch], [role=checkbox
 
 const CSS = `
 :host { all: initial; }
-.frost { position: fixed; z-index: 2147483000; pointer-events: none; -webkit-backdrop-filter: blur(var(--frost-blur, 5px)); backdrop-filter: blur(var(--frost-blur, 5px));
-  background: color-mix(in srgb, var(--battman-surface-card, var(--card-background-color, #111)) 46%, transparent); }
+.layer, .tint { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; }
 .ring { position: fixed; z-index: 2147483001; box-sizing: border-box; pointer-events: none; border: 1.5px solid var(--battman-sky, var(--primary-color, #4af)); }
 .ring.glow { animation: bt-glow .9s cubic-bezier(.2,.8,.2,1) both; }
 .ring.beckon::after { content: ""; position: absolute; inset: -1.5px; border-radius: inherit; animation: bt-beckon 1.8s cubic-bezier(.2,.8,.2,1) infinite; }
 @keyframes bt-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--battman-sky, #4af) 60%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
 @keyframes bt-beckon { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--battman-sky, #4af) 45%, transparent); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
-.glide .frost, .glide .ring { transition: top .52s cubic-bezier(.2,.8,.2,1), left .52s cubic-bezier(.2,.8,.2,1), width .52s cubic-bezier(.2,.8,.2,1),
-  height .52s cubic-bezier(.2,.8,.2,1), border-radius .52s; }
 .words { position: fixed; z-index: 2147483002; box-sizing: border-box; width: min(340px, calc(100vw - 32px)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
   font: 14px/1.45 var(--primary-font-family, system-ui, sans-serif); text-shadow: 0 1px 2px color-mix(in srgb, var(--battman-surface-card, #000) 70%, transparent);
   opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; }
@@ -57,7 +56,7 @@ button:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color
   background: var(--battman-surface-popup, var(--card-background-color, #222)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
   border: 1px solid var(--battman-border-neutral, var(--divider-color, #555)); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { .glide .frost, .glide .ring, .words { transition: none; } .ring.glow, .ring.beckon::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .words { transition: none; } .ring.glow, .ring.beckon::after { animation: none; } }
 `;
 
 let tour = null;
@@ -108,6 +107,14 @@ function findShown(scope, text) {
     && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want));
   if (scope.shadowRoot) hits.push(...deepAll(scope, (el) => el.textContent.trim().toLowerCase() === want
     && ![...el.children].some((c) => c.textContent.trim().toLowerCase() === want)));
+  if (!hits.length) {
+    // a label broken over two lines ("SELL<br>OVERRIDE" on an Overrides row): read the line break as a space
+    const spaced = (n) => [...n.childNodes].map((c) => (c.nodeType === 3 ? c.textContent : c.localName === "br" ? " " : c.nodeType === 1 ? spaced(c) : "")).join("");
+    const norm = (n) => spaced(n).replace(/\s+/g, " ").trim().toLowerCase();
+    const want2 = want.replace(/\s+/g, " ");
+    const test = (el) => el.querySelector && el.querySelector("br") && norm(el) === want2 && ![...el.children].some((c) => norm(c) === want2);
+    hits.push(...deepAll(scope.shadowRoot || scope, test));
+  }
   return hits.find((h) => shown(h) && onTop(h)) || hits.find(shown) || hits[0] || findText(scope, text);
 }
 // is el what's actually on screen at its middle (not under another panel, not clipped away)?
@@ -138,16 +145,14 @@ function controlAround(el, scope) {
   // a setting's name (Settings' rows: the name, then its box): the whole row, name and box
   return fieldAround(el, scope) || el;
 }
-// the nearest box (up to three levels up, no taller than a row) that holds exactly one field: a label and its box, a setting's row
+// the nearest box (up to three levels up, no taller than a row) that holds a field: a label and its box, a setting's row
 const FIELD = "input:not([type=hidden]), select, textarea";
 function fieldAround(el, scope) {
   let n = up(el);
   for (let k = 0; n && n !== scope && k < 3; k++, n = up(n)) {
     if (n.nodeType !== 1) continue;
     if (rectOf(n).height > 140) return null;          // a whole block, not one field's row
-    const f = [...n.querySelectorAll(FIELD)].filter(shown);
-    if (f.length === 1) return n;
-    if (f.length > 1) return null;
+    if ([...n.querySelectorAll(FIELD)].some(shown)) return n;
   }
   return null;
 }
@@ -177,7 +182,7 @@ export function startTour({ title, steps }) {
   host.id = "battman-tour";
   const root = host.attachShadow({ mode: "open" });
   root.innerHTML = `<style>${CSS}</style><div class="stage">`
-    + `<div class="frost f1"></div><div class="frost f2"></div><div class="frost f3"></div><div class="frost f4"></div>`
+    + `<div class="layer"></div><div class="layer"></div><div class="layer"></div><div class="layer"></div><div class="tint"></div>`
     + `<div class="ring" hidden></div><div class="words" role="dialog" aria-live="polite" tabindex="-1"></div></div>`
     + `<div class="pill" hidden><span>Walkthrough paused</span><button data-act="resume" class="fwd">Back to the walkthrough</button><button data-act="stop">Stop</button></div>`;
   document.body.appendChild(host);
@@ -220,6 +225,7 @@ function go(i, dir = 1) {
   t.pressed = false;
   t.finished = false;
   t.popupsAtStart = anyPopups().length;
+  t.counted = false;
   t.popupSince = 0;
   if (!t.step.popup) navigate(`/${t.dash}/${t.step.view}`);
   draw("finding");
@@ -291,7 +297,7 @@ function tick() {
     const top = openPopups().pop() || document.body;
     if (t.host.parentNode !== top) top.appendChild(t.host);
     // what it pointed at has gone (the popup closed): the card the popup came from, where the outcome shows
-    if (!(t.lensEl && t.lensEl.isConnected && shown(t.lensEl)) && t.homeCard && t.homeCard.isConnected) t.lensEl = t.homeCard;
+    if (!(t.lensEl && t.lensEl.isConnected && shown(t.lensEl)) && t.homeCard && t.homeCard.isConnected) { t.lensEl = t.homeCard; t.chain = [t.homeCard]; }
     return;
   }
   if (why) { t.ended = why; return next(); }
@@ -307,7 +313,7 @@ function tick() {
   // the stage lives in the open popup, or the page can't be pressed through to it
   const top = openPopups().pop() || document.body;
   if (t.host.parentNode !== top) top.appendChild(t.host);
-  t.host.dataset.at = !at ? "no-scope" : !at.lens ? "no-target" : shown(at.lens) ? "shown" : "hidden";   // what it sees (for checks)
+  t.host.dataset.at = (!at ? "no-scope" : !at.lens ? "no-target" : shown(at.lens) ? "shown" : "hidden") + ` ${t.i} ${anyPopups().length}/${t.popupsAtStart}`;   // what it sees (for checks)
   if (!at || !at.lens) { if (t.landed || !t.extra) draw("finding"); return; }
   if (!s.popup && at.card) t.homeCard = at.card;     // the card on the page the walkthrough is working with
   // folded away: a step of its own, to open it first
@@ -324,16 +330,25 @@ function tick() {
   if (t.lensEl !== at.lens) {
     land(at.lens, at.card, false);
     draw("found");
+  } else if (!inView(at.lens) && Date.now() - (t.scrolled || 0) > 1500) {
+    // still off screen (a scroll was cut short as the card redrew): bring it in again
+    t.scrolled = Date.now();
+    at.lens.scrollIntoView({ block: s.popup ? "nearest" : "center" });
   }
 }
+const inView = (el) => { const r = rectOf(el); return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth; };
 
 function land(el, card, folding) {
   const t = tour;
   if (t.lensEl && t.onPress) { t.lensEl.removeEventListener("click", t.onPress, true); t.lensEl.removeEventListener("pointerup", t.onPress, true); }
   t.lensEl = el;
+  t.chain = chainOf(el, card);
   t.host.dataset.lens = (el.textContent || el.localName).replace(/\s+/g, " ").trim().slice(0, 40);   // what it rings (for checks)
   t.card = card;
   t.landed = true;
+  // count the popups open when the step first lands on its own view (not where the walkthrough started), so "popup"
+  // means a new one
+  if (!folding && !t.counted) { t.popupsAtStart = anyPopups().length; t.counted = true; }
   copyTheme(card || el);
   const u = String(t.step.until || "press");
   const step = t.step;
@@ -344,6 +359,7 @@ function land(el, card, folding) {
     }
   };
   if (t.onPress) { el.addEventListener("click", t.onPress, true); el.addEventListener("pointerup", t.onPress, true); }
+  t.scrolled = Date.now();
   if (!folding) el.scrollIntoView({ block: t.step.popup ? "nearest" : "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const ring = t.root.querySelector(".ring");
   ring.hidden = false;
@@ -351,7 +367,17 @@ function land(el, card, folding) {
   void ring.offsetWidth;
   ring.classList.add("glow");
   ring.classList.toggle("beckon", folding || /press|popup|closed|state:/.test(u));
-  t.root.querySelector(".stage").classList.add("glide");
+}
+
+// the boxes from the control up to its card (or popup), smallest first: the walkthrough clears the biggest that leaves
+// room for the words beside it, so the whole card shows while the ring stays on the control
+function chainOf(el, card) {
+  const out = [];
+  for (let n = el; n; n = up(n)) {
+    if (n.nodeType === 1 && getComputedStyle(n).display !== "contents") out.push(n);
+    if (n === card) break;
+  }
+  return out;
 }
 
 function copyTheme(el) {
@@ -380,11 +406,42 @@ function draw(state) {
   if (state === "finding") {
     t.root.querySelector(".ring").hidden = true;
     t.lensEl = null;
+    t.chain = [];
   }
   setTimeout(() => { if (tour === t) w.classList.add("in"); }, state === "finding" ? 0 : 320);
 }
 
-// every frame: the frost around the lens, the ring on it, the words beside it
+// every frame: the frost, the ring on the control, the words beside the clear part. The frost is several blur layers and
+// a tint, each fading out from the words (on a phone, one even layer); the control and its card (or the part of it that
+// leaves room for the words) are clear holes in all of them. Everything glides to where it's going; reduced motion jumps.
+const BLURS = [2, 5, 10, 16], REACH = [640, 420, 260, 120], PHONE_BLUR = 8, PHONE_TINT = 55;
+const tintOf = (p) => `color-mix(in srgb, var(--battman-surface-card, var(--card-background-color, #111)) ${p}%, transparent)`;
+const r1 = (v) => Math.round(v * 10) / 10;
+function roundRect({ x, y, w, h, r }) {
+  const k = Math.max(0, Math.min(r, w / 2, h / 2));
+  return `M${r1(x + k)} ${r1(y)}H${r1(x + w - k)}A${r1(k)} ${r1(k)} 0 0 1 ${r1(x + w)} ${r1(y + k)}V${r1(y + h - k)}`
+    + `A${r1(k)} ${r1(k)} 0 0 1 ${r1(x + w - k)} ${r1(y + h)}H${r1(x + k)}A${r1(k)} ${r1(k)} 0 0 1 ${r1(x)} ${r1(y + h - k)}`
+    + `V${r1(y + k)}A${r1(k)} ${r1(k)} 0 0 1 ${r1(x + k)} ${r1(y)}Z`;
+}
+const inside = (a, b) => a.x >= b.x - 1 && a.y >= b.y - 1 && a.x + a.w <= b.x + b.w + 1 && a.y + a.h <= b.y + b.h + 1;
+
+// where the words go outside box B (level with the control's top, or flush with its left); null if they don't fit
+function wordsBeside(B, L, ww, wh, vw, vh, phone, topMin) {
+  const gap = 20;
+  if (phone) {
+    const x = (vw - ww) / 2, top = { x, y: topMin }, bottom = { x, y: vh - wh - 16 };
+    const fitsTop = B.y >= topMin + wh + gap, fitsBottom = B.y + B.h <= vh - wh - 16 - gap;
+    const pref = L.y + L.h / 2 > vh / 2 ? [fitsTop && top, fitsBottom && bottom] : [fitsBottom && bottom, fitsTop && top];
+    return pref.find(Boolean) || null;
+  }
+  const clampY = (y) => Math.min(Math.max(topMin, y), vh - wh - 16), clampX = (x) => Math.min(Math.max(16, x), vw - ww - 16);
+  if (vw - (B.x + B.w) - gap >= ww + 16) return { x: B.x + B.w + gap, y: clampY(L.y) };
+  if (B.x - gap >= ww + 16) return { x: B.x - gap - ww, y: clampY(L.y) };
+  if (vh - (B.y + B.h) - gap >= wh + 16) return { x: clampX(L.x), y: B.y + B.h + gap };
+  if (B.y - gap - wh >= topMin) return { x: clampX(L.x), y: B.y - gap - wh };
+  return null;
+}
+
 function place() {
   const t = tour;
   if (!t) return;
@@ -394,43 +451,84 @@ function place() {
   stage.hidden = t.paused;
   R.querySelector(".pill").hidden = !t.paused;
   if (t.paused) return;
-  const vw = window.innerWidth, vh = window.innerHeight, phone = vw < 600;
-  t.host.style.setProperty("--frost-blur", phone ? "8px" : "5px");
-  let L;
+  const vw = window.innerWidth, vh = window.innerHeight, phone = vw < 600, topMin = Math.max(12, headerBottom() + 12);
+  const ww = w.offsetWidth, wh = w.offsetHeight;
+  // where everything is going: the lens round the control, the clear part around it, the words
+  let L = null, C = null, at = null;
   if (t.lensEl && t.lensEl.isConnected && shown(t.lensEl)) {
     const r = rectOf(t.lensEl);
     const radius = parseFloat(getComputedStyle(t.lensEl).borderTopLeftRadius) || 8;
     L = { x: r.left - PAD, y: r.top - PAD, w: r.width + PAD * 2, h: r.height + PAD * 2, r: radius + 4 };
-    // keep the ring on screen: a control at the edge gets its padding on the inside
-    const x2 = Math.min(vw - 2, L.x + L.w);
+    const x2 = Math.min(vw - 2, L.x + L.w);       // keep the ring on screen: a control at the edge gets its padding inside
     L.x = Math.max(2, L.x);
     L.w = Math.max(0, x2 - L.x);
-  } else {
-    L = { x: vw / 2, y: vh / 2, w: 0, h: 0, r: 0 };
+    // the biggest box from the card down that, cut to the screen, still leaves room for the words outside it
+    const screen = { x: 0, y: topMin - 12, w: vw, h: vh - topMin + 12 };
+    for (const el of (t.chain || []).slice().reverse()) {
+      if (!el.isConnected || !shown(el)) continue;
+      const b = rectOf(el);
+      const x = Math.max(screen.x, b.left), y = Math.max(screen.y, b.top);
+      const box = { x, y, w: Math.min(screen.x + screen.w, b.right) - x, h: Math.min(screen.y + screen.h, b.bottom) - y,
+        r: parseFloat(getComputedStyle(el).borderTopLeftRadius) || 12 };
+      if (box.w <= 0 || box.h <= 0 || inside(box, L) || !inside(L, { ...box, x: box.x - PAD, y: box.y - PAD, w: box.w + 2 * PAD, h: box.h + 2 * PAD })) continue;
+      const spot = wordsBeside(box, L, ww, wh, vw, vh, phone, topMin);
+      if (spot) { C = box; at = spot; break; }
+    }
+    if (!at) at = wordsBeside(L, L, ww, wh, vw, vh, phone, topMin);
   }
-  const set = (el, x, y, ww, hh) => Object.assign(el.style, { left: `${x}px`, top: `${y}px`, width: `${Math.max(0, ww)}px`, height: `${Math.max(0, hh)}px` });
-  const [f1, f2, f3, f4] = R.querySelectorAll(".frost");
-  set(f1, 0, 0, vw, L.y);                                  // above
-  set(f2, 0, L.y + L.h, vw, vh - L.y - L.h);               // below
-  set(f3, 0, L.y, L.x, L.h);                               // left
-  set(f4, L.x + L.w, L.y, vw - L.x - L.w, L.h);            // right
+  if (!at) at = { x: (vw - ww) / 2, y: L ? (L.y + L.h / 2 > vh / 2 ? topMin : vh - wh - 16) : (vh - wh) / 2 };
+  const F = { x: at.x + ww / 2, y: at.y + wh / 2, r: Math.max(ww, wh) / 2 + 16 };
+  // glide: a step of the way there, by the time since the last frame (it settles in about half a second, however
+  // slowly the frames come)
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const now = performance.now(), k = 1 - Math.exp(-Math.min(200, now - (t.at || now)) / 110);
+  t.at = now;
+  let moving = false;
+  const step = (a, b) => (!a || !b || still ? b : Object.fromEntries(Object.keys(b).map((key) => {
+    if (Math.abs(b[key] - a[key]) < 0.5) return [key, b[key]];
+    moving = true;
+    return [key, a[key] + (b[key] - a[key]) * k];
+  })));
+  const cur = t.cur || (t.cur = {});
+  cur.L = L ? step(cur.L, L) : null;
+  cur.C = C ? step(cur.C || cur.L, C) : null;
+  cur.F = step(cur.F, F);
+  if (t.host.dataset.still !== String(!moving)) t.host.dataset.still = String(!moving);   // (for checks: it has arrived)
+  // the frost: holes for the lens and the clear part (one hole when one holds the other)
+  // (overlapping holes become one: evenodd would fill the overlap back in)
+  const holes = [];
+  const apart = (a, b) => a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+  if (cur.C && cur.L && !apart(cur.L, cur.C)) {
+    const x = Math.min(cur.L.x, cur.C.x), y = Math.min(cur.L.y, cur.C.y);
+    holes.push({ x, y, w: Math.max(cur.L.x + cur.L.w, cur.C.x + cur.C.w) - x, h: Math.max(cur.L.y + cur.L.h, cur.C.y + cur.C.h) - y, r: cur.C.r });
+  } else for (const b of [cur.L, cur.C]) if (b && b.w > 0 && b.h > 0) holes.push(b);
+  const clip = holes.length ? `path(evenodd, "M0 0H${vw}V${vh}H0Z ${holes.map(roundRect).join(" ")}")` : "none";
+  const fade = (reach) => `radial-gradient(circle at ${r1(cur.F.x)}px ${r1(cur.F.y)}px, #000 0, #000 ${r1(cur.F.r)}px, transparent ${r1(cur.F.r + reach)}px)`;
+  // (a style is written only when it changes: repainting the blur every frame would keep the page busy)
+  const put = (el, prop, v) => { const k = `_${prop}`; if (el[k] !== v) { el[k] = v; el.style.setProperty(prop, v); } };
+  R.querySelectorAll(".layer").forEach((el, i) => {
+    const on = !phone || i === 0;
+    if (el.hidden === on) el.hidden = !on;
+    if (!on) return;
+    const blur = `blur(${phone ? PHONE_BLUR : BLURS[i]}px)`;
+    const mask = phone ? "none" : fade(REACH[i]);
+    put(el, "backdrop-filter", blur);
+    put(el, "-webkit-backdrop-filter", blur);
+    put(el, "mask-image", mask);
+    put(el, "-webkit-mask-image", mask);
+    put(el, "clip-path", clip);
+  });
+  const tint = R.querySelector(".tint");
+  put(tint, "clip-path", clip);
+  const { x: fx, y: fy, r: fr } = cur.F;
+  put(tint, "background", phone ? tintOf(PHONE_TINT)
+    : `radial-gradient(circle at ${r1(fx)}px ${r1(fy)}px, ${tintOf(66)} 0, ${tintOf(52)} ${r1(fr)}px, ${tintOf(18)} ${r1(fr + 220)}px, ${tintOf(0)} ${r1(fr + 460)}px)`);
+  // the ring on the control
   const ring = R.querySelector(".ring");
-  set(ring, L.x, L.y, L.w, L.h);
-  ring.style.borderRadius = `${L.r}px`;
-  // the words: beside the lens, level with its top; else below or above it, flush with its left; on a phone, docked away from it
-  const ww = w.offsetWidth, wh = w.offsetHeight, gap = 20, topMin = Math.max(12, headerBottom() + 12);
-  let x, y;
-  if (!L.w) { x = (vw - ww) / 2; y = (vh - wh) / 2; }
-  else if (phone) {
-    x = (vw - ww) / 2;
-    y = L.y + L.h / 2 > vh / 2 ? topMin : vh - wh - 16;
-  } else if (vw - (L.x + L.w) - gap >= ww + 16) { x = L.x + L.w + gap; y = L.y; }
-  else if (L.x - gap >= ww + 16) { x = L.x - gap - ww; y = L.y; }
-  else if (vh - (L.y + L.h) - gap >= wh + 16) { x = L.x; y = L.y + L.h + gap; }
-  else { x = L.x; y = L.y - gap - wh; }
-  x = Math.min(Math.max(16, x), vw - ww - 16);
-  y = Math.min(Math.max(topMin, y), vh - wh - 16);
-  Object.assign(w.style, { left: `${x}px`, top: `${y}px` });
+  const Lr = cur.L || { x: vw / 2, y: vh / 2, w: 0, h: 0, r: 0 };
+  put(ring, "left", `${Lr.x}px`); put(ring, "top", `${Lr.y}px`); put(ring, "width", `${Math.max(0, Lr.w)}px`);
+  put(ring, "height", `${Math.max(0, Lr.h)}px`); put(ring, "border-radius", `${Lr.r}px`);
+  put(w, "left", `${at.x}px`); put(w, "top", `${at.y}px`);
 }
 
 // ── the person ──────────────────────────────────────────────────────────────────────────────────
