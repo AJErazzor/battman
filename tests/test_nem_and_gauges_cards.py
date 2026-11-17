@@ -115,10 +115,12 @@ async def test_nem_sensors_missing(hass: HomeAssistant) -> None:
     del attrs["gas_recip"]
     _opennem(hass, "sa", attrs)
     await _setup(hass)
+    # OpenNEM leaves a fuel out when it isn't running: it counts as 0, not a problem,
+    # and the totals are still worked out.
     recip = hass.states.get("sensor.battman_nem_gas_recip")
-    assert recip.state == "unknown" and "gas_recip" in recip.attributes["problem"]      # not 0
-    assert hass.states.get("sensor.battman_nem_total_supply").state == "unknown"
-    assert hass.states.get("sensor.battman_nem_consumers").state == "unknown"
+    assert recip.state == "0.0" and "problem" not in recip.attributes
+    assert hass.states.get("sensor.battman_nem_total_supply").state == "2343.75"
+    assert hass.states.get("sensor.battman_nem_consumers").state == "690.47"
     assert hass.states.get("sensor.battman_nem_wind").state == "812.4"
     assert hass.states.get("sensor.battman_nem_exports").state == "455.12"
 
