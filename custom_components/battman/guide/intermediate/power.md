@@ -348,7 +348,7 @@ In **Bars**, a block of 4% or more shows its % inside it when the % fits, and th
 
 - **OpenNEM isn't installed:** "NEM mix needs the OpenNEM integration: install it from HACS and add it for your region (Settings → Repairs has the steps)." See [Battman's NEM mix card needs OpenNEM](../help/repairs.md#opennem-missing).
 - **Several regions:** Battman can't tell which to read until you pick one. See [Pick your OpenNEM region](../help/repairs.md#opennem-choose).
-- **A figure is missing:** a line above the pies reads "NEM mix: no value from" and names the sensors, with the reason when there is one.
+- **OpenNEM has no figures:** if its sensor is unavailable, a line above the pies reads "NEM mix: no value from" and names the sensors, with the reason. A fuel that simply isn't running (OpenNEM leaves it out) counts as 0 and doesn't trigger this.
 
 <a id="heading-picture"></a>
 ## Heading picture

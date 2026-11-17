@@ -19,9 +19,10 @@ Battman re-exposes them as sensors (MW), plus where the power goes:
                                 v0.43.0: rooftop solar is its own slice of the demand mix, as it's used
                                 behind the meter)
 
-No fallbacks: if the OpenNEM sensor is unavailable, every NEM sensor is unavailable.
-If one category is missing from it, that sensor is unknown (not 0), and so are the
-totals that need it; the `problem` attribute says which.
+If the OpenNEM sensor is unavailable, every NEM sensor is unavailable (its `problem`
+attribute says why). A single category OpenNEM leaves out is not broken data: OpenNEM
+drops a fuel that isn't running, and the distillate peakers are idle most of the time,
+so a missing category counts as 0 (the card is a pie chart, not a data-integrity check).
 """
 
 from __future__ import annotations
@@ -79,29 +80,28 @@ def _num(attrs: dict[str, Any], name: str) -> float | None:
         return None
 
 
-def compute(state: Any) -> tuple[bool, dict[str, float | None], list[str]]:
-    """(available, values by sensor key, missing OpenNEM attributes) for an OpenNEM state."""
+def compute(state: Any) -> tuple[bool, dict[str, float | None]]:
+    """(available, values by sensor key) for an OpenNEM state.
+
+    When the sensor is available, a source it leaves out counts as 0: OpenNEM drops a
+    fuel that isn't generating, so a missing category means that fuel is off, not that
+    the data is broken. Only the sensor itself being unavailable makes the values unknown.
+    """
     if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
-        return False, dict.fromkeys(ALL_KEYS), []
+        return False, dict.fromkeys(ALL_KEYS)
     attrs = dict(state.attributes)
     out: dict[str, float | None] = {}
-    missing: list[str] = []
     for key, (attr, _icon) in GENERATION.items():
-        out[key] = _num(attrs, attr)
-        if out[key] is None:
-            missing.append(attr)
+        v = _num(attrs, attr)
+        out[key] = v if v is not None else 0.0
     for key, attr in (("nem_exports", "exports"), ("nem_battery_charging", "battery_charging")):
         v = _num(attrs, attr)
-        out[key] = round(abs(v), 2) if v is not None else None
-        if v is None:
-            missing.append(attr)
+        out[key] = round(abs(v), 2) if v is not None else 0.0
     gen = [out[k] for k in GENERATION]
-    out["nem_total_supply"] = None if None in gen else round(sum(max(0.0, v) for v in gen), 2)
+    out["nem_total_supply"] = round(sum(max(0.0, v) for v in gen), 2)
     parts = (out["nem_total_supply"], out["nem_exports"], out["nem_battery_charging"], out["nem_rooftop_solar"])
-    out["nem_consumers"] = (
-        None if None in parts else round(max(0.0, parts[0] - parts[1] - parts[2] - max(0.0, parts[3])), 2)
-    )
-    return True, out, missing
+    out["nem_consumers"] = round(max(0.0, parts[0] - parts[1] - parts[2] - max(0.0, parts[3])), 2)
+    return True, out
 
 
 def find_regions(hass: HomeAssistant) -> list[str]:
@@ -193,7 +193,7 @@ class NemSource:
             self._unsub_states()
             self._unsub_states = None
 
-    def read(self) -> tuple[bool, dict[str, float | None], list[str]]:
+    def read(self) -> tuple[bool, dict[str, float | None]]:
         return compute(self.hass.states.get(self.entity_id) if self.entity_id else None)
 
 
@@ -218,7 +218,7 @@ class BattmanNemSensor(SensorEntity):
 
     @callback
     def _refresh(self) -> None:
-        available, values, missing = self._source.read()
+        available, values = self._source.read()
         # no region sensor to read (none found, or several to choose from): unknown, saying why
         # (HA drops an unavailable sensor's attributes, so the reason would be lost)
         self._attr_available = available or bool(self._source.problem)
@@ -228,8 +228,6 @@ class BattmanNemSensor(SensorEntity):
             attrs["problem"] = self._source.problem
         elif not available:
             attrs["problem"] = f"{self._source.entity_id} is missing or unavailable"
-        elif values[self._key] is None:
-            attrs["problem"] = f"{self._source.entity_id} has no value for: {', '.join(missing)}"
         self._attr_extra_state_attributes = attrs
         if self.hass and self.entity_id:
             self.async_write_ha_state()
