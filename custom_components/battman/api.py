@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import posixpath
 import re
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,7 @@ from .const import (
     GUIDE_URL,
     IMAGE_URL,
     IMAGES_URL,
+    STATIC_URL,
     THEMES_URL,
 )
 
@@ -235,3 +237,37 @@ class BattmanGuidePageView(HomeAssistantView):
         except guide.GuideError as err:
             return self.json({"message": str(err)}, status_code=404)
         return self.json({"id": page_id, "markdown": text})
+
+
+class BattmanVersionedFilesView(HomeAssistantView):
+    """Serve www files for ANY /battmanfiles-v<version>/ path, from the current www dir.
+
+    async_setup registers a static mount for only the CURRENT version, and that mount
+    (registered first) still serves it — so this view only ever handles RETIRED versions.
+    A dashboard tab left open across a Battman update keeps relative-importing its lazy
+    chunks (e.g. the help panel is imported only on first use) from the old
+    /battmanfiles-v<old>/ folder, which is no longer mounted; without this they 404
+    ("Failed to fetch dynamically imported module") until the page is reloaded. The
+    version segment is only a cache-buster and every version maps to the same www dir,
+    so returning the current file for an old version path is correct — the stale tab
+    gets a working module instead of a broken import, and moves to the new URL on reload.
+    """
+
+    url = STATIC_URL + "-v{version}/{filename:.+}"
+    name = "battmanfiles:versioned"
+    requires_auth = False   # a module import can't send a login; same as the static mounts
+
+    def __init__(self, www_dir: str) -> None:
+        self._root = Path(www_dir)
+
+    async def get(self, request, version: str, filename: str):
+        rel = posixpath.normpath(filename)
+        if rel.startswith("..") or rel.startswith("/"):
+            return web.Response(status=404, text="Not found")
+        path = self._root / rel
+        hass: HomeAssistant = request.app[KEY_HASS]
+        if not await hass.async_add_executor_job(path.is_file):
+            return web.Response(status=404, text="Not found")
+        return web.FileResponse(
+            path, headers={"Cache-Control": "public, max-age=31536000, immutable"}
+        )

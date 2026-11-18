@@ -56,3 +56,22 @@ async def test_frontend_loads_the_one_versioned_script(hass: HomeAssistant, hass
     for name in ["battman", "battman-cards", *(f"battman-{n}" for n in names)]:
         r = await client.get(f"/battmanfiles-v{ver}/{name}.js")
         assert r.status == 200 and "max-age" in r.headers.get("Cache-Control", ""), name
+
+
+async def test_retired_version_path_still_serves(hass: HomeAssistant, hass_client_no_auth) -> None:
+    """A tab open across an update imports lazy chunks from the OLD /battmanfiles-v.../ folder.
+
+    That version is no longer mounted, so without a fallback it 404s ("Failed to fetch
+    dynamically imported module"). The fallback serves the current file for any version path.
+    """
+    await _setup(hass)
+    client = await hass_client_no_auth()
+    # a version that is NOT the running one: a stale tab's import target after an update
+    r = await client.get("/battmanfiles-v0.0.1/battman-help-panel.js")
+    assert r.status == 200
+    assert r.content_type in ("text/javascript", "application/javascript"), r.content_type
+    assert "max-age" in r.headers.get("Cache-Control", "")
+    assert (await r.read()) == (WWW / "battman-help-panel.js").read_bytes()
+    # a file that doesn't exist still 404s, and the version path can't escape the www dir
+    assert (await client.get("/battmanfiles-v0.0.1/nope.js")).status == 404
+    assert (await client.get("/battmanfiles-v0.0.1/../const.py")).status == 404

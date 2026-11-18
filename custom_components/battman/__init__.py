@@ -37,6 +37,7 @@ from .api import (
     BattmanImagesView,
     BattmanImageView,
     BattmanThemeSaveView,
+    BattmanVersionedFilesView,
 )
 from .const import DOMAIN, STATIC_URL
 from .services import (
@@ -99,6 +100,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(engine_log.BattmanLogView())
     hass.http.register_view(BattmanGuideView(str(integration.version)))
     hass.http.register_view(BattmanGuidePageView())
+    # Fallback for RETIRED /battmanfiles-v<old>/ paths: the static mount above serves the
+    # current version; this serves old-version paths (from current www) so a dashboard tab
+    # left open across an update doesn't 404 on a lazy import it never fetched before reload.
+    hass.http.register_view(BattmanVersionedFilesView(str(WWW_DIR)))
     # Battman's cards that exist at start are passed along (?cards=) so they exist before any dashboard draws them.
     local = cards.local_dir(hass)
     card_list = await hass.async_add_executor_job(cards.list_cards, local)
