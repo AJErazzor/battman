@@ -44,6 +44,7 @@ cards:
   - '[[map:parameters]]'
   - '[[map:buy_total]]'
   - '[[map:sell_total]]'
+  - '[[map:network_fee_total]]'
   show_icon: false
   show_name: false
   show_state: false
@@ -68,10 +69,9 @@ cards:
         const billSave = baseDaily*365*years*avgGrowthFactor;
         const sellTotal = num(states['[[map:sell_total]]'].state);
         const buyTotal = num(states['[[map:buy_total]]'].state);
-        const days = parseInt(states['[[map:buy_total]]'].attributes.days ?? 0);
-        const dailyNetworkCharge = num(P.dailyNetworkCharge);
+        const feeTotal = num(states['[[map:network_fee_total]]']?.state);   // what's actually been charged, day by day
         const bankedIncome = num(P.energyIncome);
-        const currentIncome = sellTotal - buyTotal - (dailyNetworkCharge*days);
+        const currentIncome = sellTotal - buyTotal - feeTotal;
         const totalIncome = currentIncome + bankedIncome;
         const dailyIncome = totalIncome/daysInstalled;
         const payOffToGo = systemCost - systemIncome - billSave - totalIncome;

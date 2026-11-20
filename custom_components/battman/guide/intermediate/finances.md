@@ -112,7 +112,7 @@ The daily network fee, and the buy and sell totals since you last reset them, wi
 | **Buy** | What you've paid for energy from the grid since the last **Reset New Income**. |
 | **Sell** | What you've been paid for energy sent to the grid since then. |
 | **Days** | The days since then. |
-| **New Income** | **Sell** less **Buy** less **Days** times **Network Fee**. |
+| **New Income** | **Sell** less **Buy** less the network fee actually charged since the last reset (the **Network fee** total). |
 | **Banked Income** | What **Bank New Income** has put aside. |
 
 <a id="billing-buttons"></a>
