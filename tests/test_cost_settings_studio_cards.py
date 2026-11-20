@@ -14,6 +14,7 @@ import re
 import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
@@ -129,3 +130,17 @@ async def test_cards_on_their_views(hass: HomeAssistant, hass_client_no_auth) ->
     assert fin[:2] == ["custom:battman-cost-chart", "custom:battman-cost-compare"]
     assert views["settings"]["cards"] == [{"type": "custom:battman-settings"}]
     assert [c["type"] for c in views["theme"]["cards"]] == ["custom:battman-theme-studio"]
+
+
+def test_split_buy_by_price() -> None:
+    url = (WWW / "battman-cost-data.js").as_uri()
+    out = _node_module(f"""
+import {{ splitBuyByPrice }} from "{url}";
+const pr = [[0, 0.30], [100, -0.10], [200, 0.20]];
+const imp = [[0, 1], [50, 1.5], [120, 2.5], [150, 2.5], [260, 3], [270, 0.2], [280, 9]];
+process.stdout.write(JSON.stringify({{ s: splitBuyByPrice(imp, pr), none: splitBuyByPrice(imp, []) }}));
+""")
+    assert out["none"] is None                        # no price history: no split, the single Buy line stays
+    # rises are costed at the price in force when they began; a flat step, a drop (reset) and a >5 kWh jump are skipped
+    assert out["s"]["paid"] == pytest.approx({"kwh": 1.5, "cost": 0.5 * 0.30 + 1.0 * 0.30})
+    assert out["s"]["neg"] == pytest.approx({"kwh": 0.5, "cost": 0.5 * -0.10})

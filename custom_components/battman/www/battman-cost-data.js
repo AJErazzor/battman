@@ -7,6 +7,24 @@
 
 export const num = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
 export const money = (v) => (v < 0 ? "-$" : "$") + Math.abs(v).toFixed(2);
+// Today's import split by the sign of the buy price then in force. `imp` is the import counter's
+// history and `pr` the buy price's (both [seconds, value] pairs, oldest first). Each rise of the
+// counter is costed at the price in force when the rise began. A rise of 0 or less, or over 5 kWh,
+// is a reset or a glitch, not buying.
+export function splitBuyByPrice(imp, pr) {
+  const out = { paid: { kwh: 0, cost: 0 }, neg: { kwh: 0, cost: 0 } };
+  if (!pr.length) return null;
+  let j = 0;
+  for (let i = 1; i < imp.length; i++) {
+    const dk = imp[i][1] - imp[i - 1][1];
+    if (dk <= 0 || dk > 5) continue;
+    while (j + 1 < pr.length && pr[j + 1][0] <= imp[i - 1][0]) j++;
+    const bucket = pr[j][1] < 0 ? out.neg : out.paid;
+    bucket.kwh += dk; bucket.cost += dk * pr[j][1];
+  }
+  return out;
+}
+
 export function midnight(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 const pad2 = (n) => String(n).padStart(2, "0");
 export const toDateStr = (d) => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());

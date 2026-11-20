@@ -55,8 +55,8 @@ Today's energy sold and bought, with the average price of each. Then the net of 
 
 | Item | Shows |
 |---|---|
-| **Today Sell** | The kWh exported to the grid today, @ the average $ per kWh it sold for. |
-| **Today Buy** | The kWh imported from the grid today, @ the average $ per kWh it cost. |
+| **Today Sell** | The kWh exported to the grid today, @ the average $ per kWh it sold for, and the amount earned on the right. |
+| **Today Buy** | The kWh imported from the grid today, @ the average $ per kWh it cost, and the net cost (or net earned) on the right. On a day with negative buy prices it splits in two: **Paid** is the energy bought at a positive price and what it cost, **Neg** is the energy taken at a negative price and what you were paid for it. |
 | **This Bill** | This billing period's net. |
 | **Last Bill** | The last billing period's net. |
 | **Lifetime** | **Banked Income** (on the [Billing](#billing) card) plus the sell total, less the buy and network fee totals, since the last **Reset New Income**. |
