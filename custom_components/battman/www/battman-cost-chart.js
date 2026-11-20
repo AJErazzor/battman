@@ -66,10 +66,12 @@ class BattmanCostChartCard extends BattmanCardBase {
     .stat .hl { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
     .stat .sub { font-size: 12px; font-weight: 600; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .stat .bd { margin-top: 4px; padding-top: 5px; border-top: 1px solid var(--divider-color); display: flex; flex-direction: column; gap: 3px; }
-    .stat .r2 { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; font-size: 14px; font-weight: 700;
+    .stat .r2 { display: grid; grid-template-columns: 38px 5.2ch 1.6ch 6.2ch 1fr; column-gap: 6px; align-items: baseline; font-size: 14px; font-weight: 700;
       font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .stat .r2 .t { font-size: 11px; font-weight: 400; color: var(--secondary-text-color); text-transform: uppercase; letter-spacing: 0.06em; min-width: 50px; }
-    .stat .r2 .m { flex: 1; }
+    .stat .r2 .t { font-size: 11px; font-weight: 400; color: var(--secondary-text-color); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat .r2 .n { text-align: right; }
+    .stat .r2 .at { font-weight: 400; text-align: center; color: var(--secondary-text-color); }
+    .stat .r2 .sub { text-align: right; }
     .statbreak { display: none; }
     @container (max-width: 960px) { .statbreak { display: block; flex-basis: 100%; height: 0; } }
     .chartWrap { flex: 1; position: relative; padding: 10px 10px 6px; min-height: 0; }
@@ -136,18 +138,21 @@ class BattmanCostChartCard extends BattmanCardBase {
       const lastBill = num(sell.attributes.bill_last) - num(buy.attributes.bill_last) - num(feeS && feeS.attributes.bill_last);
       const withAmber = num(P.attributes.energyIncome) + num(sell.state) - num(buy.state) - num(feeS && feeS.state);
       const sgn = (v) => v >= 0 ? COL.green : COL.red;
-      const kwhAt = (kwh, cost) => `${kwh.toFixed(2)} kWh @ ${money(kwh > 0 ? cost / kwh : 0)}`;
       const det = (k, col, v, amt, bd) => `<div class="stat det"><span class="k">${k}</span><div class="hl"><span class="v" style="color:${col}">${v}</span>`
         + `<span class="sub">${amt}</span></div>${bd || ""}</div>`;
-      const row = (t, col, v, amt) => `<div class="r2"><span class="t">${t}</span><span class="m" style="color:${col}">${v}</span><span class="sub">${amt}</span></div>`;
+      // columns: label | kWh | @ | price | amount, right-aligned so the decimals line up whatever the sign
+      const row = (t, col, kwh, cost, amt) => `<div class="r2" style="color:${col}"><span class="t">${t}</span><span class="n">${kwh.toFixed(2)}</span>`
+        + `<span class="at">@</span><span class="n">${money(kwh > 0 ? cost / kwh : 0)}</span><span class="sub">${amt}</span></div>`;
       // the paid / negative split only on a day that had negative buy prices
       const hasNeg = split && split.neg.kwh >= 0.005;
       const bd = hasNeg ? '<div class="bd">'
-        + row("Paid", COL.amber, kwhAt(split.paid.kwh, split.paid.cost), "cost " + money(split.paid.cost))
-        + row("Neg", COL.green, kwhAt(split.neg.kwh, split.neg.cost), "earned " + money(-split.neg.cost)) + "</div>" : "";
+        + row("Paid", COL.amber, split.paid.kwh, split.paid.cost, "cost " + money(split.paid.cost))
+        + row("Neg", COL.green, split.neg.kwh, split.neg.cost, "earned " + money(-split.neg.cost)) + "</div>" : "";
       const buyAmt = buyDay >= 0 ? "net cost " + money(buyDay) : "net earned " + money(-buyDay);
-      const html = det("Today Sell", COL.green, `${expKwh.toFixed(2)} kWh @ $${sellAvg.toFixed(2)}`, "earned " + money(sellDay))
-        + det("Today Buy", COL.amber, `${impKwh.toFixed(2)} kWh @ $${buyAvg.toFixed(2)}`, buyAmt, bd)
+      const sellAmt = sellDay >= 0 ? "earned " + money(sellDay) : "net cost " + money(-sellDay);
+      // money() puts the minus before the $ (-$0.07), where "$" + toFixed would print $-0.07
+      const html = det("Today Sell", COL.green, `${expKwh.toFixed(2)} kWh @ ${money(sellAvg)}`, sellAmt)
+        + det("Today Buy", COL.amber, `${impKwh.toFixed(2)} kWh @ ${money(buyAvg)}`, buyAmt, bd)
         + '<div class="statbreak"></div>'
         + [{ k: "This Bill", v: money(thisBill), c: sgn(thisBill) }, { k: "Last Bill", v: money(lastBill), c: sgn(lastBill) }, { k: "Lifetime", v: money(withAmber), c: sgn(withAmber) }]
           .map((it) => `<div class="stat"><span class="k">${it.k}</span><span class="v" style="color:${it.c}">${it.v}</span></div>`).join("");
