@@ -51,7 +51,7 @@ A bill cycle starts on **Bill day of month** (see [Billing](settings.md#billing)
 Today's energy sold and bought, with the average price of each. Then the net of this bill cycle and the last one, and the lifetime net: banked income plus everything since the totals were last reset.
 <!-- /guide:summary -->
 
-![The totals strip: Today Sell and Today Buy in kWh at a price, then This Bill, Last Bill and Lifetime in dollars.](../../www/guide-images/finances-costchart-totals.png)
+![The totals strip: Today Sell and Today Buy in kWh at a price with the amount beside it, Today Buy split into Paid and Neg, then This Bill, Last Bill and Lifetime in dollars.](../../www/guide-images/finances-costchart-totals.png)
 
 | Item | Shows |
 |---|---|

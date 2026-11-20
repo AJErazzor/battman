@@ -62,7 +62,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     .stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .stat .k { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--secondary-text-color); }
     .stat .v { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .stat.det { flex: 1 1 220px; }
+    .stat.det { flex: 1 1 250px; min-width: 250px; }
     .stat .hl { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
     .stat .sub { font-size: 12px; font-weight: 600; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .stat .bd { margin-top: 4px; padding-top: 5px; border-top: 1px solid var(--divider-color); display: flex; flex-direction: column; gap: 3px; }
@@ -71,7 +71,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     .stat .r2 .t { font-size: 11px; font-weight: 400; color: var(--secondary-text-color); text-transform: uppercase; letter-spacing: 0.06em; min-width: 50px; }
     .stat .r2 .m { flex: 1; }
     .statbreak { display: none; }
-    @container (max-width: 640px) { .statbreak { display: block; flex-basis: 100%; height: 0; } }
+    @container (max-width: 960px) { .statbreak { display: block; flex-basis: 100%; height: 0; } }
     .chartWrap { flex: 1; position: relative; padding: 10px 10px 6px; min-height: 0; }
     .msg { padding: 24px; text-align: center; color: var(--secondary-text-color); font-size: 14px; }
     .controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
