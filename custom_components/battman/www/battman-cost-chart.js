@@ -370,7 +370,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     }
 
     (async function start() {
-      try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN, buy_price: AMBER.buy_price }; } catch (e) { return card.problem(e.message); }
+      try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN, ...AMBER }; } catch (e) { return card.problem(e.message); }
       try { Chart = await loadChartJs(); } catch (e) { chartProblem = e.message; }
       data = costData(() => card.hass, { buy: M.buy_total, sell: M.sell_total, fee: M.network_fee_total, param: M.parameters });
       readColors();
