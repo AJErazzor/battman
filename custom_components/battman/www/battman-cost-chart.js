@@ -4,8 +4,8 @@
 // long-term statistics (battman-cost-data.js). The range you pick is kept per device.
 
 import { helpRegister } from "./battman-help-layer.js";
-import { BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars, inCardPicker } from "./battman-card-base.js";
-import { costData, fromDateStr, midnight, money, num, toDateStr } from "./battman-cost-data.js";
+import { BattmanCardBase, AMBER, SIGEN, battmanDefine, battmanMap, battmanPicker, cssVar, loadChartJs, missingEntities, missingThemeVars, inCardPicker } from "./battman-card-base.js";
+import { costData, fromDateStr, midnight, money, num, splitBuyByPrice, toDateStr } from "./battman-cost-data.js";
 
 const NEEDS = ["buy_total", "sell_total", "network_fee_total", "parameters"];
 const NEED_ENTITIES = NEEDS.concat(["grid_export_today", "grid_import_today"]);   // the last two: Sigen's, by name
@@ -62,8 +62,18 @@ class BattmanCostChartCard extends BattmanCardBase {
     .stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .stat .k { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--secondary-text-color); }
     .stat .v { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .stat.det { flex: 1 1 250px; min-width: 250px; }
+    .stat .hl { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .stat .sub { font-size: 12px; font-weight: 600; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .stat .bd { margin-top: 4px; padding-top: 5px; border-top: 1px solid var(--divider-color); display: flex; flex-direction: column; gap: 3px; }
+    .stat .r2 { display: grid; grid-template-columns: 38px 5.2ch 1.6ch 6.2ch 1fr; column-gap: 6px; align-items: baseline; font-size: 14px; font-weight: 700;
+      font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .stat .r2 .t { font-size: 11px; font-weight: 400; color: var(--secondary-text-color); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat .r2 .n { text-align: right; }
+    .stat .r2 .at { font-weight: 400; text-align: center; color: var(--secondary-text-color); }
+    .stat .r2 .sub { text-align: right; }
     .statbreak { display: none; }
-    @container (max-width: 640px) { .statbreak { display: block; flex-basis: 100%; height: 0; } }
+    @container (max-width: 960px) { .statbreak { display: block; flex-basis: 100%; height: 0; } }
     .chartWrap { flex: 1; position: relative; padding: 10px 10px 6px; min-height: 0; }
     .msg { padding: 24px; text-align: center; color: var(--secondary-text-color); font-size: 14px; }
     .controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
@@ -99,6 +109,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     let M = null, data = null, Chart = null, chart = null, chartProblem = "", FATAL = null, started = false;
     let curStart = null, curEnd = null, curKey = null;   // first / last day shown; active pill ('days:N' | 'cycle:0' | 'cycle:1' | 'custom')
     let COL = {};
+    let split = null;   // today's buying by price sign: { paid: {kwh, cost}, neg: {kwh, cost} }, from the import counter and the buy price history
     const timers = [];
 
     function readColors() {
@@ -127,17 +138,43 @@ class BattmanCostChartCard extends BattmanCardBase {
       const lastBill = num(sell.attributes.bill_last) - num(buy.attributes.bill_last) - num(feeS && feeS.attributes.bill_last);
       const withAmber = num(P.attributes.energyIncome) + num(sell.state) - num(buy.state) - num(feeS && feeS.state);
       const sgn = (v) => v >= 0 ? COL.green : COL.red;
-      const items = [
-        { k: "Today Sell", v: `${expKwh.toFixed(2)} kWh @ $${sellAvg.toFixed(2)}`, c: COL.green },
-        { k: "Today Buy", v: `${impKwh.toFixed(2)} kWh @ $${buyAvg.toFixed(2)}`, c: COL.amber },
-        { brk: true },
-        { k: "This Bill", v: money(thisBill), c: sgn(thisBill) },
-        { k: "Last Bill", v: money(lastBill), c: sgn(lastBill) },
-        { k: "Lifetime", v: money(withAmber), c: sgn(withAmber) },
-      ];
-      const html = items.map((it) => it.brk ? '<div class="statbreak"></div>'
-        : `<div class="stat"><span class="k">${it.k}</span><span class="v" style="color:${it.c}">${it.v}</span></div>`).join("");
+      const det = (k, col, v, amt, bd) => `<div class="stat det"><span class="k">${k}</span><div class="hl"><span class="v" style="color:${col}">${v}</span>`
+        + `<span class="sub">${amt}</span></div>${bd || ""}</div>`;
+      // columns: label | kWh | @ | price | amount, right-aligned so the decimals line up whatever the sign
+      const row = (t, col, kwh, cost, amt) => `<div class="r2" style="color:${col}"><span class="t">${t}</span><span class="n">${kwh.toFixed(2)}</span>`
+        + `<span class="at">@</span><span class="n">${money(kwh > 0 ? cost / kwh : 0)}</span><span class="sub">${amt}</span></div>`;
+      // the paid / negative split only on a day that had negative buy prices
+      const hasNeg = split && split.neg.kwh >= 0.005;
+      const bd = hasNeg ? '<div class="bd">'
+        + row("Paid", COL.amber, split.paid.kwh, split.paid.cost, "cost " + money(split.paid.cost))
+        + row("Neg", COL.green, split.neg.kwh, split.neg.cost, "earned " + money(-split.neg.cost)) + "</div>" : "";
+      const buyAmt = buyDay >= 0 ? "net cost " + money(buyDay) : "net earned " + money(-buyDay);
+      const sellAmt = sellDay >= 0 ? "earned " + money(sellDay) : "net cost " + money(-sellDay);
+      // money() puts the minus before the $ (-$0.07), where "$" + toFixed would print $-0.07
+      const html = det("Today Sell", COL.green, `${expKwh.toFixed(2)} kWh @ ${money(sellAvg)}`, sellAmt)
+        + det("Today Buy", COL.amber, `${impKwh.toFixed(2)} kWh @ ${money(buyAvg)}`, buyAmt, bd)
+        + '<div class="statbreak"></div>'
+        + [{ k: "This Bill", v: money(thisBill), c: sgn(thisBill) }, { k: "Last Bill", v: money(lastBill), c: sgn(lastBill) }, { k: "Lifetime", v: money(withAmber), c: sgn(withAmber) }]
+          .map((it) => `<div class="stat"><span class="k">${it.k}</span><span class="v" style="color:${it.c}">${it.v}</span></div>`).join("");
       if ($("stats").innerHTML !== html) $("stats").innerHTML = html;
+    }
+
+    // today's import by the buy price in force at the time: each rise of the import counter is
+    // costed at the price then (the price history is 5-minute steps), split by price sign
+    async function loadSplit() {
+      try {
+        const start = midnight(new Date());
+        const res = await card.hass.connection.sendMessagePromise({
+          type: "history/history_during_period", start_time: start.toISOString(), end_time: new Date().toISOString(),
+          entity_ids: [M.grid_import_today, M.buy_price], minimal_response: true, no_attributes: true, significant_changes_only: false });
+        const ser = (id) => ((res && res[id]) || [])
+          .map((r) => [Number(r.lu) || (Date.parse(r.last_updated) / 1000), Number(r.s !== undefined ? r.s : r.state)])
+          .filter((r) => isFinite(r[0]) && isFinite(r[1]));
+        const imp = ser(M.grid_import_today), pr = ser(M.buy_price);
+        const out = splitBuyByPrice(imp, pr);
+        if (!out) return;
+        split = out; renderStats();
+      } catch (x) { /* no history: the single Buy line stays */ }
     }
 
     // ---- range: pills (N days ending today), a bill cycle, or From / To ----
@@ -333,13 +370,13 @@ class BattmanCostChartCard extends BattmanCardBase {
     }
 
     (async function start() {
-      try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN }; } catch (e) { return card.problem(e.message); }
+      try { M = { ...await battmanMap(card.hass, NEEDS), ...SIGEN, ...AMBER }; } catch (e) { return card.problem(e.message); }
       try { Chart = await loadChartJs(); } catch (e) { chartProblem = e.message; }
       data = costData(() => card.hass, { buy: M.buy_total, sell: M.sell_total, fee: M.network_fee_total, param: M.parameters });
       readColors();
       buildControls();
       initRange();
-      if (!check()) renderStats();
+      if (!check()) { renderStats(); loadSplit(); }
       started = true;
       render();
       if (card.isConnected) resume();
@@ -348,6 +385,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     function resume() {
       if (!started || timers.length) return;
       timers.push(setInterval(render, 60000));
+      timers.push(setInterval(loadSplit, 60000));
     }
     function pause() { timers.splice(0).forEach(clearInterval); }
     // HA hands the card every state change; the figures on top need no more than every 2 s
