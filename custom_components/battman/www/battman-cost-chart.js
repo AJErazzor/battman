@@ -62,8 +62,8 @@ class BattmanCostChartCard extends BattmanCardBase {
     .stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .stat .k { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--secondary-text-color); }
     .stat .v { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .stat.det { flex: 1 1 250px; min-width: 250px; }
-    .stat .hl { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .stat.det { flex: 1 1 270px; min-width: 270px; }
+    .stat .hl { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 12px; }
     .stat .sub { font-size: 12px; font-weight: 600; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .stat .bd { margin-top: 4px; padding-top: 5px; border-top: 1px solid var(--divider-color); display: flex; flex-direction: column; gap: 3px; }
     .stat .r2 { display: grid; grid-template-columns: 38px 5.2ch 1.6ch 6.2ch 1fr; column-gap: 6px; align-items: baseline; font-size: 14px; font-weight: 700;
@@ -138,8 +138,10 @@ class BattmanCostChartCard extends BattmanCardBase {
       const lastBill = num(sell.attributes.bill_last) - num(buy.attributes.bill_last) - num(feeS && feeS.attributes.bill_last);
       const withAmber = num(P.attributes.energyIncome) + num(sell.state) - num(buy.state) - num(feeS && feeS.state);
       const sgn = (v) => v >= 0 ? COL.green : COL.red;
-      const det = (k, col, v, amt, bd) => `<div class="stat det"><span class="k">${k}</span><div class="hl"><span class="v" style="color:${col}">${v}</span>`
-        + `<span class="sub">${amt}</span></div>${bd || ""}</div>`;
+      // the day's amount sits beside the kWh @ price at the same size, coloured, with a P&L sign: + money in, - money out
+      const pnl = (v) => (v >= 0 ? "+" : "") + money(v);
+      const det = (k, col, v, amt, amtCol, bd) => `<div class="stat det"><span class="k">${k}</span><div class="hl"><span class="v" style="color:${col}">${v}</span>`
+        + `<span class="v" style="color:${amtCol}">${amt}</span></div>${bd || ""}</div>`;
       // columns: label | kWh | @ | price | amount, right-aligned so the decimals line up whatever the sign
       const row = (t, col, kwh, cost, amt) => `<div class="r2" style="color:${col}"><span class="t">${t}</span><span class="n">${kwh.toFixed(2)}</span>`
         + `<span class="at">@</span><span class="n">${money(kwh > 0 ? cost / kwh : 0)}</span><span class="sub">${amt}</span></div>`;
@@ -148,11 +150,9 @@ class BattmanCostChartCard extends BattmanCardBase {
       const bd = hasNeg ? '<div class="bd">'
         + row("Paid", COL.amber, split.paid.kwh, split.paid.cost, "cost " + money(split.paid.cost))
         + row("Neg", COL.green, split.neg.kwh, split.neg.cost, "earned " + money(-split.neg.cost)) + "</div>" : "";
-      const buyAmt = buyDay >= 0 ? "net cost " + money(buyDay) : "net earned " + money(-buyDay);
-      const sellAmt = sellDay >= 0 ? "earned " + money(sellDay) : "net cost " + money(-sellDay);
       // money() puts the minus before the $ (-$0.07), where "$" + toFixed would print $-0.07
-      const html = det("Today Sell", COL.green, `${expKwh.toFixed(2)} kWh @ ${money(sellAvg)}`, sellAmt)
-        + det("Today Buy", COL.amber, `${impKwh.toFixed(2)} kWh @ ${money(buyAvg)}`, buyAmt, bd)
+      const html = det("Today Sell", COL.green, `${expKwh.toFixed(2)} kWh @ ${money(sellAvg)}`, pnl(sellDay), sellDay >= 0 ? COL.green : COL.red)
+        + det("Today Buy", COL.amber, `${impKwh.toFixed(2)} kWh @ ${money(buyAvg)}`, pnl(-buyDay), buyDay > 0 ? COL.amber : COL.green, bd)
         + '<div class="statbreak"></div>'
         + [{ k: "This Bill", v: money(thisBill), c: sgn(thisBill) }, { k: "Last Bill", v: money(lastBill), c: sgn(lastBill) }, { k: "Lifetime", v: money(withAmber), c: sgn(withAmber) }]
           .map((it) => `<div class="stat"><span class="k">${it.k}</span><span class="v" style="color:${it.c}">${it.v}</span></div>`).join("");
