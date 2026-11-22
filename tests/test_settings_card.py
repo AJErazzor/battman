@@ -62,6 +62,23 @@ def test_limits_match_what_the_parameters_sensor_accepts() -> None:
         assert re.search(rf"data\.{key} \| {t} <= {re.escape(hi)}(\.0)?\b", block), (key, "max", hi)
 
 
+def test_rules_sections_show_the_hour_strip() -> None:
+    js = (ROOT / "www/battman-settings.js").read_text()
+    body = js[js.index("function rulesSection(side)"):js.index("function protectionSection()")]
+    # under the description, before the rows: one strip, built from the side's own rules and master switch
+    at = body.index("hourStrip(side, rules,")
+    assert body.index("Fine-grained control") < at < body.index("'<div class=\"rows\">'", at)
+    strip = js[js.index("function hourStrip("):js.index("function rulesSection(side)")]
+    assert "i % 3 === 0" in strip                       # labelled every three hours
+    assert "isActive" in strip and "enabled && i === nowH" in strip   # filled where on; "now" only while enabled
+    # Buy uses the Buy mode colour (yellow), Sell the Sell mode colour (green); the master switch off greys it
+    assert ".hstrip .cell.on.buy { background: var(--battman-yellow); }" in js
+    assert ".hstrip .cell.on.sell { background: var(--battman-green); }" in js
+    assert ".hstrip.off .cell.on" in js
+    for var in ("battman-yellow", "battman-text-dim", "battman-border-neutral-soft"):
+        assert var in js[js.index("const THEME_VARS"):js.index("async function loadMap")]
+
+
 def test_card_script_parses() -> None:
     subprocess.run(["node", "--check", str(ROOT / "www/battman-settings.js")], check=True, capture_output=True)
 
