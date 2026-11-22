@@ -60,6 +60,8 @@ Hour-by-hour rules that look at Amber's price forecast before Battman charges. W
 
 The card's note: "Fine-grained control over the buy price target each hour. Pick an hour and set its rule, or apply a cascade." Before any rule has been saved the card says "sensor.battman_buy_rules has no rules yet (Battman sets them up the first time it saves a rule)." and shows only the master switch.
 
+Under the note, a thin strip shows the 24 hours of the day, labelled every three hours. An hour is filled yellow (the Buy colour on the Power view) when its rule is **Active**, and the hour it is now is marked with a small triangle. While **Buy rules enabled** is off the filled hours turn grey and the triangle goes, so you can still see which hours are set up but know nothing is running.
+
 When the hour's rule is on, Battman averages the forecast in blocks (**Grouping**) up to the end of the look-ahead, takes the cheapest block, adds **Offset by** and rounds it. That's the rule's target:
 
 - **Lower than the price Battman would otherwise pay** (see [Buy](#buy)): Battman uses the target, so it holds off for the cheaper time.
@@ -376,6 +378,8 @@ Hour-by-hour rules that look at Amber's feed-in forecast before Battman sells. W
 </details>
 
 The card's note: "Fine-grained control over the sell price target each hour. Pick an hour and set its rule, or apply a cascade." Before any rule has been saved the card says "sensor.battman_sell_rules has no rules yet (Battman sets them up the first time it saves a rule)." and shows only the master switch.
+
+Under the note, a thin strip shows the 24 hours of the day, labelled every three hours. An hour is filled green (the Sell colour on the Power view) when its rule is **Active**, and the hour it is now is marked with a small triangle. While **Sell rules enabled** is off the filled hours turn grey and the triangle goes, so you can still see which hours are set up but know nothing is running.
 
 Sell rules work like [Buy rules](#buy-rules), but take the best (highest) block instead of the cheapest. The rule's target:
 
