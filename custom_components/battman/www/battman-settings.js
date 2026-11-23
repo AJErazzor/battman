@@ -100,12 +100,11 @@ class BattmanSettingsCard extends BattmanCardBase {
                  background: transparent; color: var(--battman-text-muted); }
   .tabs button.on { background: var(--battman-green-border-strong); color: var(--battman-text-bright); }
   /* the hour strip under a rules section's description: one cell per hour, filled where the rule is on.
-     Buy uses the Buy mode colour (yellow), Sell the Sell mode colour (green); the master switch off greys it. */
+     Filled hours use the page's green; the master switch off greys it. */
   .hstrip { margin: 14px 16px 0; }
   .hstrip .cells { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; padding-top: 6px; }
   .hstrip .cell { position: relative; height: 8px; border-radius: 2px; background: var(--battman-border-neutral-soft); }
-  .hstrip .cell.on.buy { background: var(--battman-yellow); }
-  .hstrip .cell.on.sell { background: var(--battman-green); }
+  .hstrip .cell.on { background: var(--battman-green); }
   .hstrip.off .cell.on { background: var(--battman-text-dim); }
   .hstrip .now { position: absolute; top: -7px; left: 50%; margin-left: -3px; width: 0; height: 0;
                  border-left: 3px solid transparent; border-right: 3px solid transparent; border-top: 5px solid var(--battman-text-bright); }
@@ -254,7 +253,7 @@ class BattmanSettingsCard extends BattmanCardBase {
     // the Battman theme colours the card uses (no fallbacks: missing ones are named)
     const THEME_VARS = ['battman-surface-card', 'battman-surface-popup', 'battman-text-bright', 'battman-text-muted', 'battman-border-neutral',
                         'battman-green', 'battman-green-soft-bg', 'battman-green-border', 'battman-green-border-strong', 'battman-red', 'battman-red-soft-bg',
-                        'battman-yellow', 'battman-text-dim', 'battman-border-neutral-soft'].map((k) => '--' + k);
+                        'battman-text-dim', 'battman-border-neutral-soft'].map((k) => '--' + k);
     async function loadMap() {
       M = await battmanMap(getHass(), NEEDS);
       const bad = missingEntities(getHass(), M, NEED_ENTITIES);
@@ -363,7 +362,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       const short = (i) => (i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p');
       let cells = '', ticks = '';
       for (let i = 0; i < 24; i++) {
-        cells += '<div class="cell ' + side + (rules[i] && rules[i].isActive ? ' on' : '') + '">' + (enabled && i === nowH ? '<i class="now"></i>' : '') + '</div>';
+        cells += '<div class="cell' + (rules[i] && rules[i].isActive ? ' on' : '') + '">' + (enabled && i === nowH ? '<i class="now"></i>' : '') + '</div>';
         ticks += '<div class="tick">' + (i % 3 === 0 ? '<span>' + short(i) + '</span>' : '') + '</div>';
       }
       return '<div class="hstrip' + (enabled ? '' : ' off') + '"><div class="cells">' + cells + '</div><div class="ticks">' + ticks + '</div></div>';

@@ -71,11 +71,11 @@ def test_rules_sections_show_the_hour_strip() -> None:
     strip = js[js.index("function hourStrip("):js.index("function rulesSection(side)")]
     assert "i % 3 === 0" in strip                       # labelled every three hours
     assert "isActive" in strip and "enabled && i === nowH" in strip   # filled where on; "now" only while enabled
-    # Buy uses the Buy mode colour (yellow), Sell the Sell mode colour (green); the master switch off greys it
-    assert ".hstrip .cell.on.buy { background: var(--battman-yellow); }" in js
-    assert ".hstrip .cell.on.sell { background: var(--battman-green); }" in js
+    # filled hours are the page's green on both sides; the master switch off greys it
+    assert ".hstrip .cell.on { background: var(--battman-green); }" in js
+    assert "battman-yellow" not in strip and "battman-yellow" not in js[js.index(".hstrip {"):js.index(".chips {")]
     assert ".hstrip.off .cell.on" in js
-    for var in ("battman-yellow", "battman-text-dim", "battman-border-neutral-soft"):
+    for var in ("battman-text-dim", "battman-border-neutral-soft"):
         assert var in js[js.index("const THEME_VARS"):js.index("async function loadMap")]
 
 
