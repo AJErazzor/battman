@@ -29,6 +29,12 @@ Rules for the guide:
 - Pictures are screenshots in `www/guide-images/`, linked relative to the page (`../../www/guide-images/power-house.png`),
   with alt text that says what they show. Every file there is used by a page. They're taken at twice the size they're
   shown; a picture of a wide card has the title "wide" (`![…](…/power-x.png "wide")`).
+- Retake pictures with `tools/guide-screenshots/shoot.py` rather than by hand: it draws the real card (the Settings card's
+  own JS, the forecast table's own template) in headless Chrome in the Coffee theme, from what the packages produce with
+  nothing saved plus the sample data in the script, and writes the PNGs at twice the size. Run
+  `BATTMAN_CHROME=<chromium> BATTMAN_NODE_PATH=<node_modules with playwright> python tools/guide-screenshots/shoot.py [name ...]`
+  after a card's look or a default changes, look at the result, and commit the PNGs with the change. To add a picture, add it to
+  `SHOTS` in `shoot.py` (the Settings card pictures are sections; the card's own draw code is in `shoot.mjs`).
 - Link between pages with relative `.md` links (`../help/repairs.md#local-cards`), as GitHub does.
 - Describe what Battman does, not its bugs: a known problem is a GitHub issue, not a note in the guide.
 - A "?" on a card opens a summary block on a guide page: `<!-- guide:summary id="settings.buy" -->` … `<!-- /guide:summary -->`,

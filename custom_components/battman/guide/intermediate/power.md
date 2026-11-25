@@ -278,14 +278,16 @@ Each tile shows the limit as a whole number with its unit, or "—" when the sen
 ## Amber 24-hour forecast table
 
 <!-- guide:summary id="power.amber24hourforecasttable" -->
-Every interval of Amber's forecast in one scrolling table: its start time, the Sell price, Amber Advanced's predicted Sell (SS), the Buy price and Amber Advanced's predicted Buy (SS). Each price is coloured by band, and the first row, the current interval, has a blue marker.
+Every interval of Amber's forecast in one scrolling table: its start time, the Sell price, Amber Advanced's predicted Sell (SS), the Buy price and Amber Advanced's predicted Buy (SS). Each price is coloured by band. The first row, **Now**, has a blue marker and shows what Amber is charging this minute: the current Sell and Buy prices, each beside the prediction for the same interval, so you can see how close Amber Advanced was.
 <!-- /guide:summary -->
 
-![The Amber forecast table: a scrolling table with the columns Time, Sell, SS, Buy and SS, one row per forecast interval, each price on a coloured background, and a blue bar at the left of the first row.](../../www/guide-images/power-amber24hourforecasttable.png "wide")
+![The Amber forecast table: a scrolling table with the columns Time, Sell, SS, Buy and SS, a first row, Now, with a blue bar at its left and the current prices, then one row per forecast interval, each price on a coloured background.](../../www/guide-images/power-amber24hourforecasttable.png "wide")
 
 ### Reading it
 
-The **Time** column is the start of each interval in Home Assistant's time zone, as "Tue 14:30". Prices are in c with two decimals. **Sell** is shown as what you earn: positive earns, negative means you pay to export. **Buy** is the buy price. **SS** is Amber Advanced's predicted price for that interval, and "—" where Amber gives none.
+The first row, **Now**, is the live price: **Sell** and **Buy** are `sensor.amber_5min_current_feed_in_price` and `sensor.amber_5min_current_general_price`, and the two **SS** cells are Amber Advanced's prediction for the interval you are in, the same figures as the first forecast row. A dash shows where Amber gives no current price (the row stays while either one has a number). Without a current price from either sensor the row is left out and the blue marker goes on the first forecast row.
+
+Below it, the **Time** column is the start of each interval in Home Assistant's time zone, as "Tue 14:30". Prices are in c with two decimals. **Sell** is shown as what you earn: positive earns, negative means you pay to export. **Buy** is the buy price. **SS** is Amber Advanced's predicted price for that interval, and "—" where Amber gives none.
 
 The colours use the same bands as the [price grid](#amber5minpricegrid), judged on the price shown. A Sell of exactly 0c is dark red here but orange on the grid and the [House](#house) card. The header stays put while the rows scroll.
 

@@ -550,7 +550,7 @@ def _settings_page() -> str:
 def test_settings_page_has_a_summary_for_every_section_and_a_heading_for_every_setting() -> None:
     page = _settings_page()
     keys = re.findall(r"^\s+(\w+):\s+\{ title: '((?:[^'\\]|\\.)*)'", SETTINGS_JS, re.M)
-    assert len(keys) == 15
+    assert len(keys) == 16
     ids = re.findall(r'<!-- guide:summary id="([^"]+)" -->', page)
     assert len(ids) == len(set(ids))
     for key, title in keys:

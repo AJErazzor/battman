@@ -373,13 +373,13 @@ Hour-by-hour rules that look at Amber's feed-in forecast before Battman sells. W
 <details>
 <summary>Show picture</summary>
 
-![The Sell rules section of the Settings card: Sell rules enabled, Hour, Active, Allow last chance to sell low, Look ahead, Grouping and more.](../../www/guide-images/settings-sell-rules.png)
+![The Sell rules section of the Settings card: Sell rules enabled, Hour, Active, Allow last chance to sell low, Look ahead, Grouping, Sell solar and more, with the hour strip showing the Sell solar hours half green and half purple.](../../www/guide-images/settings-sell-rules.png)
 
 </details>
 
 The card's note: "Fine-grained control over the sell price target each hour. Pick an hour and set its rule, or apply a cascade." Before any rule has been saved the card says "sensor.battman_sell_rules has no rules yet (Battman sets them up the first time it saves a rule)." and shows only the master switch.
 
-Under the note, a thin strip shows the 24 hours of the day, labelled every three hours. An hour is filled green when its rule is **Active**, and the hour it is now is marked with a small triangle. While **Sell rules enabled** is off the filled hours turn grey and the triangle goes, so you can still see which hours are set up but know nothing is running.
+Under the note, a thin strip shows the 24 hours of the day, labelled every three hours. An hour is filled green when its rule is **Active**, or half green and half purple when its rule is **Active** and **Sell solar** is on, and the hour it is now is marked with a small triangle. While **Sell rules enabled** is off the filled hours turn grey and the triangle goes, so you can still see which hours are set up but know nothing is running.
 
 Sell rules work like [Buy rules](#buy-rules), but take the best (highest) block instead of the cheapest. The rule's target:
 
@@ -425,6 +425,10 @@ The [Sell price protection](#protection) floor still applies.
 
 "Fixed adjustment added to the price target", in c/kWh. 0 to start with. Whole cents, and it can be negative. A positive offset holds out for more than the best block; a negative one settles for a little less.
 
+### Sell solar
+
+"Sell surplus solar to the grid instead of storing it". Off to begin with, for every hour. It only counts while the hour's rule is **Active**: an hour with **Sell solar** on and its rule off stays grey in the strip. The limits it works to are in the [Sell solar](#sell-solar) section.
+
 ### Start hour
 
 On the **⚡ Cascade** tab: "From the start hour, each hour is switched on with a look-ahead counting down to 1. Its other settings stay as they are." Every hour in the run looks ahead to the same end, as for [Buy rules](#buy-rules).
@@ -432,6 +436,34 @@ On the **⚡ Cascade** tab: "From the start hour, each hour is switched on with 
 ### Max look-ahead
 
 "1 to 12 hours", in hours. 4 to start with. The chips show each hour and its look-ahead; **Apply cascade** saves them and says "✓ Cascade applied to" and the number of hours.
+
+<a id="sell-solar"></a>
+## Sell solar
+
+<!-- guide:summary id="settings.sellSolar" -->
+The limits for hours that have **Sell solar** switched on in [Sell rules](#sell-rules): the lowest feed-in price, the lowest battery level and how much solar there has to be beyond what the house uses. They apply to every hour that has **Sell solar** on.
+<!-- /guide:summary -->
+
+<details>
+<summary>Show picture</summary>
+
+![The Sell solar section of the Settings card: Minimum price 5 c/kWh, Battery level 5 %, Excess solar 10 %, with a Reset button.](../../www/guide-images/settings-sell-solar.png)
+
+</details>
+
+The card's note: "Used by every hour that has Sell solar switched on." There is one set of values for all hours. **↻ Reset** puts all three back to the values under [Reset defaults](#defaults).
+
+### Minimum price
+
+"Only sell solar when the feed-in price is above this", in c/kWh. 5 to start with. From 0 to 10,000.
+
+### Battery level
+
+"Only sell solar once the battery is above this", in %. 5% to start with. Whole numbers from 0 to 100.
+
+### Excess solar
+
+"Sell when solar beats the house load by this much", in %. 10 to start with. Whole numbers from -100 to 100.
 
 <a id="spike"></a>
 ## Spike selling
@@ -713,7 +745,7 @@ When the mode buttons on the Battery mode card ask before acting. The question n
 ## Reset defaults
 
 <!-- guide:summary id="settings.defaults" -->
-The values each section's **↻ Reset** button puts back, for Buy, Sell, Spike selling, Needy curve triggers, Watchdog and Billing. Change them and press **Save defaults** to make your own values the ones Reset restores. Nothing here changes a setting until you press a Reset button.
+The values each section's **↻ Reset** button puts back, for Buy, Sell, Spike selling, Sell solar, Needy curve triggers, Watchdog and Billing. Change them and press **Save defaults** to make your own values the ones Reset restores. Nothing here changes a setting until you press a Reset button.
 <!-- /guide:summary -->
 
 <details>
@@ -782,3 +814,15 @@ Billing's **Daily network charge**, in $. 1.09 to start with.
 ### Billing: bill day of month
 
 Billing's **Bill day of month**. 2 to start with.
+
+### Sell solar: minimum price
+
+Sell solar's **Minimum price**, in c/kWh. 5 to start with.
+
+### Sell solar: battery level
+
+Sell solar's **Battery level**, in %. 5 to start with.
+
+### Sell solar: excess solar
+
+Sell solar's **Excess solar**, in %. 10 to start with.

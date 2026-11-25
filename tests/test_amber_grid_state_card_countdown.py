@@ -239,6 +239,34 @@ async def test_forecast_table_missing_values(hass: HomeAssistant) -> None:
     assert "Missing Amber forecast data" in out and BUY_F in out
 
 
+@needs_node
+async def test_forecast_table_now_row(hass: HomeAssistant) -> None:
+    """The first row is the live price, with this interval's SS prediction beside it to check it against."""
+    js = (await _card(hass, "amber24hourforecasttable"))["config"]["cards"][0]["custom_fields"]["card"]
+    out = run_js([(js, price_states(-0.05, 0.2), None)])[0]
+    now = out.split('<tr class="at6t-tr at6t-now"')[1].split("</tr>")[0]
+    cells = re.findall(r"<td[^>]*>([^<]*)</td>", now)
+    assert cells[0] == "Now" and cells[1] == "-5.00c" and cells[3] == "20.00c"       # what is being charged now
+    first = re.findall(r"<td[^>]*>([^<]*)</td>", out.split('<tr class="at6t-tr">')[1])
+    assert cells[2] == first[2] and cells[4] == first[4] and cells[2] != "—"          # the SS prediction for the same interval
+    assert out.index("at6t-now") < out.index('<tr class="at6t-tr">')                    # above the forecast rows
+    assert "border-left:2px solid var(--battman-blue)" in now and "border-left" not in out.split('<tr class="at6t-tr">')[1].split("</tr>")[0]
+
+    # one current price missing: that cell is a dash, the row stays
+    gone = price_states(-0.05, 0.2)
+    gone[BUY_NOW] = {"state": "unavailable", "attributes": {}}
+    cells = re.findall(r"<td[^>]*>([^<]*)</td>", run_js([(js, gone, None)])[0].split('<tr class="at6t-tr at6t-now"')[1].split("</tr>")[0])
+    assert cells[1] == "-5.00c" and cells[3] == "—"
+
+    # neither current price has a number: no Now row, and the marker stays on the first forecast row
+    none = price_states(-0.05, 0.2)
+    del none[SELL_NOW]
+    none[BUY_NOW] = {"state": "unknown", "attributes": {}}
+    out = run_js([(js, none, None)])[0]
+    assert "at6t-now" not in out
+    assert "border-left:2px solid var(--battman-blue)" in out.split('<tr class="at6t-tr">')[1].split("</tr>")[0]
+
+
 # ── state ────────────────────────────────────────────────────────────────────
 
 def state_states(scen, now: datetime | None = None):
