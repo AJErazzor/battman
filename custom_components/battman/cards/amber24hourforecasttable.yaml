@@ -14,6 +14,9 @@
 # General), the same clock as the price grid. (The original showed NEM time, UTC+10.)
 # A missing price shows — (never 0.00c); missing sensors or no forecasts show an error
 # naming the sensors.
+# The first row, Now, is the live price from the 5-minute current-price sensors (Sell as
+# earned, as above), with the SS prediction for the same interval, so SS can be checked
+# against what was charged. It is left out when neither current-price sensor has a number.
 type: horizontal-stack
 cards:
   - type: custom:button-card
@@ -23,11 +26,15 @@ cards:
     triggers_update:
       - 'sensor.amber_billing_interval_forecasts_feed_in_price'
       - 'sensor.amber_billing_interval_forecasts_general_price'
+      - 'sensor.amber_5min_current_feed_in_price'
+      - 'sensor.amber_5min_current_general_price'
     custom_fields:
       card: |
         [[[
           const E_SELL = 'sensor.amber_billing_interval_forecasts_feed_in_price';
           const E_BUY  = 'sensor.amber_billing_interval_forecasts_general_price';
+          const E_NOW_SELL = 'sensor.amber_5min_current_feed_in_price';
+          const E_NOW_BUY  = 'sensor.amber_5min_current_general_price';
           const sell = states[E_SELL]?.attributes?.Forecasts || [];
           const buy  = states[E_BUY]?.attributes?.Forecasts || [];
           if (!sell.length || !buy.length)
@@ -78,9 +85,21 @@ cards:
             + '.at6t-pred { font-size:15px; font-weight:600; margin-left:6px; white-space:nowrap; vertical-align:0px; }'
             + '</style>';
 
+          // The price Amber is charging right now, as the first row, with the SS prediction for this same
+          // interval beside it, so the prediction can be checked against what actually happened. Shown when
+          // either current price sensor has a number; the blue marker moves to it.
+          const nowSell = num(states[E_NOW_SELL]?.state), nowBuy = num(states[E_NOW_BUY]?.state);
+          const hasNow = nowSell !== null || nowBuy !== null;
+          const b0 = buy.find(x => x.nem_date === sell[0].nem_date);
+          const nowRow = !hasNow ? '' : '<tr class="at6t-tr at6t-now" style="border-bottom:2px solid var(--battman-border-neutral)">'
+            + '<td class="at6t-td at6t-nowt" style="border-left:2px solid var(--battman-blue);padding-left:6px;color:var(--battman-text-bright);font-size:13px;font-weight:600;white-space:nowrap">Now</td>'
+            + sellCell(nowSell === null ? null : 0 - nowSell) + sellCell(pred(sell[0]))
+            + buyCell(nowBuy) + buyCell(b0 ? pred(b0) : null)
+            + '</tr>';
+
           const rows = sell.map((s, idx) => {
             const b = buy.find(x => x.nem_date === s.nem_date);
-            const now = idx === 0 ? ' style="border-left:2px solid var(--battman-blue);padding-left:6px"' : '';
+            const now = idx === 0 && !hasNow ? ' style="border-left:2px solid var(--battman-blue);padding-left:6px"' : '';
             return '<tr class="at6t-tr">'
               + '<td class="at6t-td at6t-time"' + now + '>' + when(s.start_time) + '</td>'
               + sellCell(num(s.per_kwh)) + sellCell(pred(s))
@@ -91,7 +110,7 @@ cards:
           return css + '<div class="at6t-wrap"><table class="at6t-tbl"><thead class="at6t-thead"><tr>'
             + '<th class="at6t-th">Time</th><th class="at6t-th">Sell</th><th class="at6t-th">SS</th>'
             + '<th class="at6t-th">Buy</th><th class="at6t-th">SS</th>'
-            + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+            + '</tr></thead><tbody>' + nowRow + rows + '</tbody></table></div>';
         ]]]
     styles:
       card:

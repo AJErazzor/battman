@@ -21,8 +21,8 @@ PARAMS = ["buyProrateSOCOffset", "buyHighSOCOffset", "sellProrateSOCOffset", "se
           "billDayOfMonth", "systemCost", "systemInstallDate", "systemIncome", "systemExpenses", "preSystemBillQ1",
           "preSystemBillQ2", "preSystemBillQ3", "preSystemBillQ4", "billInflation", "amberBuyAlertThreshold",
           "alertNotifyTarget", "amberNegativeBuyAlert", "amberBuyAlert", "liveActivitySpikeAlertOn", "liveActivityEnabled",
-          "offGridAlert", "offGridAlertDelay", "offGridRestoredAlert", "confirmPriceMismatch", "confirmBuyAbove", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme", "showHelp"]
-RULE_ITEMS = ["isActive", "allowLastChance", "hours_ahead", "grouping_minutes", "roundTo", "roundtype", "offset"]
+          "sellSolarRulePrice", "sellSolarRuleSOC", "sellSolarRuleExcess", "offGridAlert", "offGridAlertDelay", "offGridRestoredAlert", "confirmPriceMismatch", "confirmBuyAbove", "simpleBatteryMode", "alwaysShowOverrideTimer", "dashboardTheme", "showHelp"]
+RULE_ITEMS = ["isActive", "allowLastChance", "allowSellSolar", "hours_ahead", "grouping_minutes", "roundTo", "roundtype", "offset"]
 TRACKING = ["buy_trackingA_CutOffKwh", "buy_trackingA_CutOffcKwh", "buy_trackingA_Offset",
             "buy_trackingA_AllowLastChance", "buy_trackingA_ResetHour"]
 # the Live Activity: its switch and its settings (parameters attributes since v0.26.0)
@@ -42,7 +42,7 @@ def test_every_old_setting_is_on_the_page() -> None:
     for marker in ("attribute: 'rules'", "attribute: 'state'", "action: 'SetValue', provider", "'tariffBuy' : 'tariffSell'",
                    "action: 'SetDefaults'", "data-cascade", "lovelace/config/save"):
         assert marker in JS, marker
-    for sec in ("buy", "buyRules", "needy", "watchdog", "billing", "system", "sell", "sellRules", "spike", "protection",
+    for sec in ("buy", "buyRules", "needy", "watchdog", "billing", "system", "sell", "sellRules", "sellSolar", "spike", "protection",
                 "provider", "notifications", "dashboard", "defaults"):
         assert re.search(rf"\b{sec}:\s+\{{ title:", JS), sec
     assert "{{" not in JS and "[[map:" not in JS                             # entity names come from the map at run time
@@ -53,7 +53,7 @@ def test_limits_match_what_the_parameters_sensor_accepts() -> None:
     yaml_text = (ROOT / "packages/battman_parameters.yaml").read_text()
     table = JS[JS.index("const RANGE"):JS.index("const DEFAULT_KEYS")]
     page = {m[0]: m[1:] for m in re.findall(r"(\w+): \[(\d), (-?[\d.]+), (-?[\d.]+)", table)}
-    assert len(page) == 25
+    assert len(page) == 28
     for key, (is_int, lo, hi) in page.items():
         block = yaml_text[yaml_text.index(f"\n          {key}: >"):]
         block = block[:block.index("{% else %}")]

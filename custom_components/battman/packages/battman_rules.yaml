@@ -43,6 +43,7 @@ template:
           rules: >
               
               {# --- build default safely --- #}
+              {# allowSellSolar (sell rules only) is off by default #}
               
               {% set ns = namespace(default=[]) %}
               {% for i in range(24) %}
@@ -50,6 +51,7 @@ template:
                   'hour': i,
                   'isActive': false,
                   'allowLastChance': false,
+                  'allowSellSolar': false,
                   'hours_ahead': 3,
                   'grouping_minutes': 60,
                   'roundTo': 2,
@@ -58,27 +60,47 @@ template:
                 } ] %}
                 {% endfor %}
 
-            
-              {% set current = this.attributes.get('rules', ns.default) %}
-            
+
+              {# Rebuild all 24 stored hours on every run. Rules saved before a field existed don't
+                 have it, so any missing field is filled from the default list above (existing
+                 values are kept). Every hour gets the field, whether or not its rule is active. #}
+              {% set stored = this.attributes.get('rules', ns.default) %}
+              {% set ns3 = namespace(fixed=[]) %}
+              {% for i in range(24) %}
+                {% set r = stored[i] %}
+                {% set d = ns.default[i] %}
+                {% set ns3.fixed = ns3.fixed + [ {
+                  'hour': i,
+                  'isActive': r.get('isActive', d.isActive),
+                  'allowLastChance': r.get('allowLastChance', d.allowLastChance),
+                  'allowSellSolar': r.get('allowSellSolar', d.allowSellSolar),
+                  'hours_ahead': r.get('hours_ahead', d.hours_ahead),
+                  'grouping_minutes': r.get('grouping_minutes', d.grouping_minutes),
+                  'roundTo': r.get('roundTo', d.roundTo),
+                  'roundtype': r.get('roundtype', d.roundtype),
+                  'offset': r.get('offset', d.offset)
+                } ] %}
+              {% endfor %}
+              {% set current = ns3.fixed %}
+
               {# --- handle update event --- #}
-              {% if trigger is defined 
+              {% if trigger is defined
                     and trigger.platform == 'event'
                     and trigger.event.data.hour is defined
                     and trigger.event.data.hour >= 0
                     and trigger.event.data.hour < 24
-                    and trigger.event.data.attribute is defined 
+                    and trigger.event.data.attribute is defined
                     and trigger.event.data.attribute == 'rules'
-                    and trigger.event.data.item is defined 
+                    and trigger.event.data.item is defined
                     %}
-            
+
                 {% set hour = trigger.event.data.hour %}
                 {% set attr = trigger.event.data.attribute %}
                 {% set item = trigger.event.data.item %}
                 {% set value = trigger.event.data.value %}
-                
+
                 {% set typed_value = value | int if item in ['offset','grouping_minutes','hours_ahead','roundTo']
-                    else value | bool if item in ['isActive','allowLastChance']
+                    else value | bool if item in ['isActive','allowLastChance','allowSellSolar']
                     else value
                 %}
 
@@ -97,7 +119,8 @@ template:
                       'roundTo': typed_value if item == 'roundTo' else r.roundTo,
                       'roundtype': typed_value if item == 'roundtype' else r.roundtype,
                       'offset': typed_value if item == 'offset' else r.offset,
-                      'allowLastChance': typed_value if item == 'allowLastChance' else r.allowLastChance
+                      'allowLastChance': typed_value if item == 'allowLastChance' else r.allowLastChance,
+                      'allowSellSolar': typed_value if item == 'allowSellSolar' else r.allowSellSolar
                     } %}
                     
                     {% set ns2.updated = ns2.updated + [new_rule] %}

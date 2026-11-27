@@ -622,6 +622,48 @@ template:
                  else 15 }}
             {% endif %}   
             
+          sellSolarRulePrice: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSolarRulePrice is defined 
+               and trigger.event.data.sellSolarRulePrice | float >= 0
+               and trigger.event.data.sellSolarRulePrice | float <= 10000 %}
+              {{ trigger.event.data.sellSolarRulePrice | float }}
+            {% else %}
+              {{ this.attributes.sellSolarRulePrice
+                 if this.attributes.sellSolarRulePrice is defined
+                 else 5 }}
+            {% endif %}    
+            
+          sellSolarRuleSOC: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSolarRuleSOC is defined 
+               and trigger.event.data.sellSolarRuleSOC | int >= 0
+               and trigger.event.data.sellSolarRuleSOC | int <= 100 %}
+              {{ trigger.event.data.sellSolarRuleSOC | int }}
+            {% else %}
+              {{ this.attributes.sellSolarRuleSOC
+                 if this.attributes.sellSolarRuleSOC is defined
+                 else 5 }}
+            {% endif %}    
+
+          sellSolarRuleExcess: >
+            {% if trigger is defined
+               and trigger.platform == 'event'
+               and trigger.event.data.action == 'SetAttribute' 
+               and trigger.event.data.sellSolarRuleExcess is defined 
+               and trigger.event.data.sellSolarRuleExcess | int >= -100
+               and trigger.event.data.sellSolarRuleExcess | int <= 100 %}
+              {{ trigger.event.data.sellSolarRuleExcess | int }}
+            {% else %}
+              {{ this.attributes.sellSolarRuleExcess
+                 if this.attributes.sellSolarRuleExcess is defined
+                 else 10 }}
+            {% endif %}    
+            
           watchdogScriptNotRunLimit: >
             {% if trigger is defined
                and trigger.platform == 'event'
@@ -846,7 +888,7 @@ template:
                and trigger.event.data.action == 'SetDefaults' %}
               {{ trigger.event.data.defaults }}
             {% else %}
-              {{ this.attributes.defaults if this.attributes.defaults is defined else {
+              {% set base = this.attributes.defaults if this.attributes.defaults is defined else {
                 'gridChargingPositive': {
                   'buyProrateSOCOffset': 1,
                   'buyHighSOCOffset': 10,
@@ -875,7 +917,13 @@ template:
                   'dailyNetworkCharge': 1.09,
                   'billDayOfMonth': 2
                 }
-              } }}
+              } %}
+              {# sellSolar was added after some installs had saved their defaults, so it is added to those #}
+              {{ base if base.sellSolar is defined else dict(base, sellSolar={
+                'sellSolarRulePrice': 5,
+                'sellSolarRuleSOC': 5,
+                'sellSolarRuleExcess': 10
+              }) }}
             {% endif %}            
 
           overridePresets: >
