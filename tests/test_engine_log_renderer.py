@@ -37,7 +37,7 @@ def test_engine_script_has_no_emoji() -> None:
         assert not EMOJI.findall((scripts / f"{name}.yaml").read_text()), name
     text = (scripts / "battman_engine_decide.yaml").read_text()
     for head in ("Run: {{ as_local(", "Mode:", "Prices:", "Battery:", "SOC Limits:", "Solar:", "Actions:",
-                 "Sell Forecasts:", "Buy Forecasts:", "Version:", "Debug: ", "(Spike 1)", "(Spike 2)", "(Bad!)"):
+                 "Sell Forecasts:", "Buy Forecasts:", "Version:", "Debug:", "(Spike 1)", "(Spike 2)", "(Bad!)"):
         assert head in text, head
     # Battman's log text (the Debug Message step's prettyMessage): the headings and lines above
     steps = yaml.safe_load(text)["sequence"]

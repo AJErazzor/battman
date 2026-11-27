@@ -213,7 +213,7 @@ class BattmanSettingsCard extends BattmanCardBase {
       dailyNetworkCharge: [0, 0, 5], billDayOfMonth: [1, 0, 31, true],
       systemCost: [0, 0, 100000], systemIncome: [0, 0, 50000], systemExpenses: [0, 0, 50000],
       preSystemBillQ1: [0, 0, 5000], preSystemBillQ2: [0, 0, 5000], preSystemBillQ3: [0, 0, 5000], preSystemBillQ4: [0, 0, 5000],
-      sellSolarRulePrice: [0, 0, 10000], sellSolarRuleSOC: [1, 0, 100], sellSolarRuleExcess: [1, -100, 100],
+      sellSolarRulePrice: [0, 0, 10000], sellSolarRuleSOC: [1, 0, 100], sellSolarRuleExcess: [0, 0, 1000],
       billInflation: [1, 0, 100], amberBuyAlertThreshold: [0, 0, 99], confirmBuyAbove: [0, 0, 99], offGridAlertDelay: [1, 0, 30],
     };
     const DEFAULT_KEYS = {   // the defaults each section's Reset restores (parameters' `defaults`)
@@ -659,7 +659,7 @@ class BattmanSettingsCard extends BattmanCardBase {
         watchdogScriptNotRunLimit: ['Watchdog: not run limit', 'min'], watchdogScriptDisabledLimit: ['Watchdog: disabled limit', 'min'],
         dailyNetworkCharge: ['Billing: daily network charge', '$'], billDayOfMonth: ['Billing: bill day of month', 'day'],
         sellSolarRulePrice: ['Sell solar: minimum price', 'c/kWh'], sellSolarRuleSOC: ['Sell solar: battery level', '%'],
-        sellSolarRuleExcess: ['Sell solar: excess solar', '%'] };
+        sellSolarRuleExcess: ['Sell solar: excess solar', 'kWh'] };
       let rows = '';
       Object.entries(DEFAULT_KEYS).forEach(([sec, keys]) => keys.forEach((k) => {
         const v = (d[sec] || {})[k];
@@ -719,9 +719,9 @@ class BattmanSettingsCard extends BattmanCardBase {
                     + numParam('sellLowSOCOffset', 'Low price SOC offset', 'SOC offset at low sell prices', '%') + '</div>' },
       sellRules:  { title: 'Sell rules', deps: ['sell_rules'], render: () => rulesSection('sell') },
       sellSolar:  { title: 'Sell solar', reset: 'sellSolar', deps: ['parameters'], render: () => note('Used by every hour that has Sell solar switched on.') + '<div class="rows">'
-                    + numParam('sellSolarRulePrice', 'Minimum price', 'Only sell solar when the feed-in price is above this', 'c/kWh')
-                    + numParam('sellSolarRuleSOC', 'Battery level', 'Only sell solar once the battery is above this', '%')
-                    + numParam('sellSolarRuleExcess', 'Excess solar', 'Sell when solar beats the house load by this much', '%') + '</div>' },
+                    + numParam('sellSolarRulePrice', 'Minimum price', 'Only sell solar when the feed-in price is at or above this', 'c/kWh')
+                    + numParam('sellSolarRuleSOC', 'Battery level', 'Only sell solar once the battery is at or above this', '%')
+                    + numParam('sellSolarRuleExcess', 'Excess solar', 'Sell when the solar still to come today is this much more than the battery needs to fill', 'kWh') + '</div>' },
       spike:      { title: 'Spike selling', reset: 'spikeSelling', deps: ['parameters'], render: () => note('When prices spike the battery can export at a profit. Two tiers let it sell harder at higher prices.') + '<div class="rows">'
                     + '<div class="subdiv">Tier 1</div>' + numParam('sellSpikePrice1', 'Spike sell price', '', 'c/kWh') + numParam('sellSpikeSOC1', 'Sell above SOC', '', '%')
                     + '<div class="subdiv">Tier 2</div>' + numParam('sellSpikePrice2', 'Spike sell price', '', 'c/kWh') + numParam('sellSpikeSOC2', 'Sell above SOC', '', '%') + '</div>' },

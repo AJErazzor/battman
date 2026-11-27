@@ -104,7 +104,7 @@ custom_fields:
     const MODE = {'Charge': [C.yellow, 'buy'], 'Discharge': [C.green, 'sell'], 'Self Consume': [C.blue, 'selfconsume'], 'Float': [C.orange, 'sellsolar'],
       'Drain': [C.red, 'drain'], 'Float Solar Off': [C.yellow, 'houseparty'], 'Charge Solar Off': [C.green, 'hooover']};
     // engine reason labels — newer engines publish Drain as 'Battery Only' and add 'Solar -ve' / 'Solar Only'
-    const DRAIN = ['Drain', 'Battery Only', 'No, Draining'], SOLAR = ['Solar', 'Solar -ve', 'Solar Only'];
+    const DRAIN = ['Drain', 'Battery Only', 'No, Draining'], SOLAR = ['Solar', 'Solar -ve', 'Solar Only', 'Solar Rule'];
     // negative-price modes: no rule numbers — the BUY tile shows the live price it's buying at
     const SOAK = {'Charge Solar Off': ['Hoooover', 'Filling up'], 'Float Solar Off': ['House Party', 'Paid to use']};
 
