@@ -49,7 +49,7 @@ const LOG_CSS = `
   .page {
     background: var(--ha-bg);
     color: var(--ha-text);
-    font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif);
+    font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
     font-size: 15px;
     line-height: 1.5;
     padding: 20px;

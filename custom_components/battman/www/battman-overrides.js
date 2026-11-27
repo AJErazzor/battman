@@ -14,7 +14,7 @@
 
 import { AMBER as AMBER_ENT, BattmanCardBase, SIGEN, battmanDefine, battmanMap, battmanPicker, esc, inCardPicker } from "./battman-card-base.js";
 import { helpRegister } from "./battman-help-layer.js";
-import { OVERRIDES, colours, isFalse, isOn, isTrue, money, num, pad2, rowHtml, stripHtml } from "./battman-overrides-core.js";
+import { OVERRIDES, colours, isFalse, isOn, isTrue, money, num, pad2, presetRows, rowHtml, stripHtml } from "./battman-overrides-core.js";
 
 // Battman's own names are replaced by the entity map's when the card starts (run); the rest are named directly.
 const E = {
@@ -40,7 +40,7 @@ const closeDialog = (dlg) => { try { dlg.close(); } catch (e) { /* already close
 const FL = "font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:5px";
 const CHL = "font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--battman-text-dim);margin-bottom:6px";
 const CHS = "height:26px;display:inline-flex;align-items:center;gap:5px;padding:0 9px;border-radius:5px;background:var(--battman-surface-card);cursor:pointer;margin:0 5px 5px 0";
-const NUM = "width:100%;box-sizing:border-box;height:37px;background:var(--battman-surface-card);border-radius:6px;color:var(--battman-text-bright);font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font)";
+const NUM = "width:100%;box-sizing:border-box;height:37px;background:var(--battman-surface-card);border-radius:6px;color:var(--battman-text-bright);font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))";
 const BTN = "flex:1;text-align:center;padding:8px 4px;border-radius:6px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer";
 
 const plugStyle = "display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:10px;box-sizing:border-box;background:transparent;border:1px solid var(--battman-border-neutral)";
@@ -118,7 +118,7 @@ function editHtml(o, P, UL) {
     `<span data-ul="${i}" style="${CHS};border:1px solid var(--battman-border-neutral-soft);font-size:11px;font-weight:800;color:var(--battman-text-muted)">${esc(e[0])}</span>`).join("");
   const input = (id, label, color, attrs, border, fz) =>
     `<div style="flex:1"><span style="${FL};color:${color}">${label}</span><input id="${id}" type="number" ${attrs} style="${NUM};border:1px solid ${border};font-size:${fz}px"></div>`;
-  return `<div style="background:var(--battman-surface-popup);padding:12px;border-radius:10px;font-family:var(--battman-font)">`
+  return `<div style="background:var(--battman-surface-popup);padding:12px;border-radius:10px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">`
     + `<div style="font-size:14px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:${K.c};display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 60px 9px 0;margin-bottom:9px;border-bottom:1px solid ${K.dim}">${o.name}</div>`
     + `<div id="body">`
     + (chips ? `<div style="margin-bottom:10px">${chips}</div>` : "")
@@ -152,6 +152,7 @@ function editHtml(o, P, UL) {
     + `<div style="font-size:10px;color:var(--battman-text-dim);font-weight:700;margin-bottom:12px;text-align:center">Saves SOC, price, lock and timer for ${o.name}</div>`
     + `<div style="display:flex;gap:8px"><div id="savecancel" style="flex:1;text-align:center;padding:11px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral);cursor:pointer">Cancel</div>`
     + `<div id="saveok" style="flex:1.4;text-align:center;padding:11px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-green);background:var(--battman-green-soft-bg);border:1px solid var(--battman-green-border-strong);cursor:pointer">Save preset</div></div></div>`
+    + `<div id="pvw" style="display:none"></div>`
     + `</div>`;
 }
 
@@ -163,7 +164,7 @@ function openEdit(o, anchor) {
   const P = (H.states[E.params] || {}).attributes || {};
   const UL = L.runUntilList(H);
   const K = colours(o);
-  const dlg = L.modal(anchor, { width: "min(94vw,340px)", close: true, html: editHtml(o, P, UL) });
+  const dlg = L.modal(anchor, { width: "min(94vw,340px)", close: true, css: PV_CSS, html: editHtml(o, P, UL) });
   if (!dlg) return;
   const Q = (id) => dlg.querySelector("#" + id);
   let untilSec = 0;
@@ -203,14 +204,36 @@ function openEdit(o, anchor) {
   }));
 
   // presets: apply one for this override (values, lock, and its timer)
-  dlg.querySelectorAll("[data-preset]").forEach((el) => el.addEventListener("click", () => {
-    const pr = (P.overridePresets || [])[+el.dataset.preset];
+  const applyPreset = (pi) => {
+    const pr = (P.overridePresets || [])[pi];
     if (!pr) return;
     const v = pr.values || {};
     startTimer(L.presetSec(pr));
     send({ [o.soc]: (v[o.id] && parseFloat(v[o.id].soc)) || 0, [o.price]: (v[o.id] && parseFloat(v[o.id].price)) || 0,
       [o.reset]: !(v[o.id] && v[o.id].allowReset === false) });
-  }));
+  };
+  dlg.querySelectorAll("[data-preset]").forEach((el) => el.addEventListener("click", () => applyPreset(+el.dataset.preset)));
+  // hold a chip: what it does, with Close / Start now (shown in place of the editor)
+  let pvi = -1;
+  const pvShow = (on) => { Q("body").style.display = on ? "none" : ""; Q("pvw").style.display = on ? "" : "none"; };
+  xBack(dlg, () => {
+    if (pvi >= 0) { pvi = -1; pvShow(false); return true; }
+    if (Q("save").style.display === "block") { Q("save").style.display = "none"; Q("body").style.display = "block"; return true; }
+    return false;
+  });
+  holdPreview(dlg, () => Q("save").style.display !== "block" && pvi < 0, (c) => {
+    pvi = +c.dataset.preset;
+    const pr = (P.overridePresets || [])[pvi];
+    if (!pr) { pvi = -1; return; }
+    Q("pvw").innerHTML = previewHtml(pr, false, false);
+    pvShow(true);
+  });
+  Q("pvw").addEventListener("click", (e) => {
+    const t = e.target.closest ? e.target.closest("[data-a]") : null;
+    if (!t) return;
+    if (t.dataset.a === "pvgo") applyPreset(pvi);
+    else if (t.dataset.a === "pvclose") { pvi = -1; pvShow(false); }
+  });
 
   // cost preview and cheapest price (Buy Anytime)
   const costPv = () => costPreview(H, Q("costpv"), parseFloat(Q("s").value) || 0, parseFloat(Q("p").value) || 0, K);
@@ -269,7 +292,7 @@ function openHelp(o, anchor) {
   const hr = `<div style="border-top:1px solid var(--battman-border-neutral-soft);margin:8px 0"></div>`;
   const b = (t) => `<span style="color:var(--battman-text-bright);font-weight:600">${t}</span>`;
   L.modal(anchor, { width: "min(94vw,360px)", close: true, html:
-    `<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font)">`
+    `<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">`
     + `<div style="font-size:9px;font-weight:700;color:${K.c};text-transform:uppercase;letter-spacing:0.14em;display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 60px 6px 0;margin-bottom:10px;border-bottom:1px solid ${K.dim}">${o.name}</div>`
     + `<div style="margin-bottom:10px"><div style="margin-bottom:5px"><span style="color:${K.c};font-weight:700;font-size:12px">SOC</span><span style="color:var(--battman-text-muted);font-size:11px"> — ${o.helpSoc}</span></div>`
     + `<div><span style="color:${K.c};font-weight:700;font-size:12px">Price</span><span style="color:var(--battman-text-muted);font-size:11px"> — ${o.helpPrice}</span></div></div>`
@@ -338,7 +361,7 @@ function openTimerSheet(anchor) {
   const t0 = timerOf(H.states), live = t0.state === "active";
   const CH = "height:30px;display:inline-flex;align-items:center;padding:0 11px;border-radius:6px;background:var(--battman-surface-card);cursor:pointer;font-size:12px;font-weight:800;margin:0 5px 5px 0";
   const LB = "font-size:9px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-dim);margin-bottom:6px";
-  const IN = "width:100%;box-sizing:border-box;height:36px;background:var(--battman-surface-card);border:1px solid var(--battman-blue-border);border-radius:6px;color:var(--battman-text-bright);font-size:16px;font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font);color-scheme:dark";
+  const IN = "width:100%;box-sizing:border-box;height:36px;background:var(--battman-surface-card);border:1px solid var(--battman-blue-border);border-radius:6px;color:var(--battman-text-bright);font-size:16px;font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));color-scheme:dark";
   const head = live
     ? `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:13px;padding-right:60px"><span id="sh-cd" style="font-size:26px;font-weight:800;color:${C};font-variant-numeric:tabular-nums"></span><span id="sh-un" style="font-size:12px;font-weight:700;color:${C}"></span></div>`
     : `<div style="font-size:13px;font-weight:800;color:var(--battman-text-dim);margin-bottom:13px;padding-right:60px">Timer is off</div>`;
@@ -346,7 +369,7 @@ function openTimerSheet(anchor) {
     `<span class="sh-x bmb2" data-s="${e[1]}" style="${CH};border:1px solid var(--battman-blue-border);color:${C}">${live ? e[0] : e[0].replace("+", "")}</span>`).join("");
   const run = L.runUntilList(H).map((r) =>
     `<span class="sh-r bmb2" data-at="${esc(r[2])}" data-s="${r[1]}" style="${CH};border:1px solid var(--battman-border-neutral-soft);color:var(--battman-text-muted)">${esc(r[0])}</span>`).join("");
-  const html = `<div style="background:var(--battman-surface-popup);padding:14px;border-radius:12px;font-family:var(--battman-font)">` + head
+  const html = `<div style="background:var(--battman-surface-popup);padding:14px;border-radius:12px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">` + head
     + `<div style="${LB}">${live ? "Extend" : "Start for"}</div><div style="margin-bottom:12px">${ext}</div>`
     + `<div style="${LB}">Run until</div><div style="margin-bottom:11px">${run}</div>`
     + `<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">`
@@ -383,6 +406,60 @@ function openTimerSheet(anchor) {
   tick = setInterval(show, 1000);
 }
 
+// ── press-and-hold preview of a saved preset (scene or chip) ─────────────────────────────────
+// The rows come from presetRows (battman-overrides-core.js). Buttons carry data-a="pvclose" / "pvarm" / "pvgo";
+// the popup that shows it handles them. canArm: a scene with a net target (the moon); armed: it is armed now.
+const PV_CSS = '[data-a="apply"],[data-a="ntapply"],[data-preset]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}';
+function previewHtml(p, armed, canArm) {
+  const v = (p && p.values) || {};
+  const keys = Object.keys(v);
+  const o1 = keys.length === 1 ? OVERRIDES.find((x) => x.id === keys[0]) : null;
+  const kind = keys.length > 1 ? "Scene" : (o1 ? o1.name + " chip" : "Net Target chip");
+  const nameCol = o1 ? colours(o1).c : "var(--battman-teal)";
+  const rows = presetRows(p, armed).map((r) =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><div style="width:6px;height:6px;border-radius:50%;background:${r.c};flex:none"></div>`
+    + `<div style="font-size:12px;font-weight:700;color:var(--battman-text-bright);flex:1;white-space:nowrap">${esc(r.n)}</div>`
+    + `<div style="font-size:12px;font-weight:800;color:${r.c};text-align:right">${esc(r.v)}</div></div>`).join("");
+  const B = "flex:1;display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:40px;padding:0 4px;white-space:nowrap;text-align:center;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer";
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px;box-sizing:border-box;padding:0 0 8px;margin-bottom:10px;border-bottom:1px solid var(--battman-border-neutral-soft)">`
+    + `<span style="font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-bright);white-space:nowrap">${kind}</span>`
+    + `<span style="font-size:13px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:${nameCol};text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span></div>`
+    + `<div style="background:var(--battman-surface-card);border:1px solid var(--battman-border-neutral-soft);border-radius:8px;padding:8px 12px;margin-bottom:12px">${rows}</div>`
+    + `<div style="display:flex;gap:8px"><div data-a="pvclose" style="${B};color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral)">Close</div>`
+    + (canArm ? `<div data-a="pvarm" style="${B};color:var(--battman-blue);border:1px solid var(--battman-blue-border)">${armed ? "☾ Disarm" : "☾ Arm"}</div>` : "")
+    + `<div data-a="pvgo" style="${B};flex:1.3;color:var(--battman-green);background:var(--battman-green-soft-bg);border:1px solid var(--battman-green-border-strong)">Start now</div></div>`;
+}
+// Hold on a preset chip in a popup: calls show(chipElement) after HOLD_MS and swallows the click that ends the hold.
+// Right-click (desktop) shows it at once. ok(el) says which elements count as chips.
+// While a panel (Save box, preview) is open inside a popup, its ✕ goes back to the popup instead of closing it.
+// back() returns true when it closed a panel. Capture on the dialog runs before the ✕'s own click handler.
+function xBack(dlg, back) {
+  dlg.addEventListener("click", (e) => {
+    if (!(e.target && e.target.classList && e.target.classList.contains("x"))) return;
+    if (back()) { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); if (e.stopPropagation) e.stopPropagation(); if (e.preventDefault) e.preventDefault(); }
+  }, true);
+}
+function holdPreview(dlg, ok, show) {
+  let t = null, swallow = false, x0 = 0, y0 = 0;
+  const chipAt = (e) => { const c = e.target.closest ? e.target.closest("[data-a=apply],[data-a=ntapply],[data-preset]") : null; return c && ok(c, e) ? c : null; };
+  dlg.addEventListener("pointerdown", (e) => {
+    swallow = false; clearTimeout(t);
+    if (e.button !== 0) return;
+    const c = chipAt(e); if (!c) return;
+    x0 = e.clientX; y0 = e.clientY;
+    t = setTimeout(() => { swallow = true; show(c); }, 500);
+  });
+  dlg.addEventListener("pointermove", (e) => { if (t && Math.abs(e.clientX - x0) + Math.abs(e.clientY - y0) > 12) { clearTimeout(t); t = null; } });
+  ["pointerup", "pointercancel"].forEach((ev) => dlg.addEventListener(ev, () => { clearTimeout(t); t = null; }));
+  dlg.addEventListener("contextmenu", (e) => {
+    const c = chipAt(e); if (!c) return;
+    e.preventDefault();
+    if (!swallow) show(c);
+  });
+  // capture phase: runs before the popup's own click handler
+  dlg.addEventListener("click", (e) => { if (swallow) { swallow = false; if (e.stopPropagation) e.stopPropagation(); if (e.preventDefault) e.preventDefault(); } }, true);
+}
+
 // ── the control centre (tap the OVERRIDES strip) ─────────────────────────────────────────────
 // Net Target, then the five overrides as panels (one open at a time), the Scenes strip, Save current / Manage.
 // Everything inside is plain markup with data-a="action" attributes and ONE click handler on the dialog.
@@ -401,7 +478,7 @@ const NT = { c: "var(--battman-teal)", d: "var(--battman-teal-border)", w: "var(
 const NT_BAD = "Buy / sell totals unavailable, so no target can be set";
 const CC_LBL = "font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:5px";
 const CC_CHS = "height:26px;display:inline-flex;align-items:center;padding:0 9px;border-radius:5px;background:var(--battman-surface-card);cursor:pointer;margin:0 5px 5px 0;font-size:11px;font-weight:800";
-const CC_TIN = "width:100%;box-sizing:border-box;height:37px;background:var(--battman-surface-card);border:1px solid var(--battman-blue-border);border-radius:6px;color:var(--battman-text-bright);font-size:16px;font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font);color-scheme:dark";
+const CC_TIN = "width:100%;box-sizing:border-box;height:37px;background:var(--battman-surface-card);border:1px solid var(--battman-blue-border);border-radius:6px;color:var(--battman-text-bright);font-size:16px;font-weight:800;text-align:center;padding:0 4px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));color-scheme:dark";
 const CC_TLB = "font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--battman-blue);display:block;margin-bottom:5px";
 const CHEV = `<svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:var(--battman-border-neutral);flex:none"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
 const rBox = (lk) => (lk ? lib().lockSvg(AMBER, 15) + `<span style="font-size:11px;font-weight:800;color:${AMBER}">ON</span>` : `<span style="font-size:11px;font-weight:800;color:var(--battman-text-muted)">OFF</span>`);
@@ -414,7 +491,7 @@ function openControl(anchor) {
   let presets = (P.overridePresets || []).slice();
   const UL = L.runUntilList(H);
   const pins = OVERRIDES.filter((o) => P[o.pin] === "show").map((o) => o.id);
-  let MG = false, SV = false, SVALS = null, OPEN = -1, TDUR = "", TUNT = "", ARM = String(P.armedScene || "");
+  let MG = false, SV = false, SVALS = null, OPEN = -1, TDUR = "", TUNT = "", ARM = String(P.armedScene || ""), PV = -1;
   let DRAFT = null;   // what was typed in a panel when its Save was pressed: { i, s, p, locked }
   let NTSIDE = "sell", NTV = 0, NTSV = false, ntHold = null, ntN = 0;
   const tm0 = H.states[E.timer] || {};
@@ -585,18 +662,25 @@ function openControl(anchor) {
         + `<div style="margin-bottom:10px"><span style="${CC_LBL};color:var(--battman-text-muted)">Name</span><input id="nm" type="text" placeholder="e.g. Evening dump" style="width:100%;box-sizing:border-box;background:var(--battman-surface-card);border:1px solid var(--battman-border-neutral);border-radius:7px;color:var(--battman-text-bright);font-size:15px;font-weight:700;padding:10px 12px"></div>`
         + `<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px"><div style="flex:1"><span style="${CC_TLB}">Timer h</span><input id="snt" data-in="nin0" type="number" min="0" max="48" step="0.25" placeholder="—" style="${tin}"></div>`
         + `<div style="color:var(--battman-text-dim);font-size:10px;font-weight:700;padding-bottom:13px">or</div>`
-        + `<div style="flex:1"><span style="${CC_TLB}">Until</span><input id="snu" data-in="nin1" type="time" style="${tin};font-family:var(--battman-font);color-scheme:dark"></div></div>`
+        + `<div style="flex:1"><span style="${CC_TLB}">Until</span><input id="snu" data-in="nin1" type="time" style="${tin};font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));color-scheme:dark"></div></div>`
         + `<div style="font-size:10px;color:var(--battman-text-dim);font-weight:700;margin-bottom:10px;text-align:center">Until is re-evaluated each time the preset is applied</div>`
         + `<div style="font-size:11px;color:var(--battman-purple);font-weight:700;margin-bottom:12px">${kind}</div>`
         + `<div style="display:flex;gap:8px"><div data-a="savecancel" style="flex:1;text-align:center;padding:11px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-text-muted);border:1px solid var(--battman-border-neutral);cursor:pointer">Cancel</div>`
         + `<div data-a="saveok" style="flex:1.4;text-align:center;padding:11px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--battman-green);background:var(--battman-green-soft-bg);border:1px solid var(--battman-green-border-strong);cursor:pointer">Save preset</div></div>`;
     }
-    return `<div style="position:absolute;inset:0;background:rgba(6,10,18,0.94);border-radius:12px;display:flex;flex-direction:column;justify-content:flex-start;padding:16px;overflow:auto"><div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-bright);margin-bottom:12px">Save preset</div>${box}</div>`;
+    return `<div style="position:absolute;left:0;right:0;bottom:0;top:53px;background:var(--battman-surface-popup);display:flex;flex-direction:column;justify-content:flex-start;padding:2px 0 0;overflow:auto"><div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--battman-text-bright);margin-bottom:12px">Save preset</div>${box}</div>`;
+  };
+
+  const pvOverlay = () => {
+    const p = presets[PV];
+    if (!p) return "";
+    const v = p.values || {};
+    return `<div style="position:absolute;left:0;right:0;bottom:0;top:53px;background:var(--battman-surface-popup);padding:2px 0 0;box-sizing:border-box;overflow:auto">${previewHtml(p, ARM === p.name, Object.keys(v).length > 1 && !!v.net)}</div>`;
   };
 
   // ---- the dialog ----
-  const dlg = L.modal(anchor, { width: "min(94vw,360px)", close: true,
-    html: `<div id="cc" style="background:var(--battman-surface-popup);padding:12px;border-radius:12px;font-family:var(--battman-font)"></div>` });
+  const dlg = L.modal(anchor, { width: "min(94vw,360px)", close: true, css: PV_CSS,
+    html: `<div id="cc" style="background:var(--battman-surface-popup);padding:12px;border-radius:12px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))"></div>` });
   if (!dlg) return;
   const q = (sel) => dlg.querySelector(sel);
   const closeIt = () => closeDialog(dlg);
@@ -629,12 +713,12 @@ function openControl(anchor) {
       + `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:11px;border-top:1px solid var(--battman-border-neutral-soft)">`
       + `<div data-a="saveopen" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:6px;cursor:pointer;border:1px solid var(--battman-green-border-light)"><span style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--battman-green)">＋ Save current</span></div>`
       + `<div data-a="mgmt" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:6px;cursor:pointer;border:1px solid ${MG ? "var(--battman-blue-border-strong)" : "var(--battman-border-neutral)"};background:${MG ? "var(--battman-blue-wash)" : "transparent"}"><span style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${MG ? "var(--battman-blue)" : "var(--battman-text-muted)"}">${MG ? "Done" : "Manage"}</span></div></div>`
-      + `<div style="font-size:11px;color:var(--battman-text-dim);line-height:1.5;margin-top:10px;text-align:center">${MG ? "× deletes a preset · ＋ Save current adds one" : "Chips apply instantly · Scenes replace all overrides + net target · moon runs a scene at 00:01 · pin keeps a row visible"}</div>`
-      + (SV ? overlay() : "") + `</div>`;
+      + `<div style="font-size:11px;color:var(--battman-text-dim);line-height:1.5;margin-top:10px;text-align:center">${MG ? "× deletes a preset · ＋ Save current adds one" : "Chips apply instantly · hold one to see what it does · Scenes replace all overrides + net target · moon runs a scene at 00:01 · pin keeps a row visible"}</div>`
+      + (SV ? overlay() : (PV >= 0 ? pvOverlay() : "")) + `</div>`;
     q("#cc").innerHTML = html;
-    if (SV) { const sc = dlg.querySelector(".bm-scroll"); if (sc) sc.scrollTop = 0; }
+    if (SV || PV >= 0) { const sc = dlg.querySelector(".bm-scroll"); if (sc) sc.scrollTop = 0; }
     OVERRIDES.forEach((o, i) => fillPanel(i));
-    if (!SV) {
+    if (!SV && PV < 0) {
       if (OPEN === 99) { fillNet(); expand(q("#b99")); }
       else if (OPEN >= 0) expand(q("#b" + OPEN));
     }
@@ -751,6 +835,15 @@ function openControl(anchor) {
       fire({ armedScene: ARM }); render();
     },
     mgmt() { MG = !MG; if (!MG) { SV = false; SVALS = null; } render(); },
+    pvclose() { PV = -1; render(); },
+    pvarm() { const pi = PV; PV = -1; if (presets[pi]) ACT.arm({ dataset: { pi } }); else render(); },
+    pvgo() {
+      const pi = PV, p = presets[pi];
+      PV = -1;
+      if (!p) { render(); return; }
+      const keys = Object.keys(p.values || {});
+      if (keys.length === 1 && keys[0] === "net") ACT.ntapply({ dataset: { pi } }); else ACT.apply({ dataset: { pi } });
+    },
     // Save in a panel: the values typed there (not applied) become a preset chip for that override
     panelsave(t) {
       const i = +t.dataset.i, o = OVERRIDES[i];
@@ -838,6 +931,9 @@ function openControl(anchor) {
   });
   ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => dlg.addEventListener(ev, ntUp, true));
   dlg.addEventListener("close", ntUp);
+  xBack(dlg, () => { if (PV >= 0) { ACT.pvclose(); return true; } if (SV) { ACT.savecancel(); return true; } return false; });
+  holdPreview(dlg, (c, e) => !MG && !SV && PV < 0 && !(e.target.closest && e.target.closest("[data-a=arm],[data-a=del]")) && c.dataset.pi !== undefined,
+    (c) => { PV = +c.dataset.pi; render(); });
   render();
 }
 
@@ -848,7 +944,7 @@ function openDockHelp(anchor) {
   const m = (t, size = 10) => `<div style="margin-bottom:4px;color:var(--battman-text-muted);font-size:${size}px">${t}</div>`;
   const k = (t, col = "var(--battman-text-bright)") => `<span style="color:${col};font-weight:600">${t}</span>`;
   L.modal(anchor, { width: "min(94vw,360px)", close: true, html:
-    `<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font)">`
+    `<div style="background:var(--battman-surface-popup);padding:14px 16px;border-radius:8px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">`
     + `<div style="font-size:9px;font-weight:700;color:var(--battman-text-muted);text-transform:uppercase;letter-spacing:0.14em;display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:0 60px 6px 0;margin-bottom:10px;border-bottom:1px solid var(--battman-border-neutral-soft)">Override Dock</div>`
     + m("Rows appear below the dock when an override is active or pinned. The override timer follows the same rule.", 11)
     + `<div style="border-top:1px solid var(--battman-border-neutral-soft);margin:8px 0"></div>`
@@ -864,11 +960,30 @@ function openDockHelp(anchor) {
 
 const TAP_GAP = 300, HOLD_MS = 500;
 
+// When the strip's two sides don't fit side by side, scale BOTH down by the same factor (to 80% at most) so nothing
+// is hidden; past that the OVERRIDES label ends in "…" (CSS above). The numbers on the right are never cut.
+function fitStrip(host) {
+  const inn = host && host.querySelector ? host.querySelector(".strip-in") : null;
+  if (!inn) return 1;
+  const kids = Array.from(inn.children);
+  kids.forEach((k) => { k.style.zoom = ""; });
+  const cs = getComputedStyle(inn);
+  const gap = parseFloat(cs.columnGap) || parseFloat(cs.gap) || 0;
+  const avail = inn.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) - gap * Math.max(0, kids.length - 1);
+  const want = kids.reduce((s, k) => s + k.scrollWidth, 0);
+  if (avail <= 0 || want <= avail) return 1;
+  const f = Math.max(0.8, Math.floor((avail / want) * 100) / 100);
+  kids.forEach((k) => { k.style.zoom = String(f); });
+  return f;
+}
+
 const CSS = `
   :host { display: block; }
-  .stack { display: flex; flex-direction: column; gap: 2px; font-family: var(--primary-font-family, sans-serif); }
+  .stack { display: flex; flex-direction: column; gap: 2px; font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
   .strip { height: 52px; box-sizing: border-box; border-radius: 8px; overflow: hidden; cursor: pointer; }
   .strip-in { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; }
+  /* the OVERRIDES label gives way last (ellipsis) when the strip is still too tight after fitStrip; numbers never do */
+  .strip-in > div:first-child > div:first-child { flex: 0 1 auto !important; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .row { position: relative; height: 60px; box-sizing: border-box; border-radius: 8px; overflow: hidden; cursor: pointer; }
   .strip, .row { transition: filter .1s, transform .1s; }
   .strip:active, .row:active { transform: scale(0.96); filter: brightness(1.5); }
@@ -945,6 +1060,7 @@ class BattmanOverrides extends BattmanCardBase {
       if (key === last) return;
       last = key;
       root.getElementById("strip").innerHTML = stripHtml(a, st, E);
+      fitStrip(root.getElementById("strip"));
       root.getElementById("rows").innerHTML = OVERRIDES
         .filter((o) => isOn(o, a) || a[o.pin] === "show")
         .map((o) => rowHtml(o, a, st, E)).join("");
@@ -973,6 +1089,7 @@ class BattmanOverrides extends BattmanCardBase {
     });
     // The strip: tap = control centre, hold = how the dock works.
     const stripEl = root.getElementById("strip");
+    if (window.ResizeObserver) new ResizeObserver(() => fitStrip(stripEl)).observe(stripEl);
     let sHold = null, sHeld = false;
     const onStrip = (e) => (e.target.closest ? e.target.closest(".strip") : null);
     stripEl.addEventListener("pointerdown", (e) => {
@@ -1020,7 +1137,7 @@ class BattmanOverrides extends BattmanCardBase {
 }
 
 // for the tests (tests/js/overrides_check.mjs)
-export { BattmanOverrides, clearOverride, countdown, openControl, openDockHelp, openEdit, openHelp, openTimerSheet, remSec, timerHtml, timerShown };
+export { BattmanOverrides, clearOverride, countdown, fitStrip, openControl, openDockHelp, openEdit, openHelp, openTimerSheet, remSec, timerHtml, timerShown };
 
 battmanDefine("battman-overrides", BattmanOverrides);
 battmanPicker("battman-overrides", "Battman Overrides",

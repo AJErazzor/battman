@@ -71,7 +71,7 @@ custom_fields:
           <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px">
             <div style="${colCss}">${cell('Lasts about', hm(lasts), rightC, 17)}${ok(lasts) ? cell('Halve load', hm(lasts * 2), 'var(--battman-green)', 17) : ''}</div>
             <div style="${colCss}">${cell('Battery', ok(S.soc) ? Math.round(S.soc) + '%' : '—', rightC, 17)}${cell('Load', ok(S.load) ? S.load.toFixed(1) + ' kW' : '—', 'var(--primary-text-color)', 17)}</div></div></div>`;
-      return `<div style="font-family:var(--primary-font-family,var(--battman-font,sans-serif));font-variant-numeric:tabular-nums;font-feature-settings:'tnum';position:relative;margin-top:11px;margin-bottom:26px;padding:16px 6px 16px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(col, 70)};box-shadow:0 0 10px -4px ${col};">
+      return `<div style="font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));font-variant-numeric:tabular-nums;font-feature-settings:'tnum';position:relative;margin-top:11px;margin-bottom:26px;padding:16px 6px 16px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(col, 70)};box-shadow:0 0 10px -4px ${col};">
         <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(col, 70)}">
           ${ico('mdi:alert', 16, col)}<span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:${col};white-space:nowrap">Panic · Off Grid${auto ? '' : ' · Manual'} · off for ${since(S.offMin)}</span></div>
         ${box}
@@ -278,7 +278,7 @@ custom_fields:
         ico(ic, 16, col) + (wide ? '' : `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${col};white-space:nowrap;'>Auto</span>`) + `</div>`;
     })();
 
-    return `<div style='font-family:var(--primary-font-family,var(--battman-font,sans-serif));font-variant-numeric:tabular-nums;font-feature-settings:"tnum";position:relative;margin-top:11px;margin-bottom:${act ? (act.ready ? 10 : 26) : 0}px;padding:16px 6px ${act ? 16 : 6}px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(st.color, 70)};box-shadow:0 0 10px -4px ${st.color};'>` +
+    return `<div style='font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));font-variant-numeric:tabular-nums;font-feature-settings:"tnum";position:relative;margin-top:11px;margin-bottom:${act ? (act.ready ? 10 : 26) : 0}px;padding:16px 6px ${act ? 16 : 6}px;border-radius:12px;background:var(--battman-surface-popup);border:1.5px solid ${mix(st.color, 70)};box-shadow:0 0 10px -4px ${st.color};'>` +
       `<div style='position:absolute;top:-9px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--battman-surface-popup);border:1px solid ${mix(st.color, 70)};'>` +
       ico(st.icon, 16, st.color) + `<span style='font-size:12px;font-weight:800;letter-spacing:0.04em;color:${st.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>${st.text}</span></div>` + acPill +
       `<div style='display:flex;gap:6px;'>` + tile(SELL) + tile(BUY) + `</div>` + (act ? pill(act) : '') + `</div>`;

@@ -39,7 +39,7 @@ class BattmanSolarCard extends BattmanCardBase {
     if (!inCardPicker(this)) return super._build();
     this._built = true;
     const row = (n, c, w, v) => `<div style="padding:6px 0"><div style="display:flex;align-items:baseline;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:${c}"></span><b style="flex:1;font-size:13px">${n}</b><b style="font-size:16px">${v}<small style="font-size:10px;opacity:.6"> kW</small></b></div><div style="height:7px;border-radius:4px;background:var(--divider-color);margin:6px 0 2px"><div style="height:100%;width:${w}%;border-radius:4px;background:${c}"></div></div></div>`;
-    this.shadowRoot.innerHTML = `<ha-card style="overflow:hidden;padding:0 14px 10px;font-family:var(--primary-font-family,sans-serif)">`
+    this.shadowRoot.innerHTML = `<ha-card style="overflow:hidden;padding:0 14px 10px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">`
       + `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--divider-color)"><b style="font-size:12px;letter-spacing:.09em">SOLAR</b>`
       + `<span style="font-size:11px;color:var(--secondary-text-color)">10% &nbsp; Now &nbsp; Forecast</span></div>`
       + row("Inverter 1", "#f97316", 62, "3.1") + row("Inverter 2", "#eab308", 78, "4.6") + `</ha-card>`;
@@ -94,7 +94,7 @@ class BattmanSolarCard extends BattmanCardBase {
     button { font-family: inherit; }
     ha-card { overflow: hidden; background: var(--card-background-color); border: 1px solid var(--divider-color);
       border-radius: 12px; color: var(--primary-text-color); box-shadow: none; font-size: 16px; line-height: normal;
-      font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif); }
+      font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
     .head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between;
       padding: 10px 16px; border-bottom: 1px solid var(--divider-color); }
     .title { font-size: 13px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }

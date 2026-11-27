@@ -18,7 +18,7 @@ class BattmanSettingsCard extends BattmanCardBase {
      each section an inner panel */
   :host { display: block; }
   ha-card { background: var(--primary-background-color); overflow: hidden; container: card / inline-size; }
-  .frame { color: var(--battman-text-bright); font-family: var(--primary-font-family, sans-serif);
+  .frame { color: var(--battman-text-bright); font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
            font-size: 15px; line-height: 1.5; padding: 8px; }
   @container card (min-width: 600px) { .frame { padding: 20px; } }
   .page { max-width: 2200px; margin: 0 auto; background: var(--card-background-color);

@@ -123,7 +123,7 @@ const HOUSE_CSS = `
   :host { display: block; }
   ha-card { position: relative; border: none; aspect-ratio: 395 / 450; container-type: inline-size; overflow: hidden; }
   .it { position: absolute; box-sizing: border-box; padding: 12px; font-weight: bold; letter-spacing: -0.1px;
-        font-family: var(--battman-font, var(--primary-font-family, sans-serif)); line-height: 1.3; cursor: pointer; }
+        font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); line-height: 1.3; cursor: pointer; }
   .it.noclick { cursor: default; }
   .p { font-size: clamp(13px, 4.1cqw, 17px); white-space: nowrap; overflow: visible; }
   .s { font-size: clamp(11px, 3.6cqw, 15px); white-space: nowrap; }

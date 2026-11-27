@@ -19,7 +19,7 @@ class BattmanModeHistoryStripCard extends BattmanCardBase {
     button { font-family: inherit; }
     ha-card { overflow: hidden; background: var(--card-background-color); border: 1px solid var(--divider-color);
       border-radius: 12px; color: var(--primary-text-color); box-shadow: none; font-size: 16px; line-height: normal;
-      font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif); }
+      font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
     .head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between;
       padding: 10px 16px; border-bottom: 1px solid var(--divider-color); }
     .title { font-size: 13px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
@@ -55,7 +55,7 @@ class BattmanModeHistoryStripCard extends BattmanCardBase {
     if (!inCardPicker(this)) return super._build();
     this._built = true;
     const seg = (w, c) => `<div style="width:${w}%;background:${c}"></div>`;
-    this.shadowRoot.innerHTML = `<ha-card style="overflow:hidden;padding:0 14px 12px;font-family:var(--primary-font-family,sans-serif)">`
+    this.shadowRoot.innerHTML = `<ha-card style="overflow:hidden;padding:0 14px 12px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">`
       + `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><b style="font-size:12px;letter-spacing:.09em">MODE HISTORY</b>`
       + `<span style="font-size:11px;color:var(--secondary-text-color)">1h &nbsp; 4h &nbsp; 12h</span></div>`
       + `<div style="display:flex;height:28px;border-radius:6px;overflow:hidden">${seg(26, "#3b82f6")}${seg(14, "#22c55e")}${seg(30, "#eab308")}${seg(10, "#ef4444")}${seg(20, "#3b82f6")}</div></ha-card>`;

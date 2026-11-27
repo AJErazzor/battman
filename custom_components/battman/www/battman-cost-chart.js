@@ -54,7 +54,7 @@ class BattmanCostChartCard extends BattmanCardBase {
     ha-card { height: 100%; min-height: 340px; display: flex; flex-direction: column; overflow: hidden; container-type: inline-size;
       background: var(--card-background-color); border: 1px solid var(--divider-color); border-radius: 12px;
       color: var(--primary-text-color); box-shadow: none; font-size: 16px; line-height: normal;
-      font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif); }
+      font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
     .title { padding: 12px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
       border-bottom: 1px solid var(--divider-color); }
     .stats { display: flex; flex-wrap: wrap; gap: 10px 18px; justify-content: space-between; align-items: center;

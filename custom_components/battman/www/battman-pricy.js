@@ -25,7 +25,7 @@ const CSS = `
     :host { color-scheme: light dark; }
 
     :host, .modal {
-      font-family: var(--primary-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
       font-size: 16px; line-height: normal;
       color: var(--primary-text-color, #1a1a1a);
     }
@@ -120,7 +120,7 @@ const CSS = `
       font-size: 12px; line-height: 1.6; color: var(--battman-text-bright);
       font-family: 'Courier New', monospace; max-height: 200px; overflow-y: auto;
     }
-    .debug-box .btn { font-family: var(--primary-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif); }
+    .debug-box .btn { font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
     /* Form controls don't inherit font-family by default — make them follow the theme */
     input, textarea, select, button { font-family: inherit; }
 

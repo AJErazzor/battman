@@ -28,7 +28,7 @@ ha-card { overflow: clip; color: var(--g-text); background: var(--g-card);
   --g-border: var(--battman-border-neutral, var(--divider-color));
   --g-link: var(--battman-sky, var(--primary-color));
   --g-accent: var(--battman-blue, var(--primary-color));
-  font-family: var(--primary-font-family, sans-serif); }
+  font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
 .top { display: flex; align-items: center; gap: 12px; padding: 14px 20px 10px; border-bottom: 1px solid var(--g-border); }
 .top .name { font-size: 18px; font-weight: 700; margin: 0; }
 .top .ver { font-size: 12px; color: var(--g-muted); }

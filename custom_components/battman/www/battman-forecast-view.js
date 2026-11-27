@@ -10,7 +10,7 @@ import { describe, exportHint, group, hhmm, money, split, summaryHints, sum } fr
 const CSS = `
 :host{display:block;--wi:#6fb7e9}
 *{box-sizing:border-box;margin:0;padding:0}
-.wrap{background:var(--battman-surface-card);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,system-ui,-apple-system,sans-serif));font-size:15px;line-height:1.4;padding:8px}
+.wrap{background:var(--battman-surface-card);color:var(--primary-text-color);font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));font-size:15px;line-height:1.4;padding:8px}
 .pop{max-width:620px;margin:0 auto;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup)}
 /* the header pill (as the Chill card's popup) */
 .pill{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:8px;

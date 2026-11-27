@@ -35,7 +35,7 @@ const CSS = `
 @keyframes bt-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--battman-sky, #4af) 60%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
 @keyframes bt-beckon { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--battman-sky, #4af) 45%, transparent); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
 .words { position: fixed; z-index: 2147483002; box-sizing: border-box; width: min(340px, calc(100vw - 32px)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
-  font: 14px/1.45 var(--primary-font-family, system-ui, sans-serif); text-shadow: 0 1px 2px color-mix(in srgb, var(--battman-surface-card, #000) 70%, transparent);
+  font: 14px/1.45 var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); text-shadow: 0 1px 2px color-mix(in srgb, var(--battman-surface-card, #000) 70%, transparent);
   opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; }
 .words.in { opacity: 1; transform: none; }
 .meta { font-size: 12px; color: var(--battman-text-muted, var(--secondary-text-color, #aaa)); letter-spacing: .02em; }
@@ -52,7 +52,7 @@ button.fwd { background: var(--battman-blue-soft-bg, rgba(127,127,127,.15)); col
 button:focus:not(:focus-visible) { outline: none; }
 button:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
 .pill { position: fixed; z-index: 2147483002; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center;
-  padding: 8px 10px 8px 16px; border-radius: 12px; font: 14px var(--primary-font-family, system-ui, sans-serif);
+  padding: 8px 10px 8px 16px; border-radius: 12px; font: 14px var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
   background: var(--battman-surface-popup, var(--card-background-color, #222)); color: var(--battman-text-bright, var(--primary-text-color, #eee));
   border: 1px solid var(--battman-border-neutral, var(--divider-color, #555)); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
 [hidden] { display: none !important; }

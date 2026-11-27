@@ -129,7 +129,7 @@ export const esc = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").repl
 
 // The box a card shows instead of itself when it can't run.
 export function problemHtml(title, msg) {
-  return `<div style="padding:16px 18px;font-family:var(--primary-font-family,sans-serif)">`
+  return `<div style="padding:16px 18px;font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))">`
     + `<div style="font-weight:700;color:var(--error-color,#db4437);margin-bottom:6px">${esc(title)}</div>`
     + `<div style="color:var(--primary-text-color);font-size:14px;line-height:1.4">${esc(msg)}</div></div>`;
 }
