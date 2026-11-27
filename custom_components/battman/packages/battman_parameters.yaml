@@ -655,9 +655,9 @@ template:
                and trigger.platform == 'event'
                and trigger.event.data.action == 'SetAttribute' 
                and trigger.event.data.sellSolarRuleExcess is defined 
-               and trigger.event.data.sellSolarRuleExcess | int >= -100
-               and trigger.event.data.sellSolarRuleExcess | int <= 100 %}
-              {{ trigger.event.data.sellSolarRuleExcess | int }}
+               and trigger.event.data.sellSolarRuleExcess | float >= 0
+               and trigger.event.data.sellSolarRuleExcess | float <= 1000 %}
+              {{ trigger.event.data.sellSolarRuleExcess | float }}
             {% else %}
               {{ this.attributes.sellSolarRuleExcess
                  if this.attributes.sellSolarRuleExcess is defined

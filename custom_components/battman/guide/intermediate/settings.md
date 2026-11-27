@@ -441,13 +441,13 @@ On the **⚡ Cascade** tab: "From the start hour, each hour is switched on with 
 ## Sell solar
 
 <!-- guide:summary id="settings.sellSolar" -->
-The limits for hours that have **Sell solar** switched on in [Sell rules](#sell-rules): the lowest feed-in price, the lowest battery level and how much solar there has to be beyond what the house uses. They apply to every hour that has **Sell solar** on.
+The limits for hours that have **Sell solar** switched on in [Sell rules](#sell-rules): the lowest feed-in price, the lowest battery level and how much of Solcast's forecast for the rest of today is left once the battery is full. They apply to every hour that has **Sell solar** on.
 <!-- /guide:summary -->
 
 <details>
 <summary>Show picture</summary>
 
-![The Sell solar section of the Settings card: Minimum price 5 c/kWh, Battery level 5 %, Excess solar 10 %, with a Reset button.](../../www/guide-images/settings-sell-solar.png)
+![The Sell solar section of the Settings card: Minimum price 5 c/kWh, Battery level 5 %, Excess solar 10 kWh, with a Reset button.](../../www/guide-images/settings-sell-solar.png)
 
 </details>
 
@@ -455,15 +455,23 @@ The card's note: "Used by every hour that has Sell solar switched on." There is 
 
 ### Minimum price
 
-"Only sell solar when the feed-in price is above this", in c/kWh. 5 to start with. From 0 to 10,000.
+"Only sell solar when the feed-in price is at or above this", in c/kWh. 5 to start with. From 0 to 10,000. The current feed-in price is the one tested.
 
 ### Battery level
 
-"Only sell solar once the battery is above this", in %. 5% to start with. Whole numbers from 0 to 100.
+"Only sell solar once the battery is at or above this", in %. 5 to start with. Whole numbers from 0 to 100. The battery's real level is the one tested.
 
 ### Excess solar
 
-"Sell when solar beats the house load by this much", in %. 10 to start with. Whole numbers from -100 to 100.
+"Sell when the solar still to come today is this much more than the battery needs to fill", in kWh. 10 to start with. From 0 to 1,000. It is the room left in the battery (its size less what is in it now) taken from Solcast's 10% forecast for the rest of today, so the figure is what is left over once the battery is full.
+
+### How an hour sells solar
+
+An hour sells solar when its rule is **Active** with **Sell solar** on, **Sell rules enabled** is on, and all three hold: the current feed-in price is at or above **Minimum price**, the battery is at or above **Battery level**, and the excess is at or above **Excess solar**. Battman then puts the battery in Float, so solar goes to the house and the grid instead of the battery.
+
+It only does this when nothing else wants to act. Buying (Anytime included), a negative buy price and every other way of selling come first, and it comes after Drain. It never runs while the feed-in price is negative, and it does nothing when Solcast's forecast isn't there.
+
+Once an hour is selling, it carries on while the excess stays within 1 kWh of **Excess solar** and the feed-in price is not negative, so a forecast that wobbles doesn't flip the mode every few minutes. The price and battery level are tested when it starts.
 
 <a id="spike"></a>
 ## Spike selling
@@ -825,4 +833,4 @@ Sell solar's **Battery level**, in %. 5 to start with.
 
 ### Sell solar: excess solar
 
-Sell solar's **Excess solar**, in %. 10 to start with.
+Sell solar's **Excess solar**, in kWh. 10 to start with.
