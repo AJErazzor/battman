@@ -624,7 +624,7 @@ window.BattmanLib.showPopup = function (d, el) {
 };
 
 // The scrolling panel every content popup is drawn in.
-window.BattmanLib.POPUP_CSS = '.bm .pop{box-sizing:border-box;width:100%;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--primary-font-family,var(--battman-font,sans-serif))}';
+window.BattmanLib.POPUP_CSS = '.bm .pop{box-sizing:border-box;width:100%;padding:10px 12px;border-radius:8px;background:var(--battman-surface-popup);color:var(--primary-text-color);font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)))}';
 
 // The "Next hours" forecast (State card's tap): the <battman-forecast-view> element (battman-forecast-view.js), which
 // shows what Battman's real engine would do over the next hours. The strip above it is for the ✕.

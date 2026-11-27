@@ -302,6 +302,83 @@ const O = (id) => CORE.OVERRIDES.find((o) => o.id === id);
   run.pause && run.pause();
 }
 
+// ---- 5b. press-and-hold preview of a preset (#178) ----
+{
+  const rows = (p, armed) => CORE.presetRows(p, armed).map((r) => r.n + ": " + r.v);
+  T("preview: an overnight break-even scene", rows({ name: "Morning BE", timer: 0, timer_at: "05:26", values: { sell: { soc: 0, price: 9.5, allowReset: true }, net: { side: "sell", price: 0.001 } } }, false),
+    ["Sell Override: any SOC · min 9.5¢", "Net Target: Sell to break even", "Overnight ☾: starts 00:01 when armed", "Runs: until 05:26 or target met"]);
+  T("preview: an armed scene says so", rows({ name: "x", values: { sell: { soc: 0, price: 35 }, net: { side: "sell", price: 0.001 } } }, true)[2], "Overnight ☾: armed: starts 00:01 tonight");
+  T("preview: a scene without a net target has no overnight row", rows({ name: "Storm Prep", timer: 43200, values: { sell: { soc: 100, price: 0 }, any: { soc: 100, price: 35 } } }, false),
+    ["Sell Override: No selling", "Buy Anytime: up to 100% · max 35¢", "Runs: 12 hours"]);
+  T("preview: a locked chip shows No reset and no timer", rows({ name: "Crazy high", timer: 0, values: { sell: { soc: 75, price: 60, allowReset: false } } }, false),
+    ["Sell Override: down to 75% · min 60¢", "No reset: stays until you clear it", "Runs: no timer"]);
+  T("preview: a negative buy price and a short timer", rows({ name: "neg", timer: 1800, values: { buy: { soc: 1, price: -9 } } }, false),
+    ["Buy Override: up to 1% · max -9¢", "Runs: 30 min"]);
+  T("preview: a net target chip on its own (not armable)", rows({ name: "Net 2", values: { net: { side: "sell", price: 2 } } }, false),
+    ["Net Target: Sell target $2.00", "Runs: until target met"]);
+  T("preview: drain is a max price", rows({ name: "d", values: { drain: { soc: 20, price: 10 } } }, false)[0], "Drain Battery: down to 20% · max 10¢");
+
+  const presets = [
+    { name: "Sell hi", timer: 3600, values: { sell: { soc: 20, price: 30, allowReset: false } } },
+    { name: "Eve dump", timer: 0, values: { sell: { soc: 30, price: 25, allowReset: true }, net: { side: "sell", price: 0.001 } } },
+    { name: "Net 2", timer: 0, values: { net: { side: "sell", price: 2 } } }];
+  const open = (attrs = {}) => { const w = world({ overridePresets: clone(presets), ...attrs }); C.openControl({}); return { w, d: lastDlg }; };
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  const hold = async (d, ds, ms = 560) => {
+    const chip = { dataset: ds };
+    const ev = { button: 0, clientX: 5, clientY: 5, target: { closest: (sel) => (sel.includes("apply") || sel.includes("data-preset") ? chip : null) } };
+    d.ls.pointerdown.forEach((f) => f(ev));
+    await pause(ms);
+    (d.ls.pointerup || []).forEach((f) => f(ev));
+    // the next tap starts with a pointerdown somewhere else (that is what ends a hold's click-swallowing)
+    d.ls.pointerdown.forEach((f) => f({ button: 0, clientX: 0, clientY: 0, target: { closest: () => null } }));
+  };
+  let { w, d } = open();
+  await hold(d, { a: "apply", pi: "1" });
+  const h = d.cc.innerHTML;
+  T("cc: holding a scene shows its preview", ["Scene", "EVE DUMP".toLowerCase(), "Sell to break even", "starts 00:01 when armed", "☾ Arm<", "Start now"].every((t) => h.toLowerCase().includes(t.toLowerCase())), true);
+  T("cc: holding applies nothing", [w.ev().length, w.calls.length, d.closed], [0, 0, 0]);
+  click(d, { a: "pvclose" });
+  T("cc: Close goes back to the list", d.cc.innerHTML.includes("Start now"), false);
+  const xTap = (d) => d.ls.click.forEach((f) => f({ target: { classList: { contains: (c) => c === "x" }, closest: () => null } }));
+  ({ w, d } = open()); await hold(d, { a: "apply", pi: "1" }); xTap(d);
+  T("cc: the popup's ✕ on a preview goes back to the list", [d.cc.innerHTML.includes("Start now"), d.cc.innerHTML.includes("Scenes"), d.closed], [false, true, 0]);
+  ({ w, d } = open()); click(d, { a: "saveopen" }); xTap(d);
+  T("cc: the popup's ✕ on the Save box goes back to the list", d.cc.innerHTML.includes("Save preset"), false);
+  ({ w, d } = open()); await hold(d, { a: "apply", pi: "1" });
+  T("cc: the Overrides heading stays above the preview", d.cc.innerHTML.includes(">Overrides</div>") && d.cc.innerHTML.includes("top:53px"), true);
+  ({ w, d } = open()); await hold(d, { a: "apply", pi: "1" }, 200);
+  T("cc: a short press is not a hold", d.cc.innerHTML.includes("Start now"), false);
+  ({ w, d } = open()); await hold(d, { a: "apply", pi: "1" }); click(d, { a: "pvgo" });
+  T("cc: Start now runs the scene", w.calls, [["script", "battman_apply_scene", { name: "Eve dump" }]]);
+  ({ w, d } = open()); await hold(d, { a: "apply", pi: "1" }); click(d, { a: "pvarm" });
+  T("cc: Arm arms the scene and closes the preview", [w.ev(), d.cc.innerHTML.includes("Start now")], [[{ action: "SetAttribute", armedScene: "Eve dump" }], false]);
+  ({ w, d } = open({ armedScene: "Eve dump" })); await hold(d, { a: "apply", pi: "1" });
+  T("cc: an armed scene offers Disarm", [d.cc.innerHTML.includes("Disarm"), d.cc.innerHTML.includes("armed: starts 00:01 tonight")], [true, true]);
+  ({ w, d } = open()); await hold(d, { a: "apply", pi: "0" });
+  T("cc: holding a chip shows No reset, no Arm button", [d.cc.innerHTML.includes("Sell Override chip"), d.cc.innerHTML.includes("stays until you clear it"), d.cc.innerHTML.includes("☾ Arm<")], [true, true, false]);
+  click(d, { a: "pvgo" });
+  T("cc: Start now applies the chip with its timer", [w.ev(), w.calls], [[{ action: "SetAttribute", sellOverrideSOC: 20, sellOverridePrice: 30, sellOverrideAllowReset: false }], [["timer", "start", { entity_id: TM, duration: 3600 }]]]);
+  ({ w, d } = open()); await hold(d, { a: "ntapply", pi: "2" }); click(d, { a: "pvgo" });
+  T("cc: Start now on a net chip sets the target", w.ev(), [{ action: "SetAttribute", netTargetSellPrice: 2, netTargetBuyPrice: 0 }]);
+  ({ w, d } = open()); click(d, { a: "mgmt" }); await hold(d, { a: "apply", pi: "1" });
+  T("cc: no preview in Manage mode", d.cc.innerHTML.includes("Start now"), false);
+  // the row's quick edit: hold a chip
+  w = world({ overridePresets: clone(presets) }); C.openEdit(O("sell"), {}); d = lastDlg;
+  await hold(d, { preset: "0" });
+  const pvw = d.querySelector("#pvw");
+  T("popup: holding a chip shows what it does in place of the editor", [pvw.style.display, d.querySelector("#body").style.display, pvw.innerHTML.includes("stays until you clear it")], ["", "none", true]);
+  pvw.ls.click({ target: { closest: () => ({ dataset: { a: "pvclose" } }) } });
+  T("popup: Close brings the editor back", [pvw.style.display, d.querySelector("#body").style.display, w.ev().length], ["none", "", 0]);
+  await hold(d, { preset: "0" }); xTap(d);
+  T("popup: the ✕ on a preview brings the editor back", [pvw.style.display, d.querySelector("#body").style.display], ["none", ""]);
+  d.querySelector("#s").value = "40"; d.querySelector("#saveopen").click(); xTap(d);
+  T("popup: the ✕ on the Save box brings the editor back", [d.querySelector("#save").style.display, d.querySelector("#body").style.display], ["none", "block"]);
+  await hold(d, { preset: "0" });
+  pvw.ls.click({ target: { closest: () => ({ dataset: { a: "pvgo" } }) } });
+  T("popup: Start now applies the chip", [w.ev(), w.calls], [[{ action: "SetAttribute", sellOverrideSOC: 20, sellOverridePrice: 30, sellOverrideAllowReset: false }], [["timer", "start", { entity_id: TM, duration: 3600 }]]]);
+}
+
 // ---- 6. the shared pieces ----
 T("core: five overrides, in the dock's order", CORE.OVERRIDES.map((o) => o.id), ["sell", "sellsolar", "buy", "any", "drain"]);
 T("core: only Buy takes a negative price", CORE.OVERRIDES.filter((o) => o.allowNegative).map((o) => o.id), ["buy"]);

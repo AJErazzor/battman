@@ -37,7 +37,7 @@ class BattmanAmberForecastChartCard extends BattmanCardBase {
     ha-card { height: 100%; min-height: 320px; display: flex; flex-direction: column; overflow: hidden;
       background: var(--card-background-color); border: 1px solid var(--divider-color); border-radius: 12px;
       color: var(--primary-text-color); box-shadow: none; font-size: 16px; line-height: normal;
-      font-family: var(--primary-font-family, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif); }
+      font-family: var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
     .head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
       padding: 10px 16px; border-bottom: 1px solid var(--divider-color); }
     .title { font-size: 13px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }

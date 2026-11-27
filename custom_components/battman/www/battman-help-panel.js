@@ -35,7 +35,7 @@ export function tagHtml(id, label, small) {
 export const TAG_CSS = `
 .bh-tag { display: none; flex: none; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0;
   border-radius: 6px; border: 1px solid var(--battman-sky, var(--primary-color)); color: var(--battman-sky, var(--primary-color));
-  background: var(--battman-sky-soft-bg, rgba(127, 127, 127, 0.12)); font: 800 13px/1 var(--primary-font-family, sans-serif); cursor: pointer; }
+  background: var(--battman-sky-soft-bg, rgba(127, 127, 127, 0.12)); font: 800 13px/1 var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); cursor: pointer; }
 .bh-tag.small { width: 24px; height: 20px; border-radius: 5px; font-size: 11px; }
 /* open: the same outline, tinted deeper (never a solid fill) */
 .bh-tag[aria-expanded="true"] { background: color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); color: var(--battman-sky, var(--primary-color)); border-color: var(--battman-sky, var(--primary-color)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--battman-sky, var(--primary-color)) 26%, transparent); }
@@ -49,7 +49,7 @@ const PANEL_CSS = `
   display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; overflow-y: auto;
   background: var(--battman-surface-popup, var(--card-background-color)); color: var(--battman-text-bright, var(--primary-text-color));
   border-left: 1px solid var(--battman-border-neutral, var(--divider-color)); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
-  font: 14px/1.55 var(--primary-font-family, sans-serif); }
+  font: 14px/1.55 var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); }
 @media (max-width: 700px) {
   .bh-panel { top: auto; left: 0; width: auto; max-height: 75vh; border-left: 0; border-top: 1px solid var(--battman-border-neutral, var(--divider-color));
     border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3); padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }

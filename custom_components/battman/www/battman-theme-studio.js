@@ -47,7 +47,7 @@ class BattmanThemeStudioCard extends BattmanCardBase {
 :host{display:block}
 ha-card{overflow:hidden;container-type:inline-size;background:var(--primary-background-color,#201d24)}
 .studio{color-scheme:dark;max-width:100%;overflow-x:hidden;font-size:16px;line-height:normal;
-  font-family:var(--primary-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif);
+  font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
   margin:0;padding:12px;
   color:var(--primary-text-color,#fff);
   -webkit-font-smoothing:antialiased;
@@ -228,7 +228,7 @@ details.panel>.body{margin-top:14px}
 
 /* ════════════ PREVIEW (scoped to edited theme) ════════════ */
 #preview{
-  font-family:var(--battman-font);
+  font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
   background:var(--battman-surface-popup);
   border-radius:14px;padding:16px;overflow:hidden;
   border:1px solid var(--battman-border-neutral);

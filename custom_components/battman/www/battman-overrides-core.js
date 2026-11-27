@@ -40,6 +40,48 @@ export const isOn = (o, a) => {
   return soc > 0 || price > 0 || (!!o.allowNegative && price < 0);
 };
 
+// What a saved preset (a scene or a single-override chip) does, as rows for the press-and-hold preview:
+// [{ c: colour, n: name, v: value }]. One row per override, the Net Target, Overnight (scenes that can be armed:
+// they have a net target and more than one part), No reset, and how long it runs. Plain words, no markup.
+const fmtC = (v) => (Math.round(v * 100) / 100).toString() + "¢";
+const fmtDur = (sec) => {
+  const m = Math.round(sec / 60);
+  if (m < 60) return m + " min";
+  const h = Math.round(m / 6) / 10;
+  return h + (h === 1 ? " hour" : " hours");
+};
+export function presetRows(p, armed) {
+  const v = (p && p.values) || {};
+  const rows = [];
+  let noReset = false;
+  OVERRIDES.forEach((o) => {
+    const x = v[o.id];
+    if (!x) return;
+    const soc = num(x.soc), price = num(x.price);
+    if (x.allowReset === false) noReset = true;
+    let val;
+    if (o.specialAt > 0 && soc === o.specialAt && price === 0) val = o.specialDesc.charAt(0) + o.specialDesc.slice(1).toLowerCase();
+    else {
+      const parts = [soc > 0 ? (o.dir === "down" ? "down to " : "up to ") + soc.toFixed(0) + "%" : "any SOC"];
+      if (price !== 0) parts.push((o.dir === "down" && o.money === "EARN" ? "min " : "max ") + fmtC(price));
+      val = parts.join(" · ");
+    }
+    rows.push({ c: colours(o).c, n: o.name, v: val });
+  });
+  const net = v.net;
+  if (net) {
+    const pr = num(net.price), be = pr !== 0 && Math.abs(pr) < 0.005, buy = net.side === "buy";
+    rows.push({ c: "var(--battman-teal)", n: "Net Target",
+      v: buy ? (be ? "Buy budget: break even" : "Buy budget " + money(pr)) : (be ? "Sell to break even" : "Sell target " + money(pr)) });
+    if (Object.keys(v).length > 1) rows.push({ c: "var(--battman-blue)", n: "Overnight ☾", v: armed ? "armed: starts 00:01 tonight" : "starts 00:01 when armed" });
+  }
+  if (noReset) rows.push({ c: "var(--battman-amber)", n: "No reset", v: "stays until you clear it" });
+  let run = p && p.timer_at ? "until " + p.timer_at : (p && num(p.timer) > 0 ? fmtDur(num(p.timer)) : "");
+  if (net) run = run ? run + " or target met" : "until target met";
+  rows.push({ c: "var(--battman-text-muted)", n: "Runs", v: run || "no timer" });
+  return rows;
+}
+
 // The Net Target state: today's net (sell total - buy total - daily network charge), the target set
 // (sell or buy), what is left to reach it, and a "met" time that stays until midnight.
 export function netState(a, states, E) {

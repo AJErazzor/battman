@@ -233,7 +233,7 @@ cards:
           display:flex;
           flex-direction:column;
           gap:2px;
-          font-family:var(--battman-font,sans-serif);
+          font-family:var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
         ">
           ${strip('SELL', sellNow, sellPeriods, sellMeta)}
           ${strip('BUY', buyNow, buyPeriods, buyMeta)}

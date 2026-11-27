@@ -68,7 +68,7 @@ const headerHeight = headerBottom;
 
 const CSS = `
 :host { all: initial; }
-.helpbtn { position: fixed; right: 16px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; font: 14px/1 var(--primary-font-family, sans-serif);
+.helpbtn { position: fixed; right: 16px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; font: 14px/1 var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif)));
   padding: 6px 12px; min-height: 34px; border-radius: 8px; cursor: pointer; color: var(--battman-text-bright, var(--primary-text-color));
   border: 1px solid var(--battman-border-neutral, var(--divider-color));
   background: var(--battman-green-soft-bg, var(--battman-surface-popup, var(--card-background-color)));
@@ -80,7 +80,7 @@ const CSS = `
 .helpbtn[aria-pressed="true"] { background: var(--battman-blue-soft-bg, rgba(127, 127, 127, 0.14)); color: var(--battman-blue, var(--primary-color)); border-color: var(--battman-blue-border-strong, var(--battman-blue, var(--primary-color))); }
 .helpbtn:focus:not(:focus-visible) { outline: none; }
 .helpbtn:focus-visible { outline: 2px solid var(--battman-sky, var(--primary-color)); outline-offset: 2px; }
-.msg { position: fixed; right: 16px; z-index: 6; font: 12px/1.3 var(--primary-font-family, sans-serif); color: var(--battman-text-muted, var(--secondary-text-color)); }
+.msg { position: fixed; right: 16px; z-index: 6; font: 12px/1.3 var(--battman-font,var(--primary-font-family,var(--ha-font-family-body,Roboto,sans-serif))); color: var(--battman-text-muted, var(--secondary-text-color)); }
 .msg.bad { color: var(--error-color, #db4437); }
 .bh-tag { position: fixed; z-index: 5; }
 `;
